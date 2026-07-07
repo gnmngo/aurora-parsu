@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AURORA
 
-## Getting Started
+**Academic Unified Review, Observation, Rating, and Assessment System**
 
-First, run the development server:
+Master's Capstone Project for **Partido State University – Goa Campus**
+
+A university-wide paperless defense management platform that digitizes manuscript review, annotation, evaluation, grading, and defense workflows.
+
+## Tech Stack
+
+- **Frontend:** Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, React Query, Zustand
+- **Backend:** Supabase (PostgreSQL, Auth, Storage, Realtime, Edge Functions)
+- **Deployment:** Vercel + GitHub
+
+## Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.local.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run Supabase migrations (see docs/modules/MODULE-01-FOUNDATION.md)
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Module Progress
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Module | Name | Status |
+|--------|------|--------|
+| M01 | Foundation & Database | ✅ Done |
+| M02 | Authentication & RBAC | 🔜 Next |
+| M03 | Dashboard Shell | Pending |
+| M04 | Document Upload | Pending |
+| M05 | PDF Viewer | Pending |
+| M06 | Annotation Engine | Pending |
+| M07 | Split-Screen Workspace | Pending |
+| M08 | Grading Engine | Pending |
+| M09 | Defense Management | Pending |
+| M10 | Audit Trail | Pending |
+| M11 | Analytics | Pending |
+| M12 | Reports | Pending |
+| M13 | Notifications | Pending |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation
 
-## Learn More
+- [System Architecture](docs/ARCHITECTURE.md)
+- [Module 01: Foundation](docs/modules/MODULE-01-FOUNDATION.md)
 
-To learn more about Next.js, take a look at the following resources:
+## Institution
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Partido State University – Goa Campus
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Colleges:**
+- College of Education
+- College of Business and Management
+- College of Engineering and Computational Sciences
+- College of Arts and Humanities
+- College of Science
