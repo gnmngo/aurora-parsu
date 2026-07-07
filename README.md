@@ -1,10 +1,6 @@
 # AURORA
 
-**Academic Unified Review, Observation, Rating, and Assessment System**
-
-Master's Capstone Project for **Partido State University – Goa Campus**
-
-A university-wide paperless defense management platform that digitizes manuscript review, annotation, evaluation, grading, and defense workflows.
+Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 ## Tech Stack
 
