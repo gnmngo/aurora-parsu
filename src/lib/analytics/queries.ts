@@ -135,7 +135,7 @@ export async function fetchAnalyticsData(
     let withRevisions = 0;
     let failed = 0;
 
-    projects.forEach((p: any) => {
+    projects.forEach((p: { final_verdict: string | null; status: string }) => {
       const v = (p.final_verdict || "").toLowerCase();
       if (v.includes("fail")) failed++;
       else if (v.includes("revision") || v.includes("minor") || v.includes("major"))
@@ -167,9 +167,11 @@ export async function fetchAnalyticsData(
     const deptScores = new Map<string, { total: number; count: number }>();
     const projectInfoMap = new Map<string, { college: string; dept: string }>();
 
-    projects.forEach((p: any) => {
-      const colCode = p.departments?.colleges?.code || "Unknown";
-      const deptName = p.departments?.name || "Unknown Department";
+    projects.forEach((p: { id: string; departments: { name: string; colleges: { code: string } | { code: string }[] } | { name: string; colleges: { code: string } | { code: string }[] }[] }) => {
+      const depts = Array.isArray(p.departments) ? p.departments[0] : p.departments;
+      const cols = Array.isArray(depts?.colleges) ? depts?.colleges[0] : depts?.colleges;
+      const colCode = cols?.code || "Unknown";
+      const deptName = depts?.name || "Unknown Department";
       projectInfoMap.set(p.id, { college: colCode, dept: deptName });
 
       if (!collegeScores.has(colCode)) {
@@ -261,9 +263,11 @@ export async function fetchAnalyticsData(
 
     // Revision counts per project
     const projectRevisions = new Map<string, { title: string; count: number }>();
-    annotationsRes.data?.forEach((a: any) => {
-      const projId = a.document_versions?.documents?.id;
-      const projTitle = a.document_versions?.documents?.title;
+    annotationsRes.data?.forEach((a: { document_versions: { documents: { id: string; title: string } | { id: string; title: string }[] } | { documents: { id: string; title: string } | { id: string; title: string }[] }[] }) => {
+      const vers = Array.isArray(a.document_versions) ? a.document_versions[0] : a.document_versions;
+      const docs = Array.isArray(vers?.documents) ? vers?.documents[0] : vers?.documents;
+      const projId = docs?.id;
+      const projTitle = docs?.title;
       if (projId && projTitle) {
         if (!projectRevisions.has(projId)) {
           projectRevisions.set(projId, { title: projTitle, count: 0 });

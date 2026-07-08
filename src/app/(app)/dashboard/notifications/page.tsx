@@ -24,6 +24,7 @@ import {
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
 
 const typeIcons = {
   comment: MessageSquare,
@@ -43,16 +44,16 @@ export default function NotificationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   
   const supabase = createClient();
+  const { user } = useAuth();
 
   const loadNotifications = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!user) return;
 
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
-        .eq("profile_id", session.user.id)
+        .eq("profile_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -119,13 +120,12 @@ export default function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!user) return;
 
       const { error } = await supabase
         .from("notifications")
         .update({ read_at: new Date().toISOString() })
-        .eq("profile_id", session.user.id)
+        .eq("profile_id", user.id)
         .is("read_at", null);
 
       if (error) throw error;

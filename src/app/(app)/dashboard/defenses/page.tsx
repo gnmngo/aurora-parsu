@@ -15,7 +15,7 @@ import { Loader2, Settings } from "lucide-react";
 export default function DefensesPage() {
   const [stages, setStages] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("70000000-0000-0000-0000-000000000001");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"stages" | "calendar">("stages");
   const { roles } = useAuth();
@@ -28,10 +28,12 @@ export default function DefensesPage() {
       try {
         const { data } = await supabase
           .from("workflow_templates")
-          .select("*")
+          .select("id, name, program_id, programs(name, departments(name))")
           .order("name");
-        if (data) {
+        if (data && data.length > 0) {
           setTemplates(data);
+          // Auto-select first template — no hardcoding
+          setSelectedTemplateId((prev) => prev || data[0].id);
         }
       } catch (err) {
         console.error("Error loading workflow templates:", err);
@@ -105,9 +107,16 @@ export default function DefensesPage() {
               onChange={(e) => setSelectedTemplateId(e.target.value)}
               className="h-8 rounded-lg border border-border bg-card px-2 text-[10px] font-bold focus:outline-none cursor-pointer"
             >
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
+          {templates.map((t) => {
+                const department = (t.programs as any)?.departments?.name;
+                const program = (t.programs as any)?.name;
+                const label = department && program
+                  ? `${program} — ${department}`
+                  : t.name;
+                return (
+                  <option key={t.id} value={t.id}>{label}</option>
+                );
+              })}
             </select>
           </div>
 

@@ -32,7 +32,7 @@ export function ActivityFeed() {
 
     // Subscribe to realtime audit_logs channel for live feed!
     const channel = supabase
-      .channel("live_activity_feed")
+      .channel(`live_activity_feed-${Date.now()}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_logs" }, (payload) => {
         setActivities((prev) => [payload.new, ...prev.slice(0, 9)]);
       })

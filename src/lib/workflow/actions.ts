@@ -16,9 +16,9 @@ export async function adviserApproveDocumentAction(
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Get adviser identity
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
+  // 1. Get adviser identity (secure — uses getUser() not getSession())
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
@@ -38,7 +38,7 @@ export async function adviserApproveDocumentAction(
     .from("project_members")
     .select("id")
     .eq("project_id", doc.projects.id)
-    .eq("profile_id", session.user.id)
+    .eq("profile_id", user.id)
     .eq("member_role", "adviser")
     .maybeSingle();
 
@@ -61,8 +61,8 @@ export async function adviserApproveDocumentAction(
 
   // 3. Log Audit trail
   await supabase.from("audit_logs").insert({
-    profile_id: session.user.id,
-    user_email: session.user.email || "unknown",
+    profile_id: user.id,
+    user_email: user.email || "unknown",
     user_role: "adviser",
     action_type: "UPDATE",
     module: "documents",
@@ -91,13 +91,16 @@ export async function adviserApproveDocumentAction(
 }
 
 /**
- * Enforces five-state annotation lifecycle transitions:
- * Open -> Addressed (Student) -> Verified/Resolved (Adviser/Panelist) -> Archived (Coordinator/Admin)
+ * Enforces annotation lifecycle transitions for workflow module.
+ * NOTE: Use annotations/actions.ts updateAnnotationStatusAction for the full
+ * lifecycle implementation with history tracking and audit trail.
+ * This lightweight version is for direct workflow pipeline transitions.
  */
-export async function updateAnnotationStatusAction(annotationId: string, targetStatus: string) {
+export async function workflowUpdateAnnotationStatusAction(annotationId: string, targetStatus: string) {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) {
+  // Secure — uses getUser() not getSession()
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
@@ -105,9 +108,12 @@ export async function updateAnnotationStatusAction(annotationId: string, targetS
   const { data: callerRoles } = await supabase
     .from("user_roles")
     .select("roles(code)")
-    .eq("profile_id", session.user.id);
+    .eq("profile_id", user.id);
 
-  const codes = callerRoles?.map((ur: any) => ur.roles?.code) ?? [];
+  const codes = (callerRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) ?? [];
 
   // Enforce role transition rules
   if (targetStatus === "addressed") {

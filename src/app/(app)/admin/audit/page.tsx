@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function AuditPage() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -52,6 +54,7 @@ export default function AuditPage() {
   );
 
   return (
+    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -167,5 +170,6 @@ export default function AuditPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }

@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Menu, Search, LogOut } from "lucide-react";
+import { Bell, Menu, Search, LogOut, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/providers/theme-provider";
 
 interface AppHeaderProps {
   title?: string;
@@ -17,6 +18,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
   const { profile, roles, signOut } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const supabase = createClient();
 
@@ -39,7 +41,7 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
 
     // Set up realtime notification updates
     const channel = supabase
-      .channel("unread-notifications")
+      .channel(`unread-notifications-${Date.now()}`)
       .on(
         "postgres_changes",
         {
@@ -99,6 +101,20 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
         </Button>
       </Link>
 
+      {/* Theme toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        {resolvedTheme === "dark" ? (
+          <Sun className="h-4 w-4" />
+        ) : (
+          <Moon className="h-4 w-4" />
+        )}
+      </Button>
       <div className="flex items-center gap-3">
         {profile && (
           <div className="hidden text-right md:block">

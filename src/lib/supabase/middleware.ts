@@ -38,12 +38,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   console.log("MIDDLEWARE - Pathname:", pathname);
-  console.log("MIDDLEWARE SESSION - User ID:", user?.id || "None", "Session Exists:", !!session);
+  console.log("MIDDLEWARE SESSION - User ID:", user?.id || "None");
 
   const isAuthRoute =
     pathname.startsWith("/login") ||
@@ -102,14 +98,14 @@ export async function updateSession(request: NextRequest) {
 
       console.log("MIDDLEWARE ROLE - user_roles result:", JSON.stringify(userRoles));
 
-      const roles = userRoles?.map((ur: any) => {
+      const roles = userRoles?.map((ur: { roles: { code: string } | { code: string }[] | null }) => {
         const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
         return role?.code;
       }).filter(Boolean) || [];
 
       console.log("MIDDLEWARE ROLE - Extracted codes:", roles);
       const hasAdminAccess = roles.some((r) =>
-        ["sys_admin", "coordinator"].includes(r)
+        r && ["sys_admin", "coordinator"].includes(r)
       );
 
       if (!hasAdminAccess) {

@@ -26,6 +26,8 @@ import {
   archiveRubricAction,
   deleteRubricAction
 } from "@/lib/rubrics/actions";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function RubricsPage() {
   const [rubrics, setRubrics] = useState<any[]>([]);
@@ -87,6 +89,7 @@ export default function RubricsPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
       <div className="flex items-center justify-between">
         <div>
@@ -225,5 +228,6 @@ export default function RubricsPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }

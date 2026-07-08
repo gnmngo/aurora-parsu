@@ -115,14 +115,14 @@ export async function runDemoSeeder() {
   const departmentId = dept.id;
 
   const roleMap = new Map<string, string>();
-  roles.forEach((r: any) => roleMap.set(r.code, r.id));
+  roles.forEach((r: { code: string; id: string }) => roleMap.set(r.code, r.id));
 
   // Seed Users: 5 System Admins, 5 Coordinators, 10 Advisers, 10 Panelists, 20 Students
-  const admins: any[] = [];
-  const coordinators: any[] = [];
-  const advisers: any[] = [];
-  const panelists: any[] = [];
-  const students: any[] = [];
+  const admins: { id: string; firstName: string; lastName: string; email: string }[] = [];
+  const coordinators: { id: string; firstName: string; lastName: string; email: string }[] = [];
+  const advisers: { id: string; firstName: string; lastName: string; email: string }[] = [];
+  const panelists: { id: string; firstName: string; lastName: string; email: string }[] = [];
+  const students: { id: string; studentId?: string; firstName: string; lastName: string; email: string }[] = [];
 
   const createUser = async (email: string, roleCode: string, firstName: string, lastName: string) => {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -237,7 +237,7 @@ export async function runDemoSeeder() {
     });
 
     // Create manuscript document & version
-    const { data: doc, error: docErr } = await supabaseAdmin
+    const { data: doc } = await supabaseAdmin
       .from("documents")
       .insert({
         project_id: project.id,

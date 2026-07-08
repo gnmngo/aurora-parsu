@@ -9,6 +9,8 @@
   
   --primary: #2563eb;
   --primary-foreground: #ffffff;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
   
   --secondary: #3b82f6;
   --secondary-foreground: #ffffff;
@@ -27,12 +29,49 @@
   --sidebar-muted: #94a3b8;
   --sidebar-active: #2563eb;
   
-  --success: #10b981;
-  --danger: #ef4444;
+  --success: #16a34a;
+  --danger: #dc2626;
   --warning: #f59e0b;
-  --info: #3b82f6;
+  --info: #2563eb;
   
-  --radius: 0.75rem;
+  --radius-card: 16px;
+  --radius-button: 10px;
+  
+  --shadow-normal: 0 4px 12px rgba(0,0,0,.04);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+}
+
+/* Dark mode overrides */
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --primary-light: #1e293b;
+  --primary-dark: #1d4ed8;
+  
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --muted-dark: #64748b;
+  
+  --border: #334155;
+  
+  --sidebar: #0b0f19;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-muted: #64748b;
+  --sidebar-active: #3b82f6;
+  
+  --info: #3b82f6;
 }
 
 @theme inline {
@@ -42,6 +81,8 @@
   --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
@@ -56,7 +97,7 @@
   --color-warning: var(--warning);
   --color-info: var(--info);
   --font-sans: var(--font-inter);
-  --radius-xl: var(--radius);
+  --font-display: var(--font-lexend);
 }
 
 /* Base resets & styles matching Modern Academic SaaS */
@@ -64,6 +105,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbar matching Notion/Linear */
@@ -78,21 +120,32 @@ body {
   background: #cbd5e1;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* PDF viewer canvas styling */
 .react-pdf__Page__canvas {
   margin: 0 auto;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  border-radius: 4px;
+  box-shadow: var(--shadow-normal);
+  border-radius: var(--radius-card);
 }
 
-/* Additional UI custom properties */
 .shadow-sm {
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  box-shadow: var(--shadow-sm);
 }
 .shadow-md {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow: var(--shadow-normal);
+}
+.rounded-xl {
+  border-radius: var(--radius-card) !important;
+}
+.rounded-lg {
+  border-radius: var(--radius-button) !important;
 }

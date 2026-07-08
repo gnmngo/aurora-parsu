@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shield, User, AlertCircle, Database, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function DebugAuthPage() {
   const { user, session, profile, roles, permissions, isLoading } = useAuth();
@@ -72,6 +74,7 @@ export default function DebugAuthPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -271,5 +274,6 @@ export default function DebugAuthPage() {
         </CardContent>
       </Card>
     </div>
+    </RoleGuard>
   );
 }

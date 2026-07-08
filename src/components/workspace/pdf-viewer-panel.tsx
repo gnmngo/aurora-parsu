@@ -80,7 +80,7 @@ export function PdfViewerPanel({
   // Load PDF Document
   useEffect(() => {
     if (!pdfUrl) return;
-    setLoadingPdf(true);
+    const timer = setTimeout(() => setLoadingPdf(true), 0);
 
     async function loadPdf() {
       try {
@@ -99,6 +99,7 @@ export function PdfViewerPanel({
       }
     }
     loadPdf();
+    return () => clearTimeout(timer);
   }, [pdfUrl]);
 
   // Load Annotations for the current version
@@ -132,9 +133,33 @@ export function PdfViewerPanel({
 
   useEffect(() => {
     if (documentVersionId) {
-      loadAnnotations();
+      const timer = setTimeout(() => loadAnnotations(), 0);
+
+      // Real-time synchronization
+      const channel = supabase
+        .channel(`annotations-${documentVersionId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "annotations",
+            filter: `document_version_id=eq.${documentVersionId}`,
+          },
+          () => {
+            loadAnnotations();
+            onAnnotationChange?.();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        clearTimeout(timer);
+        supabase.removeChannel(channel);
+      };
     }
-  }, [documentVersionId, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentVersionId]);
 
   // Render Page onto Canvas
   useEffect(() => {

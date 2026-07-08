@@ -64,7 +64,7 @@ export default function PresentationModePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col p-8 text-xs font-semibold select-none">
+    <div className="min-h-screen bg-background text-foreground flex flex-col p-8 text-xs font-semibold select-none">
       {/* Header bar */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-6 mb-8 shrink-0">
         <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function PresentationModePage() {
               >
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <div className="p-3 bg-slate-900 text-primary rounded-xl group-hover:bg-primary/10 transition-colors">
+                    <div className="p-3 bg-background text-primary rounded-xl group-hover:bg-primary/10 transition-colors">
                       <Icon className="h-5 w-5" />
                     </div>
                     {isBypassing && <Loader2 className="h-4 w-4 animate-spin text-primary" />}

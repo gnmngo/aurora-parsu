@@ -16,6 +16,8 @@ import {
   Inbox
 } from "lucide-react";
 import { toast } from "sonner";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function ReportsPage() {
   const supabase = createClient();
@@ -103,6 +105,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 print:p-8 print:bg-white text-slate-800">
       <div className="flex items-center justify-between print:hidden">
         <div>
@@ -239,5 +242,6 @@ export default function ReportsPage() {
         </Card>
       )}
     </div>
+    </RoleGuard>
   );
 }

@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { resetDemoDataAction } from "@/lib/admin/actions";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function SystemHealthPage() {
   const supabase = createClient();
@@ -81,6 +83,7 @@ export default function SystemHealthPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -224,5 +227,6 @@ export default function SystemHealthPage() {
         </>
       )}
     </div>
+    </RoleGuard>
   );
 }

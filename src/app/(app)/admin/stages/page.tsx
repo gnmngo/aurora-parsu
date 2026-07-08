@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { Inbox } from "lucide-react";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function StagesPage() {
   const [stages, setStages] = useState<any[]>([]);
@@ -34,6 +36,7 @@ export default function StagesPage() {
   }, [supabase]);
 
   return (
+    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -98,5 +101,6 @@ export default function StagesPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }

@@ -35,19 +35,20 @@ function resolveScoreCache(cache: unknown): number | null {
 }
 
 /** Map raw Supabase project rows to submission cards */
-export function mapProjectsToSubmissions(projects: any[]): SubmissionRow[] {
+export function mapProjectsToSubmissions(projects: { id: string; title: string; current_stage_id: string; created_at: string; status: string; students: unknown; departments: { name: string } | { name: string }[]; documents: { stage_id: string; defense_stages?: { name: string } | { name: string }[]; document_versions?: { id: string; version_number: number; is_current: boolean; created_at: string; annotation_count?: number }[] }[]; project_score_cache: unknown }[]): SubmissionRow[] {
   return projects.map((proj) => {
     const docs = proj.documents ?? [];
     const stageDoc =
-      docs.find((d: any) => d.stage_id === proj.current_stage_id) ?? docs[0] ?? null;
+      docs.find((d: { stage_id: string; defense_stages?: { name: string } | { name: string }[]; document_versions?: unknown[] }) => d.stage_id === proj.current_stage_id) ?? docs[0] ?? null;
 
     const versions = stageDoc?.document_versions ?? [];
     const currentVer =
-      versions.find((v: any) => v.is_current) ?? versions[versions.length - 1] ?? null;
+      versions.find((v: { id: string; version_number: number; is_current: boolean; created_at: string; annotation_count?: number }) => v.is_current) ?? versions[versions.length - 1] ?? null;
 
     const stageId = stageDoc?.stage_id ?? proj.current_stage_id;
+    const stageDocDefense = Array.isArray(stageDoc?.defense_stages) ? stageDoc?.defense_stages[0] : stageDoc?.defense_stages;
     const stageName =
-      stageDoc?.defense_stages?.name ??
+      stageDocDefense?.name ??
       (proj.current_stage_id ? "Assigned stage" : "No stage assigned");
 
     return {
@@ -63,7 +64,7 @@ export function mapProjectsToSubmissions(projects: any[]): SubmissionRow[] {
       reviewStatus: proj.status ?? "draft",
       score: resolveScoreCache(proj.project_score_cache),
       commentCount: currentVer?.annotation_count ?? 0,
-      department: proj.departments?.name ?? "General",
+      department: (Array.isArray(proj.departments) ? proj.departments[0]?.name : proj.departments?.name) ?? "General",
       hasDocument: Boolean(currentVer),
     };
   });
@@ -155,13 +156,19 @@ export interface ProjectLookupData {
     profiles: { first_name: string; last_name: string } | null;
   }>;
   departments: Array<{ id: string; name: string }>;
-  stages: Array<{ id: string; name: string; sequence_order: number }>;
+  programs: Array<{ id: string; department_id: string; name: string }>;
+  workflow_templates: Array<{ 
+    id: string; 
+    name: string; 
+    program_id: string; 
+    defense_stages: Array<{ id: string; name: string; sequence_order: number }> 
+  }>;
 }
 
 export async function fetchProjectLookups(
   supabase: SupabaseClient
 ): Promise<ProjectLookupData> {
-  const [studentsRes, facultyRes, deptRes, stageRes] = await Promise.all([
+  const [studentsRes, facultyRes, deptRes, programsRes, templatesRes] = await Promise.all([
     supabase
       .from("students")
       .select("id, profile_id, profiles(first_name, last_name)")
@@ -171,11 +178,11 @@ export async function fetchProjectLookups(
       .select("id, profile_id, profiles(first_name, last_name)")
       .order("id"),
     supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
+    supabase.from("programs").select("id, department_id, name").order("name"),
     supabase
-      .from("defense_stages")
-      .select("id, name, sequence_order")
-      .eq("is_enabled", true)
-      .order("sequence_order"),
+      .from("workflow_templates")
+      .select("id, name, program_id, defense_stages(id, name, sequence_order)")
+      .order("name"),
   ]);
 
   if (studentsRes.error) {
@@ -190,24 +197,32 @@ export async function fetchProjectLookups(
     logSupabaseError("fetchProjectLookups.departments", deptRes.error);
     throw deptRes.error;
   }
-  if (stageRes.error) {
-    logSupabaseError("fetchProjectLookups.defense_stages", stageRes.error);
-    throw stageRes.error;
+  if (programsRes.error) {
+    logSupabaseError("fetchProjectLookups.programs", programsRes.error);
+    throw programsRes.error;
+  }
+  if (templatesRes.error) {
+    logSupabaseError("fetchProjectLookups.templates", templatesRes.error);
+    throw templatesRes.error;
   }
 
   return {
-    students: (studentsRes.data ?? []).map((s: any) => ({
+    students: (studentsRes.data ?? []).map((s: { id: string; profile_id: string; profiles: unknown }) => ({
       id: s.id,
       profile_id: s.profile_id,
       profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles,
     })),
-    faculty: (facultyRes.data ?? []).map((f: any) => ({
+    faculty: (facultyRes.data ?? []).map((f: { id: string; profile_id: string; profiles: unknown }) => ({
       id: f.id,
       profile_id: f.profile_id,
       profiles: Array.isArray(f.profiles) ? f.profiles[0] : f.profiles,
     })),
     departments: deptRes.data ?? [],
-    stages: stageRes.data ?? [],
+    programs: programsRes.data ?? [],
+    workflow_templates: (templatesRes.data ?? []).map((t: { id: string; name: string; program_id: string; defense_stages: { id: string; name: string; sequence_order: number }[] }) => ({
+      ...t,
+      defense_stages: (t.defense_stages || []).sort((a: { sequence_order: number }, b: { sequence_order: number }) => a.sequence_order - b.sequence_order),
+    })),
   };
 }
 
@@ -216,6 +231,7 @@ export interface CreateProjectInput {
   studentId: string;
   facultyId: string;
   departmentId: string;
+  workflowTemplateId: string;
   stageId: string;
   campusId: string;
   academicYear?: string;
@@ -225,18 +241,6 @@ export async function createProject(
   supabase: SupabaseClient,
   input: CreateProjectInput
 ) {
-  // Diagnostics: Before Insert
-  console.log("PROJECT CREATION DIAGNOSTIC: Before Insert");
-  console.log("PROJECT CREATION DIAGNOSTIC: Insert Payload", {
-    campus_id: input.campusId,
-    department_id: input.departmentId,
-    student_id: input.studentId,
-    title: input.title.trim(),
-    current_stage_id: input.stageId,
-    academic_year: input.academicYear ?? "2025-2026",
-    status: "draft",
-  });
-
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -244,6 +248,7 @@ export async function createProject(
       department_id: input.departmentId,
       student_id: input.studentId,
       title: input.title.trim(),
+      workflow_template_id: input.workflowTemplateId,
       current_stage_id: input.stageId,
       academic_year: input.academicYear ?? "2025-2026",
       status: "draft",
@@ -252,11 +257,8 @@ export async function createProject(
     .single();
 
   if (error) {
-    console.error("PROJECT CREATION DIAGNOSTIC: Insert Error", error);
     throw error;
   }
-
-  console.log("PROJECT CREATION DIAGNOSTIC: Insert Result", data);
 
   // Link student as project member
   const { data: student } = await supabase

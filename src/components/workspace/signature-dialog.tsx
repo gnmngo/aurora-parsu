@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PenTool, Type, FileImage, ShieldCheck, AlertTriangle } from "lucide-react";
+import { PenTool, Type, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface SignatureDialogProps {
@@ -205,8 +205,8 @@ export function SignatureDialog({
       });
 
       onOpenChange(false);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to submit signature.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit signature.");
     } finally {
       setSubmitting(false);
     }

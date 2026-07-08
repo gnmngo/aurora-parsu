@@ -25,12 +25,12 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !session?.user) {
+  // 1. Authenticate user (secure — uses getUser() not getSession())
+  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  if (sessionError || !user) {
     throw new Error("Unauthorized. Please sign in again.");
   }
-  const userId = session.user.id;
+  const userId = user.id;
 
   // 2. Fetch current evaluation record to verify ownership and check locked status
   const { data: currentEval, error: fetchError } = await supabase
@@ -120,7 +120,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
 
   await supabase.from("audit_logs").insert({
     profile_id: userId,
-    user_email: profile?.email || session.user.email || "unknown",
+    user_email: profile?.email || user.email || "unknown",
     user_role: "panelist",
     action_type: "GRADE",
     module: "grading",
@@ -164,12 +164,12 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !session?.user) {
+  // 1. Authenticate user (secure — uses getUser() not getSession())
+  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  if (sessionError || !user) {
     throw new Error("Unauthorized. Please sign in again.");
   }
-  const userId = session.user.id;
+  const userId = user.id;
 
   // 2. Fetch latest submitted evaluation version
   const { data: latestEval, error: fetchError } = await supabase
@@ -223,7 +223,7 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
 
   await supabase.from("audit_logs").insert({
     profile_id: userId,
-    user_email: profile?.email || session.user.email || "unknown",
+    user_email: profile?.email || user.email || "unknown",
     user_role: "panelist",
     action_type: "CREATE",
     module: "grading",

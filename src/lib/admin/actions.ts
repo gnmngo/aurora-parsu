@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/server";
 import { headers } from "next/headers";
 
 /**
- * Updates a user role and logs the event
+ * Updates a user role and logs the event.
+ * Only sys_admin can invoke this action.
  */
 export async function updateUserRoleAction(profileId: string, roleCode: string) {
   const supabase = await createClient();
@@ -12,21 +14,8 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user and verify sys_admin role
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
-    throw new Error("Unauthorized. Please log in.");
-  }
-
-  const { data: callerRoles } = await supabase
-    .from("user_roles")
-    .select("roles(code)")
-    .eq("profile_id", session.user.id);
-
-  const codes = callerRoles?.map((ur: any) => ur.roles?.code) ?? [];
-  if (!codes.includes("sys_admin")) {
-    throw new Error("Permission denied. Only System Administrators can reassign roles.");
-  }
+  // 1. Authenticate and authorize (sys_admin only)
+  const caller = await requireRole(supabase, ["sys_admin"]);
 
   // 2. Fetch role ID of selected code
   const { data: targetRole, error: roleErr } = await supabase
@@ -55,7 +44,9 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
     .eq("profile_id", profileId)
     .maybeSingle();
 
-  const oldRoleCode = (currentRoleLink as any)?.roles?.code || "none";
+  const currentLink = currentRoleLink as { roles: { code: string } | { code: string }[] | null } | null;
+  const r = currentLink?.roles;
+  const oldRoleCode = (Array.isArray(r) ? r[0]?.code : r?.code) || "none";
 
   // 3. Update role (delete old linkage and insert new)
   await supabase
@@ -76,8 +67,8 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
 
   // 4. Log audit log
   await supabase.from("audit_logs").insert({
-    profile_id: session.user.id,
-    user_email: session.user.email || "unknown",
+    profile_id: caller.id,
+    user_email: caller.email,
     user_role: "sys_admin",
     action_type: "UPDATE",
     module: "users",
@@ -97,23 +88,10 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
 export async function resetDemoDataAction() {
   const supabase = await createClient();
 
-  // 1. Authenticate user and verify sys_admin role
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
-    throw new Error("Unauthorized. Please log in.");
-  }
+  // Authenticate and authorize (sys_admin only)
+  await requireRole(supabase, ["sys_admin"]);
 
-  const { data: userRoles } = await supabase
-    .from("user_roles")
-    .select("roles(code)")
-    .eq("profile_id", session.user.id);
-
-  const codes = userRoles?.map((ur: any) => ur.roles?.code) ?? [];
-  if (!codes.includes("sys_admin")) {
-    throw new Error("Permission denied. Only System Administrators can reset demo data.");
-  }
-
-  // 2. Import seeder dynamically to avoid compile time circular dependencies and execute seeder
+  // Import seeder dynamically to avoid compile time circular dependencies
   const { runDemoSeeder } = await import("./seeder");
   await runDemoSeeder();
 

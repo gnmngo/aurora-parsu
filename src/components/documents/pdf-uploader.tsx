@@ -161,8 +161,6 @@ export function PdfUploader({
 
       if (storageError) throw storageError;
 
-      const signedUrl = await getManuscriptSignedUrl(supabase, filePath);
-
       const { data: docData, error: docError } = await supabase
         .from("documents")
         .upsert(
@@ -204,7 +202,6 @@ export function PdfUploader({
           document_id: docData.id,
           version_number: nextVersion,
           storage_path: filePath,
-          file_url: signedUrl,
           file_name: file.name,
           file_size: file.size,
           mime_type: file.type,

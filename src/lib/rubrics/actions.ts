@@ -2,36 +2,42 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
-/** Helper to authorize coordinator/sys_admin roles */
-async function authorizeCoordinatorOrAdmin(supabase: any) {
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
+/** Helper to authorize coordinator/sys_admin roles using secure getUser() */
+async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
+  // Use getUser() which validates JWT with Supabase Auth server (not just cookie)
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
   const { data: userRoles } = await supabase
     .from("user_roles")
     .select("roles(code)")
-    .eq("profile_id", session.user.id);
+    .eq("profile_id", user.id);
 
-  const codes = userRoles?.map((ur: any) => ur.roles?.code) ?? [];
+  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) ?? [];
+
   const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
   if (!isAuthorized) {
     throw new Error("Permission denied. Only coordinators can manage rubrics.");
   }
-  return session.user;
+  return user;
 }
 
 /** Helper to log audit logs */
 async function logAudit(
-  supabase: any,
-  user: any,
+  supabase: SupabaseClient,
+  user: User,
   actionType: string,
   entityId: string,
   description: string,
-  oldVal: any,
-  newVal: any
+  oldVal: unknown,
+  newVal: unknown
 ) {
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";

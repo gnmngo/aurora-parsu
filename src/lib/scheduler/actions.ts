@@ -24,18 +24,21 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user and verify coordinator or admin role
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
+  // 1. Authenticate user and verify coordinator or admin role (secure — uses getUser())
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
   const { data: userRoles } = await supabase
     .from("user_roles")
     .select("roles(code)")
-    .eq("profile_id", session.user.id);
+    .eq("profile_id", user.id);
 
-  const codes = userRoles?.map((ur: any) => ur.roles?.code) ?? [];
+  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) ?? [];
   const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
   if (!isAuthorized) {
     throw new Error("Permission denied. Only coordinators or administrators can schedule defenses.");
@@ -46,6 +49,12 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
   const endTime = new Date(startTime.getTime() + input.durationMinutes * 60 * 1000);
   const startTimeISO = startTime.toISOString();
   const endTimeISO = endTime.toISOString();
+
+  // Prevent scheduling on weekends
+  const dayOfWeek = startTime.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    throw new Error("Scheduling is not permitted on weekends (Saturday/Sunday).");
+  }
 
   // 2. Fetch student and adviser profile IDs of the project
   const { data: project, error: projErr } = await supabase
@@ -71,8 +80,8 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
   }
 
   const studentProfileId = Array.isArray(project.students)
-    ? (project.students[0] as any)?.profile_id
-    : (project.students as any)?.profile_id;
+    ? (project.students[0] as { profile_id?: string })?.profile_id
+    : (project.students as { profile_id?: string })?.profile_id;
 
   const { data: adviserMember } = await supabase
     .from("project_members")
@@ -93,17 +102,13 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     .maybeSingle();
 
   if (roomConflict) {
-    const conflictTitle = (roomConflict as any).projects?.title || "another project";
+    const conflictTitle = (roomConflict as { projects?: { title?: string } }).projects?.title || "another project";
     throw new Error(`Room Conflict: ${input.room} is already booked for "${conflictTitle}" during this timeslot.`);
   }
 
   // 4. Validation B: Panelist Conflicts
   if (input.panelistIds.length > 0) {
-    const { data: panelConflicts } = await supabase
-      .from("defense_panels")
-      .select("profile_id, project_id, projects(title), profiles(first_name, last_name)")
-      .in("profile_id", input.panelistIds)
-      .eq("projects.defense_schedules.status", "scheduled");
+
 
     // Wait! Let's check overlaps manually by joining with defense_schedules
     const { data: activeSchedules } = await supabase
@@ -122,9 +127,9 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
       if (conflictingPanels && conflictingPanels.length > 0) {
         const conf = conflictingPanels[0];
-        const panelistName = Array.isArray(conf.profiles)
-          ? `${(conf.profiles[0] as any)?.first_name} ${(conf.profiles[0] as any)?.last_name}`
-          : `${(conf.profiles as any)?.first_name} ${(conf.profiles as any)?.last_name}`;
+        const profiles = conf.profiles as { first_name?: string; last_name?: string } | { first_name?: string; last_name?: string }[];
+        const p = Array.isArray(profiles) ? profiles[0] : profiles;
+        const panelistName = `${p?.first_name} ${p?.last_name}`;
         throw new Error(`Panelist Conflict: Evaluator ${panelistName} is already assigned to a defense during this timeslot.`);
       }
     }
@@ -202,7 +207,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
       meeting_url: input.meetingUrl,
       duration_minutes: input.durationMinutes,
       status: "scheduled",
-      created_by: session.user.id
+      created_by: user.id
     })
     .select()
     .single();
@@ -218,7 +223,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
       stage_id: input.stageId,
       profile_id: pid,
       panel_role: "member" as const,
-      assigned_by: session.user.id
+      assigned_by: user.id
     }));
 
     const { error: panelError } = await supabase
@@ -232,8 +237,8 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
   // 9. Write audit log
   await supabase.from("audit_logs").insert({
-    profile_id: session.user.id,
-    user_email: session.user.email || "unknown",
+    profile_id: user.id,
+    user_email: user.email || "unknown",
     user_role: "coordinator",
     action_type: "CREATE",
     module: "scheduling",
@@ -276,18 +281,21 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user and verify coordinator or admin role
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
+  // 1. Authenticate user and verify coordinator or admin role (secure — uses getUser())
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
   const { data: userRoles } = await supabase
     .from("user_roles")
     .select("roles(code)")
-    .eq("profile_id", session.user.id);
+    .eq("profile_id", user.id);
 
-  const codes = userRoles?.map((ur: any) => ur.roles?.code) ?? [];
+  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) ?? [];
   const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
   if (!isAuthorized) {
     throw new Error("Permission denied. Only coordinators or administrators can schedule defenses.");
@@ -298,6 +306,12 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
   const endTime = new Date(startTime.getTime() + input.durationMinutes * 60 * 1000);
   const startTimeISO = startTime.toISOString();
   const endTimeISO = endTime.toISOString();
+
+  // Prevent scheduling on weekends
+  const dayOfWeek = startTime.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    throw new Error("Scheduling is not permitted on weekends (Saturday/Sunday).");
+  }
 
   // 2. Fetch student and adviser profile IDs of the project
   const { data: project, error: projErr } = await supabase
@@ -323,8 +337,8 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
   }
 
   const studentProfileId = Array.isArray(project.students)
-    ? (project.students[0] as any)?.profile_id
-    : (project.students as any)?.profile_id;
+    ? (project.students[0] as { profile_id?: string })?.profile_id
+    : (project.students as { profile_id?: string })?.profile_id;
 
   const { data: adviserMember } = await supabase
     .from("project_members")
@@ -346,7 +360,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     .maybeSingle();
 
   if (roomConflict) {
-    const conflictTitle = (roomConflict as any).projects?.title || "another project";
+    const conflictTitle = (roomConflict as { projects?: { title?: string } }).projects?.title || "another project";
     throw new Error(`Room Conflict: ${input.room} is already booked for "${conflictTitle}" during this timeslot.`);
   }
 
@@ -369,9 +383,9 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
 
       if (conflictingPanels && conflictingPanels.length > 0) {
         const conf = conflictingPanels[0];
-        const panelistName = Array.isArray(conf.profiles)
-          ? `${(conf.profiles[0] as any)?.first_name} ${(conf.profiles[0] as any)?.last_name}`
-          : `${(conf.profiles as any)?.first_name} ${(conf.profiles as any)?.last_name}`;
+        const profiles = conf.profiles as { first_name?: string; last_name?: string } | { first_name?: string; last_name?: string }[];
+        const p = Array.isArray(profiles) ? profiles[0] : profiles;
+        const panelistName = `${p?.first_name} ${p?.last_name}`;
         throw new Error(`Panelist Conflict: Evaluator ${panelistName} is already assigned to a defense during this timeslot.`);
       }
     }
@@ -468,7 +482,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       stage_id: input.stageId,
       profile_id: pid,
       panel_role: "member" as const,
-      assigned_by: session.user.id
+      assigned_by: user.id
     }));
 
     const { error: panelError } = await supabase
@@ -482,8 +496,8 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
 
   // 9. Write audit log
   await supabase.from("audit_logs").insert({
-    profile_id: session.user.id,
-    user_email: session.user.email || "unknown",
+    profile_id: user.id,
+    user_email: user.email || "unknown",
     user_role: "coordinator",
     action_type: "UPDATE",
     module: "scheduling",

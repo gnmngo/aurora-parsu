@@ -20,6 +20,8 @@ import {
   Inbox
 } from "lucide-react";
 import { updateUserRoleAction } from "@/lib/admin/actions";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function UsersPage() {
   const supabase = createClient();
@@ -74,6 +76,7 @@ export default function UsersPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">SysAdmin Control Console</h1>
@@ -236,5 +239,6 @@ export default function UsersPage() {
         </Card>
       </div>
     </div>
+    </RoleGuard>
   );
 }

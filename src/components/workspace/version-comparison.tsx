@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, ArrowRight, BookOpen } from "lucide-react";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface VersionComparisonProps {
-  documentVersions: any[];
+  documentVersions: { id: string; file_url: string }[];
 }
 
 interface DiffToken {
@@ -26,18 +26,26 @@ export function VersionComparison({ documentVersions }: VersionComparisonProps) 
   const [rightVersionId, setRightVersionId] = useState("");
   const [loading, setLoading] = useState(false);
   
-  const [leftText, setLeftText] = useState<string>("");
-  const [rightText, setRightText] = useState<string>("");
   const [diffResult, setDiffResult] = useState<DiffToken[]>([]);
 
   useEffect(() => {
+    let active = true;
     if (documentVersions && documentVersions.length >= 2) {
-      setLeftVersionId(documentVersions[documentVersions.length - 2].id);
-      setRightVersionId(documentVersions[documentVersions.length - 1].id);
+      setTimeout(() => {
+        if (active) {
+          setLeftVersionId(documentVersions[documentVersions.length - 2].id);
+          setRightVersionId(documentVersions[documentVersions.length - 1].id);
+        }
+      }, 0);
     } else if (documentVersions && documentVersions.length > 0) {
-      setLeftVersionId(documentVersions[0].id);
-      setRightVersionId(documentVersions[0].id);
+      setTimeout(() => {
+        if (active) {
+          setLeftVersionId(documentVersions[0].id);
+          setRightVersionId(documentVersions[0].id);
+        }
+      }, 0);
     }
+    return () => { active = false; };
   }, [documentVersions]);
 
   // LCS word diffing algorithm
@@ -80,7 +88,7 @@ export function VersionComparison({ documentVersions }: VersionComparisonProps) 
     return result;
   };
 
-  const handleCompare = async () => {
+  const handleCompare = useCallback(async () => {
     if (!leftVersionId || !rightVersionId) {
       toast.error("Please select both versions to compare.");
       return;
@@ -104,7 +112,7 @@ export function VersionComparison({ documentVersions }: VersionComparisonProps) 
             const page = await pdf.getPage(pNum);
             const textContent = await page.getTextContent();
             const pageStr = textContent.items
-              .map((item: any) => item.str)
+              .map((item) => ("str" in item ? item.str : ""))
               .join(" ");
             fullText += pageStr + "\n\n";
           }
@@ -120,26 +128,27 @@ export function VersionComparison({ documentVersions }: VersionComparisonProps) 
         extractText(rightVer.file_url),
       ]);
 
-      setLeftText(textL);
-      setRightText(textR);
-
       // Perform word diff comparison
       const diffs = computeWordDiff(textL, textR);
       setDiffResult(diffs);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast.error("Could not compare versions. Check storage connectivity.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [leftVersionId, rightVersionId, documentVersions]);
 
   // Run automatically when selections load
   useEffect(() => {
+    let active = true;
     if (leftVersionId && rightVersionId) {
-      handleCompare();
+      setTimeout(() => {
+        if (active) handleCompare();
+      }, 0);
     }
-  }, [leftVersionId, rightVersionId]);
+    return () => { active = false; };
+  }, [leftVersionId, rightVersionId, handleCompare]);
 
   if (!documentVersions || documentVersions.length === 0) {
     return (

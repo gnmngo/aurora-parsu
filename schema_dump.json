@@ -1,0 +1,7819 @@
+{
+  "columns": [
+    {
+      "table_name": "activity_logs",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "event_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "entity_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "entity_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "color",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "is_system",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "annotation_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "from_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "to_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "changed_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "changed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "column_name": "annotation_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "annotation_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "content",
+      "data_type": "text"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "document_version_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "parent_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "type",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "page_number",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "coordinates",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "selected_text",
+      "data_type": "text"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "content",
+      "data_type": "text"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "category_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "severity",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "author_role",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "version_checksum",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "is_stale",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "revision_completed",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "revision_completed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "revision_completed_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "resolved_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "resolved_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "academic_year",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "user_email",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "user_role",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "action_type",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "module",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "entity_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "entity_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "old_value",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "new_value",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "amount_changed",
+      "data_type": "text"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "ip_address",
+      "data_type": "inet"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "user_agent",
+      "data_type": "text"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "device_info",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "session_id",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "integrity_hash",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "device",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "address",
+      "data_type": "text"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "settings",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "campuses",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "schedule_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "marked_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "marked_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "panel_role",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "assigned_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "assigned_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "scheduled_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "end_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "room",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "building",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "is_online",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "meeting_url",
+      "data_type": "text"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "duration_minutes",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "sequence_order",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "is_enabled",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "required_documents",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requirements",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "passing_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "workflow_template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requires_submission",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requires_schedule",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requires_panel",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requires_rubric",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "requires_signature",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "allows_revision",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "college_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "document_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "version_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "action",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "performed_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "ip_address",
+      "data_type": "inet"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "user_agent",
+      "data_type": "text"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "document_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "version_number",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "storage_path",
+      "data_type": "text"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "file_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "file_size",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "mime_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "checksum_sha256",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "page_count",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "extracted_text",
+      "data_type": "text"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "chapter_outline",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "upload_notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "is_current",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "uploaded_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "change_summary",
+      "data_type": "text"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "current_version",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "adviser_approval_status",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "approval_remarks",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "event_type",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "payload",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "panelist_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "total_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "weighted_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "verdict_code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "recommendations",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "panel_notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "submitted_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "rubric_template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "scores",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "version",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "derived_from_version",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "revision_reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "signature_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "signature_image",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "signature_hash",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "signed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "verified",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "verified_by_system",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "certificate_serial",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "ip_address",
+      "data_type": "inet"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "user_agent",
+      "data_type": "text"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "device_info",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "employee_number",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "rank",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "specialization",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "is_adviser",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "is_panelist",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "weight",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "max_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "sort_order",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "is_required",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "label",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "min_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "max_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "sort_order",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "evaluation_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "criterion_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "subcriterion_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "notes",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "criterion_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "max_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "sort_order",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "college_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "scoring_model",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "passing_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "max_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "custom_formula",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "version",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "label",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "condition_expr",
+      "data_type": "text"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "priority",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "message",
+      "data_type": "text"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "type",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "link",
+      "data_type": "text"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "read_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "message",
+      "data_type": "text"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "type",
+      "data_type": "text"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "is_read",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "notifications_compat",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "highest_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "lowest_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "average_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "column_name": "score_difference",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "module",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "permissions",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "college_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "department_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "email",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "first_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "last_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "middle_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "avatar_url",
+      "data_type": "text"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "phone",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "mfa_enabled",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "last_login_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "department_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "member_role",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "is_primary",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "assigned_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "assigned_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "column_name": "compliance_rate",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "column_name": "avg_rubric_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "column_name": "major_unresolved_comments",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "column_name": "readiness_level",
+      "data_type": "text"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "avg_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "compliance_rate",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "readiness_level",
+      "data_type": "text"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "last_updated",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "from_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "to_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "campus_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "department_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "student_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "abstract",
+      "data_type": "text"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "keywords",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "current_stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "academic_year",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "semester",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "system_completion_pct",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "final_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "final_verdict",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "archived_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "workflow_template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "join_code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "report_type",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "format",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "scope_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "scope_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "storage_path",
+      "data_type": "text"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "parameters",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "generated_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "generated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "project_title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "total_comments",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "addressed_count",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "verified_count",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "in_progress_count",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "column_name": "compliance_rate",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "role_permissions",
+      "column_name": "role_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "role_permissions",
+      "column_name": "permission_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "hierarchy",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "roles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "title",
+      "data_type": "text"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "criteria",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "passing_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "excellent_score",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "target_compliance_rate",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "min_compliance_rate",
+      "data_type": "numeric"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "max_major_unresolved",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "created_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "is_published",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "is_archived",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "version",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "parent_template_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "students",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "students",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "students",
+      "column_name": "student_number",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "students",
+      "column_name": "year_level",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "students",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "students",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "students",
+      "column_name": "program_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "profile_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "role_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "scope_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "scope_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "assigned_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "assigned_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "program_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "project_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "stage_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "from_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "to_status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "triggered_by",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "reason",
+      "data_type": "text"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    }
+  ],
+  "fkeys": [
+    {
+      "table_name": "students",
+      "column_name": "program_id",
+      "foreign_table_name": "programs",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "workflow_templates",
+      "column_name": "program_id",
+      "foreign_table_name": "programs",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "programs",
+      "column_name": "department_id",
+      "foreign_table_name": "departments",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "workflow_template_id",
+      "foreign_table_name": "workflow_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "workflow_template_id",
+      "foreign_table_name": "workflow_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "parent_template_id",
+      "foreign_table_name": "rubric_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "changed_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_history",
+      "column_name": "annotation_id",
+      "foreign_table_name": "annotations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "rubric_template_id",
+      "foreign_table_name": "rubric_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "rubric_templates",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_score_cache",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluation_events",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "generated_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "activity_logs",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "subcriterion_id",
+      "foreign_table_name": "grading_subcriteria",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "criterion_id",
+      "foreign_table_name": "grading_criteria",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_scores",
+      "column_name": "evaluation_id",
+      "foreign_table_name": "evaluations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "template_id",
+      "foreign_table_name": "grading_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "panelist_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evaluations",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "column_name": "template_id",
+      "foreign_table_name": "grading_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "column_name": "template_id",
+      "foreign_table_name": "grading_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "column_name": "criterion_id",
+      "foreign_table_name": "grading_criteria",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_criteria",
+      "column_name": "template_id",
+      "foreign_table_name": "grading_templates",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "college_id",
+      "foreign_table_name": "colleges",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "grading_templates",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "column_name": "annotation_id",
+      "foreign_table_name": "annotations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_replies",
+      "column_name": "annotation_id",
+      "foreign_table_name": "annotations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "resolved_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "revision_completed_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "category_id",
+      "foreign_table_name": "annotation_categories",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "parent_id",
+      "foreign_table_name": "annotations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotations",
+      "column_name": "document_version_id",
+      "foreign_table_name": "document_versions",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "annotation_categories",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "performed_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "version_id",
+      "foreign_table_name": "document_versions",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "document_upload_history",
+      "column_name": "document_id",
+      "foreign_table_name": "documents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "uploaded_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "document_versions",
+      "column_name": "document_id",
+      "foreign_table_name": "documents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "marked_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_attendance",
+      "column_name": "schedule_id",
+      "foreign_table_name": "defense_schedules",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "assigned_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_panels",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "created_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_schedules",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "triggered_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "assigned_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "project_members",
+      "column_name": "project_id",
+      "foreign_table_name": "projects",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "current_stage_id",
+      "foreign_table_name": "defense_stages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "student_id",
+      "foreign_table_name": "students",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "department_id",
+      "foreign_table_name": "departments",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "projects",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "defense_stages",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "assigned_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "role_id",
+      "foreign_table_name": "roles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "faculty",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "students",
+      "column_name": "profile_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "department_id",
+      "foreign_table_name": "departments",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "college_id",
+      "foreign_table_name": "colleges",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "role_permissions",
+      "column_name": "permission_id",
+      "foreign_table_name": "permissions",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "role_permissions",
+      "column_name": "role_id",
+      "foreign_table_name": "roles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "departments",
+      "column_name": "college_id",
+      "foreign_table_name": "colleges",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "colleges",
+      "column_name": "campus_id",
+      "foreign_table_name": "campuses",
+      "foreign_column_name": "id"
+    }
+  ],
+  "rls": [
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_update_own",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(id = auth.uid())"
+    },
+    {
+      "tablename": "documents",
+      "policyname": "documents_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "documents",
+      "policyname": "documents_insert",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "document_versions",
+      "policyname": "document_versions_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM documents d\n  WHERE ((d.id = document_versions.document_id) AND (is_project_participant(d.project_id) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text)))))"
+    },
+    {
+      "tablename": "annotation_replies",
+      "policyname": "annotation_replies_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "annotation_replies",
+      "policyname": "annotation_replies_insert",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "evaluations",
+      "policyname": "evaluations_panelist",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(panelist_id = auth.uid())"
+    },
+    {
+      "tablename": "evaluations",
+      "policyname": "evaluations_coordinator_read",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "grading_scores",
+      "policyname": "grading_scores_panelist",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM evaluations e\n  WHERE ((e.id = grading_scores.evaluation_id) AND (e.panelist_id = auth.uid()))))"
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "notifications_own",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(profile_id = auth.uid())"
+    },
+    {
+      "tablename": "audit_logs",
+      "policyname": "audit_read",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "defense_schedules",
+      "policyname": "defense_schedules_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "defense_panels",
+      "policyname": "defense_panels_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "reports",
+      "policyname": "reports_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "((generated_by = auth.uid()) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_debug_select_all",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "students",
+      "policyname": "students_select_authenticated",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "students",
+      "policyname": "students_select_all_authenticated",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "departments",
+      "policyname": "departments_select_all",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "students",
+      "policyname": "students_read_all",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "departments",
+      "policyname": "departments_read_all",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "defense_stages",
+      "policyname": "defense_stages_read_all",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "annotations",
+      "policyname": "annotations_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (document_versions dv\n     JOIN documents d ON ((d.id = dv.document_id)))\n  WHERE ((dv.id = annotations.document_version_id) AND (is_project_participant(d.project_id) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text)))))"
+    },
+    {
+      "tablename": "annotations",
+      "policyname": "annotations_insert",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "annotations",
+      "policyname": "annotations_update",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (document_versions dv\n     JOIN documents d ON ((d.id = dv.document_id)))\n  WHERE ((dv.id = annotations.document_version_id) AND (is_project_participant(d.project_id) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text)))))"
+    },
+    {
+      "tablename": "annotations",
+      "policyname": "annotations_delete",
+      "roles": "{public}",
+      "cmd": "DELETE",
+      "qual": "((created_by = auth.uid()) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "faculty",
+      "policyname": "faculty_select_authenticated",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_select_policy",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id\n   FROM students\n  WHERE (students.profile_id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM project_members pm\n  WHERE ((pm.project_id = pm.id) AND (pm.profile_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM defense_panels dp\n  WHERE ((dp.project_id = dp.id) AND (dp.profile_id = auth.uid())))))"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_insert_policy",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_update_policy",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id\n   FROM students\n  WHERE (students.profile_id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM project_members pm\n  WHERE ((pm.project_id = pm.id) AND (pm.profile_id = auth.uid())))))"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_insert",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "document_versions",
+      "policyname": "document_versions_insert_policy",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "project_members",
+      "policyname": "project_members_select_policy",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_project_participant(project_id) OR has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))"
+    },
+    {
+      "tablename": "project_members",
+      "policyname": "project_members_modify_policy",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "(has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))"
+    },
+    {
+      "tablename": "annotation_history",
+      "policyname": "annotation_history_select",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM ((annotations a\n     JOIN document_versions dv ON ((dv.id = a.document_version_id)))\n     JOIN documents d ON ((d.id = dv.document_id)))\n  WHERE ((a.id = annotation_history.annotation_id) AND (is_project_participant(d.project_id) OR has_role('coordinator'::text) OR has_role('sys_admin'::text)))))"
+    },
+    {
+      "tablename": "annotation_history",
+      "policyname": "annotation_history_insert",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "workflow_templates",
+      "policyname": "workflow_templates_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "workflow_templates",
+      "policyname": "workflow_templates_write",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(has_role('coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "programs",
+      "policyname": "programs_select",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "programs",
+      "policyname": "programs_all",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(has_role('coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "students",
+      "policyname": "students_select_staff",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((profile_id = auth.uid()) OR has_role('coordinator'::text) OR has_role('adviser'::text) OR has_role('panelist'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_select_staff",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((id = auth.uid()) OR has_role('coordinator'::text) OR has_role('adviser'::text) OR has_role('panelist'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_update",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(has_role('coordinator'::text) OR has_role('sys_admin'::text))"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "projects_select",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_project_participant(id) OR has_role('coordinator'::text) OR has_role('sys_admin'::text) OR (EXISTS ( SELECT 1\n   FROM students s\n  WHERE ((s.id = projects.student_id) AND (s.profile_id = auth.uid())))))"
+    },
+    {
+      "tablename": "project_workflow_history",
+      "policyname": "pwh_select",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "true"
+    },
+    {
+      "tablename": "project_workflow_history",
+      "policyname": "pwh_insert",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    },
+    {
+      "tablename": "project_members",
+      "policyname": "project_members_insert",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null
+    }
+  ],
+  "grants": [
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "roles",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "role_permissions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_scores",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluation_events",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_score_cache",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "campuses",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotations",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_members",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_stages",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "profiles",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "user_roles",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "documents",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "students",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "students",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "students",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_schedules",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_transitions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_attendance",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "faculty",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_replies",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "departments",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "colleges",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_upload_history",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_categories",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_mentions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_criteria",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_subcriteria",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_rating_scales",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "grading_verdicts",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "activity_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "permissions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "defense_panels",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "reports",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "revision_compliance_metrics",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "notifications_compat",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_workflow_history",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "audit_logs",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "document_versions",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "evaluations",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "annotation_history",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "rubric_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "programs",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "workflow_templates",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "INSERT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "SELECT"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "DELETE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "projects",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "panel_consensus_summary",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "anon",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "anon",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "anon",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "authenticated",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "authenticated",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "authenticated",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "service_role",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "service_role",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "table_name": "project_readiness_status",
+      "grantee": "service_role",
+      "privilege_type": "TRIGGER"
+    }
+  ],
+  "triggers": [
+    {
+      "event_object_table": "profiles",
+      "trigger_name": "tr_profiles_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_projects_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "documents",
+      "trigger_name": "tr_documents_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "defense_stages",
+      "trigger_name": "tr_defense_stages_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "grading_templates",
+      "trigger_name": "tr_grading_templates_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "defense_schedules",
+      "trigger_name": "tr_defense_schedules_updated",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "document_versions",
+      "trigger_name": "tr_document_version",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "audit_logs",
+      "trigger_name": "tr_audit_hash",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluation_events",
+      "trigger_name": "tr_process_evaluation_event",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_validate_rubric_template",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_validate_rubric_template",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_evaluations_compute_score",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_evaluations_compute_score",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "document_versions",
+      "trigger_name": "tr_workflow_doc_versions",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "defense_schedules",
+      "trigger_name": "tr_workflow_schedules",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_workflow_evaluations",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_workflow_evaluations",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "annotations",
+      "trigger_name": "tr_workflow_annotations",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "document_versions",
+      "trigger_name": "tr_notification_doc_upload",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "defense_schedules",
+      "trigger_name": "tr_notification_scheduled",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_notification_evaluation",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "annotations",
+      "trigger_name": "tr_notification_annotation",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_prevent_rubric_hard_delete",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_validate_project_status",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_evaluations_immutable",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_audit_projects",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_audit_projects",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_audit_projects",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "students",
+      "trigger_name": "tr_audit_students",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "faculty",
+      "trigger_name": "tr_audit_faculty",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_audit_rubric_templates",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_audit_rubric_templates",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "event_object_table": "rubric_templates",
+      "trigger_name": "tr_audit_rubric_templates",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "document_versions",
+      "trigger_name": "tr_audit_document_versions",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "annotations",
+      "trigger_name": "tr_audit_annotations",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "annotations",
+      "trigger_name": "tr_audit_annotations",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_audit_evaluations",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "evaluations",
+      "trigger_name": "tr_audit_evaluations",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "user_roles",
+      "trigger_name": "tr_audit_user_roles",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "notifications",
+      "trigger_name": "tr_audit_notifications",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "event_object_table": "projects",
+      "trigger_name": "tr_projects_join_code",
+      "event_manipulation": "INSERT"
+    }
+  ]
+}

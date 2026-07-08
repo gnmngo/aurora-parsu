@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useCallback,
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -67,8 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadingRef = useRef<string | null>(null);
+  const loadedUserRef = useRef<string | null>(null);
 
-  const clearAuthState = () => {
+  const clearAuthState = useCallback(() => {
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -78,10 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFacultyProfile(null);
     setCoordinatorProfile(null);
     loadingRef.current = null;
-  };
+    loadedUserRef.current = null;
+  }, []);
 
-  const loadUserProfile = async (userId: string) => {
-    if (profile && profile.id === userId && roles.length > 0) {
+  const loadUserProfile = useCallback(async (userId: string) => {
+    if (loadedUserRef.current === userId) {
       console.log("AUTH: Profile already loaded for", userId);
       setIsLoading(false);
       return;
@@ -146,11 +149,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const roleCodes =
         userRoles
-          ?.map((r: any) => {
+          ?.map((r: { roles: { code: string } | { code: string }[] | null }) => {
             const role = Array.isArray(r.roles) ? r.roles[0] : r.roles;
             return role?.code;
           })
-          .filter(Boolean) ?? [];
+          .filter((code): code is string => Boolean(code)) ?? [];
 
       setRoles(roleCodes);
       console.log("AUTH STEP 4: roles fetched successfully:", roleCodes);
@@ -211,8 +214,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log("AUTH STEP 5: final auth state populated");
+      loadedUserRef.current = userId;
       setIsLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("AUTH LOAD ERROR:", err);
       toast.error("Auth loading failed");
       clearAuthState();
@@ -220,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       loadingRef.current = null;
     }
-  };
+  }, [clearAuthState]);
 
   useEffect(() => {
     let mounted = true;
@@ -276,7 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         await loadUserProfile(session.user.id);
       } else if (event === "TOKEN_REFRESHED") {
-        if (!profile) {
+        if (!loadedUserRef.current) {
           setIsLoading(true);
           await loadUserProfile(session.user.id);
         }
@@ -290,15 +294,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadUserProfile, clearAuthState]);
 
   const hasRole = (roleCodes: string | string[]) => {
     const arr = Array.isArray(roleCodes) ? roleCodes : [roleCodes];
     return roles.some((r) => arr.includes(r));
   };
 
-  const hasPermission = (perm: string) => {
-    return permissions.includes(perm) || roles.includes("sys_admin");
+  const hasPermission = (permissionCode: string) => {
+    // Fine-grained permissions are role-based in AURORA.
+    // sys_admin has all permissions by definition.
+    // Future: populate permissions from DB and check here.
+    void permissionCode;
+    return roles.includes("sys_admin");
   };
 
   const signOut = async () => {

@@ -42,13 +42,21 @@ export function CreateProjectDialog({
   const [departments, setDepartments] = useState<
     Array<{ id: string; name: string }>
   >([]);
-  const [stages, setStages] = useState<
-    Array<{ id: string; name: string; sequence_order: number }>
+  const [programs, setPrograms] = useState<
+    Array<{ id: string; department_id: string; name: string }>
+  >([]);
+  const [templates, setTemplates] = useState<
+    Array<{ 
+      id: string; 
+      name: string; 
+      program_id: string; 
+      defense_stages: Array<{ id: string; name: string; sequence_order: number }> 
+    }>
   >([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
-  const [selectedStage, setSelectedStage] = useState("");
+  const [selectedProgram, setSelectedProgram] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingLookups, setLoadingLookups] = useState(false);
 
@@ -64,7 +72,8 @@ export function CreateProjectDialog({
         setStudents(lookups.students);
         setFaculty(lookups.faculty);
         setDepartments(lookups.departments);
-        setStages(lookups.stages);
+        setPrograms(lookups.programs);
+        setTemplates(lookups.workflow_templates);
 
         if (lookups.students.length > 0) {
           setSelectedStudent(lookups.students[0].id);
@@ -78,13 +87,15 @@ export function CreateProjectDialog({
         }
         if (lookups.departments.length > 0) {
           setSelectedDept(lookups.departments[0].id);
+          const defaultPrograms = lookups.programs.filter(p => p.department_id === lookups.departments[0].id);
+          if (defaultPrograms.length > 0) {
+            setSelectedProgram(defaultPrograms[0].id);
+          } else {
+            setSelectedProgram("");
+          }
         } else {
           setSelectedDept("");
-        }
-        if (lookups.stages.length > 0) {
-          setSelectedStage(lookups.stages[0].id);
-        } else {
-          setSelectedStage("");
+          setSelectedProgram("");
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";
@@ -98,10 +109,18 @@ export function CreateProjectDialog({
     loadData();
   }, [open, supabase]);
 
+  const activeTemplate = templates.find((t) => t.program_id === selectedProgram);
+  const initialStage = activeTemplate?.defense_stages?.[0];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !selectedStudent || !selectedFaculty || !selectedDept || !selectedStage) {
+    if (!title.trim() || !selectedStudent || !selectedFaculty || !selectedDept || !selectedProgram) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!activeTemplate || !initialStage) {
+      toast.error("The selected program does not have a configured workflow template or stages.");
       return;
     }
 
@@ -112,7 +131,8 @@ export function CreateProjectDialog({
         studentId: selectedStudent,
         facultyId: selectedFaculty,
         departmentId: selectedDept,
-        stageId: selectedStage,
+        workflowTemplateId: activeTemplate.id,
+        stageId: initialStage.id,
         campusId: PARSU_CAMPUS_ID,
       });
 
@@ -129,8 +149,10 @@ export function CreateProjectDialog({
     }
   };
 
+  const filteredPrograms = programs.filter(p => p.department_id === selectedDept);
+
   const lookupsReady =
-    students.length > 0 && faculty.length > 0 && departments.length > 0 && stages.length > 0;
+    students.length > 0 && faculty.length > 0 && departments.length > 0 && programs.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -225,7 +247,11 @@ export function CreateProjectDialog({
             <select
               id="dept"
               value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
+              onChange={(e) => {
+                setSelectedDept(e.target.value);
+                const newPrograms = programs.filter(p => p.department_id === e.target.value);
+                setSelectedProgram(newPrograms.length > 0 ? newPrograms[0].id : "");
+              }}
               disabled={loadingLookups || departments.length === 0}
               className="w-full rounded-xl border border-border bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
               required
@@ -243,25 +269,39 @@ export function CreateProjectDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="stage">Initial Defense Stage</Label>
+            <Label htmlFor="program">Program</Label>
             <select
-              id="stage"
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value)}
-              disabled={loadingLookups || stages.length === 0}
+              id="program"
+              value={selectedProgram}
+              onChange={(e) => setSelectedProgram(e.target.value)}
+              disabled={loadingLookups || filteredPrograms.length === 0}
               className="w-full rounded-xl border border-border bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
               required
             >
-              {stages.length === 0 ? (
-                <option value="">No defense stages available</option>
+              {filteredPrograms.length === 0 ? (
+                <option value="">No programs available for this department</option>
               ) : (
-                stages.map((st) => (
-                  <option key={st.id} value={st.id}>
-                    {st.name}
+                filteredPrograms.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
                   </option>
                 ))
               )}
             </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Workflow Template & Initial Stage</Label>
+            <div className="w-full rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground flex flex-col gap-1">
+              {!activeTemplate ? (
+                <span>No workflow configured for this program.</span>
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">{activeTemplate.name}</span>
+                  <span className="text-xs">Initial Stage: {initialStage?.name || "None"}</span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

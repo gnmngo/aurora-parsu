@@ -19,18 +19,22 @@ export async function updateAnnotationStatusAction(input: UpdateAnnotationStatus
   const userAgent = headersList.get("user-agent") || "unknown";
 
   // 1. Authenticate user
-  const { data: { session }, error: authErr } = await supabase.auth.getSession();
-  if (authErr || !session?.user) {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please log in.");
   }
 
   // Fetch roles
-  const { data: userRoles } = await supabase
+  const { data: userRolesData } = await supabase
     .from("user_roles")
     .select("roles(code)")
-    .eq("profile_id", session.user.id);
+    .eq("profile_id", user.id);
 
-  const codes = userRoles?.map((ur: any) => ur.roles?.code) ?? [];
+  const codes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) as string[] ?? [];
+
   const isStudent = codes.includes("student");
   const isFaculty = codes.includes("adviser") || codes.includes("panelist");
   const isAdminOrCoord = codes.includes("coordinator") || codes.includes("sys_admin");
@@ -76,7 +80,7 @@ export async function updateAnnotationStatusAction(input: UpdateAnnotationStatus
       from_status: oldStatus,
       to_status: input.newStatus,
       notes: input.notes || null,
-      changed_by: session.user.id
+      changed_by: user.id
     });
 
   if (histErr) {
@@ -84,10 +88,9 @@ export async function updateAnnotationStatusAction(input: UpdateAnnotationStatus
   }
 
   // 5. Log audit trail
-  const projectId = (annotation.document_versions as any)?.documents?.project_id || "00000000-0000-0000-0000-000000000000";
   await supabase.from("audit_logs").insert({
-    profile_id: session.user.id,
-    user_email: session.user.email || "unknown",
+    profile_id: user.id,
+    user_email: user.email || "unknown",
     user_role: "authenticated",
     action_type: "UPDATE",
     module: "revisions",
