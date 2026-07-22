@@ -92,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (loadingRef.current === userId) {
       console.log("AUTH: Profile already loading for", userId);
+      // Do NOT hang — ensure loading spinner resolves even if we bail early
+      // The in-flight call will call setIsLoading(false) when it finishes
       return;
     }
     loadingRef.current = userId;
@@ -172,9 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else if (data) {
             setStudentProfile({
               student_number: data.student_number,
-              college_id: profileData.college_id,
-              department_id: profileData.department_id,
-              program_id: data.program,
+              college_id: data.college_id ?? profileData.college_id,
+              department_id: data.department_id ?? profileData.department_id,
+              program_id: data.program_id,  // Fixed: was 'data.program' (undefined)
               year_level: data.year_level,
             });
           }
@@ -229,41 +231,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Check session on mount
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("AUTH: Initial session check error:", error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!mounted) return;
-
-        if (session) {
-          console.log("AUTH STEP 2: session result found on init:", session.user.email);
-          setSession(session);
-          setUser(session.user);
-          await loadUserProfile(session.user.id);
-        } else {
-          console.log("AUTH STEP 2: no session found on init");
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error("AUTH: Session check exception:", err);
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
+    /**
+     * Use onAuthStateChange exclusively for session initialization.
+     *
+     * Supabase fires INITIAL_SESSION synchronously before any other events.
+     * This eliminates the race condition between getSession() and SIGNED_IN
+     * where both could call loadUserProfile() simultaneously.
+     *
+     * Pattern per Supabase SSR docs:
+     * https://supabase.com/docs/guides/auth/server-side/nextjs
+     */
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("AUTH EVENT:", event);
+      console.log("AUTH EVENT:", event, "| User:", session?.user?.email ?? "none");
 
       if (!mounted) return;
+
+      if (event === "INITIAL_SESSION") {
+        if (!session) {
+          // No session on initial load
+          console.log("AUTH INITIAL_SESSION: no session");
+          clearAuthState();
+          setIsLoading(false);
+          return;
+        }
+        // Session found — load profile
+        console.log("AUTH INITIAL_SESSION: session found for", session.user.email);
+        setSession(session);
+        setUser(session.user);
+        await loadUserProfile(session.user.id);
+        return;
+      }
 
       if (!session) {
         console.log("AUTH: No session in auth event, clearing state");
@@ -272,13 +271,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      console.log("AUTH STEP 2: session result updated in listener:", session.user.email);
       setSession(session);
       setUser(session.user);
 
       if (event === "SIGNED_IN") {
-        setIsLoading(true);
-        await loadUserProfile(session.user.id);
+        // Only load profile if not already loaded for this user
+        if (loadedUserRef.current !== session.user.id) {
+          setIsLoading(true);
+          await loadUserProfile(session.user.id);
+        }
       } else if (event === "TOKEN_REFRESHED") {
         if (!loadedUserRef.current) {
           setIsLoading(true);
@@ -287,6 +288,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (event === "SIGNED_OUT") {
         clearAuthState();
         setIsLoading(false);
+      } else if (event === "USER_UPDATED") {
+        // Password changed or profile updated
+        if (loadedUserRef.current === session.user.id) {
+          loadedUserRef.current = null; // Force re-load
+          setIsLoading(true);
+          await loadUserProfile(session.user.id);
+        }
       }
     });
 

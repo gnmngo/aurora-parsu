@@ -27,23 +27,13 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/settings`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
       });
 
       if (error) throw error;
 
       setIsSent(true);
       toast.success("Password recovery link has been sent to your email.");
-      
-      // Audit Failed/Successful log event if we want, but since they're not logged in, we log to general audits
-      await supabase.rpc("log_auth_event", {
-        p_user_email: email,
-        p_profile_id: null,
-        p_action: "UPDATE",
-        p_description: "Requested password reset link",
-        p_ip_address: "127.0.0.1",
-        p_user_agent: window.navigator.userAgent,
-      });
 
     } catch (err: any) {
       console.error(err);

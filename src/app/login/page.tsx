@@ -24,7 +24,6 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
 
   // Registration States
@@ -146,16 +145,22 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    if (!trimmedEmail || !trimmedPassword) {
       toast.error("Please enter email and password");
+      return;
+    }
+    if (trimmedPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
       if (error) {
@@ -245,7 +250,7 @@ function LoginForm() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/login?tab=reset`
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
       });
       if (error) throw error;
       setForgotSent(true);

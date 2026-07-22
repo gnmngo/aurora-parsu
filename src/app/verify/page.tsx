@@ -42,6 +42,7 @@ export default function VerifyCertificatePage() {
           verdict_code,
           signed_at,
           certificate_serial,
+          signature_hash,
           projects ( title ),
           defense_stages ( name ),
           profiles ( first_name, last_name )
@@ -59,10 +60,10 @@ export default function VerifyCertificatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-xs font-semibold text-slate-800">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-xs font-semibold text-foreground">
       <div className="w-full max-w-xl space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">AURORA Registry</h1>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">AURORA Registry</h1>
           <p className="text-sm text-muted-foreground font-medium">
             Digital Certificate & Signatures Verification Portal
           </p>
@@ -147,8 +148,8 @@ export default function VerifyCertificatePage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-muted-foreground uppercase text-[8px] font-bold">Cryptographic SHA-256 Integrity Hash</p>
-                      <p className="font-mono text-[9px] text-slate-500 truncate bg-slate-100/60 p-2 rounded border border-border/40">
-                        {"sha256-" + result.id.substring(0, 8) + result.certificate_serial.replace("AURORA-CERT-", "") + "bf72ac3901b00e84b2e88a09f874"}
+                      <p className="font-mono text-[9px] text-muted-foreground truncate bg-muted/60 p-2 rounded border border-border/40">
+                        {result.signature_hash ?? "Hash not available"}
                       </p>
                     </div>
                   </div>
