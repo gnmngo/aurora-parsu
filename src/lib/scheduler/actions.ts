@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
+import { emitNotificationToMany } from "@/lib/notifications/emit";
 
 export interface CreateScheduleInput {
   projectId: string;
@@ -256,8 +258,33 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
+
+  // 10. Emit defense_scheduled notifications to all participants (Sprint 2E)
+  try {
+    const recipientIds = [
+      ...(studentProfileId ? [studentProfileId] : []),
+      ...(adviserProfileId ? [adviserProfileId] : []),
+      ...input.panelistIds,
+    ].filter((id, i, arr) => arr.indexOf(id) === i); // deduplicate
+
+    const formattedDate = new Date(startTimeISO).toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+
+    if (recipientIds.length > 0) {
+      await emitNotificationToMany(supabase, recipientIds, {
+        title: "Defense Schedule Set",
+        message: `Your defense for "${project.title}" has been scheduled on ${formattedDate} in ${input.room}${input.building ? ", " + input.building : ""}.`,
+        eventType: "defense_scheduled",
+        metadata: { scheduleId: newSchedule.id, projectId: input.projectId, stageId: input.stageId },
+      });
+    }
+  } catch (notifEx: unknown) {
+    console.error("[createDefenseScheduleAction] Notification failed:", notifEx instanceof Error ? notifEx.message : notifEx);
+  }
 
   return newSchedule;
 }
@@ -516,8 +543,40 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
+
+  // 10. Emit defense_rescheduled notifications to all participants (Sprint 2E)
+  try {
+    const studentProfileIdUpd = Array.isArray(project.students)
+      ? (project.students[0] as { profile_id?: string })?.profile_id
+      : (project.students as { profile_id?: string })?.profile_id;
+    const { data: adviserMemberUpd } = await supabase
+      .from("project_members")
+      .select("profile_id")
+      .eq("project_id", input.projectId)
+      .eq("member_role", "adviser")
+      .maybeSingle();
+    const recipientIds = [
+      ...(studentProfileIdUpd ? [studentProfileIdUpd] : []),
+      ...(adviserMemberUpd?.profile_id ? [adviserMemberUpd.profile_id] : []),
+      ...input.panelistIds,
+    ].filter((id, i, arr) => arr.indexOf(id) === i);
+    const formattedDate = new Date(startTimeISO).toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+    if (recipientIds.length > 0) {
+      await emitNotificationToMany(supabase, recipientIds, {
+        title: "Defense Rescheduled",
+        message: `Your defense for "${project.title}" has been rescheduled to ${formattedDate} in ${input.room}${input.building ? ", " + input.building : ""}.`,
+        eventType: "defense_rescheduled",
+        metadata: { scheduleId: input.scheduleId, projectId: input.projectId, stageId: input.stageId },
+      });
+    }
+  } catch (notifEx: unknown) {
+    console.error("[updateDefenseScheduleAction] Notification failed:", notifEx instanceof Error ? notifEx.message : notifEx);
+  }
 
   return updatedSchedule;
 }

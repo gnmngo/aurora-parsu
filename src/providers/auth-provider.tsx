@@ -124,9 +124,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (profileData.status !== "approved") {
-        console.warn("AUTH PROFILE (STEP 3) - Account status not approved:", profileData.status);
-        toast.error(`Account is ${profileData.status}`);
+      // Allow both 'approved' (standard approval flow) and 'active' (legacy/seeded accounts).
+      // user_status enum: active | inactive | suspended | pending | approved | rejected
+      const allowedStatuses = ["approved", "active"];
+      if (!allowedStatuses.includes(profileData.status)) {
+        console.warn("AUTH PROFILE (STEP 3) - Account status not allowed:", profileData.status);
+        toast.error(`Account is ${profileData.status}. Contact your administrator.`);
         await supabase.auth.signOut();
         clearAuthState();
         setIsLoading(false);

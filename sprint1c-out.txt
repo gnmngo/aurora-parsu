@@ -1,0 +1,276 @@
+======================================================================
+AURORA Sprint 1C — Dashboard & Membership DB Verification
+======================================================================
+
+══ 1. ENUM: member_role ==
+student, adviser, panel_chair, panel_member, student_leader
+
+══ 2. ENUM: project_status ==
+draft, submitted, under_review, scheduled, in_progress, revision_required, passed, passed_minor, passed_major, conditional, failed, archived
+
+══ 3. ENUM: document_status ==
+uploading, processing, draft, submitted, under_review, approved, revision_required, rejected, locked
+
+══ 4. ENUM: notification_type ==
+comment, schedule, grade_released, document_returned, revision_requested, final_verdict, assignment, reminder, system
+
+══ 5. ENUM: annotation_type ==
+highlight, underline, strike_through, sticky_note, text_comment, correction_note, recommendation, research_concern, methodology_concern, formatting_concern, grammar_concern
+
+══ 6. ENUM: annotation_status ==
+open, resolved, archived, addressed, verified, in_progress, closed
+
+══ 7. ENUM: evaluation_status ==
+draft, submitted, locked
+
+══ COLS: projects ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  campus_id: uuid | null:NO | default:none
+  department_id: uuid | null:NO | default:none
+  student_id: uuid | null:NO | default:none
+  title: character varying | null:NO | default:none
+  abstract: text | null:YES | default:none
+  keywords: ARRAY | null:YES | default:none
+  current_stage_id: uuid | null:YES | default:none
+  status: project_status | null:NO | default:'draft'::project_status
+  academic_year: character varying | null:NO | default:none
+  semester: character varying | null:YES | default:none
+  system_completion_pct: integer | null:NO | default:0
+  final_score: numeric | null:YES | default:none
+  final_verdict: character varying | null:YES | default:none
+  archived_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  created_by: uuid | null:YES | default:none
+  workflow_template_id: uuid | null:YES | default:none
+  join_code: character varying | null:YES | default:none
+  college_id: uuid | null:YES | default:none
+  program_id: uuid | null:YES | default:none
+  major_id: uuid | null:YES | default:none
+
+══ COLS: project_members ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  profile_id: uuid | null:NO | default:none
+  member_role: member_role | null:NO | default:none
+  is_primary: boolean | null:NO | default:false
+  assigned_by: uuid | null:YES | default:none
+  assigned_at: timestamp with time zone | null:NO | default:now()
+
+══ COLS: defense_schedules ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  scheduled_at: timestamp with time zone | null:NO | default:none
+  end_at: timestamp with time zone | null:YES | default:none
+  room: character varying | null:YES | default:none
+  building: character varying | null:YES | default:none
+  is_online: boolean | null:NO | default:false
+  meeting_url: text | null:YES | default:none
+  duration_minutes: integer | null:NO | default:120
+  status: schedule_status | null:NO | default:'scheduled'::schedule_status
+  notes: text | null:YES | default:none
+  created_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+
+══ COLS: documents ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  title: character varying | null:NO | default:none
+  status: document_status | null:NO | default:'draft'::document_status
+  current_version: integer | null:NO | default:0
+  created_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  adviser_approval_status: character varying | null:YES | default:'approved'::character varying
+  approval_remarks: text | null:YES | default:none
+
+══ COLS: document_versions ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  document_id: uuid | null:NO | default:none
+  version_number: integer | null:NO | default:none
+  storage_path: text | null:NO | default:none
+  file_name: character varying | null:NO | default:none
+  file_size: bigint | null:NO | default:none
+  mime_type: character varying | null:NO | default:none
+  checksum_sha256: character varying | null:NO | default:none
+  page_count: integer | null:YES | default:none
+  extracted_text: text | null:YES | default:none
+  chapter_outline: jsonb | null:NO | default:'[]'::jsonb
+  upload_notes: text | null:YES | default:none
+  is_current: boolean | null:NO | default:true
+  uploaded_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  change_summary: text | null:YES | default:'Initial upload'::text
+
+══ COLS: annotations ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  document_version_id: uuid | null:NO | default:none
+  parent_id: uuid | null:YES | default:none
+  type: annotation_type | null:NO | default:none
+  page_number: integer | null:NO | default:none
+  coordinates: jsonb | null:NO | default:none
+  selected_text: text | null:YES | default:none
+  content: text | null:YES | default:none
+  category_id: uuid | null:YES | default:none
+  severity: severity_level | null:NO | default:'info'::severity_level
+  status: annotation_status | null:NO | default:'open'::annotation_status
+  author_role: character varying | null:YES | default:none
+  version_checksum: character varying | null:YES | default:none
+  is_stale: boolean | null:NO | default:false
+  revision_completed: boolean | null:NO | default:false
+  revision_completed_at: timestamp with time zone | null:YES | default:none
+  revision_completed_by: uuid | null:YES | default:none
+  created_by: uuid | null:NO | default:none
+  resolved_by: uuid | null:YES | default:none
+  resolved_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+
+══ COLS: evaluations ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  panelist_id: uuid | null:NO | default:none
+  template_id: uuid | null:YES | default:none
+  status: evaluation_status | null:NO | default:'draft'::evaluation_status
+  total_score: numeric | null:YES | default:none
+  weighted_score: numeric | null:YES | default:none
+  verdict_code: character varying | null:YES | default:none
+  recommendations: text | null:YES | default:none
+  panel_notes: text | null:YES | default:none
+  submitted_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  rubric_template_id: uuid | null:YES | default:none
+  scores: jsonb | null:YES | default:'{}'::jsonb
+  version: integer | null:NO | default:1
+  derived_from_version: integer | null:YES | default:none
+  revision_reason: text | null:YES | default:none
+  signature_type: character varying | null:YES | default:none
+  signature_image: text | null:YES | default:none
+  signature_hash: character varying | null:YES | default:none
+  signed_at: timestamp with time zone | null:YES | default:none
+  verified: boolean | null:YES | default:false
+  verified_by_system: boolean | null:YES | default:false
+  certificate_serial: character varying | null:YES | default:none
+  ip_address: inet | null:YES | default:none
+  user_agent: text | null:YES | default:none
+  device_info: jsonb | null:YES | default:none
+
+══ COLS: defense_stages ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  campus_id: uuid | null:NO | default:none
+  code: character varying | null:NO | default:none
+  name: character varying | null:NO | default:none
+  sequence_order: integer | null:NO | default:none
+  description: text | null:YES | default:none
+  is_enabled: boolean | null:NO | default:true
+  required_documents: jsonb | null:NO | default:'[]'::jsonb
+  requirements: jsonb | null:NO | default:'{}'::jsonb
+  passing_score: numeric | null:YES | default:75.00
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  workflow_template_id: uuid | null:YES | default:none
+  requires_submission: boolean | null:YES | default:true
+  requires_schedule: boolean | null:YES | default:true
+  requires_panel: boolean | null:YES | default:true
+  requires_rubric: boolean | null:YES | default:true
+  requires_signature: boolean | null:YES | default:true
+  allows_revision: boolean | null:YES | default:true
+
+══ COLS: faculty ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  profile_id: uuid | null:NO | default:none
+  employee_number: character varying | null:NO | default:none
+  rank: character varying | null:YES | default:none
+  specialization: character varying | null:YES | default:none
+  is_adviser: boolean | null:NO | default:false
+  is_panelist: boolean | null:NO | default:false
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+
+══ COLS: notifications ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  profile_id: uuid | null:NO | default:none
+  title: character varying | null:NO | default:none
+  message: text | null:NO | default:none
+  type: notification_type | null:NO | default:none
+  link: text | null:YES | default:none
+  metadata: jsonb | null:NO | default:'{}'::jsonb
+  read_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+
+══ COLS: students ==
+  id: uuid | null:NO | default:gen_random_uuid()
+  profile_id: uuid | null:NO | default:none
+  student_number: character varying | null:YES | default:NULL::character varying
+  year_level: integer | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  program_id: uuid | null:YES | default:none
+  major_id: uuid | null:YES | default:none
+  campus_id: uuid | null:YES | default:none
+  college_id: uuid | null:YES | default:none
+  department_id: uuid | null:YES | default:none
+
+══ CHECK: projects.join_code ==
+  EXISTS: join_code (character varying) nullable:YES
+
+══ CHECK: projects archive columns ==
+  FOUND: archived_at
+
+══ CHECK: documents.adviser_approval_status ==
+  EXISTS: adviser_approval_status (character varying)
+
+══ UNIQUE CONSTRAINTS: project_members ==
+  project_members_pkey: (id)
+  project_members_project_id_profile_id_member_role_key: (project_id, profile_id, member_role)
+
+══ INDEXES: projects ==
+  idx_projects_department: CREATE INDEX idx_projects_department ON public.projects USING btree (department_id)
+  idx_projects_join_code: CREATE INDEX idx_projects_join_code ON public.projects USING btree (join_code)
+  idx_projects_stage: CREATE INDEX idx_projects_stage ON public.projects USING btree (current_stage_id)
+  idx_projects_status: CREATE INDEX idx_projects_status ON public.projects USING btree (status)
+  idx_projects_student: CREATE INDEX idx_projects_student ON public.projects USING btree (student_id)
+  projects_join_code_key: CREATE UNIQUE INDEX projects_join_code_key ON public.projects USING btree (join_code)
+  projects_pkey: CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)
+
+══ TRIGGERS: projects ==
+  [AFTER INSERT] tr_audit_projects
+  [AFTER DELETE] tr_audit_projects
+  [AFTER UPDATE] tr_audit_projects
+  [BEFORE INSERT] tr_projects_join_code
+  [BEFORE UPDATE] tr_projects_updated
+  [BEFORE UPDATE] tr_validate_project_status
+
+══ TRIGGERS: project_members ==
+  No triggers
+
+══ DATA COUNTS ==
+  projects: 3
+  project_members: 4
+  students: 2
+  faculty: 5
+  profiles: 7
+  documents: 1
+  document_versions: 1
+  annotations: 2
+  evaluations: 1
+  defense_schedules: 1
+  defense_panels: 0
+  notifications: 0
+  audit_logs: 5
+
+══ CHECK: project_score_cache ==
+  EXISTS
+
+══ REALTIME PUBLICATION ==
+  [supabase_realtime] annotation_replies
+  [supabase_realtime] annotations
+  [supabase_realtime] notifications
+
+======================================================================
+Done.

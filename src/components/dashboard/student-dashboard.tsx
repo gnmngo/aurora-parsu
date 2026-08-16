@@ -36,7 +36,11 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [stagesList, setStagesList] = useState<any[]>([]);
   const [annotationsCount, setAnnotationsCount] = useState({ total: 0, unresolved: 0 });
   const [activeTab, setActiveTab] = useState<"submissions" | "revisions" | "evaluations">("submissions");
+  const [error, setError] = useState<string | null>(null);
   
+  // B4 Fix: createClient() is a singleton (see src/lib/supabase/client.ts).
+  // Declare it outside the effect for reuse within the component body,
+  // but do NOT include it in useEffect deps — it never changes reference.
   const supabase = createClient();
 
   useEffect(() => {
@@ -103,7 +107,12 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
             .eq("project_id", proj.id);
 
           if (docs && docs.length > 0) {
-            const activeDoc = docs.find(d => d.status === "active") || docs[0];
+            // Pick the most relevant document: prefer submitted/approved, then fall back to most recent.
+            // Note: document_status enum has NO "active" value — valid values are:
+            // uploading, processing, draft, submitted, under_review, approved, revision_required, rejected, locked
+            const activeDoc =
+              docs.find((d: any) => d.status === "submitted" || d.status === "under_review" || d.status === "approved") ||
+              docs[0];
             setLatestDoc(activeDoc);
 
             // Compile submissions list
@@ -158,13 +167,33 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         }
       } catch (err) {
         console.error("Error loading student dashboard:", err);
+        setError(err instanceof Error ? err.message : "Failed to load project data.");
       } finally {
         setLoading(false);
       }
     }
 
     loadStudentData();
-  }, [supabase, userId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  if (error) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5 p-8 text-center flex flex-col items-center">
+        <AlertTriangle className="h-8 w-8 text-destructive opacity-60" />
+        <h3 className="text-sm font-bold mt-3 text-foreground">Failed to Load Dashboard</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4 text-xs"
+          onClick={() => { setError(null); setLoading(true); }}
+        >
+          Try Again
+        </Button>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { RoleGuard } from "@/components/auth/role-guard";
@@ -14,9 +14,8 @@ import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { format } from "date-fns";
 import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
-  Clock, Upload, History, User, Building2, GraduationCap, AlertCircle,
-  Loader2, Inbox, ArrowRight, CheckCheck, XCircle, ChevronRight, Download,
-  ExternalLink
+  Clock, Upload, User, Building2, GraduationCap, AlertCircle,
+  CheckCheck, ExternalLink, Copy, Check, Users, Crown
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -34,6 +33,8 @@ interface ProjectData {
   workflow_template_id: string | null;
   departments: { id: string; name: string } | null;
   students: { id: string; profiles: { first_name: string; last_name: string } | null } | null;
+  // join_code is nullable — only returned if the auth user is the project owner
+  join_code: string | null;
 }
 
 interface StageData {
@@ -52,7 +53,7 @@ interface DocumentVersion {
   file_size: number;
   created_at: string;
   is_current: boolean;
-  checksum: string | null;
+  checksum_sha256: string | null;
 }
 
 interface DocumentData {
@@ -100,6 +101,13 @@ interface EvaluationResult {
   defense_stages: { name: string } | null;
 }
 
+interface ProjectMemberDisplay {
+  profile_id: string;
+  member_role: string;
+  is_primary: boolean;
+  profiles: { first_name: string; last_name: string; email: string } | null;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   submitted: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -119,20 +127,24 @@ export default function MyProjectPage() {
   const [project, setProject] = useState<ProjectData | null>(null);
   const [stages, setStages] = useState<StageData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [allMembers, setAllMembers] = useState<ProjectMemberDisplay[]>([]);
   const [adviser, setAdviser] = useState<AdviserMember | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "documents" | "feedback" | "schedule" | "evaluations">("overview");
+  const [joinCodeCopied, setJoinCodeCopied] = useState(false);
 
-  async function loadProjectData() {
+  const loadProjectData = useCallback(async function _loadProjectData() {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Get student record
+      // 1. Get student record.
+      //    profile_id is included so CreateProjectModal can insert the correct
+      //    UUID into project_members.profile_id (profiles.id, NOT students.id).
       const { data: studentRecord } = await supabase
         .from("students")
-        .select("id, campus_id, college_id, department_id, program_id, major_id")
+        .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
         .eq("profile_id", user.id)
         .maybeSingle();
 
@@ -142,12 +154,12 @@ export default function MyProjectPage() {
       }
       setStudent(studentRecord);
 
-      // 2. Get project with all linked data
+      // 2. Get project with all linked data (including join_code for the leader)
       const { data: proj } = await supabase
         .from("projects")
         .select(`
           id, title, status, academic_year, created_at,
-          current_stage_id, workflow_template_id,
+          current_stage_id, workflow_template_id, join_code,
           defense_stages ( id, name, sequence_order ),
           departments ( id, name ),
           students ( id, profiles ( first_name, last_name ) )
@@ -178,20 +190,25 @@ export default function MyProjectPage() {
         .select(`
           id, stage_id,
           document_versions (
-            id, version_number, file_name, file_size, created_at, is_current, checksum
+            id, version_number, file_name, file_size, created_at, is_current, checksum_sha256
           )
         `)
         .eq("project_id", proj.id)
         .order("created_at", { ascending: false });
       if (docs) setDocuments(docs as any);
 
-      // 5. Fetch adviser from project_members
+      // 5. Fetch ALL project members (students + adviser + panel roles)
+      //    Display all to the student so they know who is on their project.
       const { data: members } = await supabase
         .from("project_members")
-        .select("profile_id, member_role, profiles ( first_name, last_name, email )")
+        .select("profile_id, member_role, is_primary, profiles ( first_name, last_name, email )")
         .eq("project_id", proj.id)
-        .eq("member_role", "adviser");
-      if (members && members.length > 0) setAdviser(members[0] as any);
+        .order("assigned_at", { ascending: true });
+      if (members) {
+        setAllMembers(members as any);
+        const adviserMember = members.find((m: any) => m.member_role === "adviser");
+        if (adviserMember) setAdviser(adviserMember as any);
+      }
 
       // 6. Fetch defense schedules
       const { data: scheds } = await supabase
@@ -237,11 +254,11 @@ export default function MyProjectPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   useEffect(() => {
     loadProjectData();
-  }, [user]);
+  }, [loadProjectData]);
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BookOpen },
@@ -545,6 +562,92 @@ export default function MyProjectPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* ── Project Members ─────────────────────── */}
+              {allMembers.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      Project Members
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    {allMembers.map((m) => {
+                      const name = m.profiles
+                        ? `${m.profiles.first_name} ${m.profiles.last_name}`
+                        : "Unknown";
+                      const isLeader = m.is_primary || m.member_role === "student_leader";
+                      const roleBadgeVariant =
+                        m.member_role === "adviser" ? "info" :
+                        m.member_role === "student_leader" ? "warning" :
+                        "outline";
+                      const roleLabel =
+                        m.member_role === "student_leader" ? "Leader" :
+                        m.member_role === "adviser" ? "Adviser" :
+                        m.member_role === "panel_chair" ? "Chair" :
+                        m.member_role === "panel_member" ? "Panelist" :
+                        "Member";
+                      return (
+                        <div key={m.profile_id} className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-black text-muted-foreground">
+                            {name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              {isLeader && (
+                                <Crown className="h-3 w-3 text-amber-500 shrink-0" />
+                              )}
+                              <p className="font-bold text-foreground truncate">{name}</p>
+                            </div>
+                            {m.profiles?.email && (
+                              <p className="text-[9px] text-muted-foreground truncate">{m.profiles.email}</p>
+                            )}
+                          </div>
+                          <Badge variant={roleBadgeVariant} className="text-[8px] shrink-0">
+                            {roleLabel}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ── Join Code (visible to student members) ─── */}
+              {project?.join_code && (
+                <Card className="border-primary/20 bg-primary/3">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-primary">Join Code</CardTitle>
+                    <CardDescription className="text-[10px]">
+                      Share this code with your team members so they can join this project.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 rounded-lg bg-background px-3 py-2 text-center text-base font-black tracking-[0.2em] text-foreground border border-border">
+                        {project.join_code}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 h-9 w-9 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(project.join_code || "");
+                          setJoinCodeCopied(true);
+                          setTimeout(() => setJoinCodeCopied(false), 2000);
+                        }}
+                        title="Copy join code"
+                      >
+                        {joinCodeCopied
+                          ? <Check className="h-3.5 w-3.5 text-success" />
+                          : <Copy className="h-3.5 w-3.5" />
+                        }
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Quick actions */}
               <Card>

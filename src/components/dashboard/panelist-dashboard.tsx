@@ -82,7 +82,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
     }
 
     loadPanelistData();
-  }, [supabase, userId]);
+  }, [userId]);
 
   if (loading) {
     return (

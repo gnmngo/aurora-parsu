@@ -157,8 +157,13 @@ export async function runDemoSeeder() {
         .insert({
           profile_id: profileId,
           student_number: "2026-" + Math.floor(1000 + Math.random() * 9000),
-          program: "BSIT",
-          year_level: 4
+          // program_id references the BSIT program (verified from live DB)
+          // programs.id = '80000000-0000-0000-0000-000000000001' = BSIT
+          program_id: "80000000-0000-0000-0000-000000000001",
+          year_level: 4,
+          campus_id: campusId,
+          college_id: "10000000-0000-0000-0000-000000000003", // CECS
+          department_id: departmentId,
         })
         .select()
         .single();
@@ -243,7 +248,8 @@ export async function runDemoSeeder() {
         project_id: project.id,
         stage_id: stage.id,
         title: `${title} - Draft Manuscript`,
-        status: "active"
+        status: "draft",  // valid document_status enum value (was incorrectly 'active')
+        created_by: student.id,
       })
       .select()
       .single();
@@ -274,21 +280,32 @@ export async function runDemoSeeder() {
           .select()
           .single();
 
-        // Seed some Annotations if version created
+        // Seed annotations with correct column names and all required NOT NULL fields.
+        // Verified from live DB: annotations requires type, coordinates, severity (all NOT NULL)
         if (ver) {
           await supabaseAdmin.from("annotations").insert([
             {
               document_version_id: ver.id,
+              type: "text_comment",                         // annotation_type enum
               page_number: 2,
-              comment: "Check the problem description in the abstract.",
-              status: "open",
+              coordinates: { left: 10, top: 15, width: 80, height: 5 },  // jsonb
+              content: "Check the problem description in the abstract.",
+              severity: "minor",                            // severity_level enum
+              status: "open",                               // annotation_status enum
+              is_stale: false,
+              revision_completed: false,
               created_by: adviser.id
             },
             {
               document_version_id: ver.id,
+              type: "correction_note",                     // annotation_type enum
               page_number: 3,
-              comment: "Add more citations to the methodology chapter.",
+              coordinates: { left: 10, top: 30, width: 80, height: 5 },
+              content: "Add more citations to the methodology chapter.",
+              severity: "major",
               status: "open",
+              is_stale: false,
+              revision_completed: false,
               created_by: panelists[0].id
             }
           ]);

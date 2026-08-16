@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Printer, CheckCircle, Award } from "lucide-react";
+import { VerificationQRCode } from "@/components/workspace/verification-qr-code";
 
 interface CertificateDialogProps {
   open: boolean;
@@ -247,28 +248,14 @@ export function CertificateDialog({
 
               {/* QR Code box */}
               <div className="flex flex-col items-center space-y-1">
-                {/* SVG simulated QR Code */}
-                <svg className="h-14 w-14 border border-slate-100 p-1 bg-white rounded" viewBox="0 0 100 100">
-                  <rect width="100" height="100" fill="white" />
-                  {/* Outer boundaries */}
-                  <rect x="5" y="5" width="25" height="25" fill="#0f172a" />
-                  <rect x="10" y="10" width="15" height="15" fill="white" />
-                  <rect x="70" y="5" width="25" height="25" fill="#0f172a" />
-                  <rect x="75" y="10" width="15" height="15" fill="white" />
-                  <rect x="5" y="70" width="25" height="25" fill="#0f172a" />
-                  <rect x="10" y="75" width="15" height="15" fill="white" />
-                  {/* Random pixels for simulation */}
-                  <rect x="35" y="5" width="10" height="10" fill="#0f172a" />
-                  <rect x="45" y="15" width="10" height="5" fill="#0f172a" />
-                  <rect x="55" y="5" width="5" height="20" fill="#0f172a" />
-                  <rect x="35" y="35" width="30" height="30" fill="#0f172a" />
-                  <rect x="40" y="40" width="20" height="20" fill="white" />
-                  <rect x="45" y="45" width="10" height="10" fill="#0f172a" />
-                  <rect x="5" y="45" width="15" height="15" fill="#0f172a" />
-                  <rect x="70" y="45" width="15" height="20" fill="#0f172a" />
-                  <rect x="45" y="80" width="25" height="10" fill="#0f172a" />
-                  <rect x="80" y="80" width="15" height="15" fill="#0f172a" />
-                </svg>
+                {evaluation.certificate_serial ? (
+                  <VerificationQRCode
+                    certificateSerial={evaluation.certificate_serial}
+                    size={56}
+                  />
+                ) : (
+                  <div className="h-14 w-14 border border-slate-100 rounded bg-slate-50" />
+                )}
                 <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-wider">AURORA QR VERIFY</span>
               </div>
             </div>

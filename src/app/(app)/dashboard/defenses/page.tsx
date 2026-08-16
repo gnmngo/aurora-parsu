@@ -59,8 +59,15 @@ export default function DefensesPage() {
         const { data: dbStages } = await query;
         if (!dbStages) return;
 
-        const { data: docs } = await supabase.from("documents").select("stage_id");
-        const { data: evals } = await supabase.from("evaluations").select("stage_id, status");
+        const { data: docs } = await supabase
+          .from("documents")
+          .select("stage_id")
+          .in("stage_id", dbStages.map((s) => s.id));
+
+        const { data: evals } = await supabase
+          .from("evaluations")
+          .select("stage_id, status")
+          .in("stage_id", dbStages.map((s) => s.id));
 
         const stagesData = dbStages.map((stage) => {
           const stageDocs = docs?.filter((d) => d.stage_id === stage.id) || [];

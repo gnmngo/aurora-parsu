@@ -1,0 +1,700 @@
+AURORA — Academic Defense Workflow DB Audit
+Timestamp: 2026-08-03T08:26:34.517Z
+
+==============================================================
+  ALL ENUMS
+==============================================================
+  annotation_status: open, resolved, archived, addressed, verified, in_progress, closed
+  annotation_type: highlight, underline, strike_through, sticky_note, text_comment, correction_note, recommendation, research_concern, methodology_concern, formatting_concern, grammar_concern
+  attendance_status: present, absent, excused, late
+  audit_action: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, UPLOAD, DOWNLOAD, SUBMIT, APPROVE, REJECT, ASSIGN, RELEASE, TRANSITION, COMMENT, GRADE, SCHEDULE
+  document_status: uploading, processing, draft, submitted, under_review, approved, revision_required, rejected, locked
+  evaluation_status: draft, submitted, locked
+  member_role: student, adviser, panel_chair, panel_member, student_leader
+  notification_type: comment, schedule, grade_released, document_returned, revision_requested, final_verdict, assignment, reminder, system
+  panel_role: chair, member
+  project_status: draft, submitted, under_review, scheduled, in_progress, revision_required, passed, passed_minor, passed_major, conditional, failed, archived
+  report_format: pdf, xlsx, csv
+  report_type: defense_result, panel_report, student_report, rubric_report, college_report, university_report
+  schedule_status: scheduled, in_progress, completed, cancelled, postponed
+  scoring_model: weighted_average, percentage, custom_formula
+  severity_level: info, minor, major, critical
+  user_status: active, inactive, suspended, pending, approved, rejected
+
+==============================================================
+  ALL TABLES
+==============================================================
+  academic_levels, activity_logs, annotation_categories, annotation_history, annotation_mentions, annotation_replies, annotations, audit_logs, campuses, colleges, defense_attendance, defense_panels, defense_schedules, defense_stages, departments, document_upload_history, document_versions, documents, evaluation_events, evaluations, faculty, grading_criteria, grading_rating_scales, grading_scores, grading_subcriteria, grading_templates, grading_verdicts, majors, notifications, permissions, profiles, programs, project_members, project_score_cache, project_workflow_history, projects, reports, role_permissions, roles, rubric_templates, students, user_roles, workflow_templates, workflow_transitions
+
+==============================================================
+  COLS: documents
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  title: character varying | null:NO | default:none
+  status: document_status | null:NO | default:'draft'::document_status
+  current_version: integer | null:NO | default:0
+  created_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  adviser_approval_status: character varying | null:YES | default:'approved'::character varying
+  approval_remarks: text | null:YES | default:none
+
+==============================================================
+  COLS: document_versions
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  document_id: uuid | null:NO | default:none
+  version_number: integer | null:NO | default:none
+  storage_path: text | null:NO | default:none
+  file_name: character varying | null:NO | default:none
+  file_size: bigint | null:NO | default:none
+  mime_type: character varying | null:NO | default:none
+  checksum_sha256: character varying | null:NO | default:none
+  page_count: integer | null:YES | default:none
+  extracted_text: text | null:YES | default:none
+  chapter_outline: jsonb | null:NO | default:'[]'::jsonb
+  upload_notes: text | null:YES | default:none
+  is_current: boolean | null:NO | default:true
+  uploaded_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  change_summary: text | null:YES | default:'Initial upload'::text
+
+==============================================================
+  COLS: annotations
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  document_version_id: uuid | null:NO | default:none
+  parent_id: uuid | null:YES | default:none
+  type: annotation_type | null:NO | default:none
+  page_number: integer | null:NO | default:none
+  coordinates: jsonb | null:NO | default:none
+  selected_text: text | null:YES | default:none
+  content: text | null:YES | default:none
+  category_id: uuid | null:YES | default:none
+  severity: severity_level | null:NO | default:'info'::severity_level
+  status: annotation_status | null:NO | default:'open'::annotation_status
+  author_role: character varying | null:YES | default:none
+  version_checksum: character varying | null:YES | default:none
+  is_stale: boolean | null:NO | default:false
+  revision_completed: boolean | null:NO | default:false
+  revision_completed_at: timestamp with time zone | null:YES | default:none
+  revision_completed_by: uuid | null:YES | default:none
+  created_by: uuid | null:NO | default:none
+  resolved_by: uuid | null:YES | default:none
+  resolved_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+
+==============================================================
+  COLS: annotation_replies
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  annotation_id: uuid | null:NO | default:none
+  content: text | null:NO | default:none
+  created_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+
+==============================================================
+  COLS: evaluations
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  panelist_id: uuid | null:NO | default:none
+  template_id: uuid | null:YES | default:none
+  status: evaluation_status | null:NO | default:'draft'::evaluation_status
+  total_score: numeric | null:YES | default:none
+  weighted_score: numeric | null:YES | default:none
+  verdict_code: character varying | null:YES | default:none
+  recommendations: text | null:YES | default:none
+  panel_notes: text | null:YES | default:none
+  submitted_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  rubric_template_id: uuid | null:YES | default:none
+  scores: jsonb | null:YES | default:'{}'::jsonb
+  version: integer | null:NO | default:1
+  derived_from_version: integer | null:YES | default:none
+  revision_reason: text | null:YES | default:none
+  signature_type: character varying | null:YES | default:none
+  signature_image: text | null:YES | default:none
+  signature_hash: character varying | null:YES | default:none
+  signed_at: timestamp with time zone | null:YES | default:none
+  verified: boolean | null:YES | default:false
+  verified_by_system: boolean | null:YES | default:false
+  certificate_serial: character varying | null:YES | default:none
+  ip_address: inet | null:YES | default:none
+  user_agent: text | null:YES | default:none
+  device_info: jsonb | null:YES | default:none
+
+==============================================================
+  COLS: evaluation_scores
+==============================================================
+  TABLE DOES NOT EXIST
+
+==============================================================
+  COLS: rubrics
+==============================================================
+  TABLE DOES NOT EXIST
+
+==============================================================
+  COLS: rubric_criteria
+==============================================================
+  TABLE DOES NOT EXIST
+
+==============================================================
+  COLS: workflow_templates
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  name: character varying | null:NO | default:none
+  description: text | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  program_id: uuid | null:YES | default:none
+
+==============================================================
+  COLS: defense_stages
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  campus_id: uuid | null:NO | default:none
+  code: character varying | null:NO | default:none
+  name: character varying | null:NO | default:none
+  sequence_order: integer | null:NO | default:none
+  description: text | null:YES | default:none
+  is_enabled: boolean | null:NO | default:true
+  required_documents: jsonb | null:NO | default:'[]'::jsonb
+  requirements: jsonb | null:NO | default:'{}'::jsonb
+  passing_score: numeric | null:YES | default:75.00
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+  workflow_template_id: uuid | null:YES | default:none
+  requires_submission: boolean | null:YES | default:true
+  requires_schedule: boolean | null:YES | default:true
+  requires_panel: boolean | null:YES | default:true
+  requires_rubric: boolean | null:YES | default:true
+  requires_signature: boolean | null:YES | default:true
+  allows_revision: boolean | null:YES | default:true
+
+==============================================================
+  COLS: defense_schedules
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  scheduled_at: timestamp with time zone | null:NO | default:none
+  end_at: timestamp with time zone | null:YES | default:none
+  room: character varying | null:YES | default:none
+  building: character varying | null:YES | default:none
+  is_online: boolean | null:NO | default:false
+  meeting_url: text | null:YES | default:none
+  duration_minutes: integer | null:NO | default:120
+  status: schedule_status | null:NO | default:'scheduled'::schedule_status
+  notes: text | null:YES | default:none
+  created_by: uuid | null:NO | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  updated_at: timestamp with time zone | null:NO | default:now()
+
+==============================================================
+  COLS: defense_panels
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:NO | default:none
+  profile_id: uuid | null:NO | default:none
+  panel_role: panel_role | null:NO | default:'member'::panel_role
+  assigned_by: uuid | null:YES | default:none
+  assigned_at: timestamp with time zone | null:NO | default:now()
+
+==============================================================
+  COLS: notifications
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  profile_id: uuid | null:NO | default:none
+  title: character varying | null:NO | default:none
+  message: text | null:NO | default:none
+  type: notification_type | null:NO | default:none
+  link: text | null:YES | default:none
+  metadata: jsonb | null:NO | default:'{}'::jsonb
+  read_at: timestamp with time zone | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+
+==============================================================
+  COLS: audit_logs
+==============================================================
+  id: uuid | null:NO | default:gen_random_uuid()
+  academic_year: character varying | null:NO | default:'2025-2026'::character varying
+  profile_id: uuid | null:YES | default:none
+  user_email: character varying | null:NO | default:none
+  user_role: character varying | null:YES | default:none
+  action_type: audit_action | null:NO | default:none
+  module: character varying | null:NO | default:none
+  entity_type: character varying | null:NO | default:none
+  entity_id: uuid | null:NO | default:none
+  description: text | null:NO | default:none
+  old_value: jsonb | null:YES | default:none
+  new_value: jsonb | null:YES | default:none
+  amount_changed: text | null:YES | default:none
+  reason: text | null:YES | default:none
+  ip_address: inet | null:YES | default:none
+  user_agent: text | null:YES | default:none
+  device_info: jsonb | null:YES | default:none
+  session_id: character varying | null:YES | default:none
+  integrity_hash: character varying | null:YES | default:none
+  created_at: timestamp with time zone | null:NO | default:now()
+  stage_id: uuid | null:YES | default:none
+  project_id: uuid | null:YES | default:none
+  device: character varying | null:YES | default:none
+
+==============================================================
+  COLS: digital_signatures
+==============================================================
+  TABLE DOES NOT EXIST
+
+==============================================================
+  COLS: certificates
+==============================================================
+  TABLE DOES NOT EXIST
+
+==============================================================
+  COLS: project_score_cache
+==============================================================
+  project_id: uuid | null:NO | default:none
+  stage_id: uuid | null:YES | default:none
+  avg_score: numeric | null:YES | default:none
+  compliance_rate: numeric | null:YES | default:none
+  readiness_level: text | null:YES | default:none
+  last_updated: timestamp with time zone | null:YES | default:now()
+
+==============================================================
+  FOREIGN KEYS
+==============================================================
+  annotation_replies.annotation_id -> annotations.id [CASCADE]
+  annotation_replies.created_by -> profiles.id [NO ACTION]
+  annotations.category_id -> annotation_categories.id [NO ACTION]
+  annotations.created_by -> profiles.id [NO ACTION]
+  annotations.document_version_id -> document_versions.id [CASCADE]
+  annotations.parent_id -> annotations.id [CASCADE]
+  annotations.resolved_by -> profiles.id [NO ACTION]
+  annotations.revision_completed_by -> profiles.id [NO ACTION]
+  audit_logs.profile_id -> profiles.id [NO ACTION]
+  audit_logs.project_id -> projects.id [CASCADE]
+  audit_logs.stage_id -> defense_stages.id [CASCADE]
+  defense_panels.assigned_by -> profiles.id [NO ACTION]
+  defense_panels.profile_id -> profiles.id [NO ACTION]
+  defense_panels.project_id -> projects.id [CASCADE]
+  defense_panels.stage_id -> defense_stages.id [NO ACTION]
+  defense_schedules.created_by -> profiles.id [NO ACTION]
+  defense_schedules.project_id -> projects.id [CASCADE]
+  defense_schedules.stage_id -> defense_stages.id [NO ACTION]
+  defense_stages.campus_id -> campuses.id [NO ACTION]
+  defense_stages.workflow_template_id -> workflow_templates.id [CASCADE]
+  document_versions.document_id -> documents.id [CASCADE]
+  document_versions.uploaded_by -> profiles.id [NO ACTION]
+  documents.created_by -> profiles.id [NO ACTION]
+  documents.project_id -> projects.id [CASCADE]
+  documents.stage_id -> defense_stages.id [NO ACTION]
+  evaluations.panelist_id -> profiles.id [NO ACTION]
+  evaluations.project_id -> projects.id [CASCADE]
+  evaluations.rubric_template_id -> rubric_templates.id [SET NULL]
+  evaluations.stage_id -> defense_stages.id [NO ACTION]
+  evaluations.template_id -> grading_templates.id [NO ACTION]
+  notifications.profile_id -> profiles.id [CASCADE]
+  project_score_cache.project_id -> projects.id [CASCADE]
+  project_score_cache.stage_id -> defense_stages.id [CASCADE]
+  workflow_templates.program_id -> programs.id [SET NULL]
+
+==============================================================
+  UNIQUE CONSTRAINTS
+==============================================================
+  [PRIMARY KEY] annotation_replies.annotation_replies_pkey: (id)
+  [PRIMARY KEY] annotations.annotations_pkey: (id)
+  [PRIMARY KEY] audit_logs.audit_logs_pkey: (id)
+  [PRIMARY KEY] defense_panels.defense_panels_pkey: (id)
+  [UNIQUE] defense_panels.defense_panels_project_id_stage_id_profile_id_key: (project_id,stage_id,profile_id)
+  [PRIMARY KEY] defense_schedules.defense_schedules_pkey: (id)
+  [UNIQUE] defense_schedules.defense_schedules_project_id_stage_id_key: (project_id,stage_id)
+  [UNIQUE] defense_stages.defense_stages_campus_id_code_key: (campus_id,code)
+  [PRIMARY KEY] defense_stages.defense_stages_pkey: (id)
+  [UNIQUE] document_versions.document_versions_document_id_version_number_key: (document_id,version_number)
+  [PRIMARY KEY] document_versions.document_versions_pkey: (id)
+  [PRIMARY KEY] documents.documents_pkey: (id)
+  [UNIQUE] documents.documents_project_id_stage_id_key: (project_id,stage_id)
+  [PRIMARY KEY] evaluations.evaluations_pkey: (id)
+  [UNIQUE] evaluations.evaluations_project_id_stage_id_panelist_id_key: (project_id,stage_id,panelist_id)
+  [PRIMARY KEY] notifications.notifications_pkey: (id)
+  [PRIMARY KEY] project_score_cache.project_score_cache_pkey: (project_id)
+  [UNIQUE] workflow_templates.workflow_templates_name_key: (name)
+  [PRIMARY KEY] workflow_templates.workflow_templates_pkey: (id)
+
+==============================================================
+  CHECK CONSTRAINTS
+==============================================================
+  annotation_replies | 2200_18371_1_not_null: id IS NOT NULL
+  annotation_replies | 2200_18371_2_not_null: annotation_id IS NOT NULL
+  annotation_replies | 2200_18371_3_not_null: content IS NOT NULL
+  annotation_replies | 2200_18371_4_not_null: created_by IS NOT NULL
+  annotation_replies | 2200_18371_5_not_null: created_at IS NOT NULL
+  annotations | 2200_18327_1_not_null: id IS NOT NULL
+  annotations | 2200_18327_2_not_null: document_version_id IS NOT NULL
+  annotations | 2200_18327_4_not_null: type IS NOT NULL
+  annotations | 2200_18327_5_not_null: page_number IS NOT NULL
+  annotations | 2200_18327_6_not_null: coordinates IS NOT NULL
+  annotations | 2200_18327_10_not_null: severity IS NOT NULL
+  annotations | 2200_18327_11_not_null: status IS NOT NULL
+  annotations | 2200_18327_14_not_null: is_stale IS NOT NULL
+  annotations | 2200_18327_15_not_null: revision_completed IS NOT NULL
+  annotations | 2200_18327_18_not_null: created_by IS NOT NULL
+  annotations | 2200_18327_21_not_null: created_at IS NOT NULL
+  annotations | 2200_18327_22_not_null: updated_at IS NOT NULL
+  audit_logs | 2200_18572_1_not_null: id IS NOT NULL
+  audit_logs | 2200_18572_2_not_null: academic_year IS NOT NULL
+  audit_logs | 2200_18572_4_not_null: user_email IS NOT NULL
+  audit_logs | 2200_18572_6_not_null: action_type IS NOT NULL
+  audit_logs | 2200_18572_7_not_null: module IS NOT NULL
+  audit_logs | 2200_18572_8_not_null: entity_type IS NOT NULL
+  audit_logs | 2200_18572_9_not_null: entity_id IS NOT NULL
+  audit_logs | 2200_18572_10_not_null: description IS NOT NULL
+  audit_logs | 2200_18572_20_not_null: created_at IS NOT NULL
+  defense_panels | 2200_18180_1_not_null: id IS NOT NULL
+  defense_panels | 2200_18180_2_not_null: project_id IS NOT NULL
+  defense_panels | 2200_18180_3_not_null: stage_id IS NOT NULL
+  defense_panels | 2200_18180_4_not_null: profile_id IS NOT NULL
+  defense_panels | 2200_18180_5_not_null: panel_role IS NOT NULL
+  defense_panels | 2200_18180_7_not_null: assigned_at IS NOT NULL
+  defense_schedules | 2200_18150_1_not_null: id IS NOT NULL
+  defense_schedules | 2200_18150_2_not_null: project_id IS NOT NULL
+  defense_schedules | 2200_18150_3_not_null: stage_id IS NOT NULL
+  defense_schedules | 2200_18150_4_not_null: scheduled_at IS NOT NULL
+  defense_schedules | 2200_18150_8_not_null: is_online IS NOT NULL
+  defense_schedules | 2200_18150_10_not_null: duration_minutes IS NOT NULL
+  defense_schedules | 2200_18150_11_not_null: status IS NOT NULL
+  defense_schedules | 2200_18150_13_not_null: created_by IS NOT NULL
+  defense_schedules | 2200_18150_14_not_null: created_at IS NOT NULL
+  defense_schedules | 2200_18150_15_not_null: updated_at IS NOT NULL
+  defense_stages | 2200_18047_1_not_null: id IS NOT NULL
+  defense_stages | 2200_18047_2_not_null: campus_id IS NOT NULL
+  defense_stages | 2200_18047_3_not_null: code IS NOT NULL
+  defense_stages | 2200_18047_4_not_null: name IS NOT NULL
+  defense_stages | 2200_18047_5_not_null: sequence_order IS NOT NULL
+  defense_stages | 2200_18047_7_not_null: is_enabled IS NOT NULL
+  defense_stages | 2200_18047_8_not_null: required_documents IS NOT NULL
+  defense_stages | 2200_18047_9_not_null: requirements IS NOT NULL
+  defense_stages | 2200_18047_11_not_null: created_at IS NOT NULL
+  defense_stages | 2200_18047_12_not_null: updated_at IS NOT NULL
+  document_versions | 2200_18266_1_not_null: id IS NOT NULL
+  document_versions | 2200_18266_2_not_null: document_id IS NOT NULL
+  document_versions | 2200_18266_3_not_null: version_number IS NOT NULL
+  document_versions | 2200_18266_4_not_null: storage_path IS NOT NULL
+  document_versions | 2200_18266_5_not_null: file_name IS NOT NULL
+  document_versions | 2200_18266_6_not_null: file_size IS NOT NULL
+  document_versions | 2200_18266_7_not_null: mime_type IS NOT NULL
+  document_versions | 2200_18266_8_not_null: checksum_sha256 IS NOT NULL
+  document_versions | 2200_18266_11_not_null: chapter_outline IS NOT NULL
+  document_versions | 2200_18266_13_not_null: is_current IS NOT NULL
+  document_versions | 2200_18266_14_not_null: uploaded_by IS NOT NULL
+  document_versions | 2200_18266_15_not_null: created_at IS NOT NULL
+  documents | 2200_18237_1_not_null: id IS NOT NULL
+  documents | 2200_18237_2_not_null: project_id IS NOT NULL
+  documents | 2200_18237_3_not_null: stage_id IS NOT NULL
+  documents | 2200_18237_4_not_null: title IS NOT NULL
+  documents | 2200_18237_5_not_null: status IS NOT NULL
+  documents | 2200_18237_6_not_null: current_version IS NOT NULL
+  documents | 2200_18237_7_not_null: created_by IS NOT NULL
+  documents | 2200_18237_8_not_null: created_at IS NOT NULL
+  documents | 2200_18237_9_not_null: updated_at IS NOT NULL
+  evaluations | 2200_18499_1_not_null: id IS NOT NULL
+  evaluations | 2200_18499_2_not_null: project_id IS NOT NULL
+  evaluations | 2200_18499_3_not_null: stage_id IS NOT NULL
+  evaluations | 2200_18499_4_not_null: panelist_id IS NOT NULL
+  evaluations | 2200_18499_6_not_null: status IS NOT NULL
+  evaluations | 2200_18499_13_not_null: created_at IS NOT NULL
+  evaluations | 2200_18499_14_not_null: updated_at IS NOT NULL
+  evaluations | 2200_18499_17_not_null: version IS NOT NULL
+  notifications | 2200_18557_1_not_null: id IS NOT NULL
+  notifications | 2200_18557_2_not_null: profile_id IS NOT NULL
+  notifications | 2200_18557_3_not_null: title IS NOT NULL
+  notifications | 2200_18557_4_not_null: message IS NOT NULL
+  notifications | 2200_18557_5_not_null: type IS NOT NULL
+  notifications | 2200_18557_7_not_null: metadata IS NOT NULL
+  notifications | 2200_18557_9_not_null: created_at IS NOT NULL
+  project_score_cache | 2200_18858_1_not_null: project_id IS NOT NULL
+  workflow_templates | 2200_25668_1_not_null: id IS NOT NULL
+  workflow_templates | 2200_25668_2_not_null: name IS NOT NULL
+  workflow_templates | 2200_25668_4_not_null: created_at IS NOT NULL
+
+==============================================================
+  INDEXES
+==============================================================
+  [annotation_replies] annotation_replies_pkey
+  [annotations] annotations_pkey
+  [annotations] idx_annotations_author
+  [annotations] idx_annotations_page
+  [annotations] idx_annotations_status
+  [annotations] idx_annotations_status_doc
+  [annotations] idx_annotations_version
+  [audit_logs] audit_logs_pkey
+  [audit_logs] idx_audit_created
+  [audit_logs] idx_audit_entity
+  [audit_logs] idx_audit_logs_project_stage
+  [audit_logs] idx_audit_profile
+  [defense_panels] defense_panels_pkey
+  [defense_panels] defense_panels_project_id_stage_id_profile_id_key
+  [defense_panels] idx_defense_panels_profile
+  [defense_schedules] defense_schedules_pkey
+  [defense_schedules] defense_schedules_project_id_stage_id_key
+  [defense_schedules] idx_defense_schedules_date
+  [defense_stages] defense_stages_campus_id_code_key
+  [defense_stages] defense_stages_pkey
+  [document_versions] document_versions_document_id_version_number_key
+  [document_versions] document_versions_pkey
+  [document_versions] idx_document_versions_current
+  [document_versions] idx_document_versions_document
+  [document_versions] idx_document_versions_document_uploaded
+  [documents] documents_pkey
+  [documents] documents_project_id_stage_id_key
+  [documents] idx_documents_project
+  [evaluations] evaluations_pkey
+  [evaluations] evaluations_project_id_stage_id_panelist_id_key
+  [evaluations] idx_evaluations_panelist
+  [evaluations] idx_evaluations_project
+  [evaluations] idx_evaluations_project_stage
+  [notifications] idx_notifications_unread
+  [notifications] notifications_pkey
+  [project_score_cache] project_score_cache_pkey
+  [workflow_templates] workflow_templates_name_key
+  [workflow_templates] workflow_templates_pkey
+
+==============================================================
+  TRIGGERS
+==============================================================
+  [annotations] [AFTER INSERT] tr_audit_annotations
+  [annotations] [AFTER UPDATE] tr_audit_annotations
+  [annotations] [AFTER UPDATE] tr_notification_annotation
+  [annotations] [AFTER UPDATE] tr_workflow_annotations
+  [audit_logs] [BEFORE INSERT] tr_audit_hash
+  [defense_schedules] [BEFORE UPDATE] tr_defense_schedules_updated
+  [defense_schedules] [AFTER INSERT] tr_notification_scheduled
+  [defense_schedules] [AFTER INSERT] tr_workflow_schedules
+  [defense_stages] [BEFORE UPDATE] tr_defense_stages_updated
+  [document_versions] [AFTER INSERT] tr_audit_document_versions
+  [document_versions] [AFTER INSERT] tr_document_version
+  [document_versions] [AFTER INSERT] tr_notification_doc_upload
+  [document_versions] [AFTER INSERT] tr_workflow_doc_versions
+  [documents] [BEFORE UPDATE] tr_documents_updated
+  [evaluations] [AFTER UPDATE] tr_audit_evaluations
+  [evaluations] [AFTER INSERT] tr_audit_evaluations
+  [evaluations] [BEFORE INSERT] tr_evaluations_compute_score
+  [evaluations] [BEFORE UPDATE] tr_evaluations_compute_score
+  [evaluations] [BEFORE UPDATE] tr_evaluations_immutable
+  [evaluations] [AFTER UPDATE] tr_notification_evaluation
+  [evaluations] [AFTER INSERT] tr_workflow_evaluations
+  [evaluations] [AFTER UPDATE] tr_workflow_evaluations
+  [notifications] [AFTER INSERT] tr_audit_notifications
+
+==============================================================
+  ALL PUBLIC FUNCTIONS
+==============================================================
+  FUNCTION: auth_profile_id
+  FUNCTION: compute_audit_integrity_hash
+  FUNCTION: compute_evaluation_score
+  FUNCTION: generate_join_code
+  FUNCTION: get_role_id_by_code
+  FUNCTION: gin_extract_query_trgm
+  FUNCTION: gin_extract_value_trgm
+  FUNCTION: gin_trgm_consistent
+  FUNCTION: gin_trgm_triconsistent
+  FUNCTION: gtrgm_compress
+  FUNCTION: gtrgm_consistent
+  FUNCTION: gtrgm_decompress
+  FUNCTION: gtrgm_distance
+  FUNCTION: gtrgm_in
+  FUNCTION: gtrgm_options
+  FUNCTION: gtrgm_out
+  FUNCTION: gtrgm_penalty
+  FUNCTION: gtrgm_picksplit
+  FUNCTION: gtrgm_same
+  FUNCTION: gtrgm_union
+  FUNCTION: handle_new_user
+  FUNCTION: handle_project_workflow_transition
+  FUNCTION: has_permission
+  FUNCTION: has_role
+  FUNCTION: is_project_participant
+  FUNCTION: log_auth_event
+  FUNCTION: manage_document_version
+  FUNCTION: prevent_rubric_hard_delete
+  FUNCTION: process_audit_trigger
+  FUNCTION: process_evaluation_event
+  FUNCTION: process_realtime_notifications
+  FUNCTION: search_projects
+  FUNCTION: set_limit
+  FUNCTION: set_project_join_code
+  FUNCTION: set_updated_at
+  FUNCTION: show_limit
+  FUNCTION: show_trgm
+  FUNCTION: similarity
+  FUNCTION: similarity_dist
+  FUNCTION: similarity_op
+  FUNCTION: strict_word_similarity
+  FUNCTION: strict_word_similarity_commutator_op
+  FUNCTION: strict_word_similarity_dist_commutator_op
+  FUNCTION: strict_word_similarity_dist_op
+  FUNCTION: strict_word_similarity_op
+  FUNCTION: validate_evaluation_immutable
+  FUNCTION: validate_project_status_transition
+  FUNCTION: validate_rubric_template
+  FUNCTION: word_similarity
+  FUNCTION: word_similarity_commutator_op
+  FUNCTION: word_similarity_dist_commutator_op
+  FUNCTION: word_similarity_dist_op
+  FUNCTION: word_similarity_op
+
+==============================================================
+  RLS ENABLED STATUS
+==============================================================
+  annotation_replies: RLS_ON
+  annotations: RLS_ON
+  audit_logs: RLS_ON
+  defense_panels: RLS_ON
+  defense_schedules: RLS_ON
+  defense_stages: RLS_ON
+  document_versions: RLS_ON
+  documents: RLS_ON
+  evaluations: RLS_ON
+  notifications: RLS_ON
+  project_score_cache: RLS_OFF
+  workflow_templates: RLS_ON
+
+==============================================================
+  RLS POLICIES
+==============================================================
+  [annotation_replies] annotation_replies_insert cmd:INSERT
+    CHECK: (created_by = auth.uid())
+  [annotation_replies] annotation_replies_select cmd:SELECT
+    USING: true
+  [annotations] annotations_delete cmd:DELETE
+    USING: ((created_by = auth.uid()) OR has_role('coordinator'::text) OR has_role('sys_admin'::text))
+  [annotations] annotations_insert cmd:INSERT
+    CHECK: (created_by = auth.uid())
+  [annotations] annotations_select cmd:SELECT
+    USING: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = a
+  [annotations] annotations_update cmd:UPDATE
+    USING: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = a
+    CHECK: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = a
+  [audit_logs] audit_read cmd:SELECT
+    USING: (has_role('coordinator'::text) OR has_role('college_dean'::text) OR has_role('sys_admin'::text))
+  [defense_panels] defense_panels_modify cmd:ALL
+    USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+    CHECK: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+  [defense_panels] defense_panels_select cmd:SELECT
+    USING: (is_project_participant(project_id) OR has_role('coordinator'::text) OR has_role('college_dean'::text) OR has_role('sys_
+  [defense_schedules] defense_schedules_select cmd:SELECT
+    USING: (is_project_participant(project_id) OR has_role('coordinator'::text) OR has_role('college_dean'::text) OR has_role('sys_
+  [defense_stages] defense_stages_read_all cmd:SELECT
+    USING: true
+  [document_versions] document_versions_insert cmd:INSERT
+    CHECK: (EXISTS ( SELECT 1
+   FROM documents d
+  WHERE ((d.id = document_versions.document_id) AND (is_project_participant(d.pro
+  [document_versions] document_versions_select cmd:SELECT
+    USING: (EXISTS ( SELECT 1
+   FROM documents d
+  WHERE ((d.id = document_versions.document_id) AND (is_project_participant(d.pro
+  [documents] documents_insert cmd:INSERT
+    CHECK: is_project_participant(project_id)
+  [documents] documents_select cmd:SELECT
+    USING: (is_project_participant(project_id) OR has_role('coordinator'::text) OR has_role('college_dean'::text) OR has_role('sys_
+  [evaluations] evaluations_coordinator_read cmd:SELECT
+    USING: (has_role('coordinator'::text) OR has_role('college_dean'::text) OR has_role('sys_admin'::text))
+  [evaluations] evaluations_panelist cmd:ALL
+    USING: (panelist_id = auth.uid())
+    CHECK: (panelist_id = auth.uid())
+  [evaluations] evaluations_participant_read cmd:SELECT
+    USING: (is_project_participant(project_id) AND (status = 'submitted'::evaluation_status))
+  [notifications] notifications_own cmd:ALL
+    USING: (profile_id = auth.uid())
+    CHECK: (profile_id = auth.uid())
+  [workflow_templates] workflow_templates_select cmd:SELECT
+    USING: true
+  [workflow_templates] workflow_templates_write cmd:ALL
+    USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+
+==============================================================
+  DATA COUNTS
+==============================================================
+  documents: 1
+  document_versions: 1
+  annotations: 2
+  annotation_replies: 0
+  evaluations: 1
+  evaluation_scores: ERROR(relation "public.evaluation_scores" does not exist)
+  rubrics: ERROR(relation "public.rubrics" does not exist)
+  rubric_criteria: ERROR(relation "public.rubric_criteria" does not exist)
+  workflow_templates: 1
+  defense_stages: 5
+  defense_schedules: 1
+  defense_panels: 0
+  notifications: 0
+  audit_logs: 5
+  digital_signatures: ERROR(relation "public.digital_signatures" does not exist)
+  certificates: ERROR(relation "public.certificates" does not exist)
+  project_score_cache: 0
+
+==============================================================
+  STORAGE BUCKETS
+==============================================================
+  avatars: public=true size_limit=2097152 mime=["image/jpeg","image/png","image/webp"]
+  exports: public=false size_limit=104857600 mime=["application/pdf","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/csv"]
+  manuscripts: public=false size_limit=52428800 mime=["application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
+==============================================================
+  STORAGE RLS POLICIES
+==============================================================
+  [objects] avatars_insert cmd:INSERT
+  [objects] avatars_select cmd:SELECT
+  [objects] exports_insert cmd:INSERT
+  [objects] exports_select cmd:SELECT
+  [objects] manuscripts_insert cmd:INSERT
+  [objects] manuscripts_select cmd:SELECT
+  [objects] manuscripts_update cmd:UPDATE
+
+==============================================================
+  REALTIME PUBLICATION
+==============================================================
+  [supabase_realtime] annotation_replies
+  [supabase_realtime] annotations
+  [supabase_realtime] notifications
+  [supabase_realtime] project_members
+  [supabase_realtime] projects
+
+==============================================================
+  RUBRICS & CRITERIA (live data)
+==============================================================
+  ERROR: relation "public.rubrics" does not exist
+
+==============================================================
+  CERTIFICATES & DIGITAL_SIGNATURES (live data)
+==============================================================
+  ERROR: relation "public.certificates" does not exist
+
+==============================================================
+  WORKFLOW_TEMPLATES (live)
+==============================================================
+  ERROR: column "type" does not exist
+
+==============================================================
+  DEFENSE_STAGES (live)
+==============================================================
+  stages: [{"id":"782ac8d9-b5be-420e-8806-abae02249c24","code":"concept","name":"Concept Defense","sequence_order":1,"workflow_template_id":"70000000-0000-0000-0000-000000000001","is_enabled":true},{"id":"602b6079-8ba1-48e2-bfaf-c23ff59289a4","code":"title","name":"Title Defense","sequence_order":2,"workflow_template_id":"70000000-0000-0000-0000-000000000001","is_enabled":true},{"id":"d4274bde-ed8d-40ed-be7b-ccdc8de7a1e5","code":"progress_1","name":"Progress Report 1","sequence_order":3,"workflow_template_id":"70000000-0000-0000-0000-000000000001","is_enabled":true},{"id":"feb2825d-a2d9-4542-98fe-eb2d4ea0ad6c","code":"progress_2","name":"Progress Report 2","sequence_order":4,"workflow_template_id":"70000000-0000-0000-0000-000000000001","is_enabled":true},{"id":"84650664-53bb-44f7-a17b-4db1993ea3c4","code":"final","name":"Final Defense","sequence_order":5,"workflow_template_id":"70000000-0000-0000-0000-000000000001","is_enabled":true}]
+
+==============================================================
+DB Audit Complete: 2026-08-03T08:26:46.395Z

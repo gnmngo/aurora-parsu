@@ -1,0 +1,901 @@
+====== PHASE 1: ENUM TYPES ======
+
+ENUM: annotation_status
+  - open
+  - resolved
+  - archived
+  - addressed
+  - verified
+  - in_progress
+  - closed
+
+ENUM: annotation_type
+  - highlight
+  - underline
+  - strike_through
+  - sticky_note
+  - text_comment
+  - correction_note
+  - recommendation
+  - research_concern
+  - methodology_concern
+  - formatting_concern
+  - grammar_concern
+
+ENUM: attendance_status
+  - present
+  - absent
+  - excused
+  - late
+
+ENUM: audit_action
+  - CREATE
+  - UPDATE
+  - DELETE
+  - LOGIN
+  - LOGOUT
+  - UPLOAD
+  - DOWNLOAD
+  - SUBMIT
+  - APPROVE
+  - REJECT
+  - ASSIGN
+  - RELEASE
+  - TRANSITION
+  - COMMENT
+  - GRADE
+  - SCHEDULE
+
+ENUM: document_status
+  - uploading
+  - processing
+  - draft
+  - submitted
+  - under_review
+  - approved
+  - revision_required
+  - rejected
+  - locked
+
+ENUM: evaluation_status
+  - draft
+  - submitted
+  - locked
+
+ENUM: member_role
+  - student
+  - adviser
+  - panel_chair
+  - panel_member
+  - student_leader
+
+ENUM: notification_type
+  - comment
+  - schedule
+  - grade_released
+  - document_returned
+  - revision_requested
+  - final_verdict
+  - assignment
+  - reminder
+  - system
+
+ENUM: panel_role
+  - chair
+  - member
+
+ENUM: project_status
+  - draft
+  - submitted
+  - under_review
+  - scheduled
+  - in_progress
+  - revision_required
+  - passed
+  - passed_minor
+  - passed_major
+  - conditional
+  - failed
+  - archived
+
+ENUM: report_format
+  - pdf
+  - xlsx
+  - csv
+
+ENUM: report_type
+  - defense_result
+  - panel_report
+  - student_report
+  - rubric_report
+  - college_report
+  - university_report
+
+ENUM: schedule_status
+  - scheduled
+  - in_progress
+  - completed
+  - cancelled
+  - postponed
+
+ENUM: scoring_model
+  - weighted_average
+  - percentage
+  - custom_formula
+
+ENUM: severity_level
+  - info
+  - minor
+  - major
+  - critical
+
+ENUM: user_status
+  - active
+  - inactive
+  - suspended
+  - pending
+  - approved
+  - rejected
+
+====== PHASE 2: TABLES ======
+academic_levels  activity_logs  annotation_categories  annotation_history  annotation_mentions  annotation_replies  annotations  audit_logs  campuses  colleges  defense_attendance  defense_panels  defense_schedules  defense_stages  departments  document_upload_history  document_versions  documents  evaluation_events  evaluations  faculty  grading_criteria  grading_rating_scales  grading_scores  grading_subcriteria  grading_templates  grading_verdicts  majors  notifications  notifications_compat  panel_consensus_summary  permissions  profiles  programs  project_members  project_readiness_status  project_score_cache  project_workflow_history  projects  reports  revision_compliance_metrics  role_permissions  roles  rubric_templates  students  user_roles  workflow_templates  workflow_transitions  
+
+====== PHASE 3: KEY TABLE COLUMNS ======
+
+TABLE: profiles
+  id | uuid | nullable:NO
+  campus_id | uuid | nullable:YES
+  college_id | uuid | nullable:YES
+  department_id | uuid | nullable:YES
+  email | character varying | nullable:NO
+  first_name | character varying | nullable:YES
+  last_name | character varying | nullable:YES
+  middle_name | character varying | nullable:YES
+  avatar_url | text | nullable:YES
+  phone | character varying | nullable:YES
+  status | ENUM(user_status) | nullable:NO
+  mfa_enabled | boolean | nullable:NO
+  last_login_at | timestamp with time zone | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: students
+  id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  student_number | character varying | nullable:YES
+  year_level | integer | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+  program_id | uuid | nullable:YES
+  major_id | uuid | nullable:YES
+  campus_id | uuid | nullable:YES
+  college_id | uuid | nullable:YES
+  department_id | uuid | nullable:YES
+
+TABLE: faculty
+  id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  employee_number | character varying | nullable:NO
+  rank | character varying | nullable:YES
+  specialization | character varying | nullable:YES
+  is_adviser | boolean | nullable:NO
+  is_panelist | boolean | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: projects
+  id | uuid | nullable:NO
+  campus_id | uuid | nullable:NO
+  department_id | uuid | nullable:NO
+  student_id | uuid | nullable:NO
+  title | character varying | nullable:NO
+  abstract | text | nullable:YES
+  keywords | ARRAY | nullable:YES
+  current_stage_id | uuid | nullable:YES
+  status | ENUM(project_status) | nullable:NO
+  academic_year | character varying | nullable:NO
+  semester | character varying | nullable:YES
+  system_completion_pct | integer | nullable:NO
+  final_score | numeric | nullable:YES
+  final_verdict | character varying | nullable:YES
+  archived_at | timestamp with time zone | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+  created_by | uuid | nullable:YES
+  workflow_template_id | uuid | nullable:YES
+  join_code | character varying | nullable:YES
+  college_id | uuid | nullable:YES
+  program_id | uuid | nullable:YES
+  major_id | uuid | nullable:YES
+
+TABLE: project_members
+  id | uuid | nullable:NO
+  project_id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  member_role | ENUM(member_role) | nullable:NO
+  is_primary | boolean | nullable:NO
+  assigned_by | uuid | nullable:YES
+  assigned_at | timestamp with time zone | nullable:NO
+
+TABLE: documents
+  id | uuid | nullable:NO
+  project_id | uuid | nullable:NO
+  stage_id | uuid | nullable:NO
+  title | character varying | nullable:NO
+  status | ENUM(document_status) | nullable:NO
+  current_version | integer | nullable:NO
+  created_by | uuid | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+  adviser_approval_status | character varying | nullable:YES
+  approval_remarks | text | nullable:YES
+
+TABLE: document_versions
+  id | uuid | nullable:NO
+  document_id | uuid | nullable:NO
+  version_number | integer | nullable:NO
+  storage_path | text | nullable:NO
+  file_name | character varying | nullable:NO
+  file_size | bigint | nullable:NO
+  mime_type | character varying | nullable:NO
+  checksum_sha256 | character varying | nullable:NO
+  page_count | integer | nullable:YES
+  extracted_text | text | nullable:YES
+  chapter_outline | jsonb | nullable:NO
+  upload_notes | text | nullable:YES
+  is_current | boolean | nullable:NO
+  uploaded_by | uuid | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  change_summary | text | nullable:YES
+
+TABLE: evaluations
+  id | uuid | nullable:NO
+  project_id | uuid | nullable:NO
+  stage_id | uuid | nullable:NO
+  panelist_id | uuid | nullable:NO
+  template_id | uuid | nullable:YES
+  status | ENUM(evaluation_status) | nullable:NO
+  total_score | numeric | nullable:YES
+  weighted_score | numeric | nullable:YES
+  verdict_code | character varying | nullable:YES
+  recommendations | text | nullable:YES
+  panel_notes | text | nullable:YES
+  submitted_at | timestamp with time zone | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+  rubric_template_id | uuid | nullable:YES
+  scores | jsonb | nullable:YES
+  version | integer | nullable:NO
+  derived_from_version | integer | nullable:YES
+  revision_reason | text | nullable:YES
+  signature_type | character varying | nullable:YES
+  signature_image | text | nullable:YES
+  signature_hash | character varying | nullable:YES
+  signed_at | timestamp with time zone | nullable:YES
+  verified | boolean | nullable:YES
+  verified_by_system | boolean | nullable:YES
+  certificate_serial | character varying | nullable:YES
+  ip_address | inet | nullable:YES
+  user_agent | text | nullable:YES
+  device_info | jsonb | nullable:YES
+
+TABLE: defense_schedules
+  id | uuid | nullable:NO
+  project_id | uuid | nullable:NO
+  stage_id | uuid | nullable:NO
+  scheduled_at | timestamp with time zone | nullable:NO
+  end_at | timestamp with time zone | nullable:YES
+  room | character varying | nullable:YES
+  building | character varying | nullable:YES
+  is_online | boolean | nullable:NO
+  meeting_url | text | nullable:YES
+  duration_minutes | integer | nullable:NO
+  status | ENUM(schedule_status) | nullable:NO
+  notes | text | nullable:YES
+  created_by | uuid | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: defense_panels
+  id | uuid | nullable:NO
+  project_id | uuid | nullable:NO
+  stage_id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  panel_role | ENUM(panel_role) | nullable:NO
+  assigned_by | uuid | nullable:YES
+  assigned_at | timestamp with time zone | nullable:NO
+
+TABLE: roles
+  id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  code | character varying | nullable:NO
+  description | text | nullable:YES
+  hierarchy | integer | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+
+TABLE: user_roles
+  id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  role_id | uuid | nullable:NO
+  scope_type | character varying | nullable:YES
+  scope_id | uuid | nullable:YES
+  assigned_by | uuid | nullable:YES
+  assigned_at | timestamp with time zone | nullable:NO
+
+TABLE: campuses
+  id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  code | character varying | nullable:NO
+  address | text | nullable:YES
+  settings | jsonb | nullable:NO
+  is_active | boolean | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: colleges
+  id | uuid | nullable:NO
+  campus_id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  code | character varying | nullable:NO
+  is_active | boolean | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: departments
+  id | uuid | nullable:NO
+  college_id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  code | character varying | nullable:NO
+  is_active | boolean | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: programs
+  id | uuid | nullable:NO
+  department_id | uuid | nullable:YES
+  name | character varying | nullable:NO
+  code | character varying | nullable:NO
+  created_at | timestamp with time zone | nullable:NO
+  college_id | uuid | nullable:YES
+  academic_level_id | uuid | nullable:YES
+
+TABLE: majors
+  id | uuid | nullable:NO
+  program_id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  code | character varying | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+
+TABLE: workflow_templates
+  id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  description | text | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  program_id | uuid | nullable:YES
+
+TABLE: defense_stages
+  id | uuid | nullable:NO
+  campus_id | uuid | nullable:NO
+  code | character varying | nullable:NO
+  name | character varying | nullable:NO
+  sequence_order | integer | nullable:NO
+  description | text | nullable:YES
+  is_enabled | boolean | nullable:NO
+  required_documents | jsonb | nullable:NO
+  requirements | jsonb | nullable:NO
+  passing_score | numeric | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  updated_at | timestamp with time zone | nullable:NO
+  workflow_template_id | uuid | nullable:YES
+  requires_submission | boolean | nullable:YES
+  requires_schedule | boolean | nullable:YES
+  requires_panel | boolean | nullable:YES
+  requires_rubric | boolean | nullable:YES
+  requires_signature | boolean | nullable:YES
+  allows_revision | boolean | nullable:YES
+
+TABLE: notifications
+  id | uuid | nullable:NO
+  profile_id | uuid | nullable:NO
+  title | character varying | nullable:NO
+  message | text | nullable:NO
+  type | ENUM(notification_type) | nullable:NO
+  link | text | nullable:YES
+  metadata | jsonb | nullable:NO
+  read_at | timestamp with time zone | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+
+====== PHASE 4: FOREIGN KEYS ======
+  activity_logs.profile_id → profiles.id (DELETE NO ACTION)
+  annotation_categories.campus_id → campuses.id (DELETE NO ACTION)
+  annotation_history.annotation_id → annotations.id (DELETE CASCADE)
+  annotation_history.changed_by → profiles.id (DELETE NO ACTION)
+  annotation_mentions.profile_id → profiles.id (DELETE CASCADE)
+  annotation_mentions.annotation_id → annotations.id (DELETE CASCADE)
+  annotation_replies.created_by → profiles.id (DELETE NO ACTION)
+  annotation_replies.annotation_id → annotations.id (DELETE CASCADE)
+  annotations.category_id → annotation_categories.id (DELETE NO ACTION)
+  annotations.resolved_by → profiles.id (DELETE NO ACTION)
+  annotations.created_by → profiles.id (DELETE NO ACTION)
+  annotations.revision_completed_by → profiles.id (DELETE NO ACTION)
+  annotations.parent_id → annotations.id (DELETE CASCADE)
+  annotations.document_version_id → document_versions.id (DELETE CASCADE)
+  audit_logs.profile_id → profiles.id (DELETE NO ACTION)
+  audit_logs.stage_id → defense_stages.id (DELETE CASCADE)
+  audit_logs.project_id → projects.id (DELETE CASCADE)
+  colleges.campus_id → campuses.id (DELETE RESTRICT)
+  defense_attendance.schedule_id → defense_schedules.id (DELETE CASCADE)
+  defense_attendance.marked_by → profiles.id (DELETE NO ACTION)
+  defense_attendance.profile_id → profiles.id (DELETE NO ACTION)
+  defense_panels.assigned_by → profiles.id (DELETE NO ACTION)
+  defense_panels.project_id → projects.id (DELETE CASCADE)
+  defense_panels.stage_id → defense_stages.id (DELETE NO ACTION)
+  defense_panels.profile_id → profiles.id (DELETE NO ACTION)
+  defense_schedules.stage_id → defense_stages.id (DELETE NO ACTION)
+  defense_schedules.project_id → projects.id (DELETE CASCADE)
+  defense_schedules.created_by → profiles.id (DELETE NO ACTION)
+  defense_stages.workflow_template_id → workflow_templates.id (DELETE CASCADE)
+  defense_stages.campus_id → campuses.id (DELETE NO ACTION)
+  departments.college_id → colleges.id (DELETE RESTRICT)
+  document_upload_history.document_id → documents.id (DELETE CASCADE)
+  document_upload_history.version_id → document_versions.id (DELETE CASCADE)
+  document_upload_history.performed_by → profiles.id (DELETE NO ACTION)
+  document_versions.uploaded_by → profiles.id (DELETE NO ACTION)
+  document_versions.document_id → documents.id (DELETE CASCADE)
+  documents.stage_id → defense_stages.id (DELETE NO ACTION)
+  documents.project_id → projects.id (DELETE CASCADE)
+  documents.created_by → profiles.id (DELETE NO ACTION)
+  evaluation_events.stage_id → defense_stages.id (DELETE CASCADE)
+  evaluation_events.project_id → projects.id (DELETE CASCADE)
+  evaluations.template_id → grading_templates.id (DELETE NO ACTION)
+  evaluations.rubric_template_id → rubric_templates.id (DELETE SET NULL)
+  evaluations.project_id → projects.id (DELETE CASCADE)
+  evaluations.stage_id → defense_stages.id (DELETE NO ACTION)
+  evaluations.panelist_id → profiles.id (DELETE NO ACTION)
+  faculty.profile_id → profiles.id (DELETE CASCADE)
+  grading_criteria.template_id → grading_templates.id (DELETE CASCADE)
+  grading_rating_scales.template_id → grading_templates.id (DELETE CASCADE)
+  grading_scores.subcriterion_id → grading_subcriteria.id (DELETE NO ACTION)
+  grading_scores.criterion_id → grading_criteria.id (DELETE NO ACTION)
+  grading_scores.evaluation_id → evaluations.id (DELETE CASCADE)
+  grading_subcriteria.criterion_id → grading_criteria.id (DELETE CASCADE)
+  grading_templates.college_id → colleges.id (DELETE NO ACTION)
+  grading_templates.campus_id → campuses.id (DELETE NO ACTION)
+  grading_templates.stage_id → defense_stages.id (DELETE NO ACTION)
+  grading_templates.created_by → profiles.id (DELETE NO ACTION)
+  grading_verdicts.template_id → grading_templates.id (DELETE CASCADE)
+  majors.program_id → programs.id (DELETE CASCADE)
+  notifications.profile_id → profiles.id (DELETE CASCADE)
+  profiles.college_id → colleges.id (DELETE NO ACTION)
+  profiles.campus_id → campuses.id (DELETE NO ACTION)
+  profiles.department_id → departments.id (DELETE NO ACTION)
+  programs.academic_level_id → academic_levels.id (DELETE NO ACTION)
+  programs.department_id → departments.id (DELETE CASCADE)
+  programs.college_id → colleges.id (DELETE NO ACTION)
+  project_members.profile_id → profiles.id (DELETE NO ACTION)
+  project_members.project_id → projects.id (DELETE CASCADE)
+  project_members.assigned_by → profiles.id (DELETE NO ACTION)
+  project_score_cache.stage_id → defense_stages.id (DELETE CASCADE)
+  project_score_cache.project_id → projects.id (DELETE CASCADE)
+  project_workflow_history.project_id → projects.id (DELETE CASCADE)
+  project_workflow_history.created_by → profiles.id (DELETE NO ACTION)
+  projects.program_id → programs.id (DELETE NO ACTION)
+  projects.student_id → students.id (DELETE NO ACTION)
+  projects.college_id → colleges.id (DELETE NO ACTION)
+  projects.campus_id → campuses.id (DELETE NO ACTION)
+  projects.department_id → departments.id (DELETE NO ACTION)
+  projects.workflow_template_id → workflow_templates.id (DELETE SET NULL)
+  projects.major_id → majors.id (DELETE NO ACTION)
+  projects.current_stage_id → defense_stages.id (DELETE NO ACTION)
+  reports.generated_by → profiles.id (DELETE NO ACTION)
+  role_permissions.permission_id → permissions.id (DELETE CASCADE)
+  role_permissions.role_id → roles.id (DELETE CASCADE)
+  rubric_templates.project_id → projects.id (DELETE CASCADE)
+  rubric_templates.created_by → profiles.id (DELETE SET NULL)
+  rubric_templates.parent_template_id → rubric_templates.id (DELETE SET NULL)
+  students.college_id → colleges.id (DELETE NO ACTION)
+  students.profile_id → profiles.id (DELETE CASCADE)
+  students.campus_id → campuses.id (DELETE NO ACTION)
+  students.program_id → programs.id (DELETE NO ACTION)
+  students.department_id → departments.id (DELETE NO ACTION)
+  students.major_id → majors.id (DELETE NO ACTION)
+  user_roles.role_id → roles.id (DELETE CASCADE)
+  user_roles.profile_id → profiles.id (DELETE CASCADE)
+  user_roles.assigned_by → profiles.id (DELETE NO ACTION)
+  workflow_templates.program_id → programs.id (DELETE SET NULL)
+  workflow_transitions.triggered_by → profiles.id (DELETE NO ACTION)
+  workflow_transitions.project_id → projects.id (DELETE CASCADE)
+  workflow_transitions.stage_id → defense_stages.id (DELETE NO ACTION)
+
+====== PHASE 5: RLS POLICIES ======
+
+  TABLE: academic_levels
+    [SELECT] academic_levels_select
+      USING: true
+
+  TABLE: annotation_history
+    [INSERT] annotation_history_insert
+      CHECK: (auth.uid() = changed_by)
+    [SELECT] annotation_history_select
+      USING: (EXISTS ( SELECT 1
+   FROM ((annotations a
+     JOIN document_versions dv ON ((dv.id = a.document_version_id)))
+     JOIN documents d ON ((d.id = dv.d
+
+  TABLE: annotation_replies
+    [INSERT] annotation_replies_insert
+      CHECK: (created_by = auth.uid())
+    [SELECT] annotation_replies_select
+      USING: true
+
+  TABLE: annotations
+    [DELETE] annotations_delete
+      USING: ((created_by = auth.uid()) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text))
+    [INSERT] annotations_insert
+      CHECK: (created_by = auth.uid())
+    [SELECT] annotations_select
+      USING: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = annotations.document_version_id
+    [UPDATE] annotations_update
+      USING: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = annotations.document_version_id
+      CHECK: (EXISTS ( SELECT 1
+   FROM (document_versions dv
+     JOIN documents d ON ((d.id = dv.document_id)))
+  WHERE ((dv.id = annotations.document_version_id
+
+  TABLE: audit_logs
+    [SELECT] audit_read
+      USING: (has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))
+
+  TABLE: defense_panels
+    [SELECT] defense_panels_select
+      USING: (is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('sys_admin'::text))
+
+  TABLE: defense_schedules
+    [SELECT] defense_schedules_select
+      USING: (is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))
+
+  TABLE: defense_stages
+    [SELECT] defense_stages_read_all
+      USING: true
+
+  TABLE: departments
+    [SELECT] departments_read_all
+      USING: true
+    [SELECT] departments_select_all
+      USING: true
+
+  TABLE: document_versions
+    [INSERT] document_versions_insert_policy
+      CHECK: (EXISTS ( SELECT 1
+   FROM documents d
+  WHERE ((d.id = document_versions.document_id) AND (is_project_participant(d.project_id) OR has_role('sys_admi
+    [SELECT] document_versions_select
+      USING: (EXISTS ( SELECT 1
+   FROM documents d
+  WHERE ((d.id = document_versions.document_id) AND (is_project_participant(d.project_id) OR has_role('dept_coo
+
+  TABLE: documents
+    [INSERT] documents_insert
+      CHECK: is_project_participant(project_id)
+    [SELECT] documents_select
+      USING: (is_project_participant(project_id) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))
+
+  TABLE: evaluations
+    [SELECT] evaluations_coordinator_read
+      USING: (has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))
+    [ALL] evaluations_panelist
+      USING: (panelist_id = auth.uid())
+      CHECK: (panelist_id = auth.uid())
+
+  TABLE: faculty
+    [SELECT] faculty_select_authenticated
+      USING: true
+
+  TABLE: grading_scores
+    [ALL] grading_scores_panelist
+      USING: (EXISTS ( SELECT 1
+   FROM evaluations e
+  WHERE ((e.id = grading_scores.evaluation_id) AND (e.panelist_id = auth.uid()))))
+
+  TABLE: majors
+    [SELECT] majors_select
+      USING: true
+
+  TABLE: notifications
+    [ALL] notifications_own
+      USING: (profile_id = auth.uid())
+      CHECK: (profile_id = auth.uid())
+
+  TABLE: profiles
+    [SELECT] profiles_select_project_members
+      USING: ((id = auth.uid()) OR (id IN ( SELECT pm.profile_id
+   FROM project_members pm
+  WHERE (pm.project_id IN ( SELECT p.id
+           FROM projects p
+    
+    [UPDATE] profiles_update_own
+      USING: (id = auth.uid())
+
+  TABLE: programs
+    [ALL] programs_all
+      USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+    [SELECT] programs_select
+      USING: true
+
+  TABLE: project_members
+    [INSERT] project_members_insert
+      CHECK: ((profile_id = auth.uid()) OR has_role('coordinator'::text) OR has_role('sys_admin'::text))
+    [ALL] project_members_modify_policy
+      USING: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))
+      CHECK: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))
+    [SELECT] project_members_select_policy
+      USING: (is_project_participant(project_id) OR has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))
+
+  TABLE: project_workflow_history
+    [INSERT] pwh_insert
+      CHECK: true
+    [SELECT] pwh_select
+      USING: true
+
+  TABLE: projects
+    [INSERT] projects_insert
+      CHECK: (has_role('student'::text) OR has_role('coordinator'::text) OR has_role('sys_admin'::text))
+    [INSERT] projects_insert_policy
+      CHECK: ((student_id IN ( SELECT students.id
+   FROM students
+  WHERE (students.profile_id = auth.uid()))) OR has_role('sys_admin'::text) OR has_role('dept_co
+    [SELECT] projects_select
+      USING: (is_project_participant(id) OR has_role('coordinator'::text) OR has_role('sys_admin'::text) OR (EXISTS ( SELECT 1
+   FROM students s
+  WHERE ((s.id = 
+    [SELECT] projects_select_policy
+      USING: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   
+    [UPDATE] projects_update
+      USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+    [UPDATE] projects_update_policy
+      USING: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   
+      CHECK: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   
+
+  TABLE: reports
+    [SELECT] reports_select
+      USING: ((generated_by = auth.uid()) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR has_role('sys_admin'::text))
+
+  TABLE: students
+    [SELECT] students_read_all
+      USING: true
+    [SELECT] students_select_all_authenticated
+      USING: true
+    [SELECT] students_select_authenticated
+      USING: true
+    [SELECT] students_select_staff
+      USING: ((profile_id = auth.uid()) OR has_role('coordinator'::text) OR has_role('adviser'::text) OR has_role('panelist'::text) OR has_role('sys_admin'::text))
+
+  TABLE: workflow_templates
+    [SELECT] workflow_templates_select
+      USING: true
+    [ALL] workflow_templates_write
+      USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+
+====== PHASE 6: TRIGGER FUNCTIONS ======
+
+FUNCTION: compute_evaluation_score
+CREATE OR REPLACE FUNCTION public.compute_evaluation_score()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_criteria JSONB;
+  v_criterion JSONB;
+  v_id TEXT;
+  v_weight NUMERIC;
+  v_score NUMERIC;
+  v_total_weight NUMERIC := 0;
+  v_computed_score NUMERIC := 0;
+BEGIN
+  IF NEW.rubric_template_id IS NOT NULL THEN
+    SELECT criteria INTO v_criteria
+    FROM public.rubric_templates
+    WHERE id = NEW.rubric_template_id;
+
+    IF v_criteria IS NOT NULL AND jsonb_array_length(v_criteria) > 0 THEN
+      FOR v_criterion IN SELECT * FROM jsonb_array_elements(v_criteria) LOOP
+        v_id := COALESCE(v_criterion->>'id', v_criterion->>'name');
+        v_weight := (v_criterion->>'weight')::numeric;
+        
+        -- Default to 0 if no score given for this criterion
+        v_score := COALESCE((NEW.scores->>v_id)::numeric, 0.00);
+        
+        v_computed_score := v_computed_score + (v_score * v_weight / 100.00);
+        v_total_weight := v_total_weight + v_weight;
+      END LOOP;
+
+      -- Set calculated values
+      NEW.total_score := round(v_computed_score, 2);
+      NEW.weighted_score := round(v_computed_score, 2);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$
+
+---
+
+FUNCTION: generate_join_code
+CREATE OR REPLACE FUNCTION public.generate_join_code()
+ RETURNS character varying
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    result TEXT := '';
+    i INTEGER := 0;
+BEGIN
+    FOR i IN 1..6 LOOP
+        result := result || substr(chars, floor(random() * 36)::int + 1, 1);
+    END LOOP;
+    RETURN result;
+END;
+$function$
+
+---
+
+FUNCTION: handle_new_user
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  v_role_id uuid;
+  v_user_role text;
+  v_first_name text;
+  v_last_name text;
+BEGIN
+  v_user_role := COALESCE(NEW.raw_user_meta_data->>'role', 'student');
+  v_first_name := COALESCE(NEW.raw_user_meta_data->>'first_name', '');
+  v_last_name := COALESCE(NEW.raw_user_meta_data->>'last_name', '');
+
+  INSERT INTO public.profiles (
+    id, email, first_name, last_name, status, created_at, updated_at
+  ) VALUES (
+    NEW.id, NEW.email, v_first_name, v_last_name, 'pending', NOW(), NOW()
+  );
+
+  SELECT id INTO v_role_id FROM public.roles WHERE code = v_user_role;
+  IF FOUND THEN
+    INSERT INTO public.user_roles (profile_id, role_id, assigned_by)
+    VALUES (NEW.id, v_role_id, NEW.id);
+  END IF;
+
+  IF v_user_role = 'student' THEN
+    INSERT INTO public.students (
+      profile_id, student_number, year_level,
+      campus_id, college_id, department_id, program_id, major_id
+    )
+    VALUES (
+      NEW.id,
+      NEW.raw_user_meta_data->>'student_number',
+      COALESCE((NEW.raw_user_meta_data->>'year_level')::integer, 1),
+      NULLIF(NEW.raw_user_meta_data->>'campus_id', '')::uuid,
+      NULLIF(NEW.raw_user_meta_data->>'college_id', '')::uuid,
+      NULLIF(NEW.raw_user_meta_data->>'department_id', '')::uuid,
+      NULLIF(NEW.raw_user_meta_data->>'program_id', '')::uuid,
+      NULLIF(NEW.raw_user_meta_data->>'major_id', '')::uuid
+    );
+  ELSIF v_user_role IN ('adviser', 'panelist') THEN
+    INSERT INTO public.faculty (profile_id, employee_number, specialization, is_adviser, is_panelist)
+    VALUES (
+      NEW.id,
+      NEW.raw_user_meta_data->>'employee_number',
+      NEW.raw_user_meta_data->>'specialization',
+      v_user_role = 'adviser',
+      v_user_role = 'panelist'
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$function$
+
+---
+
+FUNCTION: has_role
+CREATE OR REPLACE FUNCTION public.has_role(role_code text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM user_roles ur
+    JOIN roles r ON r.id = ur.role_id
+    WHERE ur.profile_id = auth.uid()
+      AND r.code = role_code
+  );
+$function$
+
+---
+
+FUNCTION: log_auth_event
+CREATE OR REPLACE FUNCTION public.log_auth_event(p_user_email text, p_profile_id uuid, p_action text, p_description text, p_ip_address inet, p_user_agent text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  INSERT INTO public.audit_logs (
+    user_email,
+    profile_id,
+    action_type,
+    module,
+    entity_type,
+    entity_id,
+    description,
+    ip_address,
+    user_agent,
+    academic_year
+  ) VALUES (
+    p_user_email,
+    p_profile_id,
+    CASE 
+      WHEN p_action = 'LOGIN' THEN 'LOGIN'::audit_action
+      WHEN p_action = 'LOGOUT' THEN 'LOGOUT'::audit_action
+      WHEN p_action = 'ASSIGN' THEN 'ASSIGN'::audit_action
+      ELSE 'UPDATE'::audit_action
+    END,
+    'auth',
+    'profile',
+    COALESCE(p_profile_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    p_description,
+    p_ip_address,
+    p_user_agent,
+    '2025-2026'
+  );
+END;
+$function$
+
+---
+
+====== PHASE 7: STORAGE BUCKETS ======
+  Bucket: manuscripts | public: false | mimes: ["application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document"] | max: 52428800
+  Bucket: exports | public: false | mimes: ["application/pdf","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/csv"] | max: 104857600
+  Bucket: avatars | public: true | mimes: ["image/jpeg","image/png","image/webp"] | max: 2097152
+
+====== PHASE 8: SAMPLE DATA ======
+
+Sample projects:
+{"id":"77777777-7777-7777-7777-777777777701","status":"under_review","student_id":"9999783c-c354-4190-8dd5-63bc3e34cbf3","join_code":"LGZOPC","campus_id":"00000000-0000-0000-0000-000000000001","college_id":null,"department_id":"b1a3a3f7-ba6f-40f3-ad2f-020f24ca88f5","program_id":null,"academic_year":"2025-2026"}
+{"id":"bdfb51b5-2f30-46a7-b5c1-717167c8826d","status":"draft","student_id":"9999783c-c354-4190-8dd5-63bc3e34cbf3","join_code":"FDYRTO","campus_id":"00000000-0000-0000-0000-000000000001","college_id":null,"department_id":"b1a3a3f7-ba6f-40f3-ad2f-020f24ca88f5","program_id":null,"academic_year":"2025-2026"}
+{"id":"cd0f6d68-1cbc-4d5e-92f8-bcfa65da3019","status":"draft","student_id":"9999783c-c354-4190-8dd5-63bc3e34cbf3","join_code":"2MDIAE","campus_id":"00000000-0000-0000-0000-000000000001","college_id":null,"department_id":"b1a3a3f7-ba6f-40f3-ad2f-020f24ca88f5","program_id":null,"academic_year":"2025-2026"}
+
+Sample students:
+{"id":"7c5db91f-bfe6-4e30-8f47-bf086b61dd70","profile_id":"27397baa-8308-407d-b8d6-874279028bfa","student_number":"STU-27397baa","program_id":null,"campus_id":null,"college_id":null,"department_id":null,"major_id":null}
+{"id":"9999783c-c354-4190-8dd5-63bc3e34cbf3","profile_id":"c17b4c1a-ed3a-4089-85cd-64ce0b220647","student_number":"STUD-STUDENT1","program_id":"ea919532-1a73-4c66-ba89-6560a90cd86a","campus_id":null,"college_id":null,"department_id":null,"major_id":null}
+
+Roles:
+{"id":"20000000-0000-0000-0000-000000000012","code":"adviser","name":"Adviser"}
+{"id":"20000000-0000-0000-0000-000000000009","code":"college_dean","name":"College Dean"}
+{"id":"20000000-0000-0000-0000-000000000011","code":"coordinator","name":"Coordinator"}
+{"id":"20000000-0000-0000-0000-000000000013","code":"panelist","name":"Panelist"}
+{"id":"20000000-0000-0000-0000-000000000008","code":"student","name":"Student"}
+{"id":"20000000-0000-0000-0000-000000000001","code":"sys_admin","name":"System Administrator"}
+
+Defense Stages:
+{"id":"782ac8d9-b5be-420e-8806-abae02249c24","code":"concept","name":"Concept Defense","sequence_order":1}
+{"id":"602b6079-8ba1-48e2-bfaf-c23ff59289a4","code":"title","name":"Title Defense","sequence_order":2}
+{"id":"d4274bde-ed8d-40ed-be7b-ccdc8de7a1e5","code":"progress_1","name":"Progress Report 1","sequence_order":3}
+{"id":"feb2825d-a2d9-4542-98fe-eb2d4ea0ad6c","code":"progress_2","name":"Progress Report 2","sequence_order":4}
+{"id":"84650664-53bb-44f7-a17b-4db1993ea3c4","code":"final","name":"Final Defense","sequence_order":5}
+column "code" does not exist

@@ -44,7 +44,9 @@ export default function SubmissionsPage() {
       return;
     }
     loadSubmissions();
-  }, [isReady, supabase]);
+    // loadSubmissions is defined in component body; isReady is the correct trigger dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]);
 
   const filteredSubmissions = submissionsList.filter(
     (sub) =>

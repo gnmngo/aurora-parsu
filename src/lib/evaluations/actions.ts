@@ -3,6 +3,9 @@
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
+import { recordWorkflowTransition } from "@/lib/workflow/history";
+import { emitNotification } from "@/lib/notifications/emit";
 
 export interface SignEvaluationInput {
   evaluationId: string;
@@ -26,13 +29,13 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   const userAgent = headersList.get("user-agent") || "unknown";
 
   // 1. Authenticate user (secure — uses getUser() not getSession())
-  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
-  if (sessionError || !user) {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     throw new Error("Unauthorized. Please sign in again.");
   }
   const userId = user.id;
 
-  // 2. Fetch current evaluation record to verify ownership and check locked status
+  // 2. Fetch evaluation and verify ownership + lock status
   const { data: currentEval, error: fetchError } = await supabase
     .from("evaluations")
     .select("*")
@@ -51,36 +54,68 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error("This evaluation version is already signed and locked.");
   }
 
-  // 3. Generate Certificate Serial (AURORA-YYYY-000001)
-  const currentYear = new Date().getFullYear();
-  const { count } = await supabase
-    .from("evaluations")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "submitted");
+  // 3. Generate certificate serial via DB sequence (atomic — no race condition)
+  //    Falls back to COUNT-based serial if sequence not yet migrated
+  let certificateSerial: string;
+  try {
+    const { data: serialData, error: seqErr } = await supabase
+      .rpc("generate_certificate_serial")
+      .single();
+    if (seqErr || !serialData) throw new Error(seqErr?.message ?? "No serial");
+    certificateSerial = serialData as string;
+  } catch {
+    const currentYear = new Date().getFullYear();
+    const { count } = await supabase
+      .from("evaluations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "submitted");
+    const serialNum = String((count ?? 0) + 1).padStart(6, "0");
+    certificateSerial = `AURORA-${currentYear}-${serialNum}`;
+  }
 
-  const serialNum = String((count || 0) + 1).padStart(6, "0");
-  const certificateSerial = `AURORA-${currentYear}-${serialNum}`;
+  // 4. Upload signature image to Supabase Storage — NEVER store base64 in DB
+  const signedAt = new Date().toISOString();
+  let signatureStoragePath: string | null = null;
+  let signatureFileHash: string | null = null;
 
-  // 4. Generate SHA-256 Integrity Hash
-  const scoresString = JSON.stringify(input.scores);
-  const hashPayload = [
-    input.evaluationId,
-    scoresString,
-    input.verdictCode,
-    input.panelNotes,
-    input.recommendations,
-    input.printedName,
-    input.positionRole,
+  if (input.signatureImage) {
+    try {
+      const base64Data = input.signatureImage.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
+      signatureFileHash = crypto.createHash("sha256").update(base64Data).digest("hex");
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, "0");
+      const storagePath = `${year}/${month}/${certificateSerial}-${input.signatureType}.png`;
+      const { error: uploadErr } = await supabase.storage
+        .from("signatures")
+        .upload(storagePath, buffer, { contentType: "image/png", cacheControl: "3600", upsert: false });
+      if (!uploadErr) signatureStoragePath = storagePath;
+      else console.error("[signEvaluationAction] Storage upload failed:", uploadErr.message);
+    } catch (uploadEx: unknown) {
+      console.error("[signEvaluationAction] Storage exception:", uploadEx instanceof Error ? uploadEx.message : uploadEx);
+    }
+  }
+
+  // 5. Build deterministic signing payload + SHA-256 hash
+  const signingPayload = {
+    evaluationId: input.evaluationId,
+    projectId: currentEval.project_id,
+    stageId: currentEval.stage_id,
+    panelistId: userId,
+    scores: input.scores,
+    verdictCode: input.verdictCode,
+    panelNotes: input.panelNotes,
+    recommendations: input.recommendations,
+    printedName: input.printedName,
+    positionRole: input.positionRole,
     certificateSerial,
-    userId
-  ].join("|");
+    signedAt,
+  };
+  const payloadJson = JSON.stringify(signingPayload, Object.keys(signingPayload).sort());
+  const payloadHash = crypto.createHash("sha256").update(payloadJson, "utf8").digest("hex");
+  const certificateHash = crypto.createHash("sha256").update(`${certificateSerial}|${payloadHash}`).digest("hex");
 
-  const signatureHash = crypto
-    .createHash("sha256")
-    .update(hashPayload)
-    .digest("hex");
-
-  // 5. Update Evaluation Record (This triggers compute_evaluation_score)
+  // 6. Update Evaluation Record — server is authoritative
   const { data: updatedEval, error: updateError } = await supabase
     .from("evaluations")
     .update({
@@ -90,20 +125,19 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
       recommendations: input.recommendations,
       status: "submitted",
       signature_type: input.signatureType,
-      signature_image: input.signatureImage,
-      signature_hash: signatureHash,
-      signed_at: new Date().toISOString(),
+      // Store storage path only — never raw base64
+      signature_image: signatureStoragePath,
+      signature_hash: payloadHash,
+      signed_at: signedAt,
       verified: true,
       verified_by_system: true,
       certificate_serial: certificateSerial,
       ip_address: ip,
       user_agent: userAgent,
-      device_info: {
-        browser: userAgent,
-        ip: ip
-      }
+      device_info: { browser: userAgent, ip, signatureType: input.signatureType },
     })
     .eq("id", input.evaluationId)
+    .eq("panelist_id", userId)   // Ownership check in WHERE clause
     .select()
     .single();
 
@@ -111,7 +145,32 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error(`Failed to update evaluation score sheet: ${updateError?.message}`);
   }
 
-  // 6. Insert audit log
+  // 7. Create immutable digital_signatures record (Sprint 2D — non-blocking)
+  try {
+    const { error: sigErr } = await supabase
+      .from("digital_signatures")
+      .insert({
+        evaluation_id: input.evaluationId,
+        panelist_id: userId,
+        certificate_serial: certificateSerial,
+        payload_hash: payloadHash,
+        certificate_hash: certificateHash,
+        signature_hash: signatureFileHash,
+        hash_algorithm: "SHA-256",
+        signing_payload: signingPayload as unknown as Record<string, unknown>,
+        signature_storage_path: signatureStoragePath,
+        signed_at: signedAt,
+        ip_address: ip,
+        user_agent: userAgent,
+        device_info: { signatureType: input.signatureType },
+        status: "active",
+      });
+    if (sigErr) console.error("[signEvaluationAction] digital_signatures insert failed:", sigErr.message);
+  } catch (dsEx: unknown) {
+    console.error("[signEvaluationAction] digital_signatures exception:", dsEx instanceof Error ? dsEx.message : dsEx);
+  }
+
+  // 8. Insert audit log
   const { data: profile } = await supabase
     .from("profiles")
     .select("email")
@@ -120,7 +179,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
 
   await supabase.from("audit_logs").insert({
     profile_id: userId,
-    user_email: profile?.email || user.email || "unknown",
+    user_email: profile?.email ?? user.email ?? "unknown",
     user_role: "panelist",
     action_type: "GRADE",
     module: "grading",
@@ -131,16 +190,16 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
       evaluation_id: input.evaluationId,
       version: updatedEval.version,
       certificate_serial: certificateSerial,
-      signature_hash: signatureHash,
+      signature_hash: payloadHash,
       total_score: updatedEval.total_score,
-      verdict_code: input.verdictCode
+      verdict_code: input.verdictCode,
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear(),
   });
 
-  // 7. Fire evaluation event trigger
+  // 9. Fire evaluation event trigger
   await supabase.from("evaluation_events").insert({
     project_id: updatedEval.project_id,
     stage_id: updatedEval.stage_id,
@@ -148,9 +207,44 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     payload: {
       evaluation_id: input.evaluationId,
       total_score: updatedEval.total_score,
-      rubric_template_id: updatedEval.rubric_template_id
-    }
+      rubric_template_id: updatedEval.rubric_template_id,
+    },
   });
+
+  // 10. Record workflow history (Sprint 2G — non-blocking)
+  await recordWorkflowTransition(supabase, {
+    projectId: currentEval.project_id,
+    fromStageId: currentEval.stage_id,
+    toStageId: currentEval.stage_id,
+    transitionedBy: userId,
+    performedByRole: "panelist",
+    transitionType: "manual",
+    transitionReason: `Evaluation signed. Certificate: ${certificateSerial}`,
+    oldStatus: "draft",
+    newStatus: "submitted",
+    metadata: { evaluationId: input.evaluationId, certificateSerial },
+  });
+
+  // 11. Notify coordinator (Sprint 2E — centralized dispatcher, non-blocking)
+  try {
+    const { data: projectMeta } = await supabase
+      .from("projects")
+      .select("coordinator_profile_id")
+      .eq("id", currentEval.project_id)
+      .maybeSingle();
+    if (projectMeta?.coordinator_profile_id) {
+      await emitNotification({
+        supabase,
+        recipientProfileId: projectMeta.coordinator_profile_id,
+        title: "Evaluation Signed & Submitted",
+        message: `A panel evaluator has signed an evaluation. Certificate: ${certificateSerial}.`,
+        eventType: "evaluation_signed",
+        metadata: { certificateSerial, evaluationId: input.evaluationId },
+      });
+    }
+  } catch (notifEx: unknown) {
+    console.error("[signEvaluationAction] Notification failed:", notifEx instanceof Error ? notifEx.message : notifEx);
+  }
 
   return updatedEval;
 }
@@ -237,7 +331,7 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
 
   return newEval;

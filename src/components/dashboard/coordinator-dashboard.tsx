@@ -89,7 +89,7 @@ export function CoordinatorDashboard() {
     }
 
     loadCoordinatorData();
-  }, [supabase]);
+  }, []);
 
   if (loading) {
     return (

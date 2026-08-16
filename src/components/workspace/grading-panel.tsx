@@ -1,5 +1,5 @@
-/* eslint-disable */  
 "use client";
+
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,7 +37,7 @@ import { computeWeightedScore, deriveScoreLabel } from "@/lib/rubric/scoring";
 import { SignatureDialog } from "@/components/workspace/signature-dialog";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
 import { signEvaluationAction, createNewEvaluationVersionAction } from "@/lib/evaluations/actions";
-import { updateAnnotationStatusAction } from "@/lib/annotations/actions";
+import { updateAnnotationStatusAction, createAnnotationReplyAction } from "@/lib/annotations/actions";
 import { useAuth } from "@/hooks/use-auth";
 
 function CollapsibleSection({
@@ -132,7 +132,8 @@ export function GradingPanel({
             title,
             departments ( name ),
             students (
-              program,
+              program_id,
+              programs ( name ),
               profiles ( first_name, last_name )
             )
           `)
@@ -182,10 +183,15 @@ export function GradingPanel({
           ? `${profileObj.first_name} ${profileObj.last_name}` 
           : "Unknown Student";
         
+        // BUG-H5: programs is a joined object via program_id FK
+        const programObj = Array.isArray(studentObj?.programs)
+          ? studentObj.programs[0]
+          : studentObj?.programs;
+
         setProjectInfo({
           title: rawProj.title,
           studentName,
-          program: studentObj?.program || "Unassigned Program",
+          program: programObj?.name || "Unknown Program",
           department: rawProj.departments?.name || "General",
           stageName: stageData?.name || "Defense Stage",
           submittedAt: submittedDate || "No manuscript uploaded yet",
@@ -195,8 +201,9 @@ export function GradingPanel({
       setRubricTemplate(rubricData);
 
       // 2. Fetch existing evaluation for the current panelist
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
+      // BUG-H4: Use getUser() — validates against Auth server (not local cookie)
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = authUser?.id;
 
       if (userId) {
         // Fetch panelist profile details for signature display
@@ -340,11 +347,13 @@ export function GradingPanel({
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [projectId, stageId, documentVersionId]);
 
   useEffect(() => {
     if (!documentVersionId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnnotations([]);
       return;
     }
@@ -434,31 +443,18 @@ export function GradingPanel({
 
     setReplyingId(annotationId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (!userId) {
-        toast.error("You must be logged in to add replies.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("annotation_replies")
-        .insert({
-          annotation_id: annotationId,
-          content: text,
-          created_by: userId,
-        });
-
-      if (error) throw error;
+      // Sprint 2E: Use server action — triggers annotation_replied notification
+      await createAnnotationReplyAction(annotationId, text);
 
       // Clear input
       setReplyTexts(prev => ({ ...prev, [annotationId]: "" }));
       setActiveReplyId(null);
       toast.success("Reply added successfully!");
       loadAnnotations();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to add reply";
       console.error("Error adding reply:", err);
-      toast.error(`Failed to add reply: ${err.message}`);
+      toast.error(`Failed to add reply: ${msg}`);
     } finally {
       setReplyingId(null);
     }
@@ -472,8 +468,9 @@ export function GradingPanel({
 
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
+      // BUG-H4: Use getUser() — validates against Auth server
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = authUser?.id;
       if (!userId) {
         toast.error("You must be logged in to evaluate.");
         return;

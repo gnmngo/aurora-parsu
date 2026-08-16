@@ -1,12 +1,15 @@
 export const ROLES = {
   SYS_ADMIN: "sys_admin",
   COORDINATOR: "coordinator",
+  /** College Dean — read-only oversight across all college-level defenses */
+  COLLEGE_DEAN: "college_dean",
   ADVISER: "adviser",
   PANELIST: "panelist",
   STUDENT: "student",
 } as const;
 
 export type RoleCode = (typeof ROLES)[keyof typeof ROLES];
+
 
 export const DEFENSE_STAGE_CODES = {
   CONCEPT: "concept",

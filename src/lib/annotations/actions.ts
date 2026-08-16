@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 export interface UpdateAnnotationStatusInput {
   annotationId: string;
@@ -101,8 +102,50 @@ export async function updateAnnotationStatusAction(input: UpdateAnnotationStatus
     new_value: { status: input.newStatus, notes: input.notes },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
+
+  return { success: true };
+}
+
+
+/**
+ * Creates annotation reply + emits annotation_replied notification. Sprint 2E.
+ * Non-blocking notification: reply succeeds even if notification fails.
+ */
+export async function createAnnotationReplyAction(annotationId: string, content: string) {
+  const supabase = await createClient();
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error("Unauthorized. Please log in.");
+  if (!content?.trim()) throw new Error("Reply cannot be empty.");
+
+  const { error } = await supabase
+    .from("annotation_replies")
+    .insert({ annotation_id: annotationId, content: content.trim(), created_by: user.id });
+
+  if (error) throw new Error("Failed to add reply: " + error.message);
+
+  try {
+    const { emitNotification } = await import("@/lib/notifications/emit");
+    const { data: ann } = await supabase
+      .from("annotations")
+      .select("created_by")
+      .eq("id", annotationId)
+      .maybeSingle();
+    if (ann?.created_by && ann.created_by !== user.id) {
+      const preview = content.trim().slice(0, 80) + (content.length > 80 ? "..." : "");
+      await emitNotification({
+        supabase,
+        recipientProfileId: ann.created_by,
+        title: "New Reply on Your Annotation",
+        message: "A reply was added to your annotation: \"" + preview + "\"",
+        eventType: "annotation_replied",
+        metadata: { annotationId, replyAuthorId: user.id },
+      });
+    }
+  } catch (e) {
+    console.error("[createAnnotationReplyAction] Notification failed:", e instanceof Error ? e.message : e);
+  }
 
   return { success: true };
 }

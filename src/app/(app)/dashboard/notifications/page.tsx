@@ -67,7 +67,9 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     loadNotifications();
-  }, [supabase]);
+    // supabase singleton is stable — user?.id is the correct dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleMarkRead = async (id: string, isRead: boolean) => {
     try {

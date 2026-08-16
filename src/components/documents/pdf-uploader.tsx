@@ -137,14 +137,15 @@ export function PdfUploader({
     let uploadedPath: string | null = null;
 
     try {
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.getSession();
+      // BUG-H3: Use getUser() — validates against Auth server (not local cookie)
+      const { data: { user: authUser }, error: authError } =
+        await supabase.auth.getUser();
 
-      if (sessionError) throw sessionError;
+      if (authError) throw authError;
 
-      const userId = sessionData?.session?.user?.id;
+      const userId = authUser?.id;
 
-      if (!userId) throw new Error("No active session");
+      if (!userId) throw new Error("Not authenticated. Please log in.");
 
       const checksum = await computeFileSha256(file);
       const fileName = `${Date.now()}_${checksum.slice(0, 8)}.pdf`;

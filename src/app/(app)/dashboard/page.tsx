@@ -34,7 +34,7 @@ export default function DashboardPage() {
     );
   }
 
-  const isManagementRole = ["coordinator", "sys_admin"].includes(activeRole);
+  const isManagementRole = ["coordinator", "sys_admin", "college_dean"].includes(activeRole);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -76,7 +76,18 @@ export default function DashboardPage() {
       {activeRole === "adviser" && <AdviserDashboard userId={user?.id || ""} />}
       {activeRole === "panelist" && <PanelistDashboard userId={user?.id || ""} />}
       {activeRole === "coordinator" && <CoordinatorDashboard />}
+      {/* B11: college_dean sees coordinator-level overview dashboard */}
+      {activeRole === "college_dean" && <CoordinatorDashboard />}
       {activeRole === "sys_admin" && <AdminDashboard />}
+      {/* Fallback for any unrecognized role — prevents blank screen */}
+      {!["student", "adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(activeRole) && (
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm font-semibold text-muted-foreground">
+            No dashboard configured for role: <span className="font-black text-foreground">{activeRole}</span>.
+            Contact your system administrator.
+          </p>
+        </div>
+      )}
 
       {/* Management-only secondary panels */}
       {isManagementRole && (

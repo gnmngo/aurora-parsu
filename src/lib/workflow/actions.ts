@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { recordWorkflowTransition } from "@/lib/workflow/history";
+import { emitNotification } from "@/lib/notifications/emit";
+
 
 /**
  * Adviser Approval Gate: Approve or Reject Student uploaded manuscript
@@ -73,22 +76,46 @@ export async function adviserApproveDocumentAction(
     new_value: { status },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear()
   });
 
-  // 4. Create Notifications for student & coordinator
-  const studentId = doc.projects.student_id;
-  await supabase.from("notifications").insert([
-    {
-      profile_id: studentId,
+  // 4. Create Notifications — BUG-H7 fix: `projects.student_id` is `students.id`,
+  //    NOT `profiles.id`. Must join students table to get the actual profile_id.
+  //    Sprint 2E: Use centralized emitNotification() dispatcher.
+  const { data: studentRecord } = await supabase
+    .from("students")
+    .select("profile_id")
+    .eq("id", doc.projects.student_id)
+    .maybeSingle();
+
+  if (studentRecord?.profile_id) {
+    await emitNotification({
+      supabase,
+      recipientProfileId: studentRecord.profile_id,
       title: `Manuscript ${status === "approved" ? "Approved" : "Rejected"}`,
       message: `Your adviser has ${status} your manuscript submission. Remarks: ${remarks || "None"}.`,
-      type: "workflow"
-    }
-  ]);
+      eventType: status === "approved" ? "document_approved" : "document_rejected",
+    });
+  }
+
+  // 5. Record workflow transition history (Sprint 2G)
+  await recordWorkflowTransition(supabase, {
+    projectId: doc.projects.id,
+    fromStageId: null,
+    toStageId: doc.stage_id ?? null,
+    transitionedBy: user.id,
+    performedByRole: "adviser",
+    transitionType: "manual",
+    transitionReason: `Adviser ${status} manuscript. Remarks: ${remarks || "None"}`,
+    oldStatus: "pending",
+    newStatus: status,
+    metadata: { documentId, adviserId: user.id },
+  });
 
   return { success: true };
+
 }
+
 
 /**
  * Enforces annotation lifecycle transitions for workflow module.

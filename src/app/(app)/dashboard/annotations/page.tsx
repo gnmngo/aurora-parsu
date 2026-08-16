@@ -10,9 +10,35 @@ import { createClient } from "@/lib/supabase/client";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { useAuth } from "@/hooks/use-auth";
+import type { Annotation } from "@/types/database";
+
+/**
+ * AnnotationsPage — displays all annotations scoped to the viewer's role.
+ *
+ * BUG-C1 fix: annotations.created_by is the FK to profiles, not profile_id.
+ *             Use `profiles!created_by(...)` for the join.
+ * BUG-H6 fix: Apply server-side .in() filter before executing the query for
+ *             advisers/panelists instead of fetching all rows and filtering client-side.
+ */
+
+interface AnnotationRow extends Pick<Annotation,
+  "id" | "page_number" | "type" | "severity" | "status" | "content" | "selected_text" | "created_at"
+> {
+  created_by: string;
+  document_version_id: string;
+  profiles: { first_name: string; last_name: string; email: string } | null;
+  document_versions: {
+    id: string;
+    documents: {
+      id: string;
+      project_id: string;
+      projects: { id: string; title: string } | null;
+    } | null;
+  } | null;
+}
 
 export default function AnnotationsPage() {
-  const [annotations, setAnnotations] = useState<any[]>([]);
+  const [annotations, setAnnotations] = useState<AnnotationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const supabase = createClient();
@@ -27,63 +53,79 @@ export default function AnnotationsPage() {
           ["adviser", "panelist"].includes(r)
         );
         const isCoordinatorOrAdmin = roles.some((r) =>
-          ["coordinator", "sys_admin"].includes(r)
+          ["coordinator", "sys_admin", "college_dean"].includes(r)
         );
 
-        const query = supabase
-          .from("annotations")
-          .select(`
+        // BUG-C1: Use `created_by` (actual FK) not `profile_id` (non-existent column)
+        const baseSelect = `
+          id,
+          page_number,
+          type,
+          severity,
+          status,
+          content,
+          selected_text,
+          created_at,
+          created_by,
+          document_version_id,
+          profiles!created_by ( first_name, last_name, email ),
+          document_versions (
             id,
-            page_number,
-            type,
-            severity,
-            status,
-            content,
-            selected_text,
-            created_at,
-            profile_id,
-            document_version_id,
-            profiles ( first_name, last_name, email ),
-            document_versions (
+            documents (
               id,
-              documents (
-                id,
-                project_id,
-                projects ( id, title, student_id, students ( profile_id ) )
-              )
+              project_id,
+              projects ( id, title )
             )
-          `)
-          .order("created_at", { ascending: false });
+          )
+        `;
 
         if (isCoordinatorOrAdmin) {
-          // Full access — no filter
+          // Full access — no filter needed
+          const { data, error } = await supabase
+            .from("annotations")
+            .select(baseSelect)
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          setAnnotations((data as unknown as AnnotationRow[]) || []);
+
         } else if (isAdviserOrPanelist) {
-          // Scope to projects where user is a member
+          // BUG-H6: Resolve the allowed project IDs first, then apply server-side filter
           const { data: memberProjects } = await supabase
             .from("project_members")
             .select("project_id")
             .eq("profile_id", user!.id);
 
-          const projectIds = (memberProjects || []).map((m: any) => m.project_id);
+          const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
           if (projectIds.length === 0) {
             setAnnotations([]);
             setLoading(false);
             return;
           }
 
-          // Filter by document_versions that belong to those projects
-          // We'll fetch all annotations and then filter client-side for now
-          // (direct nested filter on Supabase requires a view or RPC)
-          const { data, error } = await query;
-          if (error) throw error;
+          // Fetch document_version_ids that belong to allowed projects
+          const { data: docVersions } = await supabase
+            .from("document_versions")
+            .select("id, documents!inner(project_id)")
+            .in("documents.project_id", projectIds);
 
-          const scoped = (data || []).filter((ann: any) => {
-            const projId = ann.document_versions?.documents?.project_id;
-            return projectIds.includes(projId);
-          });
-          setAnnotations(scoped);
-          setLoading(false);
-          return;
+          const allowedVersionIds = (docVersions || []).map((v: { id: string }) => v.id);
+          if (allowedVersionIds.length === 0) {
+            setAnnotations([]);
+            setLoading(false);
+            return;
+          }
+
+          // BUG-H6: Server-side filter — only fetch annotations for allowed versions
+          const { data, error } = await supabase
+            .from("annotations")
+            .select(baseSelect)
+            .in("document_version_id", allowedVersionIds)
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          setAnnotations((data as unknown as AnnotationRow[]) || []);
+
         } else {
           // Student — only see annotations on their own project's documents
           const { data: studentRecord } = await supabase
@@ -110,20 +152,28 @@ export default function AnnotationsPage() {
             return;
           }
 
-          const { data, error } = await query;
+          // Resolve version IDs for this student's project
+          const { data: docVersions } = await supabase
+            .from("document_versions")
+            .select("id, documents!inner(project_id)")
+            .eq("documents.project_id", project.id);
+
+          const allowedVersionIds = (docVersions || []).map((v: { id: string }) => v.id);
+          if (allowedVersionIds.length === 0) {
+            setAnnotations([]);
+            setLoading(false);
+            return;
+          }
+
+          const { data, error } = await supabase
+            .from("annotations")
+            .select(baseSelect)
+            .in("document_version_id", allowedVersionIds)
+            .order("created_at", { ascending: false });
+
           if (error) throw error;
-
-          const scoped = (data || []).filter((ann: any) => {
-            return ann.document_versions?.documents?.project_id === project.id;
-          });
-          setAnnotations(scoped);
-          setLoading(false);
-          return;
+          setAnnotations((data as unknown as AnnotationRow[]) || []);
         }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        setAnnotations(data || []);
       } catch (err) {
         console.error("Error loading annotations:", err);
       } finally {
@@ -132,15 +182,27 @@ export default function AnnotationsPage() {
     }
 
     loadAnnotations();
-  }, [user, roles, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, roles.join(",")]);
 
   const filteredAnnotations = annotations.filter((ann) =>
     ann.content?.toLowerCase().includes(searchText.toLowerCase()) ||
     ann.selected_text?.toLowerCase().includes(searchText.toLowerCase())
   );
 
+  const statusVariant = (status: string): "warning" | "success" | "info" | "outline" => {
+    switch (status) {
+      case "open": return "warning";
+      case "resolved":
+      case "verified": return "success";
+      case "in_progress":
+      case "addressed": return "info";
+      default: return "outline";
+    }
+  };
+
   return (
-    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "student"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "student", "college_dean"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -173,7 +235,9 @@ export default function AnnotationsPage() {
             <MessageSquare className="h-10 w-10 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">No Annotations Found</h3>
             <p className="mt-2 text-sm text-muted-foreground font-semibold">
-              No feedback comments or highlights in your documents yet.
+              {searchText
+                ? "No annotations match your search query."
+                : "No feedback comments or highlights in your documents yet."}
             </p>
           </div>
         ) : (
@@ -206,10 +270,10 @@ export default function AnnotationsPage() {
                                   : "info"
                             }
                           >
-                            {ann.type?.replace("_", " ")} ({ann.severity})
+                            {ann.type?.replace(/_/g, " ")} ({ann.severity})
                           </Badge>
-                          <Badge variant={ann.status === "open" ? "warning" : "success"}>
-                            {ann.status}
+                          <Badge variant={statusVariant(ann.status)}>
+                            {ann.status.replace(/_/g, " ")}
                           </Badge>
                         </div>
                         <p className="mt-2 text-sm font-bold text-foreground">

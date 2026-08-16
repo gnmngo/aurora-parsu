@@ -75,16 +75,22 @@ export default function RubricsPage() {
     loadRubrics();
   }, [supabase]);
 
-  const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
-    setLoading(true);
+  const handleAction = async (
+    rubricId: string,
+    actionFn: () => Promise<unknown>,
+    successMsg: string
+  ) => {
+    setActioningId(rubricId);
     try {
       await actionFn();
       toast.success(successMsg);
-      loadRubrics();
-    } catch (err: any) {
+      await loadRubrics();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Operation failed.";
       console.error(err);
-      toast.error(err.message || "Operation failed.");
-      setLoading(false);
+      toast.error(msg);
+    } finally {
+      setActioningId(null);
     }
   };
 
@@ -145,54 +151,60 @@ export default function RubricsPage() {
 
                     <div className="flex flex-wrap items-center gap-1.5 print:hidden text-[10px]">
                       {!rubric.is_published && (
-                        <Button 
-                          onClick={() => handleAction(() => publishRubricAction(rubric.id), "Rubric published successfully!")}
-                          size="sm" 
+                        <Button
+                          onClick={() => handleAction(rubric.id, () => publishRubricAction(rubric.id), "Rubric published successfully!")}
+                          size="sm"
                           className="h-8 gap-1 rounded-lg"
+                          disabled={actioningId === rubric.id}
                         >
-                          <Send className="h-3.5 w-3.5" /> Publish
+                          {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Publish
                         </Button>
                       )}
-                      <Button 
-                        onClick={() => handleAction(() => cloneRubricAction(rubric.id), "Rubric cloned successfully!")}
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={() => handleAction(rubric.id, () => cloneRubricAction(rubric.id), "Rubric cloned successfully!")}
+                        variant="outline"
+                        size="sm"
                         className="h-8 gap-1 rounded-lg"
+                        disabled={actioningId === rubric.id}
                       >
-                        <Copy className="h-3.5 w-3.5" /> Clone
+                        {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />} Clone
                       </Button>
-                      <Button 
-                        onClick={() => handleAction(() => versionRubricAction(rubric.id), "New version created successfully!")}
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={() => handleAction(rubric.id, () => versionRubricAction(rubric.id), "New version created successfully!")}
+                        variant="outline"
+                        size="sm"
                         className="h-8 gap-1 rounded-lg"
+                        disabled={actioningId === rubric.id}
                       >
-                        <Plus className="h-3.5 w-3.5" /> New Version
+                        {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} New Version
                       </Button>
-                      <Button 
-                        onClick={() => handleAction(() => toggleActiveRubricAction(rubric.id, !rubric.is_active), `Rubric ${rubric.is_active ? 'deactivated' : 'activated'} successfully!`)}
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={() => handleAction(rubric.id, () => toggleActiveRubricAction(rubric.id, !rubric.is_active), `Rubric ${rubric.is_active ? 'deactivated' : 'activated'} successfully!`)}
+                        variant="outline"
+                        size="sm"
                         className="h-8 gap-1 rounded-lg"
+                        disabled={actioningId === rubric.id}
                       >
                         {rubric.is_active ? <XCircle className="h-3.5 w-3.5 text-warning" /> : <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
                         {rubric.is_active ? "Deactivate" : "Activate"}
                       </Button>
-                      <Button 
-                        onClick={() => handleAction(() => archiveRubricAction(rubric.id), "Rubric archived successfully!")}
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={() => handleAction(rubric.id, () => archiveRubricAction(rubric.id), "Rubric archived successfully!")}
+                        variant="outline"
+                        size="sm"
                         className="h-8 gap-1 rounded-lg"
+                        disabled={actioningId === rubric.id}
                       >
-                        <Archive className="h-3.5 w-3.5" /> Archive
+                        {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />} Archive
                       </Button>
-                      <Button 
-                        onClick={() => handleAction(() => deleteRubricAction(rubric.id), "Rubric removed successfully!")}
-                        variant="danger" 
-                        size="sm" 
+                      <Button
+                        onClick={() => handleAction(rubric.id, () => deleteRubricAction(rubric.id), "Rubric removed successfully!")}
+                        variant="danger"
+                        size="sm"
                         className="h-8 gap-1 rounded-lg"
+                        disabled={actioningId === rubric.id}
                       >
-                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                        {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Delete
                       </Button>
                     </div>
                   </div>

@@ -1,0 +1,163 @@
+
+=== 1. UNIQUE constraint on projects.join_code ===
+join_code constraints: [
+  {
+    constraint_name: 'projects_join_code_key',
+    constraint_type: 'UNIQUE'
+  }
+]
+
+=== 2. projects — NOT NULL columns ===
+  id | default: gen_random_uuid()
+  campus_id | default: null
+  department_id | default: null
+  student_id | default: null
+  title | default: null
+  status | default: 'draft'::project_status
+  academic_year | default: null
+  system_completion_pct | default: 0
+  created_at | default: now()
+  updated_at | default: now()
+
+=== 3. students — NOT NULL columns ===
+  id | default: gen_random_uuid()
+  profile_id | default: null
+  created_at | default: now()
+  updated_at | default: now()
+
+=== 4. project_members — NOT NULL columns ===
+  id | default: gen_random_uuid()
+  project_id | default: null
+  profile_id | default: null
+  member_role | default: null
+  is_primary | default: false
+  assigned_at | default: now()
+
+=== 5. document_versions — NOT NULL columns ===
+  id | default: gen_random_uuid()
+  document_id | default: null
+  version_number | default: null
+  storage_path | default: null
+  file_name | default: null
+  file_size | default: null
+  mime_type | default: null
+  checksum_sha256 | default: null
+  chapter_outline | default: '[]'::jsonb
+  is_current | default: true
+  uploaded_by | default: null
+  created_at | default: now()
+
+=== 6. documents — NOT NULL + UNIQUE constraints ===
+  id | default: gen_random_uuid()
+  project_id | default: null
+  stage_id | default: null
+  title | default: null
+  status | default: 'draft'::document_status
+  current_version | default: 0
+  created_by | default: null
+  created_at | default: now()
+  updated_at | default: now()
+UNIQUE constraints: [
+  {
+    constraint_name: 'documents_project_id_stage_id_key',
+    cols: 'stage_id, project_id'
+  }
+]
+
+=== 7. workflow_templates — all columns ===
+  id | uuid | nullable:NO
+  name | character varying | nullable:NO
+  description | text | nullable:YES
+  created_at | timestamp with time zone | nullable:NO
+  program_id | uuid | nullable:YES
+
+=== 8. academic_levels ===
+{"id":"23c85f2f-b6b0-473d-ade7-92c7f1d2a971","name":"Undergraduate","created_at":"2026-07-08T08:13:45.981Z"}
+{"id":"b01e0fff-1251-4d29-a7f9-d479aeb7b7c3","name":"Graduate","created_at":"2026-07-08T08:13:45.981Z"}
+{"id":"c6c96cad-7ec7-4d6b-b567-6e5c787ba73a","name":"Doctoral","created_at":"2026-07-08T08:13:45.981Z"}
+
+=== 9. programs — sample ===
+{"id":"6a6712c3-bde0-48cb-97f1-4c48a1cc324e","name":"Bachelor of Elementary Education","code":"BEEd","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"23c85f2f-b6b0-473d-ade7-92c7f1d2a971"}
+{"id":"2067d1d3-f036-4851-8ceb-d83068c7e0cc","name":"Bachelor of Secondary Education","code":"BSEd","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"23c85f2f-b6b0-473d-ade7-92c7f1d2a971"}
+{"id":"bba74465-6bf7-425c-a6d1-be6d57bad567","name":"Doctor of Philosophy in English Language Education","code":"PhD ELE","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"c6c96cad-7ec7-4d6b-b567-6e5c787ba73a"}
+{"id":"b737643a-2c9f-4b17-aa2e-08d17ff00c70","name":"Doctor of Philosophy in Mathematics Education","code":"PhD MathEd","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"c6c96cad-7ec7-4d6b-b567-6e5c787ba73a"}
+{"id":"fad9b7b2-8975-4c96-a54c-7e495474ffbf","name":"Master of Arts in Education - English","code":"MAEd English","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"b01e0fff-1251-4d29-a7f9-d479aeb7b7c3"}
+{"id":"acbf4507-b7a6-4839-8908-eadcc4e28f72","name":"Master of Arts in Education - Science Education","code":"MAEd SciEd","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"b01e0fff-1251-4d29-a7f9-d479aeb7b7c3"}
+{"id":"d0a82a9a-ba15-4fff-b66c-440681ff89b9","name":"Master of Arts in Education - Mathematics Education","code":"MAEd MathEd","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"b01e0fff-1251-4d29-a7f9-d479aeb7b7c3"}
+{"id":"75450383-6989-4610-8c38-13887324c90c","name":"Master of Arts in Education - Instructional Management","code":"MAEd IM","department_id":null,"college_id":"10000000-0000-0000-0000-000000000001","academic_level_id":"b01e0fff-1251-4d29-a7f9-d479aeb7b7c3"}
+{"id":"536aeaaf-0809-48fc-8715-6b856f422622","name":"Bachelor of Science in Accountancy","code":"BSA","department_id":null,"college_id":"10000000-0000-0000-0000-000000000002","academic_level_id":"23c85f2f-b6b0-473d-ade7-92c7f1d2a971"}
+{"id":"a55b3573-a8cf-4647-b0cf-fa8a07005239","name":"Bachelor of Science in Business Administration - Financial Management","code":"BSBA FM","department_id":null,"college_id":"10000000-0000-0000-0000-000000000002","academic_level_id":"23c85f2f-b6b0-473d-ade7-92c7f1d2a971"}
+
+=== 10. workflow_templates with stage counts ===
+{"id":"70000000-0000-0000-0000-000000000001","name":"BSIT Default Workflow","program_id":"80000000-0000-0000-0000-000000000001","stage_count":"5"}
+
+=== 11. project_members — all unique constraints ===
+{"constraint_name":"project_members_assigned_by_fkey","cols":"assigned_by"}
+{"constraint_name":"project_members_pkey","cols":"id"}
+{"constraint_name":"project_members_profile_id_fkey","cols":"profile_id"}
+{"constraint_name":"project_members_project_id_fkey","cols":"project_id"}
+{"constraint_name":"project_members_project_id_profile_id_member_role_key","cols":"project_id, profile_id, member_role"}
+
+=== 12. notification_type enum values ===
+ - comment
+ - schedule
+ - grade_released
+ - document_returned
+ - revision_requested
+ - final_verdict
+ - assignment
+ - reminder
+ - system
+
+=== 13. document_status enum values ===
+ - uploading
+ - processing
+ - draft
+ - submitted
+ - under_review
+ - approved
+ - revision_required
+ - rejected
+ - locked
+
+=== 14. Full RLS policy bodies for projects table ===
+
+  [INSERT] projects_insert
+    CHECK: (has_role('student'::text) OR has_role('coordinator'::text) OR has_role('sys_admin'::text))
+
+  [INSERT] projects_insert_policy
+    CHECK: ((student_id IN ( SELECT students.id
+   FROM students
+  WHERE (students.profile_id = auth.uid()))) OR has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text))
+
+  [SELECT] projects_select
+    USING: (is_project_participant(id) OR has_role('coordinator'::text) OR has_role('sys_admin'::text) OR (EXISTS ( SELECT 1
+   FROM students s
+  WHERE ((s.id = projects.student_id) AND (s.profile_id = auth.uid())))))
+
+  [SELECT] projects_select_policy
+    USING: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   FROM students
+  WHERE (students.profile_id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM project_members pm
+  WHERE ((pm.project_id = pm.id) AND (pm.profile_id = auth.uid())))) OR (EXISTS ( SELECT 1
+   FROM defense_panels dp
+  WHERE ((dp.project_id = dp.id) AND (dp.profile_id = auth.uid())))))
+
+  [UPDATE] projects_update
+    USING: (has_role('coordinator'::text) OR has_role('sys_admin'::text))
+
+  [UPDATE] projects_update_policy
+    USING: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   FROM students
+  WHERE (students.profile_id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM project_members pm
+  WHERE ((pm.project_id = pm.id) AND (pm.profile_id = auth.uid())))))
+    CHECK: (has_role('sys_admin'::text) OR has_role('dept_coordinator'::text) OR has_role('college_coordinator'::text) OR (student_id IN ( SELECT students.id
+   FROM students
+  WHERE (students.profile_id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM project_members pm
+  WHERE ((pm.project_id = pm.id) AND (pm.profile_id = auth.uid())))))
+
+=== 15. Storage policies ===
+relation "storage.policies" does not exist

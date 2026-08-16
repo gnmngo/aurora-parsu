@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 /** Helper to authorize coordinator/sys_admin roles using secure getUser() */
 async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
@@ -56,7 +57,7 @@ async function logAudit(
     new_value: newVal,
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
 }
 

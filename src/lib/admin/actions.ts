@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/server";
 import { headers } from "next/headers";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 /**
  * Updates a user role and logs the event.
@@ -79,7 +80,7 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
     new_value: { role: roleCode },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: "2025-2026"
+    academic_year: currentAcademicYear()
   });
 
   return { success: true };

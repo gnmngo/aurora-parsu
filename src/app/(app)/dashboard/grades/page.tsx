@@ -11,8 +11,39 @@ import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { useAuth } from "@/hooks/use-auth";
 
+/**
+ * GradesPage — displays submitted evaluation score sheets.
+ *
+ * BUG-C2 fix: evaluations.panelist_id is the FK to profiles (not profile_id).
+ *             Select `panelist_id` and join `profiles!panelist_id(...)`.
+ *             Filter by `.eq("panelist_id", user.id)` for panelists.
+ *
+ * BUG-H2 fix: Use `rubric_templates.passing_score` for verdict threshold
+ *             instead of the hardcoded value of 75.
+ */
+
+interface CriterionScore {
+  id: string;
+  name: string;
+  weight: number;
+}
+
+interface EvaluationRow {
+  id: string;
+  total_score: number | null;
+  recommendations: string | null;
+  panel_notes: string | null;
+  submitted_at: string | null;
+  scores: Record<string, number> | null;
+  panelist_id: string;
+  project_id: string;
+  projects: { id: string; title: string; student_id: string } | null;
+  profiles: { first_name: string; last_name: string; email: string } | null;
+  rubric_templates: { title: string; criteria: CriterionScore[]; passing_score: number } | null;
+}
+
 export default function GradesPage() {
-  const [evaluations, setEvaluations] = useState<any[]>([]);
+  const [evaluations, setEvaluations] = useState<EvaluationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const { user, roles } = useAuth();
@@ -23,12 +54,13 @@ export default function GradesPage() {
     async function loadGrades() {
       try {
         const isCoordinatorOrAdmin = roles.some((r) =>
-          ["coordinator", "sys_admin"].includes(r)
+          ["coordinator", "sys_admin", "college_dean"].includes(r)
         );
         const isPanelist = roles.includes("panelist");
         const isStudent = roles.includes("student");
         const isAdviser = roles.includes("adviser");
 
+        // BUG-C2: Use `panelist_id` (actual FK) — not `profile_id` (non-existent column)
         const baseQuery = supabase
           .from("evaluations")
           .select(`
@@ -38,11 +70,11 @@ export default function GradesPage() {
             panel_notes,
             submitted_at,
             scores,
-            profile_id,
+            panelist_id,
             project_id,
             projects ( id, title, student_id ),
-            profiles ( first_name, last_name, email ),
-            rubric_templates ( title, criteria )
+            profiles!panelist_id ( first_name, last_name, email ),
+            rubric_templates ( title, criteria, passing_score )
           `)
           .eq("status", "submitted")
           .order("submitted_at", { ascending: false });
@@ -51,12 +83,14 @@ export default function GradesPage() {
           // Full access
           const { data, error } = await baseQuery;
           if (error) throw error;
-          setEvaluations(data || []);
+          setEvaluations((data as unknown as EvaluationRow[]) || []);
+
         } else if (isPanelist) {
-          // Only their own submitted evaluations
-          const { data, error } = await baseQuery.eq("profile_id", user!.id);
+          // BUG-C2: Filter by `panelist_id` not `profile_id`
+          const { data, error } = await baseQuery.eq("panelist_id", user!.id);
           if (error) throw error;
-          setEvaluations(data || []);
+          setEvaluations((data as unknown as EvaluationRow[]) || []);
+
         } else if (isAdviser) {
           // Get projects where user is adviser member
           const { data: memberProjects } = await supabase
@@ -65,7 +99,7 @@ export default function GradesPage() {
             .eq("profile_id", user!.id)
             .eq("member_role", "adviser");
 
-          const projectIds = (memberProjects || []).map((m: any) => m.project_id);
+          const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
           if (projectIds.length === 0) {
             setEvaluations([]);
             setLoading(false);
@@ -74,7 +108,8 @@ export default function GradesPage() {
 
           const { data, error } = await baseQuery.in("project_id", projectIds);
           if (error) throw error;
-          setEvaluations(data || []);
+          setEvaluations((data as unknown as EvaluationRow[]) || []);
+
         } else if (isStudent) {
           // Get student record → project → evaluations for that project
           const { data: studentRecord } = await supabase
@@ -103,7 +138,8 @@ export default function GradesPage() {
 
           const { data, error } = await baseQuery.eq("project_id", project.id);
           if (error) throw error;
-          setEvaluations(data || []);
+          setEvaluations((data as unknown as EvaluationRow[]) || []);
+
         } else {
           setEvaluations([]);
         }
@@ -115,10 +151,11 @@ export default function GradesPage() {
     }
 
     loadGrades();
-  }, [user, roles, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, roles.join(",")]);
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "student"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "student", "college_dean"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Grades</h1>
@@ -144,11 +181,14 @@ export default function GradesPage() {
               const panelistName = evalItem.profiles
                 ? `${evalItem.profiles.first_name} ${evalItem.profiles.last_name}`
                 : "Unknown Panelist";
-              const criteria = evalItem.rubric_templates?.criteria || [];
+              const criteria: CriterionScore[] = evalItem.rubric_templates?.criteria || [];
               const scoresMap = evalItem.scores || {};
               const totalScore = Number(evalItem.total_score || 0);
-              const verdict = totalScore >= 75 ? "PASSED" : "NEEDS REVISION";
-              const verdictVariant = totalScore >= 75 ? "success" : "warning";
+
+              // BUG-H2: Use rubric's configurable passing_score instead of hardcoded 75
+              const passingScore = Number(evalItem.rubric_templates?.passing_score ?? 75);
+              const verdict = totalScore >= passingScore ? "PASSED" : "NEEDS REVISION";
+              const verdictVariant: "success" | "warning" = totalScore >= passingScore ? "success" : "warning";
 
               return (
                 <Card key={evalItem.id} className="overflow-hidden rounded-2xl border border-border shadow-sm">
@@ -166,18 +206,27 @@ export default function GradesPage() {
                           <span className="font-black text-sm text-foreground">{totalScore.toFixed(1)}</span>
                           <span className="text-xs text-muted-foreground">/100</span>
                         </div>
-                        <Badge variant={verdictVariant as any} className="text-xs py-1 px-3">
+                        <Badge variant={verdictVariant} className="text-xs py-1 px-3">
                           {verdict}
                         </Badge>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
+                    {/* Rubric passing threshold info */}
+                    {evalItem.rubric_templates && (
+                      <p className="text-[10px] text-muted-foreground font-semibold">
+                        <FileCheck className="inline h-3 w-3 mr-1" />
+                        Rubric: <span className="text-foreground">{evalItem.rubric_templates.title}</span>
+                        {" · "}Passing threshold: <span className="text-foreground">{passingScore}</span>
+                      </p>
+                    )}
+
                     {criteria.length === 0 ? (
                       <p className="text-sm text-muted-foreground font-semibold">No criteria details found for this evaluation.</p>
                     ) : (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {criteria.map((c: any) => {
+                        {criteria.map((c) => {
                           const score = Number(scoresMap[c.id] || 0);
                           return (
                             <div key={c.id} className="rounded-xl border border-border p-4 space-y-2">

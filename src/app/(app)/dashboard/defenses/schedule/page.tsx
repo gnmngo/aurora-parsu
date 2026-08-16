@@ -101,7 +101,7 @@ export default function SchedulePage() {
         panelistIds: selectedPanelists,
       });
 
-      toast.success("Defense defense scheduled successfully!");
+      toast.success("Defense scheduled successfully!");
       router.push("/dashboard/defenses");
       router.refresh();
     } catch (err: any) {

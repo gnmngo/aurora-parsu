@@ -111,7 +111,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           .from("annotations")
           .select(`
             id,
-            comment,
+            content,
             status,
             page_number,
             created_at,
@@ -145,7 +145,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
 
   useEffect(() => {
     loadAdviserData();
-  }, [supabase, userId]);
+  }, [userId]);
 
   const handleApproval = async (docId: string, status: "approved" | "rejected") => {
     setUpdatingDocId(docId);
@@ -441,7 +441,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                 <div className="divide-y divide-border max-h-80 overflow-y-auto">
                   {commentsHistory.map((c) => (
                     <div key={c.id} className="p-3 text-xs space-y-1">
-                      <p className="font-bold text-slate-800">"{c.comment}"</p>
+                      <p className="font-bold text-slate-800">"{c.content}"</p>
                       <p className="text-[9px] text-muted-foreground">
                         Page {c.page_number} • Status: <span className="font-bold text-primary uppercase">{c.status}</span>
                       </p>

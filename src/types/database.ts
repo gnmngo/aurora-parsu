@@ -43,7 +43,7 @@ export interface Role {
 
 export interface Profile {
   id: string;
-  campus_id: string;
+  campus_id: string | null;
   college_id: string | null;
   department_id: string | null;
   email: string;
@@ -52,19 +52,34 @@ export interface Profile {
   middle_name: string | null;
   avatar_url: string | null;
   phone: string | null;
-  status: "active" | "inactive" | "suspended";
+  /**
+   * user_status enum values (live DB):
+   * active | inactive | suspended | pending | approved | rejected
+   */
+  status: "active" | "inactive" | "suspended" | "pending" | "approved" | "rejected";
   mfa_enabled: boolean;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
+/**
+ * Mirrors the live `students` table columns exactly.
+ * Note: students.id ≠ profiles.id — they are different UUIDs.
+ *   students.profile_id = profiles.id = auth.users.id
+ */
 export interface Student {
   id: string;
   profile_id: string;
-  student_number: string;
-  program: string | null;
+  student_number: string | null;
   year_level: number | null;
+  campus_id: string | null;
+  college_id: string | null;
+  department_id: string | null;
+  program_id: string | null;
+  major_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Faculty {
@@ -168,7 +183,11 @@ export interface Annotation {
   content: string | null;
   category_id: string | null;
   severity: "info" | "minor" | "major" | "critical";
-  status: "open" | "resolved" | "archived";
+  /**
+   * Mirrors live DB `annotation_status` enum — all 7 values.
+   * DB: open, in_progress, addressed, verified, resolved, closed, archived
+   */
+  status: "open" | "in_progress" | "addressed" | "verified" | "resolved" | "closed" | "archived";
   author_role: string | null;
   version_checksum: string | null;
   is_stale: boolean;

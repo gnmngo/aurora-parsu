@@ -152,7 +152,7 @@ export function KpiCards() {
           // Panelist KPIs — assigned defenses
           const [assignedRes, submittedRes] = await Promise.all([
             supabase.from("defense_panels").select("id", { count: "exact", head: true }).eq("profile_id", user!.id),
-            supabase.from("evaluations").select("id", { count: "exact", head: true }).eq("profile_id", user!.id).eq("status", "submitted"),
+            supabase.from("evaluations").select("id", { count: "exact", head: true }).eq("panelist_id", user!.id).eq("status", "submitted"),
           ]);
 
           setStats([

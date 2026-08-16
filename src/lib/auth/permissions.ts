@@ -14,6 +14,7 @@ export type RoleCode =
   | "adviser"
   | "panelist"
   | "coordinator"
+  | "college_dean"
   | "sys_admin";
 
 /**
@@ -62,6 +63,22 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/settings",
     "/dashboard/notifications",
     "/admin",
+  ],
+  /**
+   * College Dean — read-only institutional oversight.
+   * Can view grades, defenses, annotations, and analytics.
+   * Cannot create/update/delete anything.
+   * Does NOT have access to /admin routes.
+   */
+  college_dean: [
+    "/dashboard",
+    "/dashboard/search",
+    "/dashboard/defenses",
+    "/dashboard/annotations",
+    "/dashboard/grades",
+    "/dashboard/analytics",
+    "/dashboard/settings",
+    "/dashboard/notifications",
   ],
   sys_admin: [
     "/dashboard",
@@ -131,6 +148,16 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/submissions",
+    "/dashboard/annotations",
+    "/dashboard/grades",
+    "/dashboard/analytics",
+    "/dashboard/settings",
+    "/dashboard/notifications",
+  ],
+  college_dean: [
+    "/dashboard",
+    "/dashboard/search",
+    "/dashboard/defenses",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/analytics",
