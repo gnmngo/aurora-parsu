@@ -48,6 +48,7 @@ export default function VerifyCertificatePage() {
           profiles ( first_name, last_name )
         `)
         .eq("certificate_serial", serial.trim())
+        .eq("status", "submitted")
         .maybeSingle();
 
       if (error) throw error;

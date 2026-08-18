@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 async function tableExists(tableName) {
-  const { error } = await supabase.from(tableName).select("id").limit(1);
+  const { error } = await supabase.from(tableName).select("*").limit(1);
   if (error && (error.code === "42P01" || (error.message && error.message.includes("does not exist")))) return false;
   return true;
 }

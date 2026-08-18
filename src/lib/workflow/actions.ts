@@ -92,9 +92,11 @@ export async function adviserApproveDocumentAction(
     await emitNotification({
       supabase,
       recipientProfileId: studentRecord.profile_id,
-      title: `Manuscript ${status === "approved" ? "Approved" : "Rejected"}`,
-      message: `Your adviser has ${status} your manuscript submission. Remarks: ${remarks || "None"}.`,
-      eventType: status === "approved" ? "document_approved" : "document_rejected",
+      title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
+      message: `Your adviser has ${status === "approved" ? "approved" : "reviewed"} your manuscript submission. Remarks: ${remarks || "None"}.`,
+      // Map "rejected" → "revision_required" notification (they are semantically the same in AURORA).
+      // "approved" uses document_approved; rejection always means revise-and-resubmit.
+      eventType: status === "approved" ? "document_approved" : "revision_required",
     });
   }
 
@@ -113,8 +115,119 @@ export async function adviserApproveDocumentAction(
   });
 
   return { success: true };
-
 }
+
+
+/**
+ * Sprint 3: Coordinator releases the final verdict for a project.
+ * Sets projects.final_verdict + projects.status, then emits
+ * final_verdict_released notification to the student.
+ *
+ * This is the authoritative action for completing the AURORA workflow.
+ */
+export async function releaseProjectVerdictAction(
+  projectId: string,
+  verdictCode: string,
+  remarks?: string
+) {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  // 1. Authenticate — must be coordinator or sys_admin
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error("Unauthorized. Please log in.");
+
+  const { data: userRolesData } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", user.id);
+
+  const codes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
+    ?.map((ur) => { const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles; return r?.code as string | undefined; })
+    .filter(Boolean) ?? [];
+
+  if (!codes.includes("coordinator") && !codes.includes("sys_admin")) {
+    throw new Error("Permission denied. Only coordinators or administrators can release verdicts.");
+  }
+
+  // 2. Fetch project details
+  const { data: project, error: projErr } = await supabase
+    .from("projects")
+    .select("title, student_id")
+    .eq("id", projectId)
+    .single();
+
+  if (projErr || !project) throw new Error("Project not found.");
+
+  // 3. Update project final_verdict + status
+  const { error: updateErr } = await supabase
+    .from("projects")
+    .update({
+      final_verdict: verdictCode,
+      status: verdictCode,
+    })
+    .eq("id", projectId);
+
+  if (updateErr) throw new Error(`Failed to release verdict: ${updateErr.message}`);
+
+  // 4. Audit log
+  await supabase.from("audit_logs").insert({
+    profile_id: user.id,
+    user_email: user.email || "unknown",
+    user_role: "coordinator",
+    action_type: "UPDATE",
+    module: "workflow",
+    entity_type: "projects",
+    entity_id: projectId,
+    description: `Final verdict released: "${verdictCode}" for project "${project.title}". Remarks: ${remarks || "None"}.`,
+    new_value: { projectId, verdictCode, remarks },
+    ip_address: ip,
+    user_agent: userAgent,
+    academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear(),
+  });
+
+  // 5. Notify student — non-blocking
+  try {
+    const { data: studentRecord } = await supabase
+      .from("students")
+      .select("profile_id")
+      .eq("id", project.student_id)
+      .maybeSingle();
+
+    if (studentRecord?.profile_id) {
+      await emitNotification({
+        supabase,
+        recipientProfileId: studentRecord.profile_id,
+        title: "Final Verdict Released",
+        message: `Your defense outcome has been officially recorded: ${verdictCode.replace(/_/g, " ").toUpperCase()}. Remarks: ${remarks || "None"}.`,
+        eventType: "final_verdict_released",
+        metadata: { projectId, verdictCode },
+      });
+    }
+  } catch (notifEx: unknown) {
+    console.error("[releaseProjectVerdictAction] Notification failed:",
+      notifEx instanceof Error ? notifEx.message : notifEx);
+  }
+
+  // 6. Record workflow history — non-blocking
+  await recordWorkflowTransition(supabase, {
+    projectId,
+    fromStageId: null,
+    toStageId: null,
+    transitionedBy: user.id,
+    performedByRole: "coordinator",
+    transitionType: "manual",
+    transitionReason: `Final verdict released: ${verdictCode}. Remarks: ${remarks || "None"}`,
+    oldStatus: "evaluation_submitted",
+    newStatus: verdictCode,
+    metadata: { projectId, verdictCode },
+  });
+
+  return { success: true };
+}
+
 
 
 /**

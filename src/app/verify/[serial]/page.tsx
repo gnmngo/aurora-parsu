@@ -99,10 +99,13 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     purpose: "web_verification",
   });
 
-  const sigData = sig as any;
-  const panelistProfile = sigData?.profiles;
-  const evaluation = sigData?.evaluations;
-  const project = evaluation?.projects;
+  const panelistProfile = sig
+    ? (sig as unknown as { profiles: { first_name: string; last_name: string; email: string } | null }).profiles
+    : null;
+  const evaluation = sig
+    ? (sig as unknown as { evaluations: { total_score: number | null; verdict_code: string | null; project_id: string; projects: { title: string } | null } | null }).evaluations
+    : null;
+  const project = evaluation?.projects ?? null;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">

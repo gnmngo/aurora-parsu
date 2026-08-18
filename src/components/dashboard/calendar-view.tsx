@@ -18,7 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { updateDefenseScheduleAction } from "@/lib/scheduler/actions";
+import { updateDefenseScheduleAction, cancelDefenseScheduleAction } from "@/lib/scheduler/actions";
 
 interface CalendarViewProps {
   userRole: string;
@@ -39,6 +39,7 @@ export function CalendarView({ userRole }: CalendarViewProps) {
   const [editTime, setEditTime] = useState("");
   const [editDuration, setEditDuration] = useState(60);
   const [saving, setSaving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Load schedules
   const loadSchedules = async () => {
@@ -321,9 +322,40 @@ export function CalendarView({ userRole }: CalendarViewProps) {
                               </span>
                             </div>
                           </div>
-                          <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleOpenEditModal(s)}>
-                            Reschedule
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleOpenEditModal(s)}>
+                              Reschedule
+                            </Button>
+                            {userRole === "coordinator" || userRole === "sys_admin" ? (
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                className="h-8 rounded-lg text-[10px]"
+                                disabled={cancelling}
+                                onClick={async () => {
+                                  if (!confirm(`Cancel defense for "${s.projects?.title}"? This cannot be undone.`)) return;
+                                  setCancelling(true);
+                                  try {
+                                    await cancelDefenseScheduleAction(
+                                      s.id,
+                                      s.project_id,
+                                      s.stage_id,
+                                      "Cancelled by coordinator"
+                                    );
+                                    toast.success("Defense schedule cancelled.");
+                                    await loadSchedules();
+                                  } catch (err: unknown) {
+                                    const msg = err instanceof Error ? err.message : "Failed to cancel";
+                                    toast.error(msg);
+                                  } finally {
+                                    setCancelling(false);
+                                  }
+                                }}
+                              >
+                                Cancel Defense
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
                       );
                     })}
