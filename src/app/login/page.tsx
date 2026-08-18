@@ -83,9 +83,7 @@ function LoginForm() {
     if (regCollegeId) {
       supabase.from("departments").select("id, name").eq("college_id", regCollegeId).order("name").then(({ data }) => {
         setDepartments(data || []);
-        // Don't auto-select department if none exists (it's optional)
-        if (data && data.length > 0) setRegDepartmentId(data[0].id);
-        else setRegDepartmentId("");
+        setRegDepartmentId("");
       });
     } else {
       setDepartments([]);
@@ -93,14 +91,12 @@ function LoginForm() {
     }
   }, [regCollegeId, supabase]);
 
-  // Load programs based on college AND department
+  // Load programs based on college
   useEffect(() => {
     if (regCollegeId) {
-      let query = supabase.from("programs").select("id, name").eq("college_id", regCollegeId);
+      let query = supabase.from("programs").select("id, name, department_id").eq("college_id", regCollegeId);
       if (regDepartmentId) {
         query = query.eq("department_id", regDepartmentId);
-      } else {
-        query = query.is("department_id", null);
       }
       query.order("name").then(({ data }) => {
         setPrograms(data || []);
@@ -203,10 +199,11 @@ function LoginForm() {
       };
 
       if (regRole === "student") {
+        const selectedProg = programs.find((p) => p.id === regProgramId);
         metaData.student_number = regNumber;
         metaData.campus_id = regCampusId || null;
         metaData.college_id = regCollegeId || null;
-        metaData.department_id = regDepartmentId || null;
+        metaData.department_id = regDepartmentId || (selectedProg as { department_id?: string | null })?.department_id || null;
         metaData.program_id = regProgramId || null;
         metaData.major_id = regMajorId || null;
       } else {
