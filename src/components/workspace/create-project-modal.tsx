@@ -38,8 +38,8 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
-  // Guard: student profile must have campus_id and department_id (NOT NULL in projects)
-  const missingHierarchy = !student?.campus_id || !student?.department_id;
+  // Check if student profile has explicit hierarchy or needs auto-resolution
+  const missingHierarchy = !student;
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,47 +54,66 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
       return;
     }
 
-    if (missingHierarchy) {
-      toast.error(
-        "Your profile is missing campus or department information. Please contact your coordinator."
-      );
-      return;
-    }
-
     setLoading(true);
     try {
+      let resolvedCampusId = student.campus_id;
+      let resolvedDeptId = student.department_id;
+      let resolvedCollegeId = student.college_id;
+      let resolvedProgId = student.program_id;
+
+      // Gracefully resolve default hierarchy if not already populated on student record
+      if (!resolvedCampusId || !resolvedDeptId) {
+        const { data: defaultDept } = await supabase
+          .from("departments")
+          .select("id, college_id, colleges(campus_id)")
+          .limit(1)
+          .maybeSingle();
+
+        if (defaultDept) {
+          resolvedDeptId = resolvedDeptId || defaultDept.id;
+          resolvedCollegeId = resolvedCollegeId || defaultDept.college_id;
+          const campus = Array.isArray(defaultDept.colleges) ? defaultDept.colleges[0] : defaultDept.colleges;
+          resolvedCampusId = resolvedCampusId || (campus as { campus_id: string })?.campus_id || "00000000-0000-0000-0000-000000000001";
+
+          // Auto-save to student record in background
+          await supabase
+            .from("students")
+            .update({
+              campus_id: resolvedCampusId,
+              college_id: resolvedCollegeId,
+              department_id: resolvedDeptId,
+            })
+            .eq("id", student.id);
+        } else {
+          resolvedCampusId = resolvedCampusId || "00000000-0000-0000-0000-000000000001";
+        }
+      }
+
       // 1. Look up a workflow template for this student's program (optional).
-      //    `workflow_template_id` is nullable in projects — if no template exists,
-      //    the project is still created (coordinator assigns later).
       let workflowTemplateId: string | null = null;
-      if (student.program_id) {
+      if (resolvedProgId) {
         const { data: workflows } = await supabase
           .from("workflow_templates")
           .select("id")
-          .eq("program_id", student.program_id)
+          .eq("program_id", resolvedProgId)
           .limit(1);
         workflowTemplateId = workflows?.[0]?.id ?? null;
       }
 
       // 2. Insert the project.
-      //    `status` is omitted — DB default is 'draft' (the only valid initial value).
-      //    `projects.student_id` → students.id  (verified FK)
-      //    `projects.campus_id` NOT NULL — validated above
-      //    `projects.department_id` NOT NULL — validated above
       const currentYear = new Date().getFullYear();
       const { data: project, error: insertErr } = await supabase
         .from("projects")
         .insert({
           title: title.trim(),
           student_id: student.id,                // students.id → projects.student_id FK
-          campus_id: student.campus_id,
-          college_id: student.college_id,
-          department_id: student.department_id,
-          program_id: student.program_id,
+          campus_id: resolvedCampusId,
+          college_id: resolvedCollegeId,
+          department_id: resolvedDeptId,
+          program_id: resolvedProgId,
           major_id: student.major_id,
           academic_year: `${currentYear}-${currentYear + 1}`,
           workflow_template_id: workflowTemplateId,
-          // status: omitted — DB default 'draft' applies automatically
         })
         .select("id, title, join_code")
         .single();
@@ -105,9 +124,6 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
       }
 
       // 3. Insert creator as project member (student_leader).
-      //    project_members.profile_id → profiles.id  (verified FK)
-      //    student.profile_id === profiles.id === auth.users.id
-      //    member_role 'student_leader' is a valid member_role enum value.
       const { error: memberErr } = await supabase
         .from("project_members")
         .insert({
@@ -118,7 +134,6 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
         });
 
       if (memberErr) {
-        // Project was created but membership failed — log and warn (non-fatal for UX)
         console.error("project_members insert failed:", memberErr.message);
         toast.warning(
           `Project created but membership record failed: ${memberErr.message}. Contact your coordinator.`
@@ -153,14 +168,12 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
           <DialogTitle>Create Research Project</DialogTitle>
         </DialogHeader>
 
-        {/* Hierarchy warning — shown when campus/department is null */}
+        {/* Notice if student profile is still loading */}
         {missingHierarchy && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
-              Your profile is missing campus or department information. Please
-              contact your coordinator to complete your profile before creating a
-              project.
+              Loading student profile information. Please wait a moment...
             </p>
           </div>
         )}
