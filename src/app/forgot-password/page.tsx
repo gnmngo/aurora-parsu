@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2 } from "lucide-react";
 import { APP_NAME, INSTITUTION } from "@/constants/app";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,10 +52,8 @@ export default function ForgotPasswordPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Sparkles className="h-7 w-7 text-primary-foreground" />
-          </div>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <AuroraLogo size="lg" className="mb-4" />
           <h1 className="text-2xl font-bold tracking-tight">{APP_NAME}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{INSTITUTION}</p>
         </div>

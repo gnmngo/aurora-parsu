@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -96,10 +97,8 @@ function ResetPasswordForm() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
 
         <CardContent className="p-8">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20 shadow-inner">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <AuroraLogo size="xl" className="mb-4" />
             <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">
               Set New Password
             </h1>

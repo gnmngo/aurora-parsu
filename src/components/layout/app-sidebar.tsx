@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/constants/app";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
@@ -107,16 +108,8 @@ export function AppSidebar({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-black tracking-wider text-white uppercase">
-            {APP_NAME}
-          </p>
-          <p className="text-[10px] text-sidebar-foreground/60 font-semibold uppercase tracking-widest">ParSU Goa</p>
-        </div>
+      <div className="flex h-16 items-center border-b border-white/10 px-6">
+        <AuroraLogo size="md" showText={true} textColor="text-white" subtext="ParSU Goa" />
       </div>
 
       <ScrollArea className="flex-1 px-3 py-4">

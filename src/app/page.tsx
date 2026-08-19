@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
 import { useTheme } from "@/providers/theme-provider";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 
 const features = [
   {
@@ -113,14 +114,7 @@ export default function HomePage() {
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <motion.div 
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.3 }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-md"
-            >
-              <Sparkles className="h-5 w-5 text-white" />
-            </motion.div>
-            <span className="font-extrabold tracking-wider text-foreground text-base font-display">AURORA</span>
+            <AuroraLogo size="md" showText={true} textColor="text-foreground" />
           </Link>
 
           <div className="flex items-center gap-4">
@@ -376,8 +370,7 @@ export default function HomePage() {
       <footer className="border-t border-border bg-card py-12 mt-auto">
         <div className="mx-auto max-w-6xl px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground font-bold uppercase tracking-wider">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-foreground font-black font-display tracking-widest">AURORA PLATFORM</span>
+            <AuroraLogo size="sm" showText={true} textColor="text-foreground" />
           </div>
           <span>© {new Date().getFullYear()} {INSTITUTION}. All rights reserved.</span>
         </div>
