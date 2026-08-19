@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { registerUserAction } from "@/lib/auth/register-action";
 
 function LoginForm() {
   const router = useRouter();
@@ -192,47 +193,38 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const metaData: any = {
-        first_name: regFirstName,
-        last_name: regLastName,
-        role: regRole,
-      };
+      const selectedProg = programs.find((p) => p.id === regProgramId);
+      const departmentId = regDepartmentId || (selectedProg as { department_id?: string | null })?.department_id || null;
 
-      if (regRole === "student") {
-        const selectedProg = programs.find((p) => p.id === regProgramId);
-        metaData.student_number = regNumber;
-        metaData.campus_id = regCampusId || null;
-        metaData.college_id = regCollegeId || null;
-        metaData.department_id = regDepartmentId || (selectedProg as { department_id?: string | null })?.department_id || null;
-        metaData.program_id = regProgramId || null;
-        metaData.major_id = regMajorId || null;
-      } else {
-        metaData.employee_number = regNumber;
-        metaData.specialization = regSpecialization;
-      }
-
-      const { data, error } = await supabase.auth.signUp({
+      const result = await registerUserAction({
         email: regEmail,
         password: regPassword,
-        options: {
-          data: metaData
-        }
+        firstName: regFirstName,
+        lastName: regLastName,
+        role: regRole as "student" | "adviser" | "panelist",
+        number: regNumber,
+        campusId: regCampusId || null,
+        collegeId: regCollegeId || null,
+        departmentId,
+        programId: regProgramId || null,
+        majorId: regMajorId || null,
+        specialization: regSpecialization,
       });
 
-      if (error) {
-        toast.error(error.message || "Registration failed");
+      if (!result.success) {
+        toast.error(result.error || "Registration failed");
         return;
       }
 
-      toast.success("Account created! Please wait for administrator approval or sign in if auto-approved.");
+      toast.success("Account created successfully! You can now sign in.");
       
-      // Auto-switch back to sign-in, but DO NOT auto sign-in to prevent hanging on pending accounts.
+      // Auto-populate credentials and switch to sign in tab
       setEmail(regEmail);
       setPassword(regPassword);
       setActiveTab("signin");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Unexpected registration error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unexpected registration error";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
