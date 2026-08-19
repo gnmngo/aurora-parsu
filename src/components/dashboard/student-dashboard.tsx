@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
 import Link from "next/link";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
+import { PdfUploader } from "@/components/documents/pdf-uploader";
+import { UploadCloud, Plus, UserPlus } from "lucide-react";
 
 interface StudentDashboardProps {
   userId: string;
@@ -37,145 +39,159 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [annotationsCount, setAnnotationsCount] = useState({ total: 0, unresolved: 0 });
   const [activeTab, setActiveTab] = useState<"submissions" | "revisions" | "evaluations">("submissions");
   const [error, setError] = useState<string | null>(null);
-  
-  // B4 Fix: createClient() is a singleton (see src/lib/supabase/client.ts).
-  // Declare it outside the effect for reuse within the component body,
-  // but do NOT include it in useEffect deps — it never changes reference.
   const supabase = createClient();
 
-  useEffect(() => {
-    async function loadStudentData() {
-      try {
-        // 1. Fetch student profile and associated project
-        const { data: stdRecord } = await supabase
-          .from("students")
-          .select("id")
-          .eq("profile_id", userId)
-          .maybeSingle();
+  const loadStudentData = useCallback(async () => {
+    try {
+      // 1. Fetch student profile and associated project
+      let { data: stdRecord } = await supabase
+        .from("students")
+        .select("id")
+        .eq("profile_id", userId)
+        .maybeSingle();
 
-        if (!stdRecord) {
-          setLoading(false);
-          return;
+      if (!stdRecord) {
+        const { data: newStd } = await supabase
+          .from("students")
+          .insert({ profile_id: userId })
+          .select("id")
+          .single();
+        stdRecord = newStd;
+      }
+
+      // Check if member of any project
+      const { data: memberRows } = await supabase
+        .from("project_members")
+        .select("project_id")
+        .eq("profile_id", userId)
+        .limit(1);
+
+      const memberProjId = memberRows?.[0]?.project_id;
+
+      let projQuery = supabase
+        .from("projects")
+        .select("*, defense_stages ( id, name )");
+
+      if (memberProjId) {
+        projQuery = projQuery.eq("id", memberProjId);
+      } else if (stdRecord?.id) {
+        projQuery = projQuery.eq("student_id", stdRecord.id);
+      } else {
+        setLoading(false);
+        return;
+      }
+
+      const { data: proj } = await projQuery.maybeSingle();
+
+      if (proj) {
+        setProject(proj);
+
+        // Fetch workflow stages dynamically for this project
+        let stagesQuery = supabase
+          .from("defense_stages")
+          .select("*")
+          .order("sequence_order");
+
+        if (proj.workflow_template_id) {
+          stagesQuery = stagesQuery.eq("workflow_template_id", proj.workflow_template_id);
+        }
+        const { data: dbStages } = await stagesQuery;
+        if (dbStages) {
+          setStagesList(dbStages);
         }
 
-        const { data: proj } = await supabase
-          .from("projects")
-          .select("*, defense_stages ( id, name )")
-          .eq("student_id", stdRecord.id)
+        // 2. Fetch adviser member
+        const { data: advMem } = await supabase
+          .from("project_members")
+          .select("*, profiles(first_name, last_name, email)")
+          .eq("project_id", proj.id)
+          .eq("member_role", "adviser")
           .maybeSingle();
+        if (advMem) setAdviser(advMem);
 
-        if (proj) {
-          setProject(proj);
+        // 3. Fetch latest schedule
+        const { data: sched } = await supabase
+          .from("defense_schedules")
+          .select("*")
+          .eq("project_id", proj.id)
+          .order("scheduled_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (sched) setSchedule(sched);
 
-          // Fetch workflow stages dynamically for this project
-          let stagesQuery = supabase
-            .from("defense_stages")
-            .select("*")
-            .order("sequence_order");
+        // 4. Fetch latest manuscript document
+        const { data: docs } = await supabase
+          .from("documents")
+          .select("*, adviser_approval_status, document_versions(*)")
+          .eq("project_id", proj.id);
 
-          if (proj.workflow_template_id) {
-            stagesQuery = stagesQuery.eq("workflow_template_id", proj.workflow_template_id);
-          }
-          const { data: dbStages } = await stagesQuery;
-          if (dbStages) {
-            setStagesList(dbStages);
-          }
+        if (docs && docs.length > 0) {
+          const activeDoc =
+            docs.find((d: any) => d.status === "submitted" || d.status === "under_review" || d.status === "approved") ||
+            docs[0];
+          setLatestDoc(activeDoc);
 
-          // 2. Fetch adviser member
-          const { data: advMem } = await supabase
-            .from("project_members")
-            .select("*, profiles(first_name, last_name, email)")
-            .eq("project_id", proj.id)
-            .eq("member_role", "adviser")
-            .maybeSingle();
-          if (advMem) setAdviser(advMem);
-
-          // 3. Fetch latest schedule
-          const { data: sched } = await supabase
-            .from("defense_schedules")
-            .select("*")
-            .eq("project_id", proj.id)
-            .order("scheduled_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (sched) setSchedule(sched);
-
-          // 4. Fetch latest manuscript document
-          const { data: docs } = await supabase
-            .from("documents")
-            .select("*, adviser_approval_status, document_versions(*)")
-            .eq("project_id", proj.id);
-
-          if (docs && docs.length > 0) {
-            // Pick the most relevant document: prefer submitted/approved, then fall back to most recent.
-            // Note: document_status enum has NO "active" value — valid values are:
-            // uploading, processing, draft, submitted, under_review, approved, revision_required, rejected, locked
-            const activeDoc =
-              docs.find((d: any) => d.status === "submitted" || d.status === "under_review" || d.status === "approved") ||
-              docs[0];
-            setLatestDoc(activeDoc);
-
-            // Compile submissions list
-            const allVers: any[] = [];
-            docs.forEach((doc: any) => {
-              if (doc.document_versions) {
-                doc.document_versions.forEach((ver: any) => {
-                  allVers.push({
-                    ...ver,
-                    document_title: doc.title,
-                    stage_id: doc.stage_id,
-                    approvalStatus: doc.adviser_approval_status
-                  });
+          // Compile submissions list
+          const allVers: any[] = [];
+          docs.forEach((doc: any) => {
+            if (doc.document_versions) {
+              doc.document_versions.forEach((ver: any) => {
+                allVers.push({
+                  ...ver,
+                  document_title: doc.title,
+                  stage_id: doc.stage_id,
+                  approvalStatus: doc.adviser_approval_status
                 });
-              }
-            });
-            setSubmissionsList(allVers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+              });
+            }
+          });
+          setSubmissionsList(allVers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
 
-            // Calculate annotations
-            const versionIds = activeDoc.document_versions?.map((dv: any) => dv.id) || [];
-            if (versionIds.length > 0) {
-              const { data: anns } = await supabase
-                .from("annotations")
-                .select("*, profiles!created_by(first_name, last_name)")
-                .in("document_version_id", versionIds);
+          // Calculate annotations
+          const versionIds = activeDoc.document_versions?.map((dv: any) => dv.id) || [];
+          if (versionIds.length > 0) {
+            const { data: anns } = await supabase
+              .from("annotations")
+              .select("*, profiles!created_by(first_name, last_name)")
+              .in("document_version_id", versionIds);
 
-              if (anns) {
-                const total = anns.length;
-                const unresolved = anns.filter((a: any) => a.status !== "verified" && a.status !== "resolved").length;
-                setAnnotationsCount({ total, unresolved });
-                setRevisionsList(anns.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-              }
+            if (anns) {
+              const total = anns.length;
+              const unresolved = anns.filter((a: any) => a.status !== "verified" && a.status !== "resolved").length;
+              setAnnotationsCount({ total, unresolved });
+              setRevisionsList(anns.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
             }
           }
-
-          // 5. Fetch evaluations history
-          const { data: evals } = await supabase
-            .from("evaluations")
-            .select(`
-              id,
-              total_score,
-              verdict_code,
-              status,
-              signed_at,
-              panelist_id,
-              profiles ( first_name, last_name ),
-              defense_stages ( name )
-            `)
-            .eq("project_id", proj.id)
-            .eq("status", "submitted");
-          if (evals) setEvaluationsList(evals);
         }
-      } catch (err) {
-        console.error("Error loading student dashboard:", err);
-        setError(err instanceof Error ? err.message : "Failed to load project data.");
-      } finally {
-        setLoading(false);
-      }
-    }
 
+        // 5. Fetch evaluations history
+        const { data: evals } = await supabase
+          .from("evaluations")
+          .select(`
+            id,
+            total_score,
+            verdict_code,
+            status,
+            signed_at,
+            panelist_id,
+            profiles ( first_name, last_name ),
+            defense_stages ( name )
+          `)
+          .eq("project_id", proj.id)
+          .eq("status", "submitted");
+        if (evals) setEvaluationsList(evals);
+      }
+    } catch (err) {
+      console.error("Error loading student dashboard:", err);
+      setError(err instanceof Error ? err.message : "Failed to load project data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, supabase]);
+
+  useEffect(() => {
     loadStudentData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [loadStudentData]);
 
   if (error) {
     return (
@@ -206,11 +222,19 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   if (!project) {
     return (
       <Card className="border-dashed border-border p-12 text-center flex flex-col items-center">
-        <AlertTriangle className="h-10 w-10 text-muted-foreground opacity-40" />
-        <h3 className="text-sm font-bold mt-4 text-slate-800 uppercase tracking-wider">No Project Registered</h3>
-        <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-          You are not currently linked to any active research project. Contact your coordinator to register.
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+          <BookOpen className="h-8 w-8 text-primary" />
+        </div>
+        <h3 className="text-base font-bold text-foreground">No Research Project Yet</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed mb-6">
+          You are not currently linked to any active project. Create a new research project or join your group using a join code.
         </p>
+        <Link href="/dashboard/my-project">
+          <Button className="gap-2 font-bold shadow-sm">
+            <Plus className="h-4 w-4" />
+            Create or Join a Project
+          </Button>
+        </Link>
       </Card>
     );
   }
@@ -238,13 +262,22 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       {/* Welcome & Progress Card */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
-              Active Research Details
-            </CardTitle>
-            <CardDescription className="text-[10px]">
-              Current capstone registry mappings
-            </CardDescription>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                Active Research Details
+              </CardTitle>
+              <CardDescription className="text-[10px]">
+                Current capstone registry mappings
+              </CardDescription>
+            </div>
+            <PdfUploader
+              projectId={project.id}
+              stageId={project.current_stage_id || undefined}
+              buttonText="Upload Manuscript (PDF)"
+              className="font-bold shadow-sm"
+              onUploadCompleted={loadStudentData}
+            />
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -316,15 +349,30 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         <div className="md:col-span-2 space-y-6">
           {activeTab === "submissions" && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
                   <FileText className="h-4 w-4 text-primary" /> Submission versions history
                 </CardTitle>
+                <PdfUploader
+                  projectId={project.id}
+                  stageId={project.current_stage_id || undefined}
+                  buttonText="Upload PDF"
+                  buttonSize="sm"
+                  onUploadCompleted={loadStudentData}
+                />
               </CardHeader>
               <CardContent className="p-0">
                 {submissionsList.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground">
-                    No manuscripts uploaded yet.
+                  <div className="p-8 text-center text-xs text-muted-foreground flex flex-col items-center">
+                    <p className="mb-3">No manuscripts uploaded yet.</p>
+                    <PdfUploader
+                      projectId={project.id}
+                      stageId={project.current_stage_id || undefined}
+                      buttonText="Upload Your First Manuscript (PDF)"
+                      buttonSize="sm"
+                      className="font-bold"
+                      onUploadCompleted={loadStudentData}
+                    />
                   </div>
                 ) : (
                   <div className="divide-y divide-border">

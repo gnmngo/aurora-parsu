@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { FileUp, UploadCloud } from "lucide-react";
+import { FileUp, UploadCloud, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { computeFileSha256, getManuscriptSignedUrl } from "@/lib/documents";
+import { computeFileSha256 } from "@/lib/documents";
+import { cn } from "@/lib/utils";
 
 interface ProjectOption {
   id: string;
@@ -23,23 +24,41 @@ interface ProjectOption {
   current_stage_id: string | null;
 }
 
+interface PdfUploaderProps {
+  onUploadCompleted?: () => void;
+  projectId?: string;
+  stageId?: string;
+  buttonText?: string;
+  buttonVariant?: "default" | "outline" | "secondary";
+  buttonSize?: "default" | "sm" | "lg";
+  className?: string;
+}
+
 export function PdfUploader({
   onUploadCompleted,
-}: {
-  onUploadCompleted: () => void;
-}) {
+  projectId,
+  stageId,
+  buttonText = "Upload PDF",
+  buttonVariant = "default",
+  buttonSize = "default",
+  className,
+}: PdfUploaderProps) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [stages, setStages] = useState<Array<{ id: string; name: string }>>(
-    []
-  );
-  const [selectedProject, setSelectedProject] = useState("");
-  const [selectedStage, setSelectedStage] = useState("");
+  const [stages, setStages] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedProject, setSelectedProject] = useState(projectId || "");
+  const [selectedStage, setSelectedStage] = useState(stageId || "");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
+
+  // Sync props if passed
+  useEffect(() => {
+    if (projectId) setSelectedProject(projectId);
+    if (stageId) setSelectedStage(stageId);
+  }, [projectId, stageId]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,16 +77,8 @@ export function PdfUploader({
             .order("sequence_order", { ascending: true }),
         ]);
 
-        // 🚨 REAL ERROR LOGGING
-        if (projRes.error) {
-          console.error("PROJECT LOAD ERROR:", projRes.error);
-          throw projRes.error;
-        }
-
-        if (stageRes.error) {
-          console.error("STAGE LOAD ERROR:", stageRes.error);
-          throw stageRes.error;
-        }
+        if (projRes.error) throw projRes.error;
+        if (stageRes.error) throw stageRes.error;
 
         const projData = projRes.data ?? [];
         const stageData = stageRes.data ?? [];
@@ -75,36 +86,36 @@ export function PdfUploader({
         setProjects(projData);
         setStages(stageData);
 
-        // safe defaults
-        if (projData.length > 0) {
+        // Safe defaults if not already set
+        if (!selectedProject && projData.length > 0) {
           const first = projData[0];
           setSelectedProject(first.id);
-
           if (first.current_stage_id) {
             setSelectedStage(first.current_stage_id);
           } else if (stageData.length > 0) {
             setSelectedStage(stageData[0].id);
           }
+        } else if (selectedProject && !selectedStage) {
+          const activeProj = projData.find((p) => p.id === selectedProject);
+          if (activeProj?.current_stage_id) {
+            setSelectedStage(activeProj.current_stage_id);
+          } else if (stageData.length > 0) {
+            setSelectedStage(stageData[0].id);
+          }
         }
-      } catch (err: any) {
-        console.log("FULL UPLOAD DATA ERROR:", err);
-        console.log("STRINGIFIED:", JSON.stringify(err, null, 2));
-
-        toast.error(
-          err?.message || "Failed to load upload data (check console)"
-        );
+      } catch (err: unknown) {
+        console.error("Error loading project/stage data for upload:", err);
       }
     }
 
     loadData();
-  }, [open, supabase]);
+  }, [open, supabase, selectedProject, selectedStage]);
 
-  const handleProjectChange = (projectId: string) => {
-    setSelectedProject(projectId);
-
-    const project = projects.find((p) => p.id === projectId);
-    if (project?.current_stage_id) {
-      setSelectedStage(project.current_stage_id);
+  const handleProjectChange = (projId: string) => {
+    setSelectedProject(projId);
+    const p = projects.find((x) => x.id === projId);
+    if (p?.current_stage_id) {
+      setSelectedStage(p.current_stage_id);
     }
   };
 
@@ -129,7 +140,7 @@ export function PdfUploader({
     e.preventDefault();
 
     if (!file || !selectedProject || !selectedStage) {
-      toast.error("Please complete all fields.");
+      toast.error("Please select a file and ensure project/stage are assigned.");
       return;
     }
 
@@ -137,15 +148,13 @@ export function PdfUploader({
     let uploadedPath: string | null = null;
 
     try {
-      // BUG-H3: Use getUser() — validates against Auth server (not local cookie)
-      const { data: { user: authUser }, error: authError } =
-        await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-      if (authError) throw authError;
-
-      const userId = authUser?.id;
-
-      if (!userId) throw new Error("Not authenticated. Please log in.");
+      if (authError || !authUser) throw new Error("Not authenticated. Please log in.");
+      const userId = authUser.id;
 
       const checksum = await computeFileSha256(file);
       const fileName = `${Date.now()}_${checksum.slice(0, 8)}.pdf`;
@@ -188,9 +197,7 @@ export function PdfUploader({
       if (versionFetchError) throw versionFetchError;
 
       const nextVersion =
-        versions && versions.length > 0
-          ? versions[0].version_number + 1
-          : 1;
+        versions && versions.length > 0 ? versions[0].version_number + 1 : 1;
 
       await supabase
         .from("document_versions")
@@ -210,9 +217,7 @@ export function PdfUploader({
           uploaded_by: userId,
           is_current: true,
           change_summary:
-            nextVersion === 1
-              ? "Initial upload"
-              : `Revision v${nextVersion}`,
+            nextVersion === 1 ? "Initial upload" : `Revision v${nextVersion}`,
         })
         .select()
         .single();
@@ -246,28 +251,23 @@ export function PdfUploader({
         })
         .eq("id", selectedProject);
 
-      toast.success(`PDF v${nextVersion} uploaded successfully.`, {
+      toast.success(`Manuscript PDF v${nextVersion} uploaded successfully!`, {
         action: {
           label: "Open Workspace",
-          onClick: () =>
-            router.push(`/workspace/${selectedProject}/${selectedStage}`),
+          onClick: () => router.push(`/workspace/${selectedProject}/${selectedStage}`),
         },
       });
 
       setFile(null);
       setOpen(false);
-      onUploadCompleted();
-    } catch (err: any) {
-      console.log("UPLOAD ERROR:", err);
-      console.log(JSON.stringify(err, null, 2));
-
+      if (onUploadCompleted) onUploadCompleted();
+    } catch (err: unknown) {
+      console.error("Upload error:", err);
       if (uploadedPath) {
-        await supabase.storage
-          .from("manuscripts")
-          .remove([uploadedPath]);
+        await supabase.storage.from("manuscripts").remove([uploadedPath]);
       }
-
-      toast.error(err?.message || "Upload failed");
+      const message = err instanceof Error ? err.message : "Upload failed";
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -276,82 +276,121 @@ export function PdfUploader({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <FileUp className="mr-1.5 h-4 w-4" />
-          Upload PDF
+        <Button size={buttonSize} variant={buttonVariant} className={cn("gap-2 font-bold shadow-sm", className)}>
+          <UploadCloud className="h-4 w-4" />
+          {buttonText}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>Upload Research Manuscript</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileUp className="h-5 w-5 text-primary" />
+            Upload Research Manuscript
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleUpload} className="space-y-4 pt-2">
-          {/* PROJECT */}
-          <div className="space-y-1">
-            <Label>Select Project</Label>
-            <select
-              value={selectedProject}
-              onChange={(e) => handleProjectChange(e.target.value)}
-              className="w-full rounded-xl border p-2 text-sm"
-            >
-              {projects.length === 0 ? (
-                <option>No projects available</option>
-              ) : (
-                projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
+          {/* Project selector only if not pre-bound */}
+          {!projectId && (
+            <div className="space-y-1">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Select Project</Label>
+              <select
+                value={selectedProject}
+                onChange={(e) => handleProjectChange(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              >
+                {projects.length === 0 ? (
+                  <option value="">No projects available</option>
+                ) : (
+                  projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
+
+          {/* Stage selector only if not pre-bound */}
+          {!stageId && (
+            <div className="space-y-1">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Defense Stage</Label>
+              <select
+                value={selectedStage}
+                onChange={(e) => setSelectedStage(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              >
+                {stages.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
-                ))
-              )}
-            </select>
+                ))}
+              </select>
+            </div>
+          )}
 
-            {projects.length === 0 && (
-              <p className="text-xs text-red-500">
-                No projects found (check RLS or seed data)
-              </p>
-            )}
-          </div>
-
-          {/* STAGE */}
-          <div className="space-y-1">
-            <Label>Select Stage</Label>
-            <select
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full rounded-xl border p-2 text-sm"
-            >
-              {stages.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* FILE */}
+          {/* Enhanced PDF Drag & Drop / File Selector */}
           <div className="space-y-2">
-            <Label>PDF File</Label>
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Manuscript PDF File</Label>
 
-            <input type="file" accept="application/pdf" onChange={handleFileChange} />
-
-            {file && (
-              <p className="text-xs text-primary">
-                {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-              </p>
-            )}
+            <label className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 p-6 text-center transition-colors hover:bg-muted/40 hover:border-primary/50 cursor-pointer">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={uploading}
+              />
+              {file ? (
+                <div className="flex flex-col items-center space-y-2 text-primary">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-foreground truncate max-w-[280px]">{file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to submit
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <UploadCloud className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">
+                      Click to browse or drag and drop your PDF
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      PDF documents up to 50MB
+                    </p>
+                  </div>
+                </div>
+              )}
+            </label>
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" size="sm" disabled={uploading}>
                 Cancel
               </Button>
             </DialogClose>
 
-            <Button type="submit" disabled={uploading}>
-              {uploading ? "Uploading..." : "Submit PDF"}
+            <Button type="submit" size="sm" disabled={uploading || !file}>
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                "Submit Manuscript"
+              )}
             </Button>
           </div>
         </form>

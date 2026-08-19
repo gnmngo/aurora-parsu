@@ -139,33 +139,52 @@ export default function MyProjectPage() {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Get student record.
-      //    profile_id is included so CreateProjectModal can insert the correct
-      //    UUID into project_members.profile_id (profiles.id, NOT students.id).
-      const { data: studentRecord } = await supabase
+      // 1. Get or resolve student record.
+      let { data: studentRecord } = await supabase
         .from("students")
         .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
         .eq("profile_id", user.id)
         .maybeSingle();
 
       if (!studentRecord) {
-        setLoading(false);
-        return;
+        const { data: newStudent } = await supabase
+          .from("students")
+          .insert({ profile_id: user.id })
+          .select()
+          .single();
+        studentRecord = newStudent;
       }
       setStudent(studentRecord);
 
-      // 2. Get project with all linked data (including join_code for the leader)
-      const { data: proj } = await supabase
+      // 2. Check if user is a member of any project in project_members
+      const { data: memberRows } = await supabase
+        .from("project_members")
+        .select("project_id")
+        .eq("profile_id", user.id)
+        .limit(1);
+
+      const memberProjectId = memberRows?.[0]?.project_id;
+
+      let projectQuery = supabase
         .from("projects")
         .select(`
           id, title, status, academic_year, created_at,
-          current_stage_id, workflow_template_id, join_code,
+          current_stage_id, workflow_template_id, join_code, student_id,
           defense_stages ( id, name, sequence_order ),
           departments ( id, name ),
           students ( id, profiles ( first_name, last_name ) )
-        `)
-        .eq("student_id", studentRecord.id)
-        .maybeSingle();
+        `);
+
+      if (memberProjectId) {
+        projectQuery = projectQuery.eq("id", memberProjectId);
+      } else if (studentRecord?.id) {
+        projectQuery = projectQuery.eq("student_id", studentRecord.id);
+      } else {
+        setLoading(false);
+        return;
+      }
+
+      const { data: proj } = await projectQuery.maybeSingle();
 
       if (!proj) {
         setLoading(false);
@@ -351,7 +370,13 @@ export default function MyProjectPage() {
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
-            <PdfUploader onUploadCompleted={loadProjectData} />
+            <PdfUploader
+              projectId={project.id}
+              stageId={project.current_stage_id || undefined}
+              buttonText="Upload Manuscript (PDF)"
+              className="font-bold shadow-sm"
+              onUploadCompleted={loadProjectData}
+            />
           </div>
         </div>
 
@@ -655,17 +680,18 @@ export default function MyProjectPage() {
                   <CardTitle className="text-sm">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <PdfUploader onUploadCompleted={loadProjectData} />
+                  <PdfUploader
+                    projectId={project.id}
+                    stageId={project.current_stage_id || undefined}
+                    buttonText="Upload New Version"
+                    buttonVariant="default"
+                    className="w-full justify-center text-xs h-9 font-bold"
+                    onUploadCompleted={loadProjectData}
+                  />
                   <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs h-9" asChild>
-                    <Link href="/dashboard/annotations">
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      View All Feedback
-                    </Link>
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs h-9" asChild>
-                    <Link href="/dashboard/grades">
-                      <Award className="h-3.5 w-3.5" />
-                      View Evaluations
+                    <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open Full Workspace
                     </Link>
                   </Button>
                 </CardContent>
@@ -681,7 +707,12 @@ export default function MyProjectPage() {
                 <h2 className="text-base font-bold">Manuscript Versions</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">All uploaded manuscript files with version history</p>
               </div>
-              <PdfUploader onUploadCompleted={loadProjectData} />
+              <PdfUploader
+                projectId={project.id}
+                stageId={project.current_stage_id || undefined}
+                buttonText="Upload PDF"
+                onUploadCompleted={loadProjectData}
+              />
             </div>
 
             {documents.length === 0 ? (
@@ -692,7 +723,13 @@ export default function MyProjectPage() {
                   Upload your first manuscript to begin the defense workflow.
                 </p>
                 <div className="mt-4">
-                  <PdfUploader onUploadCompleted={loadProjectData} />
+                  <PdfUploader
+                    projectId={project.id}
+                    stageId={project.current_stage_id || undefined}
+                    buttonText="Upload First Manuscript (PDF)"
+                    className="font-bold"
+                    onUploadCompleted={loadProjectData}
+                  />
                 </div>
               </div>
             ) : (

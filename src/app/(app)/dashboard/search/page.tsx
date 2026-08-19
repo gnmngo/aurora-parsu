@@ -10,6 +10,8 @@ import { Search, Loader2, ArrowRight, Calendar, Inbox, Users, FileText, Clock, L
 import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 type SearchTab = "projects" | "people" | "documents" | "schedules";
 
@@ -97,7 +99,8 @@ export default function SearchPage() {
   }, [page, activeTab]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
+      <div className="mx-auto max-w-7xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-display">Global Search</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -258,6 +261,7 @@ export default function SearchPage() {
           </Button>
         </div>
       )}
-    </div>
+      </div>
+    </RoleGuard>
   );
 }

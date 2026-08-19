@@ -11,6 +11,8 @@ import Link from "next/link";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { cn } from "@/lib/utils";
 import { Loader2, Settings } from "lucide-react";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function DefensesPage() {
   const [stages, setStages] = useState<any[]>([]);
@@ -96,7 +98,8 @@ export default function DefensesPage() {
   }, [supabase, selectedTemplateId]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
+      <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Defenses Pipeline</h1>
@@ -207,6 +210,7 @@ export default function DefensesPage() {
       ) : (
         <CalendarView userRole={roles[0] || "student"} />
       )}
-    </div>
+      </div>
+    </RoleGuard>
   );
 }

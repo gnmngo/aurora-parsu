@@ -4,23 +4,13 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
-/**
- * studentId = students.id (NOT profiles.id).
- *
- * UUID chain verified from live DB:
- *   students.id        → projects.student_id (FK)
- *   students.profile_id → profiles.id = auth.users.id
- *   project_members.profile_id → profiles.id   ← we must look this up
- *
- * The modal resolves profile_id from students before inserting project_members.
- */
 interface JoinProjectModalProps {
   onSuccess: () => void;
-  studentId: string; // students.id — used only to look up students.profile_id
+  studentId?: string;
 }
 
 export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps) {
@@ -33,24 +23,28 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
     e.preventDefault();
 
     const code = joinCode.trim().toUpperCase();
-    if (!code || code.length < 6) {
-      toast.error("Please enter a valid 6-character join code");
-      return;
-    }
-
-    if (!studentId) {
-      toast.error("Student profile not loaded. Please refresh the page.");
+    if (!code || code.length < 4) {
+      toast.error("Please enter a valid join code");
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Look up the project by join code.
-      //    Using maybeSingle() so a missing code returns null (not an error).
-      //    join_code has a UNIQUE constraint in the DB.
+      // 1. Get current authenticated user
+      const {
+        data: { user },
+        error: authErr,
+      } = await supabase.auth.getUser();
+
+      if (authErr || !user) {
+        toast.error("You must be signed in to join a project");
+        return;
+      }
+
+      // 2. Look up the project by join code
       const { data: project, error: searchErr } = await supabase
         .from("projects")
-        .select("id, title")
+        .select("id, title, student_id")
         .eq("join_code", code)
         .maybeSingle();
 
@@ -63,48 +57,45 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
         return;
       }
 
-      // 2. Resolve the student's profile_id.
-      //    studentId = students.id (passed from parent page)
-      //    project_members.profile_id requires profiles.id
-      const { data: studentRecord, error: stuErr } = await supabase
+      // 3. Ensure student record exists
+      let profileId = user.id;
+      const { data: existingStudent } = await supabase
         .from("students")
-        .select("profile_id")
-        .eq("id", studentId)
+        .select("id, profile_id")
+        .eq("profile_id", profileId)
         .maybeSingle();
 
-      if (stuErr || !studentRecord?.profile_id) {
-        toast.error("Could not load your student profile. Please refresh the page.");
-        return;
+      if (!existingStudent) {
+        // Create student row if missing
+        await supabase.from("students").insert({
+          profile_id: profileId,
+          year_level: 4,
+        });
       }
 
-      // 3. Check for duplicate membership.
-      //    The unique constraint is (project_id, profile_id, member_role).
-      //    We check any membership first to avoid confusing error messages.
-      const { data: existing } = await supabase
+      // 4. Check for duplicate membership
+      const { data: existingMember } = await supabase
         .from("project_members")
         .select("id, member_role")
         .eq("project_id", project.id)
-        .eq("profile_id", studentRecord.profile_id)
+        .eq("profile_id", profileId)
         .maybeSingle();
 
-      if (existing) {
-        toast.error(
-          `You are already a member of this project (role: ${existing.member_role}).`
-        );
+      if (existingMember) {
+        toast.info(`You are already a member of "${project.title}". Loading your project...`);
+        setJoinCode("");
+        setOpen(false);
+        onSuccess();
         return;
       }
 
-      // 4. Insert the student as a project member.
-      //    member_role 'student' is a valid member_role enum value.
-      //    profile_id = profiles.id (verified from students.profile_id above)
-      const { error: joinErr } = await supabase
-        .from("project_members")
-        .insert({
-          project_id: project.id,
-          profile_id: studentRecord.profile_id,  // profiles.id — NOT students.id
-          member_role: "student",                 // valid member_role enum value
-          is_primary: false,
-        });
+      // 5. Insert project member
+      const { error: joinErr } = await supabase.from("project_members").insert({
+        project_id: project.id,
+        profile_id: profileId,
+        member_role: "student",
+        is_primary: false,
+      });
 
       if (joinErr) {
         toast.error(`Failed to join project: ${joinErr.message}`);
@@ -126,31 +117,38 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full justify-start gap-2">
-          <UserPlus className="w-4 h-4" />
+        <Button variant="outline" className="w-full justify-center gap-2 font-bold h-10">
+          <UserPlus className="w-4 h-4 text-primary" />
           Join Existing Project
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Join Project</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" />
+            Join Research Team
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleJoin} className="space-y-4 pt-4">
+        <form onSubmit={handleJoin} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Join Code</label>
+            <label className="text-xs font-bold uppercase text-muted-foreground">
+              Enter 6-Character Join Code
+            </label>
             <Input
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="e.g. AB3F9K"
               maxLength={8}
+              className="text-center text-lg font-black tracking-[0.25em] h-12 uppercase"
               disabled={loading}
+              autoFocus
               required
             />
-            <p className="text-xs text-muted-foreground">
-              Ask your project leader or adviser for the 6-character join code.
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Ask your project leader for their 6-character code (found on their project Overview page).
             </p>
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full font-bold h-10" disabled={loading || !joinCode.trim()}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Join Project
           </Button>
