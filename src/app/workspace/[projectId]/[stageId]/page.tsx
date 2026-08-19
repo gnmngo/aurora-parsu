@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Wifi, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Wifi, Loader2, AlertCircle, FileText } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import nextDynamic from "next/dynamic";
 import { GradingPanel } from "@/components/workspace/grading-panel";
+import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -38,79 +39,79 @@ export default function WorkspacePage() {
     setAnnotationRefreshKey((k) => k + 1);
   };
 
-  useEffect(() => {
-    async function loadWorkspaceData() {
-      try {
-        // 1. Fetch project title
-        const { data: projData, error: projErr } = await supabase
-          .from("projects")
-          .select("title, current_stage_id, students(profiles(first_name, last_name))")
-          .eq("id", projectId)
-          .single();
+  const loadWorkspaceData = useCallback(async () => {
+    try {
+      // 1. Fetch project title
+      const { data: projData, error: projErr } = await supabase
+        .from("projects")
+        .select("title, current_stage_id, students(profiles(first_name, last_name))")
+        .eq("id", projectId)
+        .single();
 
-        if (projErr || !projData) {
-          setErrorMsg("Research project not found.");
-          setLoading(false);
-          return;
-        }
+      if (projErr || !projData) {
+        setErrorMsg("Research project not found.");
+        setLoading(false);
+        return;
+      }
 
-        setProject(projData);
+      setProject(projData);
 
-        // 2. Fetch active stage details
-        const { data: stageData } = await supabase
-          .from("defense_stages")
-          .select("name")
-          .eq("id", stageId)
-          .single();
+      // 2. Fetch active stage details
+      const { data: stageData } = await supabase
+        .from("defense_stages")
+        .select("name")
+        .eq("id", stageId)
+        .single();
 
-        const stageName = stageData?.name || "Defense Stage";
+      const stageName = stageData?.name || "Defense Stage";
 
-        // 3. Fetch current manuscript document
-        const { data: docData } = await supabase
-          .from("documents")
-          .select("id")
-          .eq("project_id", projectId)
-          .eq("stage_id", stageId)
-          .single();
+      // 3. Fetch current manuscript document
+      const { data: docData } = await supabase
+        .from("documents")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("stage_id", stageId)
+        .single();
 
-        if (docData) {
-          // 4. Fetch all versions
-          const { data: verList } = await supabase
-            .from("document_versions")
-            .select("*")
-            .eq("document_id", docData.id)
-            .order("version_number", { ascending: true });
+      if (docData) {
+        // 4. Fetch all versions
+        const { data: verList } = await supabase
+          .from("document_versions")
+          .select("*")
+          .eq("document_id", docData.id)
+          .order("version_number", { ascending: true });
 
-          if (verList && verList.length > 0) {
-            setAllVersions(verList);
-            const currentVer = verList.find((v: any) => v.is_current) || verList[verList.length - 1];
-            setDocVersion(currentVer);
+        if (verList && verList.length > 0) {
+          setAllVersions(verList);
+          const currentVer = verList.find((v: any) => v.is_current) || verList[verList.length - 1];
+          setDocVersion(currentVer);
 
-            // 5. Signed URL for private manuscripts bucket (or cached file_url)
-            if (currentVer.file_url) {
-              setPdfUrl(currentVer.file_url);
-            } else if (currentVer.storage_path) {
-              const { data: signedData, error: signErr } = await supabase.storage
-                .from("manuscripts")
-                .createSignedUrl(currentVer.storage_path, 3600);
-              if (!signErr && signedData?.signedUrl) {
-                setPdfUrl(signedData.signedUrl);
-              }
+          // 5. Signed URL for private manuscripts bucket (or cached file_url)
+          if (currentVer.file_url) {
+            setPdfUrl(currentVer.file_url);
+          } else if (currentVer.storage_path) {
+            const { data: signedData, error: signErr } = await supabase.storage
+              .from("manuscripts")
+              .createSignedUrl(currentVer.storage_path, 3600);
+            if (!signErr && signedData?.signedUrl) {
+              setPdfUrl(signedData.signedUrl);
             }
           }
         }
-      } catch (err: any) {
-        console.error("Error loading workspace data:", err);
-        setErrorMsg("Failed to connect to the database.");
-      } finally {
-        setLoading(false);
       }
+    } catch (err: any) {
+      console.error("Error loading workspace data:", err);
+      setErrorMsg("Failed to connect to the database.");
+    } finally {
+      setLoading(false);
     }
+  }, [projectId, stageId, supabase]);
 
+  useEffect(() => {
     if (projectId && stageId) {
       loadWorkspaceData();
     }
-  }, [projectId, stageId, supabase]);
+  }, [projectId, stageId, loadWorkspaceData]);
 
   if (loading) {
     return (
@@ -213,8 +214,21 @@ export default function WorkspacePage() {
                       onAnnotationChange={handleAnnotationChange}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">
-                      No manuscript uploaded yet. Upload a PDF first.
+                    <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-muted/20">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+                        <FileText className="h-8 w-8 text-primary" />
+                      </div>
+                      <h3 className="text-base font-bold text-foreground">No Manuscript Uploaded Yet</h3>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-xs mb-6 leading-relaxed">
+                        Upload your research manuscript PDF to begin in-browser review, real-time annotations, and defense evaluation.
+                      </p>
+                      <PdfUploader
+                        projectId={projectId}
+                        stageId={stageId}
+                        buttonText="Upload Manuscript (PDF)"
+                        className="font-bold shadow-sm"
+                        onUploadCompleted={loadWorkspaceData}
+                      />
                     </div>
                   )
                 ) : (

@@ -41,35 +41,53 @@ export function KpiCards() {
         const primaryRole = roles[0] || "student";
 
         if (primaryRole === "student") {
-          // Student-centric KPIs
-          const { data: studentRecord } = await supabase
+          // 1. Resolve student project via project_members or students.id
+          let { data: studentRecord } = await supabase
             .from("students")
             .select("id")
             .eq("profile_id", user!.id)
             .maybeSingle();
 
-          if (!studentRecord) {
-            setStats([
-              { label: "Project Status", value: "No Project", icon: BookOpen },
-            ]);
-            setLoading(false);
-            return;
-          }
+          const { data: memberRows } = await supabase
+            .from("project_members")
+            .select("project_id")
+            .eq("profile_id", user!.id)
+            .limit(1);
 
-          const { data: project } = await supabase
+          const memberProjId = memberRows?.[0]?.project_id;
+
+          let projQuery = supabase
             .from("projects")
             .select(`
               id, status, current_stage_id,
               defense_stages ( name, sequence_order ),
               documents ( id, document_versions ( id, version_number, is_current ) ),
               defense_schedules ( scheduled_at, status )
-            `)
-            .eq("student_id", studentRecord.id)
-            .maybeSingle();
+            `);
+
+          if (memberProjId) {
+            projQuery = projQuery.eq("id", memberProjId);
+          } else if (studentRecord?.id) {
+            projQuery = projQuery.eq("student_id", studentRecord.id);
+          } else {
+            setStats([
+              { label: "Project Status", value: "No Project", icon: BookOpen },
+              { label: "Manuscript Version", value: "None", icon: FileText },
+              { label: "Open Comments", value: 0, icon: MessageSquare },
+              { label: "Next Defense", value: "Not Scheduled", icon: Calendar },
+            ]);
+            setLoading(false);
+            return;
+          }
+
+          const { data: project } = await projQuery.maybeSingle();
 
           if (!project) {
             setStats([
               { label: "Project Status", value: "No Project", icon: BookOpen },
+              { label: "Manuscript Version", value: "None", icon: FileText },
+              { label: "Open Comments", value: 0, icon: MessageSquare },
+              { label: "Next Defense", value: "Not Scheduled", icon: Calendar },
             ]);
             setLoading(false);
             return;
@@ -83,12 +101,20 @@ export function KpiCards() {
             ?.filter((s: any) => s.status === "scheduled")
             .sort((a: any, b: any) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
 
-          const [annCount] = await Promise.all([
-            supabase
+          // Scope open annotations to this project's document versions
+          const versionIds = project.documents?.flatMap((d: any) =>
+            d.document_versions?.map((v: any) => v.id) || []
+          ) || [];
+
+          let openCommentsCount = 0;
+          if (versionIds.length > 0) {
+            const { count } = await supabase
               .from("annotations")
               .select("id", { count: "exact", head: true })
-              .eq("status", "open"),
-          ]);
+              .in("document_version_id", versionIds)
+              .eq("status", "open");
+            openCommentsCount = count ?? 0;
+          }
 
           setStats([
             {
@@ -111,7 +137,7 @@ export function KpiCards() {
             },
             {
               label: "Open Comments",
-              value: annCount.count ?? 0,
+              value: openCommentsCount,
               icon: MessageSquare,
               color: "text-danger",
             },

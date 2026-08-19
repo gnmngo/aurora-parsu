@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, GraduationCap, Building2 } from "lucide-react";
+import { GraduationCap, Building2, Shield, BookOpen, Layers } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { createClient } from "@/lib/supabase/client";
@@ -11,37 +11,72 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export function WelcomeCard() {
-  const { profile, isLoading } = useAuth();
+  const { profile, roles, isLoading } = useAuth();
   const { isReady } = useAuthReady();
-  const [currentStage, setCurrentStage] = useState<any>(null);
+  const [projectInfo, setProjectInfo] = useState<{
+    title?: string;
+    stageName?: string;
+    status?: string;
+  } | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    if (!isReady) {
-      return;
-    }
+    if (!isReady || !profile) return;
 
-    async function fetchCurrentStage() {
+    async function fetchUserContext() {
       try {
-        const { data, error } = await supabase
-          .from("defense_stages")
-          .select("*")
-          .order("sequence_order")
-          .limit(1)
-          .single();
-        if (error) {
-          logSupabaseError("WelcomeCard.defense_stages", error);
-          return;
-        }
-        if (data) {
-          setCurrentStage(data);
+        const isStudent = roles.includes("student");
+        if (isStudent) {
+          // Check project_members first
+          const { data: memberRows } = await supabase
+            .from("project_members")
+            .select("project_id")
+            .eq("profile_id", profile!.id)
+            .limit(1);
+
+          const memberProjId = memberRows?.[0]?.project_id;
+
+          let query = supabase
+            .from("projects")
+            .select(`
+              title, status,
+              defense_stages ( name )
+            `);
+
+          if (memberProjId) {
+            query = query.eq("id", memberProjId);
+          } else {
+            // lookup via students
+            const { data: std } = await supabase
+              .from("students")
+              .select("id")
+              .eq("profile_id", profile!.id)
+              .maybeSingle();
+
+            if (std?.id) {
+              query = query.eq("student_id", std.id);
+            } else {
+              setProjectInfo(null);
+              return;
+            }
+          }
+
+          const { data: proj } = await query.maybeSingle();
+          if (proj) {
+            setProjectInfo({
+              title: proj.title,
+              stageName: (proj.defense_stages as any)?.name || "Not Assigned",
+              status: (proj.status || "draft").replace(/_/g, " "),
+            });
+          }
         }
       } catch (err) {
-        logSupabaseError("WelcomeCard.fetchCurrentStage", err);
+        logSupabaseError("WelcomeCard.fetchUserContext", err);
       }
     }
-    fetchCurrentStage();
-  }, [isReady, supabase]);
+
+    fetchUserContext();
+  }, [isReady, profile, roles, supabase]);
 
   if (isLoading || !profile) {
     return (
@@ -49,8 +84,9 @@ export function WelcomeCard() {
     );
   }
 
-  const collegeName = (profile as any).colleges?.name || "College of Science";
-  const departmentName = (profile as any).departments?.name || "General Department";
+  const collegeName = (profile as any).colleges?.name || "Partido State University";
+  const departmentName = (profile as any).departments?.name || "Academic Programs";
+  const roleName = (roles[0] || "User").replace(/_/g, " ");
 
   return (
     <motion.div
@@ -70,30 +106,44 @@ export function WelcomeCard() {
                 {profile.first_name} {profile.last_name}
               </h2>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge className="bg-white/15 text-white hover:bg-white/20">
+                <Badge className="bg-white/15 text-white hover:bg-white/20 capitalize font-bold">
+                  <Shield className="mr-1 h-3 w-3" />
+                  {roleName}
+                </Badge>
+                <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
                   <Building2 className="mr-1 h-3 w-3" />
                   {collegeName}
                 </Badge>
-                <Badge className="bg-white/15 text-white hover:bg-white/20">
+                <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
                   <GraduationCap className="mr-1 h-3 w-3" />
                   {departmentName}
                 </Badge>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:items-end">
-              <div className="text-right">
-                <p className="text-xs text-white/60">Current Stage</p>
-                <p className="text-lg font-semibold">
-                  {currentStage?.name ?? "No active stage"}
-                </p>
+            {projectInfo ? (
+              <div className="flex flex-col gap-2 sm:items-end">
+                <div className="sm:text-right">
+                  <p className="text-[11px] text-white/60 uppercase font-bold tracking-wider">Active Stage</p>
+                  <p className="text-base font-black flex items-center gap-1.5 sm:justify-end">
+                    <Layers className="h-4 w-4" />
+                    {projectInfo.stageName}
+                  </p>
+                </div>
+                <div>
+                  <Badge variant="warning" className="bg-white/20 text-white font-bold capitalize">
+                    {projectInfo.status}
+                  </Badge>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="warning" className="bg-warning/20 text-warning">
-                  Under Review
+            ) : (
+              <div className="flex flex-col gap-1 sm:items-end">
+                <p className="text-[11px] text-white/60 uppercase font-bold tracking-wider">System Status</p>
+                <Badge className="bg-emerald-500/30 text-white font-bold border border-emerald-400/30">
+                  AURORA Online
                 </Badge>
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

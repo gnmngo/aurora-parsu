@@ -22,7 +22,7 @@ import Link from "next/link";
 export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [counts, setCounts] = useState({ profiles: 0, projects: 0, evals: 0 });
+  const [counts, setCounts] = useState({ profiles: 0, projects: 0, evals: 0, storageMb: "0.0 MB" });
   const supabase = createClient();
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function AdminDashboard() {
           .limit(10);
         if (logs) setAuditLogs(logs);
 
-        // 2. Fetch counts
+        // 2. Fetch counts & storage
         const { count: profs } = await supabase
           .from("profiles")
           .select("id", { count: "exact", head: true });
@@ -49,10 +49,18 @@ export function AdminDashboard() {
           .from("evaluations")
           .select("id", { count: "exact", head: true });
 
+        const { data: verSizes } = await supabase
+          .from("document_versions")
+          .select("file_size");
+
+        const totalBytes = verSizes?.reduce((sum, v) => sum + (v.file_size || 0), 0) || 0;
+        const storageMb = (totalBytes / (1024 * 1024)).toFixed(1);
+
         setCounts({
           profiles: profs || 0,
           projects: projs || 0,
-          evals: evs || 0
+          evals: evs || 0,
+          storageMb: `${storageMb} MB`,
         });
 
       } catch (err) {
@@ -124,7 +132,7 @@ export function AdminDashboard() {
             <HardDrive className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">42.8 MB</p>
+            <p className="text-2xl font-black text-slate-900">{counts.storageMb}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">PDF Storage Usage</p>
           </div>
         </Card>

@@ -91,7 +91,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           const pendingList: any[] = [];
           docs.forEach((doc: any) => {
             const latestVersion = doc.document_versions?.[doc.document_versions.length - 1];
-            if (latestVersion && doc.status === "active") {
+            if (latestVersion && ["submitted", "under_review", "revision_required", "draft", "uploading"].includes(doc.status)) {
               pendingList.push({
                 documentId: doc.id,
                 projectId: doc.project_id,
