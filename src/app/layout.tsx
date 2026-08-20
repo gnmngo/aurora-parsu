@@ -20,12 +20,22 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} | ${INSTITUTION}`,
-  description: `${APP_FULL_NAME} — A paperless academic defense workflow platform for ${INSTITUTION}.`,
-  keywords: ["AURORA", "academic defense", "thesis", "capstone", "Partido State University", "paperless"],
+  title: `${APP_NAME} | Paperless Academic Defense Workflow System — ${INSTITUTION}`,
+  description: `${APP_FULL_NAME} at ${INSTITUTION}.`,
+  keywords: [
+    "AURORA",
+    "academic defense",
+    "thesis defense",
+    "capstone defense",
+    "dissertation defense",
+    "research papers",
+    "Partido State University",
+    "ParSU",
+    "paperless workflow",
+  ],
   openGraph: {
-    title: `${APP_NAME} — ${INSTITUTION}`,
-    description: APP_FULL_NAME,
+    title: `${APP_NAME} — Paperless Academic Defense Workflow System | ${INSTITUTION}`,
+    description: `${APP_FULL_NAME} at ${INSTITUTION}.`,
     type: "website",
   },
 };

@@ -1,7 +1,10 @@
 export const APP_NAME = "AURORA";
 export const APP_FULL_NAME =
-  "Academic Unified Review, Observation, Rating, and Assessment System";
-export const INSTITUTION = "Partido State University – Goa Campus";
+  "Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers";
+export const APP_OFFICIAL_TITLE =
+  "Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University";
+export const INSTITUTION = "Partido State University";
+export const INSTITUTION_CAMPUS = "Partido State University – Goa Campus";
 
 export const PARSU_CAMPUS_ID = "00000000-0000-0000-0000-000000000001";
 

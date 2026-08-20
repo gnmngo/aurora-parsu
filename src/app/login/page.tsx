@@ -303,7 +303,12 @@ function LoginForm() {
           <div className="text-center mb-8 flex flex-col items-center">
             <AuroraLogo size="xl" className="mb-4" />
             <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">AURORA</h1>
-            <p className="text-sm text-muted-foreground">Academic Defense Workflow System</p>
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+              Partido State University
+            </p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers
+            </p>
           </div>
 
           <div className="flex bg-muted/50 p-1 rounded-xl mb-6 relative">

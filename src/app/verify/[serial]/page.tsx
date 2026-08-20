@@ -277,9 +277,9 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-white/20 mt-6">
-          AURORA — Partido State University Paperless Academic Defense Workflow System<br />
-          This verification is provided for authenticity checking only.
+        <p className="text-center text-[10px] text-white/20 mt-6 leading-relaxed">
+          AURORA — Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers<br />
+          Partido State University • Cryptographic Authenticity Verification
         </p>
       </div>
     </main>

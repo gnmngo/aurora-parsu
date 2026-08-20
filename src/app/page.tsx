@@ -165,12 +165,12 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.1] text-foreground font-display"
+          className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground font-display"
         >
-          The Paperless Academic
+          Paperless Academic Defense
           <br />
           <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Defense Workflow System
+            Workflow System
           </span>
         </motion.h1>
         
@@ -178,9 +178,9 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mx-auto max-w-2xl text-sm sm:text-base text-muted-foreground font-medium leading-relaxed"
+          className="mx-auto max-w-3xl text-sm sm:text-base text-muted-foreground font-medium leading-relaxed"
         >
-          {APP_FULL_NAME}. A high-performance, RBAC-hardened campus engine validating manuscript timelines, advisor gates, and signed panel evaluations.
+          A unified paperless workflow platform for <strong>Research, Capstone, Thesis &amp; Dissertation Papers</strong> at <strong>Partido State University</strong>. Streamlining manuscript submissions, adviser approval gates, rubrics-based grading, and cryptographically verified defense certifications.
         </motion.p>
 
         <motion.div 
