@@ -253,7 +253,7 @@ export function PdfUploader({
 
       toast.success(`Manuscript PDF v${nextVersion} uploaded successfully!`, {
         action: {
-          label: "Open Workspace",
+          label: "View Manuscript",
           onClick: () => router.push(`/workspace/${selectedProject}/${selectedStage}`),
         },
       });

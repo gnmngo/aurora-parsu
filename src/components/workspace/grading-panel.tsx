@@ -593,6 +593,261 @@ export function GradingPanel({
     );
   }
 
+  if (!isFacultyOrAdmin) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="space-y-4 p-4">
+          {/* Header Banner for Student */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+              <MessageSquare className="h-4 w-4" />
+              Reviewer Suggestions &amp; Feedback
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+              Review highlighted annotations and comments from your defense panel and adviser. You can track progress, view requested revisions, and reply directly to feedback items.
+            </p>
+          </div>
+
+          {/* Section 1: Annotations & Discussions */}
+          <CollapsibleSection title={`Inline Annotations & Comments (${annotations.length})`} defaultOpen={true}>
+            <div className="space-y-4 pt-1">
+              {annotations.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
+                  <p className="font-semibold text-foreground">No open comments on this version</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Your advisers or panelists have not left any revision notes on this manuscript version yet.</p>
+                </div>
+              ) : (
+                annotations.map((ann) => (
+                  <div
+                    key={ann.id}
+                    className="rounded-xl border border-border p-3.5 space-y-3 bg-card shadow-sm transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant={
+                            ann.severity === "critical"
+                              ? "danger"
+                              : ann.severity === "major"
+                                ? "warning"
+                                : ann.severity === "minor"
+                                  ? "info"
+                                  : "outline"
+                          }
+                          className="capitalize text-[10px] px-2 py-0.5 font-bold"
+                        >
+                          Page {ann.page_number} • {ann.severity}
+                        </Badge>
+                      </div>
+
+                      <select
+                        value={ann.status}
+                        onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
+                        className={cn(
+                          "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
+                          ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
+                          ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
+                          ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
+                          ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
+                          ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
+                          ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
+                        )}
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="addressed">Addressed</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                        <span className="text-foreground font-bold">
+                          {ann.profiles ? `${ann.profiles.first_name} ${ann.profiles.last_name}` : "Reviewer"}
+                        </span>
+                        <span>{new Date(ann.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-xs text-foreground bg-muted/40 rounded-lg p-2.5 leading-relaxed font-medium">
+                        {ann.content}
+                      </p>
+                    </div>
+
+                    {/* Replies List */}
+                    {ann.annotation_replies && ann.annotation_replies.length > 0 && (
+                      <div className="pl-3 border-l-2 border-border/80 space-y-2 mt-2">
+                        {ann.annotation_replies.map((reply: any) => (
+                          <div key={reply.id} className="text-xs space-y-1">
+                            <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
+                              <span className="text-foreground flex items-center gap-1 font-bold">
+                                <CornerDownRight className="h-3 w-3 inline text-muted-foreground" />
+                                {reply.profiles ? `${reply.profiles.first_name} ${reply.profiles.last_name}` : "User"}
+                              </span>
+                              <span>{new Date(reply.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground pl-4 bg-muted/10 rounded-lg py-1 px-2.5 font-medium leading-relaxed">
+                              {reply.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Verification History */}
+                    {ann.annotation_history && ann.annotation_history.length > 0 && (
+                      <div className="pl-3 border-l-2 border-primary/20 space-y-1 mt-2 bg-primary/5 p-2 rounded-r-lg border-y border-r border-primary/10">
+                        <p className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1">Status History</p>
+                        {ann.annotation_history.map((hist: any) => {
+                          const changerName = hist.profiles
+                            ? (Array.isArray(hist.profiles) ? `${hist.profiles[0]?.first_name} ${hist.profiles[0]?.last_name}` : `${hist.profiles.first_name} ${hist.profiles.last_name}`)
+                            : "User";
+                          return (
+                            <div key={hist.id} className="text-[10px] text-slate-700 leading-relaxed">
+                              <span className="font-bold text-slate-900">{changerName}</span> marked as{" "}
+                              <span className="font-extrabold capitalize text-primary">{hist.to_status}</span>
+                              <span className="text-[9px] text-muted-foreground ml-1.5">
+                                ({new Date(hist.changed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Reply Textarea */}
+                    <div className="pt-1">
+                      {activeReplyId === ann.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            placeholder="Type your response to this comment..."
+                            value={replyTexts[ann.id] || ""}
+                            onChange={(e) =>
+                              setReplyTexts((prev) => ({
+                                ...prev,
+                                [ann.id]: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                            rows={2}
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-[10px] px-2.5 rounded-lg text-muted-foreground hover:bg-muted"
+                              onClick={() => {
+                                setActiveReplyId(null);
+                                setReplyTexts((prev) => ({ ...prev, [ann.id]: "" }));
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-7 text-[10px] px-3 rounded-lg"
+                              onClick={() => handleAddReply(ann.id)}
+                              disabled={replyingId === ann.id || !replyTexts[ann.id]?.trim()}
+                            >
+                              {replyingId === ann.id ? "Adding..." : "Reply"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setActiveReplyId(ann.id)}
+                          className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          Reply to feedback
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CollapsibleSection>
+
+          {/* Section 2: Defense Information */}
+          {projectInfo && (
+            <CollapsibleSection title="Defense Stage Details" defaultOpen={false}>
+              <dl className="grid gap-3 text-xs pt-1">
+                {[
+                  ["Student", projectInfo.studentName, <User key="user-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Program", projectInfo.program, <FileText key="prog-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Department", projectInfo.department, <Users key="dept-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Defense Stage", projectInfo.stageName, <Badge key="stage-icon" variant="outline">{projectInfo.stageName}</Badge>],
+                  ["Uploaded Date", projectInfo.submittedAt, null],
+                ].map(([label, value, icon]: any) => (
+                  <div key={label} className="flex justify-between items-center py-1 border-b border-border/40 last:border-0">
+                    <dt className="text-muted-foreground flex items-center font-medium">{label}</dt>
+                    <dd className="font-semibold text-foreground text-right flex items-center">
+                      {icon && typeof icon !== "string" && !value.props ? icon : null}
+                      {typeof value === "string" ? value : value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </CollapsibleSection>
+          )}
+
+          {/* Section 3: Evaluation Verdict & Recommendations */}
+          {evaluationData && (
+            <CollapsibleSection title="Panel Evaluation Feedback" defaultOpen={true}>
+              <div className="space-y-3 pt-1 text-xs">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
+                  <span className="font-medium text-muted-foreground">Evaluation Status</span>
+                  <Badge variant={evaluationData.status === "submitted" ? "success" : "warning"} className="capitalize text-[10px]">
+                    {evaluationData.status}
+                  </Badge>
+                </div>
+                {evaluationData.verdict_code && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
+                    <span className="font-medium text-muted-foreground">Verdict</span>
+                    <Badge variant="info" className="capitalize text-[10px] font-bold">
+                      {evaluationData.verdict_code.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                )}
+                {evaluationData.recommendations && (
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-1">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Recommendations</p>
+                    <p className="text-xs text-foreground leading-relaxed">{evaluationData.recommendations}</p>
+                  </div>
+                )}
+                {evaluationData.panel_notes && (
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-1">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Panelist Notes</p>
+                    <p className="text-xs text-foreground leading-relaxed">{evaluationData.panel_notes}</p>
+                  </div>
+                )}
+                {evaluationData.certificate_serial && (
+                  <button
+                    onClick={() => setCertificateDialogOpen(true)}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 py-2 text-xs font-bold hover:bg-emerald-500/15 transition-all"
+                  >
+                    <Award className="h-3.5 w-3.5" /> View Digital Defense Certificate ({evaluationData.certificate_serial})
+                  </button>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          <CertificateDialog
+            open={certificateDialogOpen}
+            onOpenChange={setCertificateDialogOpen}
+            evaluation={evaluationData}
+            projectTitle={projectInfo?.title || "Research Project"}
+            stageName={projectInfo?.defense_stages?.name || "Defense Stage"}
+            panelistName={evaluationData?.printed_name || (panelistProfile ? `${panelistProfile.first_name} ${panelistProfile.last_name}` : "Panelist")}
+          />
+        </div>
+      </ScrollArea>
+    );
+  }
+
   if (!rubricTemplate) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-card">

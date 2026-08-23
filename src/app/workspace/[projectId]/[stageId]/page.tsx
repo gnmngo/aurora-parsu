@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 import { VersionComparison } from "@/components/workspace/version-comparison";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 const PdfViewerPanel = nextDynamic(
   () => import("@/components/workspace/pdf-viewer-panel").then((m) => m.PdfViewerPanel),
@@ -23,8 +24,12 @@ export default function WorkspacePage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const stageId = params.stageId as string;
+  const { roles } = useAuth();
+  const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin"].includes(r));
+  const backHref = isStudent ? "/dashboard/my-project" : "/dashboard/defenses";
 
   const [project, setProject] = useState<any>(null);
+  const [stageName, setStageName] = useState<string>("Defense Stage");
   const [docVersion, setDocVersion] = useState<any>(null);
   const [allVersions, setAllVersions] = useState<any[]>([]);
   const [leftPaneTab, setLeftPaneTab] = useState<"pdf" | "compare">("pdf");
@@ -63,7 +68,8 @@ export default function WorkspacePage() {
         .eq("id", stageId)
         .single();
 
-      const stageName = stageData?.name || "Defense Stage";
+      const fetchedStageName = stageData?.name || "Defense Stage";
+      setStageName(fetchedStageName);
 
       // 3. Fetch current manuscript document
       const { data: docData } = await supabase
@@ -128,7 +134,7 @@ export default function WorkspacePage() {
         <AlertCircle className="h-10 w-10 text-danger" />
         <p className="font-semibold text-lg text-foreground">{errorMsg || "Workspace loading error."}</p>
         <Button asChild variant="outline">
-          <Link href="/dashboard/submissions">Go to Submissions</Link>
+          <Link href={backHref}>{isStudent ? "Go to My Project" : "Go to Defenses"}</Link>
         </Button>
       </div>
     );
@@ -149,16 +155,27 @@ export default function WorkspacePage() {
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard/submissions">
+            <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <p className="text-sm font-semibold leading-tight max-w-xl truncate">
-              {project.title}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold leading-tight max-w-xl truncate">
+                {project.title}
+              </p>
+              {isStudent ? (
+                <Badge variant="secondary" className="text-[9px] font-bold uppercase tracking-wider">
+                  Feedback &amp; Suggestions
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider text-primary">
+                  Evaluation Workspace
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {studentName} • Version {docVersion?.version_number || "0"}
+              {studentName} • Version {docVersion?.version_number || "0"} • {stageName}
             </p>
           </div>
         </div>

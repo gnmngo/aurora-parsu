@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 /**
  * Student record shape — must include profile_id (profiles.id / auth.uid)
@@ -112,7 +113,7 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
           department_id: resolvedDeptId,
           program_id: resolvedProgId,
           major_id: student.major_id,
-          academic_year: `${currentYear}-${currentYear + 1}`,
+          academic_year: currentAcademicYear(),
           workflow_template_id: workflowTemplateId,
         })
         .select("id, title, join_code")

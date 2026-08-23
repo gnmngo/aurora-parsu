@@ -561,7 +561,7 @@ export default function MyProjectPage() {
                     <GraduationCap className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
                       <p className="text-muted-foreground font-semibold">Academic Year</p>
-                      <p className="font-bold text-foreground">{project.academic_year || "2025-2026"}</p>
+                      <p className="font-bold text-foreground">{project.academic_year || "2026-2027"}</p>
                     </div>
                   </div>
                   <Separator />
@@ -688,10 +688,10 @@ export default function MyProjectPage() {
                     className="w-full justify-center text-xs h-9 font-bold"
                     onUploadCompleted={loadProjectData}
                   />
-                  <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs h-9" asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs h-9 font-semibold" asChild>
                     <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Open Full Workspace
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                      View Manuscript &amp; Feedback
                     </Link>
                   </Button>
                 </CardContent>
@@ -768,9 +768,10 @@ export default function MyProjectPage() {
                                 {v.is_current && (
                                   <Badge variant="success" className="text-[9px]">Current</Badge>
                                 )}
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                                <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg font-semibold" asChild>
                                   <Link href={`/workspace/${project.id}/${doc.stage_id}`}>
-                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    <FileText className="h-3.5 w-3.5 text-primary" />
+                                    View &amp; Feedback
                                   </Link>
                                 </Button>
                               </div>

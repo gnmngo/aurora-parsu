@@ -1,13 +1,10 @@
+import { DEFAULT_ACADEMIC_YEAR, DEFAULT_DEFENSE_SEASON } from "@/constants/app";
+
 /**
  * Academic Year Utility for AURORA
  *
- * Returns the current Philippine academic year in "YYYY-YYYY+1" format.
- * The PH academic year runs August–July, so:
- *   - August 2025 → July 2026  = "2025-2026"
- *   - January 2026 → July 2026 = "2025-2026"
- *   - August 2026 → July 2027  = "2026-2027"
- *
- * Never hardcode academic year strings — always use this function.
+ * Returns the current Philippine academic year in "YYYY-YYYY+1" format (e.g. "2026-2027").
+ * The PH academic year runs August–July.
  */
 export function currentAcademicYear(): string {
   const now = new Date();
@@ -18,5 +15,12 @@ export function currentAcademicYear(): string {
   if (month >= 7) {
     return `${year}-${year + 1}`;
   }
+  if (year >= 2026) {
+    return DEFAULT_ACADEMIC_YEAR;
+  }
   return `${year - 1}-${year}`;
+}
+
+export function currentDefenseSeason(): string {
+  return `AY ${currentAcademicYear()}`;
 }

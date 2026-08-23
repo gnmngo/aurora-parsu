@@ -221,8 +221,8 @@ export async function runDemoSeeder() {
         title,
         status: "in_progress",
         current_stage_id: stage.id,
-        academic_year: "2025-2026",
-        semester: "2nd Semester",
+        academic_year: "2026-2027",
+        semester: "1st Semester",
         system_completion_pct: (i + 1) * 5,
         workflow_template_id: "70000000-0000-0000-0000-000000000001" // BSIT
       })

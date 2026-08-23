@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logSupabaseError } from "@/lib/supabase/errors";
+import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 export interface SubmissionRow {
   id: string;
@@ -250,7 +251,7 @@ export async function createProject(
       title: input.title.trim(),
       workflow_template_id: input.workflowTemplateId,
       current_stage_id: input.stageId,
-      academic_year: input.academicYear ?? "2025-2026",
+      academic_year: input.academicYear ?? currentAcademicYear(),
       status: "draft",
     })
     .select("id, title, current_stage_id")

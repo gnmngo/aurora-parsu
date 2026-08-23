@@ -400,8 +400,9 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                         </div>
 
                         <Link href={`/workspace/${project.id}/${sub.stage_id}`}>
-                          <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg">
-                            Open in Workspace <ChevronRight className="h-3.5 w-3.5" />
+                          <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 rounded-lg font-semibold">
+                            <FileText className="h-3.5 w-3.5 text-primary" />
+                            View Manuscript &amp; Feedback
                           </Button>
                         </Link>
                       </div>
@@ -414,10 +415,16 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
           {activeTab === "revisions" && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
                   <MessageSquare className="h-4 w-4 text-primary" /> Active Revision Annotations
                 </CardTitle>
+                <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 font-semibold">
+                    <FileText className="h-3 w-3 text-primary" />
+                    Open Manuscript Viewer
+                  </Button>
+                </Link>
               </CardHeader>
               <CardContent className="p-0">
                 {revisionsList.length === 0 ? (

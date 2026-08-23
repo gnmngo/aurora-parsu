@@ -6,6 +6,9 @@ export const APP_OFFICIAL_TITLE =
 export const INSTITUTION = "Partido State University";
 export const INSTITUTION_CAMPUS = "Partido State University – Goa Campus";
 
+export const DEFAULT_DEFENSE_SEASON = "AY 2026-2027";
+export const DEFAULT_ACADEMIC_YEAR = "2026-2027";
+
 export const PARSU_CAMPUS_ID = "00000000-0000-0000-0000-000000000001";
 
 export const ACCEPTED_DOCUMENT_TYPES = {

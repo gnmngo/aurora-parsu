@@ -79,7 +79,7 @@ export default function DemoClient() {
           department_id: deptId,
           student_id: studentId,
           title: "AURORA Demo Workspace Project",
-          academic_year: "2025-2026",
+          academic_year: "2026-2027",
           status: "under_review"
         });
         if (projErr) throw projErr;
