@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Sparkles, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Loader2, Sparkles, Eye, EyeOff, CheckCircle, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -217,7 +217,14 @@ function LoginForm() {
         return;
       }
 
-      toast.success("Account created successfully! You can now sign in.");
+      if (regRole !== "student") {
+        toast.success(
+          "Faculty application submitted! Your account is in the verification queue and will be activated upon approval by the Research Coordinator.",
+          { duration: 9000 }
+        );
+      } else {
+        toast.success("Account created successfully! You can now sign in.");
+      }
       
       // Auto-populate credentials and switch to sign in tab
       setEmail(regEmail);
@@ -332,6 +339,18 @@ function LoginForm() {
 
           {activeTab === "signin" && (
             <form onSubmit={handleLogin} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {searchParams.get("error") === "pending" && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 flex items-start gap-2.5">
+                  <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Faculty Account Pending Verification</p>
+                    <p className="text-[11px] text-amber-900/90 mt-0.5 leading-relaxed">
+                      Your faculty registration is awaiting institutional approval by the University Research Coordinator. You will be able to sign in once your credentials have been verified.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="email">Email Address</label>
                 <Input
@@ -568,16 +587,26 @@ function LoginForm() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="specialization">Field of Specialization</label>
-                  <Input
-                    id="specialization"
-                    type="text"
-                    placeholder="e.g. Software Engineering, AI, Data Science"
-                    value={regSpecialization}
-                    onChange={(e) => setRegSpecialization(e.target.value)}
-                    disabled={isFormDisabled}
-                  />
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-start gap-2">
+                    <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-foreground">Faculty Verification Gate: </span>
+                      Faculty registrations are placed in the institutional verification queue. Access to defense workspaces and evaluations is unlocked upon approval by the Research Coordinator.
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="specialization">Field of Specialization</label>
+                    <Input
+                      id="specialization"
+                      type="text"
+                      placeholder="e.g. Software Engineering, AI, Data Science"
+                      value={regSpecialization}
+                      onChange={(e) => setRegSpecialization(e.target.value)}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
                 </div>
               )}
 
