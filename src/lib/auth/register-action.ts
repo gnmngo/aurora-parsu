@@ -7,7 +7,7 @@ export interface RegisterUserInput {
   password: string;
   firstName: string;
   lastName: string;
-  role: "student" | "adviser" | "panelist";
+  role: "student" | "adviser" | "panelist" | "coordinator";
   number: string;
   campusId?: string | null;
   collegeId?: string | null;

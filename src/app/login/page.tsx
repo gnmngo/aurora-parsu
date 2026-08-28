@@ -497,6 +497,7 @@ function LoginForm() {
                     <option value="student">Student</option>
                     <option value="adviser">Research Adviser</option>
                     <option value="panelist">Defense Panelist</option>
+                    <option value="coordinator">Research Coordinator</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -592,8 +593,10 @@ function LoginForm() {
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-start gap-2">
                   <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-foreground">Faculty Account: </span>
-                    Your account will be verified and connected for academic defense evaluations and manuscript review at Partido State University.
+                    <span className="font-bold text-foreground">
+                      {regRole === "coordinator" ? "Coordinator Account: " : "Faculty Account: "}
+                    </span>
+                    Your account will be verified and connected for academic defense workflows, scheduling, and evaluations at Partido State University.
                   </div>
                 </div>
               )}
@@ -605,7 +608,15 @@ function LoginForm() {
                     Creating account...
                   </span>
                 ) : (
-                  `Register as ${regRole === "student" ? "Student" : regRole === "adviser" ? "Research Adviser" : "Defense Panelist"}`
+                  `Register as ${
+                    regRole === "student"
+                      ? "Student"
+                      : regRole === "adviser"
+                        ? "Research Adviser"
+                        : regRole === "panelist"
+                          ? "Defense Panelist"
+                          : "Research Coordinator"
+                  }`
                 )}
               </Button>
             </form>
