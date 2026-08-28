@@ -278,27 +278,31 @@ export default function DemoClient() {
         </div>
       </header>
 
-      {/* Main split-screen panel container */}
-      <div className="hidden flex-1 overflow-hidden lg:block">
-        <Group orientation="horizontal">
-          <Panel defaultSize={65} minSize={40}>
-            {pdfUrl ? (
-              <PdfViewerPanel 
-                title={projectTitle} 
-                documentVersionId={docVersionId} 
-                pdfUrl={pdfUrl} 
-                projectId={DEMO_PROJECT_ID}
-                stageId={stageId}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">
-                No manuscript uploaded yet.
+      {/* Main split-screen panel container for Desktop */}
+      <div className="hidden flex-1 overflow-hidden lg:flex lg:flex-row h-[calc(100vh-3.5rem)] w-full">
+        <Group orientation="horizontal" className="h-full w-full">
+          <Panel defaultSize={65} minSize={35} className="h-full overflow-hidden">
+            <div className="flex flex-col h-full bg-slate-50/20">
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {pdfUrl ? (
+                  <PdfViewerPanel 
+                    title={projectTitle} 
+                    documentVersionId={docVersionId} 
+                    pdfUrl={pdfUrl} 
+                    projectId={DEMO_PROJECT_ID} 
+                    stageId={stageId} 
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">
+                    No manuscript uploaded yet.
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </Panel>
-          <Separator className="w-1.5 bg-border transition-colors hover:bg-primary/30" />
-          <Panel defaultSize={35} minSize={25}>
-            <div className="h-full border-l border-border bg-card">
+          <Separator className="w-2 bg-border hover:bg-primary/40 cursor-col-resize transition-colors flex items-center justify-center shrink-0" />
+          <Panel defaultSize={35} minSize={25} className="h-full overflow-hidden">
+            <div className="h-full border-l border-border bg-card overflow-hidden">
               <GradingPanel 
                 projectId={DEMO_PROJECT_ID} 
                 stageId={stageId} 
@@ -309,15 +313,16 @@ export default function DemoClient() {
         </Group>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
-        <div className="h-[50vh] shrink-0">
+      {/* Mobile view */}
+      <div className="flex flex-1 flex-col overflow-hidden lg:hidden h-[calc(100vh-3.5rem)]">
+        <div className="h-[50vh] shrink-0 border-b border-border">
           {pdfUrl ? (
             <PdfViewerPanel 
               title={projectTitle} 
               documentVersionId={docVersionId} 
               pdfUrl={pdfUrl} 
-              projectId={DEMO_PROJECT_ID}
-              stageId={stageId}
+              projectId={DEMO_PROJECT_ID} 
+              stageId={stageId} 
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">
@@ -325,7 +330,7 @@ export default function DemoClient() {
             </div>
           )}
         </div>
-        <div className="flex-1 overflow-hidden border-t border-border">
+        <div className="flex-1 overflow-hidden">
           <GradingPanel 
             projectId={DEMO_PROJECT_ID} 
             stageId={stageId} 
