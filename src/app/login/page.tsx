@@ -35,7 +35,6 @@ function LoginForm() {
   const [regPassword, setRegPassword] = useState("");
   const [regRole, setRegRole] = useState("student"); // student, adviser, panelist
   const [regNumber, setRegNumber] = useState(""); // student/employee number
-  const [regSpecialization, setRegSpecialization] = useState("General");
   
   // Dynamic Academic Structure States
   const [campuses, setCampuses] = useState<any[]>([]);
@@ -182,8 +181,12 @@ function LoginForm() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regEmail || !regPassword || !regFirstName || !regLastName || !regNumber) {
-      toast.error("Please fill in all required registration fields");
+    if (!regEmail || !regPassword || !regFirstName || !regLastName) {
+      toast.error("Please fill in your name, email, and password");
+      return;
+    }
+    if (regRole === "student" && !regNumber) {
+      toast.error("Please enter your Student ID number");
       return;
     }
     if (regRole === "student" && !regProgramId) {
@@ -209,7 +212,6 @@ function LoginForm() {
         departmentId,
         programId: regProgramId || null,
         majorId: regMajorId || null,
-        specialization: regSpecialization,
       });
 
       if (!result.success) {
@@ -219,7 +221,7 @@ function LoginForm() {
 
       if (regRole !== "student") {
         toast.success(
-          "Faculty application submitted! Your account is in the verification queue and will be activated upon approval by the Research Coordinator.",
+          "Faculty account created successfully! Your account is in the institutional verification queue and will be active once approved by the Research Coordinator.",
           { duration: 9000 }
         );
       } else {
@@ -490,7 +492,7 @@ function LoginForm() {
                     id="regRole"
                     value={regRole}
                     onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-border bg-card px-2.5 focus:outline-none"
+                    className="w-full h-10 rounded-lg border border-border bg-card px-2.5 focus:outline-none text-xs font-semibold"
                   >
                     <option value="student">Student</option>
                     <option value="adviser">Research Adviser</option>
@@ -499,16 +501,16 @@ function LoginForm() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regNumber">
-                    {regRole === "student" ? "Student ID" : "Employee ID"}
+                    {regRole === "student" ? "Student ID" : "Employee ID (Optional)"}
                   </label>
                   <Input
                     id="regNumber"
                     type="text"
-                    placeholder={regRole === "student" ? "2022-xxxxx" : "EMP-xxxx"}
+                    placeholder={regRole === "student" ? "2022-xxxxx" : "e.g. EMP-1024"}
                     value={regNumber}
                     onChange={(e) => setRegNumber(e.target.value)}
                     disabled={isFormDisabled}
-                    required
+                    required={regRole === "student"}
                   />
                 </div>
               </div>
@@ -587,37 +589,23 @@ function LoginForm() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-start gap-2">
-                    <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-foreground">Faculty Verification Gate: </span>
-                      Faculty registrations are placed in the institutional verification queue. Access to defense workspaces and evaluations is unlocked upon approval by the Research Coordinator.
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="specialization">Field of Specialization</label>
-                    <Input
-                      id="specialization"
-                      type="text"
-                      placeholder="e.g. Software Engineering, AI, Data Science"
-                      value={regSpecialization}
-                      onChange={(e) => setRegSpecialization(e.target.value)}
-                      disabled={isFormDisabled}
-                    />
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-foreground">Faculty Account: </span>
+                    Your account will be verified and connected for academic defense evaluations and manuscript review at Partido State University.
                   </div>
                 </div>
               )}
 
-              <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl cursor-pointer" type="submit">
+              <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl cursor-pointer font-bold text-xs" type="submit">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="animate-spin w-4 h-4" />
-                    Registering details...
+                    Creating account...
                   </span>
                 ) : (
-                  "Create Account"
+                  `Register as ${regRole === "student" ? "Student" : regRole === "adviser" ? "Research Adviser" : "Defense Panelist"}`
                 )}
               </Button>
             </form>

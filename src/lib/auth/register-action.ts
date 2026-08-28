@@ -35,8 +35,8 @@ export async function registerUserAction(input: RegisterUserInput) {
       metaData.program_id = input.programId || null;
       metaData.major_id = input.majorId || null;
     } else {
-      metaData.employee_number = input.number;
-      metaData.specialization = input.specialization;
+      metaData.employee_number = input.number?.trim() || `FACULTY-${Math.floor(1000 + Math.random() * 9000)}`;
+      metaData.specialization = input.specialization?.trim() || "Academic Faculty";
     }
 
     // Use admin.createUser with email_confirm: true to avoid client-side SMTP email rate limits

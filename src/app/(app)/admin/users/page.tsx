@@ -272,24 +272,14 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[11px] font-bold">Specialization</Label>
-                    <Input
-                      placeholder="e.g. Software Eng / AI"
-                      value={inviteForm.specialization}
-                      onChange={(e) => setInviteForm({ ...inviteForm, specialization: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[11px] font-bold">Academic Rank</Label>
+                    <Label className="text-[11px] font-bold">Academic Rank (Optional)</Label>
                     <Input
                       placeholder="e.g. Associate Professor"
                       value={inviteForm.academicRank}
                       onChange={(e) => setInviteForm({ ...inviteForm, academicRank: e.target.value })}
                     />
                   </div>
-                </div>
 
                 <div className="space-y-1">
                   <Label className="text-[11px] font-bold">Initial Password (Optional)</Label>
