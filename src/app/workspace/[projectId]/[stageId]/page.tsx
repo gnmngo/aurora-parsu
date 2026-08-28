@@ -20,15 +20,20 @@ const PdfViewerPanel = nextDynamic(
   { ssr: false }
 );
 
+const isUUID = (val: unknown) =>
+  typeof val === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export default function WorkspacePage() {
   const params = useParams();
   const projectId = params.projectId as string;
-  const stageId = params.stageId as string;
+  const rawStageId = params.stageId as string;
   const { roles } = useAuth();
   const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
   const backHref = isStudent ? "/dashboard/my-project" : "/dashboard/defenses";
 
   const [project, setProject] = useState<any>(null);
+  const [stageId, setStageId] = useState<string>(rawStageId);
   const [stageName, setStageName] = useState<string>("Defense Stage");
   const [docVersion, setDocVersion] = useState<any>(null);
   const [allVersions, setAllVersions] = useState<any[]>([]);
@@ -46,12 +51,18 @@ export default function WorkspacePage() {
 
   const loadWorkspaceData = useCallback(async () => {
     try {
-      // 1. Fetch project title
+      if (!isUUID(projectId)) {
+        setErrorMsg("Invalid research project ID.");
+        setLoading(false);
+        return;
+      }
+
+      // 1. Fetch project title and current_stage_id
       const { data: projData, error: projErr } = await supabase
         .from("projects")
         .select("title, current_stage_id, students(profiles(first_name, last_name))")
         .eq("id", projectId)
-        .single();
+        .maybeSingle();
 
       if (projErr || !projData) {
         setErrorMsg("Research project not found.");
@@ -61,31 +72,55 @@ export default function WorkspacePage() {
 
       setProject(projData);
 
-      // 2. Fetch active stage details
-      const { data: stageData } = await supabase
-        .from("defense_stages")
-        .select("name")
-        .eq("id", stageId)
-        .single();
+      // 2. Resolve valid Stage ID
+      let resolvedStage = rawStageId;
+      if (!isUUID(resolvedStage) || resolvedStage === "stage") {
+        if (isUUID(projData.current_stage_id)) {
+          resolvedStage = projData.current_stage_id;
+        } else {
+          const { data: defaultStage } = await supabase
+            .from("defense_stages")
+            .select("id, name")
+            .order("sequence_order", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (defaultStage?.id) {
+            resolvedStage = defaultStage.id;
+          }
+        }
+      }
 
-      const fetchedStageName = stageData?.name || "Defense Stage";
-      setStageName(fetchedStageName);
+      setStageId(resolvedStage);
 
-      // 3. Fetch current manuscript document (with fallback if stage_id is null or different)
+      // 3. Fetch active stage details
+      if (isUUID(resolvedStage)) {
+        const { data: stageData } = await supabase
+          .from("defense_stages")
+          .select("name")
+          .eq("id", resolvedStage)
+          .maybeSingle();
+
+        const fetchedStageName = stageData?.name || "Defense Stage";
+        setStageName(fetchedStageName);
+      }
+
+      // 4. Fetch current manuscript document (with fallback if stage_id is null or different)
       let docData: { id: string } | null = null;
 
-      const { data: stageDoc } = await supabase
-        .from("documents")
-        .select("id")
-        .eq("project_id", projectId)
-        .eq("stage_id", stageId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      if (isUUID(resolvedStage)) {
+        const { data: stageDoc } = await supabase
+          .from("documents")
+          .select("id")
+          .eq("project_id", projectId)
+          .eq("stage_id", resolvedStage)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (stageDoc) {
         docData = stageDoc;
-      } else {
+      }
+
+      if (!docData) {
         const { data: anyDoc } = await supabase
           .from("documents")
           .select("id")
@@ -97,7 +132,7 @@ export default function WorkspacePage() {
       }
 
       if (docData) {
-        // 4. Fetch all versions
+        // 5. Fetch all versions
         const { data: verList } = await supabase
           .from("document_versions")
           .select("*")
@@ -134,13 +169,13 @@ export default function WorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [projectId, stageId, supabase]);
+  }, [projectId, rawStageId, supabase]);
 
   useEffect(() => {
-    if (projectId && stageId) {
+    if (projectId) {
       loadWorkspaceData();
     }
-  }, [projectId, stageId, loadWorkspaceData]);
+  }, [projectId, loadWorkspaceData]);
 
   if (loading) {
     return (

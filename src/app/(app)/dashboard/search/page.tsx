@@ -186,7 +186,7 @@ export default function SearchPage() {
                           <span>{res.defense_stages?.name}</span>
                         </div>
                       </div>
-                      <Link href={`/workspace/${res.id}/${res.defense_stages?.id || 'stage'}`}>
+                      <Link href={`/workspace/${res.id}/${res.current_stage_id || res.defense_stages?.id || ""}`}>
                         <Button variant="ghost" size="sm" className="h-8 gap-1">
                           View <ArrowRight className="h-3 w-3" />
                         </Button>

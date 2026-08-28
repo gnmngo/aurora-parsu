@@ -276,7 +276,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                               </Badge>
                             </div>
                           </div>
-                          <Link href={`/workspace/${adv.id}/${adv.defense_stages?.id || "stage"}`}>
+                          <Link href={`/workspace/${adv.id}/${adv.current_stage_id || adv.defense_stages?.id || ""}`}>
                             <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg">
                               Open Workspace <ChevronRight className="h-3.5 w-3.5" />
                             </Button>

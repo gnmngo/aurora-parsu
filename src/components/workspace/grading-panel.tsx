@@ -126,7 +126,23 @@ export function GradingPanel({
     try {
       setLoading(true);
 
+      const isUUID = (val: unknown) =>
+        typeof val === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+      const validProjectId = isUUID(projectId) ? projectId : null;
+      const validStageId = isUUID(stageId) ? stageId : null;
+
+      if (!validProjectId) {
+        setLoading(false);
+        return;
+      }
+
       // 1. Fetch project, stage, and rubric in parallel
+      const stagePromise = validStageId
+        ? supabase.from("defense_stages").select("name").eq("id", validStageId).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+
       const [projResult, stageResult, rubricResult] = await Promise.all([
         supabase
           .from("projects")
@@ -139,17 +155,13 @@ export function GradingPanel({
               profiles ( first_name, last_name )
             )
           `)
-          .eq("id", projectId)
-          .single(),
-        supabase
-          .from("defense_stages")
-          .select("name")
-          .eq("id", stageId)
-          .single(),
+          .eq("id", validProjectId)
+          .maybeSingle(),
+        stagePromise,
         supabase
           .from("rubric_templates")
           .select("*")
-          .eq("project_id", projectId)
+          .eq("project_id", validProjectId)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle()
@@ -243,12 +255,17 @@ export function GradingPanel({
           setPanelistProfile(profile);
         }
 
-        const { data: evalData } = await supabase
+        let evalQuery = supabase
           .from("evaluations")
           .select("*")
-          .eq("project_id", projectId)
-          .eq("stage_id", stageId)
-          .eq("panelist_id", userId)
+          .eq("project_id", validProjectId)
+          .eq("panelist_id", userId);
+
+        if (validStageId) {
+          evalQuery = evalQuery.eq("stage_id", validStageId);
+        }
+
+        const { data: evalData } = await evalQuery
           .order("version", { ascending: false })
           .limit(1)
           .maybeSingle();
