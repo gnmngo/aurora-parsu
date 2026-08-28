@@ -105,18 +105,26 @@ export default function WorkspacePage() {
           .order("version_number", { ascending: true });
 
         if (verList && verList.length > 0) {
-          setAllVersions(verList);
-          const currentVer = verList.find((v: any) => v.is_current) || verList[verList.length - 1];
+          const versionsWithUrls = await Promise.all(
+            verList.map(async (v: any) => {
+              if (v.storage_path) {
+                const { data } = await supabase.storage
+                  .from("manuscripts")
+                  .createSignedUrl(v.storage_path, 7200);
+                return { ...v, file_url: data?.signedUrl || v.file_url };
+              }
+              return v;
+            })
+          );
+
+          setAllVersions(versionsWithUrls);
+          const currentVer =
+            versionsWithUrls.find((v: any) => v.is_current) ||
+            versionsWithUrls[versionsWithUrls.length - 1];
           setDocVersion(currentVer);
 
-          // 5. Signed URL for private manuscripts bucket (or cached file_url)
-          if (currentVer.storage_path) {
-            const { data: signedData, error: signErr } = await supabase.storage
-              .from("manuscripts")
-              .createSignedUrl(currentVer.storage_path, 7200);
-            if (!signErr && signedData?.signedUrl) {
-              setPdfUrl(signedData.signedUrl);
-            }
+          if (currentVer?.file_url) {
+            setPdfUrl(currentVer.file_url);
           }
         }
       }
