@@ -94,8 +94,10 @@ export function GradingPanel({
   documentVersionId,
   annotationRefreshKey = 0,
 }: GradingPanelProps) {
-  const { roles } = useAuth();
-  const isFacultyOrAdmin = roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin"].includes(r));
+  const { roles, isLoading: authLoading } = useAuth();
+  const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
+  const isFacultyOrAdmin = !isStudent;
+
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [rubricTemplate, setRubricTemplate] = useState<any>(null);
   const [evalStatus, setEvalStatus] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export function GradingPanel({
     try {
       setLoading(true);
 
-      // 1. Fetch project and stage details in parallel
+      // 1. Fetch project, stage, and rubric in parallel
       const [projResult, stageResult, rubricResult] = await Promise.all([
         supabase
           .from("projects")
@@ -155,7 +157,34 @@ export function GradingPanel({
 
       const projData = projResult.data;
       const stageData = stageResult.data;
-      const rubricData = rubricResult.data;
+      let rubricData = rubricResult.data;
+
+      // Resilient fallback: If no project-specific rubric exists, auto-load standard university rubric
+      if (!rubricData || !rubricData.criteria || rubricData.criteria.length === 0) {
+        const { data: standardTemplate } = await supabase
+          .from("rubric_templates")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (standardTemplate && standardTemplate.criteria && standardTemplate.criteria.length > 0) {
+          rubricData = standardTemplate;
+        } else {
+          rubricData = {
+            id: "00000000-0000-0000-0000-000000000001",
+            title: "Partido State University Academic Defense Rubric",
+            passing_score: 75,
+            excellent_score: 90,
+            criteria: [
+              { id: "c1", name: "Technical Rigor & Architecture", weight: 35 },
+              { id: "c2", name: "Research Methodology & Execution", weight: 30 },
+              { id: "c3", name: "Presentation & Manuscript Quality", weight: 20 },
+              { id: "c4", name: "Defense Mastery & Response to Inquiries", weight: 15 },
+            ],
+          };
+        }
+      }
 
       let submittedDate = null;
       if (documentVersionId) {
@@ -183,7 +212,6 @@ export function GradingPanel({
           ? `${profileObj.first_name} ${profileObj.last_name}` 
           : "Unknown Student";
         
-        // BUG-H5: programs is a joined object via program_id FK
         const programObj = Array.isArray(studentObj?.programs)
           ? studentObj.programs[0]
           : studentObj?.programs;
@@ -200,8 +228,7 @@ export function GradingPanel({
 
       setRubricTemplate(rubricData);
 
-      // 2. Fetch existing evaluation for the current panelist
-      // BUG-H4: Use getUser() — validates against Auth server (not local cookie)
+      // 2. Fetch existing evaluation for current panelist
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userId = authUser?.id;
 
@@ -226,6 +253,14 @@ export function GradingPanel({
           .limit(1)
           .maybeSingle();
 
+        const initialScores: Record<string, number> = {};
+        if (rubricData?.criteria) {
+          rubricData.criteria.forEach((c: any) => {
+            const key = c.id || c.name;
+            initialScores[key] = 75;
+          });
+        }
+
         if (evalData) {
           setEvalId(evalData.id);
           setEvalVersion(evalData.version || 1);
@@ -235,7 +270,6 @@ export function GradingPanel({
           setRecommendations(evalData.recommendations || "");
           setEvaluationData(evalData);
 
-          // Fetch historical rubric template if different from latest
           if (evalData.rubric_template_id && evalData.rubric_template_id !== rubricData?.id) {
             const { data: histRubric } = await supabase
               .from("rubric_templates")
@@ -247,27 +281,16 @@ export function GradingPanel({
             }
           }
           
-          // Populate scores
           if (evalData.scores) {
-            setScores(evalData.scores);
-          } else if (rubricData?.criteria) {
-            const initialScores: Record<string, number> = {};
-            rubricData.criteria.forEach((c: any) => {
-              const key = c.id || c.name;
-              initialScores[key] = 0;
-            });
+            setScores({ ...initialScores, ...evalData.scores });
+          } else {
             setScores(initialScores);
           }
-        } else if (rubricData?.criteria) {
+        } else {
           setEvalId(null);
           setEvalVersion(1);
           setEvalStatus(null);
           setEvaluationData(null);
-          const initialScores: Record<string, number> = {};
-          rubricData.criteria.forEach((c: any) => {
-            const key = c.id || c.name;
-            initialScores[key] = 0;
-          });
           setScores(initialScores);
         }
       }
@@ -476,6 +499,29 @@ export function GradingPanel({
         return;
       }
 
+      let targetRubricId = rubricTemplate.id;
+      // If using fallback placeholder id, persist a real rubric template row in DB
+      if (targetRubricId === "00000000-0000-0000-0000-000000000001") {
+        const { data: createdRubric, error: rubErr } = await supabase
+          .from("rubric_templates")
+          .insert({
+            project_id: projectId,
+            title: rubricTemplate.title,
+            passing_score: rubricTemplate.passing_score || 75,
+            excellent_score: rubricTemplate.excellent_score || 90,
+            criteria: rubricTemplate.criteria,
+          })
+          .select()
+          .single();
+
+        if (!rubErr && createdRubric) {
+          targetRubricId = createdRubric.id;
+          setRubricTemplate(createdRubric);
+        } else {
+          targetRubricId = null;
+        }
+      }
+
       // 1. Submit/upsert evaluation record
       const { data: evalData, error: evalError } = await supabase
         .from("evaluations")
@@ -483,7 +529,7 @@ export function GradingPanel({
           project_id: projectId,
           stage_id: stageId,
           panelist_id: userId,
-          rubric_template_id: rubricTemplate.id,
+          rubric_template_id: targetRubricId,
           status: "draft",
           scores: scores,
           verdict_code: verdict,
@@ -584,7 +630,7 @@ export function GradingPanel({
     { value: "failed", label: "Failed" },
   ];
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-card p-6 text-sm text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

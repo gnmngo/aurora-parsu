@@ -280,8 +280,8 @@ export function PdfViewerPanel({
 
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user.id;
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
       if (!userId) throw new Error("No active session.");
 
       const coordinates = normalizePercentCoords(

@@ -25,7 +25,7 @@ export default function WorkspacePage() {
   const projectId = params.projectId as string;
   const stageId = params.stageId as string;
   const { roles } = useAuth();
-  const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin"].includes(r));
+  const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
   const backHref = isStudent ? "/dashboard/my-project" : "/dashboard/defenses";
 
   const [project, setProject] = useState<any>(null);
@@ -71,13 +71,30 @@ export default function WorkspacePage() {
       const fetchedStageName = stageData?.name || "Defense Stage";
       setStageName(fetchedStageName);
 
-      // 3. Fetch current manuscript document
-      const { data: docData } = await supabase
+      // 3. Fetch current manuscript document (with fallback if stage_id is null or different)
+      let docData: { id: string } | null = null;
+
+      const { data: stageDoc } = await supabase
         .from("documents")
         .select("id")
         .eq("project_id", projectId)
         .eq("stage_id", stageId)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (stageDoc) {
+        docData = stageDoc;
+      } else {
+        const { data: anyDoc } = await supabase
+          .from("documents")
+          .select("id")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        docData = anyDoc;
+      }
 
       if (docData) {
         // 4. Fetch all versions
@@ -93,12 +110,10 @@ export default function WorkspacePage() {
           setDocVersion(currentVer);
 
           // 5. Signed URL for private manuscripts bucket (or cached file_url)
-          if (currentVer.file_url) {
-            setPdfUrl(currentVer.file_url);
-          } else if (currentVer.storage_path) {
+          if (currentVer.storage_path) {
             const { data: signedData, error: signErr } = await supabase.storage
               .from("manuscripts")
-              .createSignedUrl(currentVer.storage_path, 3600);
+              .createSignedUrl(currentVer.storage_path, 7200);
             if (!signErr && signedData?.signedUrl) {
               setPdfUrl(signedData.signedUrl);
             }
@@ -151,8 +166,8 @@ export default function WorkspacePage() {
     : "Unknown Student";
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+    <div className="flex h-screen flex-col bg-background overflow-hidden">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 z-10">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
             <Link href={backHref}>
@@ -189,10 +204,10 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      {/* Main split-screen panel container */}
-      <div className="hidden flex-1 overflow-hidden lg:block">
-        <Group orientation="horizontal">
-          <Panel defaultSize={65} minSize={40}>
+      {/* Main split-screen panel container for Desktop */}
+      <div className="hidden flex-1 overflow-hidden lg:flex lg:flex-row h-[calc(100vh-3.5rem)] w-full">
+        <Group orientation="horizontal" className="h-full w-full">
+          <Panel defaultSize={65} minSize={35} className="h-full overflow-hidden">
             <div className="flex flex-col h-full bg-slate-50/20">
               {/* Tab Selector */}
               <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0">
@@ -219,7 +234,7 @@ export default function WorkspacePage() {
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {leftPaneTab === "pdf" ? (
                   docVersion ? (
                     <PdfViewerPanel
@@ -256,9 +271,9 @@ export default function WorkspacePage() {
               </div>
             </div>
           </Panel>
-          <Separator className="w-1.5 bg-border transition-colors hover:bg-primary/30" />
-          <Panel defaultSize={35} minSize={25}>
-            <div className="h-full border-l border-border bg-card">
+          <Separator className="w-2 bg-border hover:bg-primary/40 cursor-col-resize transition-colors flex items-center justify-center shrink-0" />
+          <Panel defaultSize={35} minSize={25} className="h-full overflow-hidden">
+            <div className="h-full border-l border-border bg-card overflow-hidden">
               <GradingPanel
                 projectId={projectId}
                 stageId={stageId}
@@ -270,8 +285,9 @@ export default function WorkspacePage() {
         </Group>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:hidden">
-        <div className="h-[50vh] shrink-0 flex flex-col bg-slate-50/20">
+      {/* Mobile view */}
+      <div className="flex flex-1 flex-col overflow-hidden lg:hidden h-[calc(100vh-3.5rem)]">
+        <div className="h-[50vh] shrink-0 flex flex-col bg-slate-50/20 border-b border-border">
           {/* Tab Selector Mobile */}
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0">
             <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40">
@@ -297,7 +313,7 @@ export default function WorkspacePage() {
           </div>
 
           {/* Content Mobile */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             {leftPaneTab === "pdf" ? (
               docVersion ? (
                 <PdfViewerPanel
@@ -320,7 +336,7 @@ export default function WorkspacePage() {
             )}
           </div>
         </div>
-        <div className="flex-1 overflow-hidden border-t border-border">
+        <div className="flex-1 overflow-hidden">
           <GradingPanel
             projectId={projectId}
             stageId={stageId}
