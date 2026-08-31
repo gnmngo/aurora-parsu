@@ -110,9 +110,9 @@ export function RubricBuilder({
     setSubmitting(true);
     try {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
+        data: { user },
+      } = await supabase.auth.getUser();
+      const userId = user?.id;
       if (!userId) {
         throw new Error("You must be logged in to create a rubric.");
       }

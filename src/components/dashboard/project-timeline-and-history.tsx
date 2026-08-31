@@ -36,8 +36,8 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
   useEffect(() => {
     async function loadProjects() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUserId = userId || session?.user?.id;
+        const { data: { user } } = await supabase.auth.getUser();
+        const currentUserId = userId || user?.id;
         if (!currentUserId) return;
 
         // Fetch projects where the user is a member or coordinator/admin

@@ -39,8 +39,8 @@ function ResetPasswordForm() {
     );
 
     // Also check if we already have a session (user arrived from callback)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
         setIsReady(true);
       }
     });

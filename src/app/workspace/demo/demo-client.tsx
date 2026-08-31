@@ -26,8 +26,8 @@ export default function DemoClient() {
       try {
         // 1. Sign in demo user automatically if not authenticated
         setLoadingStatus("Authenticating demo reviewer...");
-        const { data: { session } } = await supabase.auth.getSession();
-        let user = session?.user;
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        let user = currentUser;
         
         if (!user) {
           const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({

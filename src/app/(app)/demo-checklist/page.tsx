@@ -48,23 +48,23 @@ export default function DemoChecklistPage() {
 
     try {
       // 1. Auth check
-      const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
       const authItem = updated.find(i => i.id === "auth")!;
-      if (sessionErr || !session?.user) {
+      if (userErr || !user) {
         authItem.status = "fail";
-        authItem.details = { error: sessionErr?.message || "No logged-in user found." };
+        authItem.details = { error: userErr?.message || "No logged-in user found." };
       } else {
         // Query user roles
         const { data: roles } = await supabase
           .from("user_roles")
           .select("roles(code)")
-          .eq("profile_id", session.user.id);
+          .eq("profile_id", user.id);
 
         authItem.status = "pass";
         authItem.details = {
-          userId: session.user.id,
-          email: session.user.email,
-          metadata: session.user.user_metadata,
+          userId: user.id,
+          email: user.email,
+          metadata: user.user_metadata,
           roles: roles?.map((r: any) => r.roles?.code) ?? []
         };
       }
