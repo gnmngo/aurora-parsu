@@ -30,6 +30,7 @@ import { ROLE_SIDEBAR_LINKS, ADMIN_ROLES, type RoleCode } from "@/lib/auth/permi
 
 const mainNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/workspace", label: "Review Workspace", icon: Sparkles },
   { href: "/dashboard/my-project", label: "My Project", icon: BookOpen },
   { href: "/dashboard/search", label: "Global Search", icon: Search },
   { href: "/dashboard/defenses", label: "Defenses", icon: Shield },
@@ -139,7 +140,7 @@ export function AppSidebar({ className }: { className?: string }) {
         <div className="rounded-xl bg-white/10 p-3">
           <p className="text-xs font-semibold text-white">Defense Season</p>
           <p className="text-[10px] text-sidebar-foreground/60 font-bold uppercase">
-            AY 2025–2026 • 2nd Sem
+            AY 2026–2027 • 1st Sem
           </p>
         </div>
       </div>

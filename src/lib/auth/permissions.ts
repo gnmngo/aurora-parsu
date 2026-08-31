@@ -30,6 +30,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/my-project",
     "/dashboard/settings",
     "/dashboard/notifications",
+    "/workspace",
   ],
   adviser: [
     "/dashboard",
@@ -38,6 +39,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/submissions",
     "/dashboard/settings",
     "/dashboard/notifications",
+    "/workspace",
   ],
   panelist: [
     "/dashboard",
@@ -47,6 +49,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/grades",
     "/dashboard/settings",
     "/dashboard/notifications",
+    "/workspace",
   ],
   coordinator: [
     "/dashboard",
@@ -59,6 +62,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/settings",
     "/dashboard/notifications",
     "/admin",
+    "/workspace",
   ],
   /**
    * College Dean — read-only institutional oversight.
@@ -75,6 +79,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/analytics",
     "/dashboard/settings",
     "/dashboard/notifications",
+    "/workspace",
   ],
   sys_admin: [
     "/dashboard",
@@ -87,6 +92,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/settings",
     "/dashboard/notifications",
     "/admin",
+    "/workspace",
   ],
 };
 
@@ -115,11 +121,13 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   student: [
     "/dashboard",
     "/dashboard/my-project",
+    "/workspace",
     "/dashboard/notifications",
     "/dashboard/settings",
   ],
   adviser: [
     "/dashboard",
+    "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/submissions",
@@ -128,6 +136,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   ],
   panelist: [
     "/dashboard",
+    "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/annotations",
@@ -137,6 +146,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   ],
   coordinator: [
     "/dashboard",
+    "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/submissions",
@@ -148,6 +158,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   ],
   college_dean: [
     "/dashboard",
+    "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/annotations",
@@ -158,6 +169,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   ],
   sys_admin: [
     "/dashboard",
+    "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
     "/dashboard/submissions",

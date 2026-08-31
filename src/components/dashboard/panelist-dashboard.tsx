@@ -28,6 +28,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [defenses, setDefenses] = useState<any[]>([]);
   const [evaluations, setEvaluations] = useState<any[]>([]);
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"defenses" | "pending" | "completed">("defenses");
   
@@ -36,28 +37,50 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
   useEffect(() => {
     async function loadPanelistData() {
       try {
+        setLoading(true);
+
         // 1. Fetch defense panels where user is panelist
         const { data: panels } = await supabase
           .from("defense_panels")
           .select("project_id, stage_id")
           .eq("profile_id", userId);
 
-        const projectIds = panels?.map((p: any) => p.project_id) || [];
+        const assignedProjectIds = panels?.map((p: any) => p.project_id) || [];
 
-        if (projectIds.length === 0) {
-          setLoading(false);
-          return;
+        // 2. Fetch all active defense projects in the system
+        let projQuery = supabase
+          .from("projects")
+          .select(`
+            id,
+            title,
+            status,
+            current_stage_id,
+            defense_stages ( id, name ),
+            departments ( name ),
+            students (
+              profiles ( first_name, last_name )
+            )
+          `)
+          .order("created_at", { ascending: false });
+
+        if (assignedProjectIds.length > 0) {
+          projQuery = projQuery.in("id", assignedProjectIds);
         }
 
-        // 2. Fetch schedules for these projects
-        const { data: scheds } = await supabase
-          .from("defense_schedules")
-          .select("*, projects(title, id)")
-          .in("project_id", projectIds)
-          .order("scheduled_at", { ascending: true });
-        if (scheds) setDefenses(scheds);
+        const { data: projs } = await projQuery;
+        if (projs) setActiveProjects(projs);
 
-        // 3. Fetch evaluations for this panelist
+        // 3. Fetch defense schedules
+        if (assignedProjectIds.length > 0) {
+          const { data: scheds } = await supabase
+            .from("defense_schedules")
+            .select("*, projects(title, id)")
+            .in("project_id", assignedProjectIds)
+            .order("scheduled_at", { ascending: true });
+          if (scheds) setDefenses(scheds);
+        }
+
+        // 4. Fetch evaluations for this panelist
         const { data: evs } = await supabase
           .from("evaluations")
           .select("*, projects(title), defense_stages(name)")
@@ -65,7 +88,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           .order("updated_at", { ascending: false });
         if (evs) setEvaluations(evs);
 
-        // 4. Fetch recent logs
+        // 5. Fetch recent logs
         const { data: logs } = await supabase
           .from("audit_logs")
           .select("*")
@@ -82,7 +105,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
     }
 
     loadPanelistData();
-  }, [userId]);
+  }, [userId, supabase]);
 
   if (loading) {
     return (
@@ -97,6 +120,30 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
 
   return (
     <div className="space-y-6 text-xs font-semibold text-slate-800">
+      {/* Quick Workspace Launcher Banner */}
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/10 shadow-xs">
+        <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-[9px] font-bold uppercase text-primary border-primary/40">
+                Core Feature
+              </Badge>
+              <h3 className="text-sm font-bold text-slate-900">
+                Split-Screen Manuscript Review &amp; Rubric Grading Workspace
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Review research manuscripts, add inline comments/remarks, score defense rubrics, and apply electronic signatures.
+            </p>
+          </div>
+          <Link href="/workspace">
+            <Button className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-sm shrink-0">
+              Open Defense Workspace <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-4 flex flex-row items-center gap-4">
@@ -104,8 +151,8 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
             <Calendar className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{defenses.length}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Defenses</p>
+            <p className="text-2xl font-black text-slate-900">{activeProjects.length}</p>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Manuscripts</p>
           </div>
         </Card>
 
@@ -136,13 +183,13 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           onClick={() => setActiveTab("defenses")}
           className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "defenses" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
         >
-          Assigned Defenses ({defenses.length})
+          Research Manuscripts ({activeProjects.length})
         </button>
         <button
           onClick={() => setActiveTab("pending")}
           className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "pending" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
         >
-          Pending Evaluations ({draftEvals.length})
+          Pending Drafts ({draftEvals.length})
         </button>
         <button
           onClick={() => setActiveTab("completed")}
@@ -156,40 +203,100 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
         {/* Main Tab Panel */}
         <div className="md:col-span-2 space-y-6">
           {activeTab === "defenses" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
-                  <Calendar className="h-4 w-4 text-primary" /> Defense Calendar
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {defenses.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-muted-foreground">
-                    <Calendar className="h-8 w-8 opacity-30 mb-2" />
-                    <p>No defenses currently scheduled.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {defenses.map((def) => (
-                      <div key={def.id} className="flex items-center justify-between p-4">
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">"{def.projects?.title}"</p>
-                          <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-1">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {new Date(def.scheduled_at).toLocaleString()}
-                          </p>
-                          <p className="text-[10px] text-primary font-bold mt-0.5">Venue: Room {def.room}</p>
+            <div className="space-y-4">
+              {/* Scheduled Defenses if any */}
+              {defenses.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                      <Calendar className="h-4 w-4 text-primary" /> Scheduled Defense Sessions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-border">
+                      {defenses.map((def) => (
+                        <div key={def.id} className="flex items-center justify-between p-4">
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">"{def.projects?.title}"</p>
+                            <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-1">
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {new Date(def.scheduled_at).toLocaleString()}
+                            </p>
+                            <p className="text-[10px] text-primary font-bold mt-0.5">Venue: Room {def.room}</p>
+                          </div>
+                          <Link href={`/workspace/${def.project_id}/${def.stage_id}`}>
+                            <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg font-bold">
+                              Evaluate <ChevronRight className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
                         </div>
-                        <Link href={`/workspace/${def.project_id}/${def.stage_id}`}>
-                          <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg">
-                            Evaluate <ChevronRight className="h-3.5 w-3.5" />
-                          </Button>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* All Assigned Manuscripts */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                    <FileText className="h-4 w-4 text-primary" /> Active Research Manuscripts
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Click "Open Workspace" to launch the split-screen PDF review, add comments, and grade.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {activeProjects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-muted-foreground">
+                      <FileText className="h-8 w-8 opacity-30 mb-2" />
+                      <p>No research manuscripts assigned yet.</p>
+                      <Link href="/workspace/demo" className="mt-3">
+                        <Button variant="outline" size="sm" className="text-xs rounded-xl font-bold">
+                          Launch Demo Workspace
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {activeProjects.map((p) => {
+                        const studentObj = Array.isArray(p.students) ? p.students[0] : p.students;
+                        const studentProfile = studentObj && Array.isArray(studentObj.profiles) ? studentObj.profiles[0] : studentObj?.profiles;
+                        const studentName = studentProfile ? `${studentProfile.first_name} ${studentProfile.last_name}` : "Student Author";
+                        const stageObj = Array.isArray(p.defense_stages) ? p.defense_stages[0] : p.defense_stages;
+                        const stageId = p.current_stage_id || stageObj?.id || "";
+                        const stageName = stageObj?.name || "Defense Stage";
+
+                        return (
+                          <div key={p.id} className="flex items-center justify-between p-4 gap-4">
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[9px] font-bold uppercase text-primary">
+                                  {stageName}
+                                </Badge>
+                                <Badge variant="secondary" className="text-[9px] capitalize">
+                                  {p.status.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              <p className="font-bold text-slate-900 text-sm truncate">
+                                "{p.title}"
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Author: <span className="font-semibold text-foreground">{studentName}</span> • Department: {p.departments?.name || "General"}
+                              </p>
+                            </div>
+                            <Link href={`/workspace/${p.id}/${stageId}`}>
+                              <Button size="sm" className="h-8 text-xs font-bold gap-1 rounded-xl shrink-0">
+                                Open Workspace <ChevronRight className="h-3.5 w-3.5" />
+                              </Button>
+                            </Link>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeTab === "pending" && (

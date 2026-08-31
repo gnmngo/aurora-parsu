@@ -247,8 +247,8 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      {/* Main split-screen panel container for Desktop */}
-      <div className="hidden flex-1 overflow-hidden lg:flex lg:flex-row h-[calc(100vh-3.5rem)] w-full">
+      {/* Main split-screen panel container for Desktop/Tablet */}
+      <div className="hidden flex-1 overflow-hidden md:flex md:flex-row h-[calc(100vh-3.5rem)] w-full">
         <Group orientation="horizontal" className="h-full w-full">
           <Panel defaultSize={65} minSize={35} className="h-full overflow-hidden">
             <div className="flex flex-col h-full bg-slate-50/20">
@@ -329,7 +329,7 @@ export default function WorkspacePage() {
       </div>
 
       {/* Mobile view */}
-      <div className="flex flex-1 flex-col overflow-hidden lg:hidden h-[calc(100vh-3.5rem)]">
+      <div className="flex flex-1 flex-col overflow-hidden md:hidden h-[calc(100vh-3.5rem)]">
         <div className="h-[50vh] shrink-0 flex flex-col bg-slate-50/20 border-b border-border">
           {/* Tab Selector Mobile */}
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0">

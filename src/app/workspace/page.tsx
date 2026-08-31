@@ -87,8 +87,8 @@ export default function WorkspaceIndexPage() {
           if (projData && projData.length > 0) {
             setProjects(projData);
 
-            // If user only has 1 active project, auto-navigate directly to that workspace
-            if (projData.length === 1) {
+            // If student only has 1 active project, auto-navigate directly to that workspace
+            if (isStudent && projData.length === 1) {
               const p = projData[0] as any;
               const stageObj = Array.isArray(p.defense_stages) ? p.defense_stages[0] : p.defense_stages;
               const targetStage = p.current_stage_id || stageObj?.id || defaultStageId;
