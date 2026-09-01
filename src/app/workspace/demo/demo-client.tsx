@@ -115,7 +115,7 @@ export default function DemoClient() {
 
         // 5. Generate and Upload Demo PDF if not already present
         setLoadingStatus("Preparing sample manuscript PDF...");
-        const storagePath = "manuscripts/demo.pdf";
+        const storagePath = "demo.pdf";
         
         // Check if file already exists in bucket
         const { data: fileCheck } = await supabase.storage.from("manuscripts").list();

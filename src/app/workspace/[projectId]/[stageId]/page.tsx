@@ -159,9 +159,10 @@ export default function WorkspacePage() {
           const versionsWithUrls = await Promise.all(
             verList.map(async (v: any) => {
               if (v.storage_path) {
+                const cleanPath = v.storage_path.replace(/^manuscripts\//, "").replace(/^\/+/, "");
                 const { data } = await supabase.storage
                   .from("manuscripts")
-                  .createSignedUrl(v.storage_path, 7200);
+                  .createSignedUrl(cleanPath, 7200);
                 return { ...v, file_url: data?.signedUrl || v.file_url };
               }
               return v;
