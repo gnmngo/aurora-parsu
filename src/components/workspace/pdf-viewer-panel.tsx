@@ -95,9 +95,10 @@ export function PdfViewerPanel({
 
     if (!documentVersionId) return;
 
-    // Real-time synchronization
+    // Real-time synchronization with unique channel name to prevent collision
+    const channelName = `pdf-annotations-${documentVersionId}-${Date.now()}`;
     const channel = supabase
-      .channel(`annotations-${documentVersionId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
