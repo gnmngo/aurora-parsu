@@ -156,38 +156,88 @@ export function PdfUploader({
       if (authError || !authUser) throw new Error("Not authenticated. Please log in.");
       const userId = authUser.id;
 
+      // Ensure target project and stage are resolved
+      let targetProjectId = selectedProject;
+      let targetStageId = selectedStage;
+
+      if (!targetProjectId && projects.length > 0) {
+        targetProjectId = projects[0].id;
+      }
+
+      if (!targetStageId) {
+        if (targetProjectId) {
+          const activeProj = projects.find((p) => p.id === targetProjectId);
+          if (activeProj?.current_stage_id) {
+            targetStageId = activeProj.current_stage_id;
+          }
+        }
+        if (!targetStageId && stages.length > 0) {
+          targetStageId = stages[0].id;
+        }
+      }
+
+      if (!targetProjectId || !targetStageId) {
+        throw new Error("Unable to determine active defense stage. Please select a stage.");
+      }
+
       const checksum = await computeFileSha256(file);
       const fileName = `${Date.now()}_${checksum.slice(0, 8)}.pdf`;
-      const filePath = `${selectedProject}/${selectedStage}/${fileName}`;
+      const filePath = `${targetProjectId}/${targetStageId}/${fileName}`;
       uploadedPath = filePath;
 
+      // 1. Upload to Supabase Storage
       const { error: storageError } = await supabase.storage
         .from("manuscripts")
         .upload(filePath, file, {
           cacheControl: "3600",
-          upsert: false,
+          upsert: true,
           contentType: "application/pdf",
         });
 
       if (storageError) throw storageError;
 
-      const { data: docData, error: docError } = await supabase
+      // 2. Query or create document record
+      let docData: { id: string } | null = null;
+      const { data: existingDoc } = await supabase
         .from("documents")
-        .upsert(
-          {
-            project_id: selectedProject,
-            stage_id: selectedStage,
+        .select("id")
+        .eq("project_id", targetProjectId)
+        .eq("stage_id", targetStageId)
+        .maybeSingle();
+
+      if (existingDoc) {
+        const { data: updatedDoc, error: updDocErr } = await supabase
+          .from("documents")
+          .update({
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            status: "under_review",
+          })
+          .eq("id", existingDoc.id)
+          .select()
+          .maybeSingle();
+
+        if (updDocErr) throw updDocErr;
+        docData = updatedDoc;
+      } else {
+        const { data: insertedDoc, error: insDocErr } = await supabase
+          .from("documents")
+          .insert({
+            project_id: targetProjectId,
+            stage_id: targetStageId,
             title: file.name.replace(/\.[^/.]+$/, ""),
             status: "under_review",
             created_by: userId,
-          },
-          { onConflict: "project_id,stage_id" }
-        )
-        .select()
-        .single();
+          })
+          .select()
+          .maybeSingle();
 
-      if (docError) throw docError;
+        if (insDocErr) throw insDocErr;
+        docData = insertedDoc;
+      }
 
+      if (!docData) throw new Error("Failed to record manuscript document metadata.");
+
+      // 3. Fetch version numbers
       const { data: versions, error: versionFetchError } = await supabase
         .from("document_versions")
         .select("version_number")
@@ -199,11 +249,13 @@ export function PdfUploader({
       const nextVersion =
         versions && versions.length > 0 ? versions[0].version_number + 1 : 1;
 
+      // 4. Mark existing versions as not current
       await supabase
         .from("document_versions")
         .update({ is_current: false })
         .eq("document_id", docData.id);
 
+      // 5. Insert new document version
       const { data: verData, error: verError } = await supabase
         .from("document_versions")
         .insert({
@@ -220,10 +272,11 @@ export function PdfUploader({
             nextVersion === 1 ? "Initial upload" : `Revision v${nextVersion}`,
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (verError) throw verError;
+      if (verError || !verData) throw verError || new Error("Failed to register document version.");
 
+      // 6. Record upload history and event
       await supabase.from("document_upload_history").insert({
         document_id: docData.id,
         version_id: verData.id,
@@ -232,8 +285,8 @@ export function PdfUploader({
       });
 
       await supabase.from("evaluation_events").insert({
-        project_id: selectedProject,
-        stage_id: selectedStage,
+        project_id: targetProjectId,
+        stage_id: targetStageId,
         event_type: "document_version_uploaded",
         payload: {
           document_id: docData.id,
@@ -243,18 +296,19 @@ export function PdfUploader({
         },
       });
 
+      // 7. Update project current stage and status
       await supabase
         .from("projects")
         .update({
           status: "under_review",
-          current_stage_id: selectedStage,
+          current_stage_id: targetStageId,
         })
-        .eq("id", selectedProject);
+        .eq("id", targetProjectId);
 
       toast.success(`Manuscript PDF v${nextVersion} uploaded successfully!`, {
         action: {
           label: "View Manuscript",
-          onClick: () => router.push(`/workspace/${selectedProject}/${selectedStage}`),
+          onClick: () => router.push(`/workspace/${targetProjectId}/${targetStageId}`),
         },
       });
 

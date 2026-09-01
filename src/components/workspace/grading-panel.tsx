@@ -204,7 +204,7 @@ export function GradingPanel({
           .from("document_versions")
           .select("created_at")
           .eq("id", documentVersionId)
-          .single();
+          .maybeSingle();
         if (verData) {
           submittedDate = new Date(verData.created_at).toLocaleDateString();
         }
@@ -250,7 +250,7 @@ export function GradingPanel({
           .from("profiles")
           .select("first_name, last_name")
           .eq("id", userId)
-          .single();
+          .maybeSingle();
         if (profile) {
           setPanelistProfile(profile);
         }
@@ -529,7 +529,7 @@ export function GradingPanel({
             criteria: rubricTemplate.criteria,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (!rubErr && createdRubric) {
           targetRubricId = createdRubric.id;
@@ -557,9 +557,9 @@ export function GradingPanel({
           onConflict: "project_id, stage_id, panelist_id, version"
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (evalError) throw evalError;
+      if (evalError || !evalData) throw evalError || new Error("Failed to save evaluation.");
 
       setEvalId(evalData.id);
       setEvalStatus(evalData.status);

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Save, Wifi, Loader2, AlertCircle, FileText } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import nextDynamic from "next/dynamic";
-import { GradingPanel } from "@/components/workspace/grading-panel";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,18 +19,31 @@ const PdfViewerPanel = nextDynamic(
   { ssr: false }
 );
 
+const GradingPanel = nextDynamic(
+  () => import("@/components/workspace/grading-panel").then((m) => m.GradingPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    ),
+  }
+);
+
 const isUUID = (val: unknown) =>
   typeof val === "string" &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
 export default function WorkspacePage() {
   const params = useParams();
-  const projectId = params.projectId as string;
-  const rawStageId = params.stageId as string;
+  const projectId = (params?.projectId as string) || "";
+  const rawStageId = (params?.stageId as string) || "";
   const { roles } = useAuth();
   const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
   const backHref = isStudent ? "/dashboard/my-project" : "/dashboard/defenses";
 
+  const [mounted, setMounted] = useState(false);
   const [project, setProject] = useState<any>(null);
   const [stageId, setStageId] = useState<string>(rawStageId);
   const [stageName, setStageName] = useState<string>("Defense Stage");
@@ -44,6 +56,10 @@ export default function WorkspacePage() {
   const [annotationRefreshKey, setAnnotationRefreshKey] = useState(0);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleAnnotationChange = () => {
     setAnnotationRefreshKey((k) => k + 1);
@@ -177,7 +193,7 @@ export default function WorkspacePage() {
     }
   }, [projectId, loadWorkspaceData]);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background text-sm text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
