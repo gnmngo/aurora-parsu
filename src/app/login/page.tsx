@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Sparkles, Eye, EyeOff, CheckCircle, ShieldAlert } from "lucide-react";
+import { Loader2, Sparkles, Eye, EyeOff, CheckCircle, ShieldAlert, Shield, Info } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -185,12 +185,12 @@ function LoginForm() {
       toast.error("Please fill in your name, email, and password");
       return;
     }
-    if (regRole === "student" && !regNumber) {
-      toast.error("Please enter your Student ID number");
+    if (!regNumber?.trim()) {
+      toast.error("Please enter your Student ID number (e.g. 2022-xxxxx)");
       return;
     }
-    if (regRole === "student" && !regProgramId) {
-      toast.error("Please select an academic program");
+    if (!regProgramId) {
+      toast.error("Please select your academic program");
       return;
     }
     
@@ -201,12 +201,12 @@ function LoginForm() {
       const departmentId = regDepartmentId || (selectedProg as { department_id?: string | null })?.department_id || null;
 
       const result = await registerUserAction({
-        email: regEmail,
+        email: regEmail.trim(),
         password: regPassword,
-        firstName: regFirstName,
-        lastName: regLastName,
-        role: regRole as "student" | "adviser" | "panelist",
-        number: regNumber,
+        firstName: regFirstName.trim(),
+        lastName: regLastName.trim(),
+        role: "student",
+        number: regNumber.trim(),
         campusId: regCampusId || null,
         collegeId: regCollegeId || null,
         departmentId,
@@ -219,14 +219,7 @@ function LoginForm() {
         return;
       }
 
-      if (regRole !== "student") {
-        toast.success(
-          "Faculty account created successfully! Your account is in the institutional verification queue and will be active once approved by the Research Coordinator.",
-          { duration: 9000 }
-        );
-      } else {
-        toast.success("Account created successfully! You can now sign in.");
-      }
+      toast.success("Student account created successfully! You can now sign in.");
       
       // Auto-populate credentials and switch to sign in tab
       setEmail(regEmail);
@@ -485,138 +478,112 @@ function LoginForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regRole">University Role</label>
-                  <select
-                    id="regRole"
-                    value={regRole}
-                    onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-border bg-card px-2.5 focus:outline-none text-xs font-semibold"
-                  >
-                    <option value="student">Student</option>
-                    <option value="adviser">Research Adviser</option>
-                    <option value="panelist">Defense Panelist</option>
-                    <option value="coordinator">Research Coordinator</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regNumber">
-                    {regRole === "student" ? "Student ID" : "Employee ID (Optional)"}
-                  </label>
-                  <Input
-                    id="regNumber"
-                    type="text"
-                    placeholder={regRole === "student" ? "2022-xxxxx" : "e.g. EMP-1024"}
-                    value={regNumber}
-                    onChange={(e) => setRegNumber(e.target.value)}
-                    disabled={isFormDisabled}
-                    required={regRole === "student"}
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regNumber">
+                  Student ID Number
+                </label>
+                <Input
+                  id="regNumber"
+                  type="text"
+                  placeholder="e.g. 2022-10492"
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                  disabled={isFormDisabled}
+                  required
+                />
               </div>
 
-              {regRole === "student" ? (
-                <div className="space-y-3 p-3 bg-muted/30 rounded-xl border border-border">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="campus">Campus</label>
-                    <select
-                      id="campus"
-                      value={regCampusId}
-                      onChange={(e) => setRegCampusId(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                      disabled={campuses.length === 0}
-                    >
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="college">College</label>
-                    <select
-                      id="college"
-                      value={regCollegeId}
-                      onChange={(e) => setRegCollegeId(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                      disabled={colleges.length === 0}
-                    >
-                      {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  {departments.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="department">Department (Optional)</label>
-                      <select
-                        id="department"
-                        value={regDepartmentId}
-                        onChange={(e) => setRegDepartmentId(e.target.value)}
-                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                      >
-                        <option value="">-- No Department --</option>
-                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="program">Academic Program</label>
-                    <select
-                      id="program"
-                      value={regProgramId}
-                      onChange={(e) => setRegProgramId(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                      disabled={programs.length === 0}
-                      required
-                    >
-                      <option value="">-- Select Program --</option>
-                      {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-
-                  {majors.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="major">Major (Optional)</label>
-                      <select
-                        id="major"
-                        value={regMajorId}
-                        onChange={(e) => setRegMajorId(e.target.value)}
-                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                      >
-                        <option value="">-- No Major --</option>
-                        {majors.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                    </div>
-                  )}
+              <div className="space-y-3 p-3 bg-muted/30 rounded-xl border border-border">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="campus">Campus</label>
+                  <select
+                    id="campus"
+                    value={regCampusId}
+                    onChange={(e) => setRegCampusId(e.target.value)}
+                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    disabled={campuses.length === 0}
+                  >
+                    {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground flex items-start gap-2">
-                  <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-foreground">
-                      {regRole === "coordinator" ? "Coordinator Account: " : "Faculty Account: "}
-                    </span>
-                    Your account will be verified and connected for academic defense workflows, scheduling, and evaluations at Partido State University.
-                  </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="college">College</label>
+                  <select
+                    id="college"
+                    value={regCollegeId}
+                    onChange={(e) => setRegCollegeId(e.target.value)}
+                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    disabled={colleges.length === 0}
+                  >
+                    {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
-              )}
+
+                {departments.length > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="department">Department (Optional)</label>
+                    <select
+                      id="department"
+                      value={regDepartmentId}
+                      onChange={(e) => setRegDepartmentId(e.target.value)}
+                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    >
+                      <option value="">-- No Department --</option>
+                      {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="program">Academic Program</label>
+                  <select
+                    id="program"
+                    value={regProgramId}
+                    onChange={(e) => setRegProgramId(e.target.value)}
+                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    disabled={programs.length === 0}
+                    required
+                  >
+                    <option value="">-- Select Program --</option>
+                    {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+
+                {majors.length > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="major">Major (Optional)</label>
+                    <select
+                      id="major"
+                      value={regMajorId}
+                      onChange={(e) => setRegMajorId(e.target.value)}
+                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    >
+                      <option value="">-- No Major --</option>
+                      {majors.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-foreground">Faculty, Adviser, or Panelist?</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Faculty, defense panelist, and coordinator accounts are officially provisioned by the Research Coordinator. Please contact your college coordinator for official access.
+                  </p>
+                </div>
+              </div>
 
               <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl cursor-pointer font-bold text-xs" type="submit">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="animate-spin w-4 h-4" />
-                    Creating account...
+                    Creating student account...
                   </span>
                 ) : (
-                  `Register as ${
-                    regRole === "student"
-                      ? "Student"
-                      : regRole === "adviser"
-                        ? "Research Adviser"
-                        : regRole === "panelist"
-                          ? "Defense Panelist"
-                          : "Research Coordinator"
-                  }`
+                  "Create Student Account"
                 )}
               </Button>
             </form>
