@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Plus, AlertTriangle, UserCheck, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { createProjectAction } from "@/lib/projects/actions";
+import { createProjectAction, getApprovedFacultyListAction } from "@/lib/projects/actions";
 
 interface StudentRecord {
   id: string;
@@ -62,25 +62,8 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
     async function loadFaculty() {
       setLoadingFaculty(true);
       try {
-        const { data, error } = await supabase
-          .from("faculty")
-          .select("profile_id, profiles(first_name, last_name, email, status)")
-          .order("created_at", { ascending: true });
-
-        if (!error && data) {
-          const list: FacultyOption[] = [];
-          for (const item of data) {
-            const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
-            if (prof && prof.status === "approved") {
-              list.push({
-                profile_id: item.profile_id,
-                name: `${prof.first_name} ${prof.last_name}`,
-                email: prof.email,
-              });
-            }
-          }
-          setFacultyList(list);
-        }
+        const list = await getApprovedFacultyListAction();
+        setFacultyList(list);
       } catch (err) {
         console.error("Failed to load faculty options:", err);
       } finally {
@@ -89,7 +72,7 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
     }
 
     loadFaculty();
-  }, [open, supabase]);
+  }, [open]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

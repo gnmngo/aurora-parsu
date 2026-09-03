@@ -433,3 +433,43 @@ export async function notifyAdviserManuscriptUploadedAction(
   }
 }
 
+export interface FacultyOptionItem {
+  profile_id: string;
+  name: string;
+  email: string;
+  department?: string;
+}
+
+/**
+ * Returns the list of approved university faculty members for adviser selection.
+ * Uses service client to bypass RLS restrictions on un-joined profiles.
+ */
+export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[]> {
+  const serviceClient = createServiceClient();
+  try {
+    const { data, error } = await serviceClient
+      .from("faculty")
+      .select("profile_id, profiles(first_name, last_name, email, status)")
+      .order("created_at", { ascending: true });
+
+    if (error || !data) return [];
+
+    const list: FacultyOptionItem[] = [];
+    for (const item of data) {
+      const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+      if (prof && prof.status === "approved") {
+        list.push({
+          profile_id: item.profile_id,
+          name: `${prof.first_name} ${prof.last_name}`,
+          email: prof.email,
+        });
+      }
+    }
+    return list;
+  } catch (err) {
+    console.error("Failed to load approved faculty list:", err);
+    return [];
+  }
+}
+
+

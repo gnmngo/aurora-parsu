@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
-import { assignProjectAdviserAction } from "@/lib/projects/actions";
+import { assignProjectAdviserAction, getApprovedFacultyListAction } from "@/lib/projects/actions";
 
 interface ProjectData {
   id: string;
@@ -151,25 +151,8 @@ export default function MyProjectPage() {
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
     try {
-      const { data, error } = await supabase
-        .from("faculty")
-        .select("profile_id, profiles(first_name, last_name, email, status)")
-        .order("created_at", { ascending: true });
-
-      if (!error && data) {
-        const list: Array<{ profile_id: string; name: string; email: string }> = [];
-        for (const item of data) {
-          const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
-          if (prof && prof.status === "approved") {
-            list.push({
-              profile_id: item.profile_id,
-              name: `${prof.first_name} ${prof.last_name}`,
-              email: prof.email,
-            });
-          }
-        }
-        setFacultyOptions(list);
-      }
+      const list = await getApprovedFacultyListAction();
+      setFacultyOptions(list);
     } catch (err) {
       console.error("Failed to load faculty options:", err);
     }
