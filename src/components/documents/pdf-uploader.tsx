@@ -17,6 +17,7 @@ import { FileUp, UploadCloud, FileText, CheckCircle2, Loader2 } from "lucide-rea
 import { toast } from "sonner";
 import { computeFileSha256 } from "@/lib/documents";
 import { cn } from "@/lib/utils";
+import { notifyAdviserManuscriptUploadedAction } from "@/lib/projects/actions";
 
 interface ProjectOption {
   id: string;
@@ -304,6 +305,11 @@ export function PdfUploader({
           current_stage_id: targetStageId,
         })
         .eq("id", targetProjectId);
+
+      // 8. Notify assigned adviser asynchronously
+      notifyAdviserManuscriptUploadedAction(targetProjectId, nextVersion).catch((e) =>
+        console.error("Adviser notification failed:", e)
+      );
 
       toast.success(`Manuscript PDF v${nextVersion} uploaded successfully!`, {
         action: {

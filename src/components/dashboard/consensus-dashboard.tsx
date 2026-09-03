@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
-import { Users, ShieldCheck } from "lucide-react";
+import { Users, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface ConsensusDashboardProps {
   projectId: string;
@@ -82,6 +82,7 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
   const squareDiffs = scores.map((s) => Math.pow(s - mean, 2));
   const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / count;
   const stdDev = Number(Math.sqrt(avgSquareDiff).toFixed(2));
+  const isHighDiscrepancy = count >= 2 && stdDev >= 15.0;
 
   // Derive Consensus Verdict
   const failCount = evaluations.filter((ev) => ev.verdict_code === "failed").length;
@@ -106,6 +107,19 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
       </CardHeader>
       
       <CardContent className="pt-4 space-y-4">
+        {/* Score Discrepancy Alert Banner */}
+        {isHighDiscrepancy && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 flex items-start gap-2.5 animate-in fade-in duration-300">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-900">Score Discrepancy Alert (σ = {stdDev} ≥ 15.0 pts)</p>
+              <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                Standard deviation between panelist scores exceeds the institutional consensus threshold (15.0 points). Coordinator arbitration or panel deliberation is advised before releasing the final verdict.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Consensus metrics row */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="p-3 bg-muted/40 rounded-xl flex items-center justify-between">
@@ -125,8 +139,19 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
           </div>
 
           <div className="p-3 bg-muted/40 rounded-xl flex items-center justify-between">
-            <span className="text-muted-foreground">Standard Deviation</span>
-            <span className="text-sm font-black text-slate-800">σ = {stdDev}</span>
+            <span className="text-muted-foreground">Score Consensus</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-black text-slate-800">σ = {stdDev}</span>
+              {isHighDiscrepancy ? (
+                <Badge variant="danger" className="text-[8px] font-extrabold uppercase">
+                  Discrepancy Alert
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[8px] font-extrabold uppercase text-emerald-600 border-emerald-300">
+                  Consensus
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 

@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/lib/supabase/client";
-import { Inbox, FileCheck, Award, Gavel, Loader2 } from "lucide-react";
+import { Inbox, FileCheck, Award, Gavel, Loader2, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { format } from "date-fns";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { useAuth } from "@/hooks/use-auth";
 import { releaseProjectVerdictAction } from "@/lib/workflow/actions";
 import { toast } from "sonner";
+import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 
 /**
  * GradesPage — displays submitted evaluation score sheets.
@@ -49,6 +50,7 @@ export default function GradesPage() {
   const [evaluations, setEvaluations] = useState<EvaluationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [releasingId, setReleasingId] = useState<string | null>(null);
+  const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
   const supabase = createClient();
   const { user, roles } = useAuth();
   const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin"].includes(r));
@@ -189,37 +191,60 @@ export default function GradesPage() {
                 <p className="text-xs text-muted-foreground">Officially record the defense outcome for each project.</p>
               </CardHeader>
               <CardContent className="p-0 divide-y divide-border">
-                {projects.map((proj) => (
-                  <div key={proj.id} className="flex items-center justify-between px-6 py-3">
-                    <p className="text-sm font-semibold text-slate-800">&ldquo;{proj.title}&rdquo;</p>
-                    <div className="flex items-center gap-2">
-                      {(["passed", "passed_minor", "passed_major", "failed", "conditional"] as const).map((v) => (
-                        <Button
-                          key={v}
-                          size="sm"
-                          variant={v.startsWith("passed") ? "default" : v === "failed" ? "danger" : "outline"}
-                          className="h-7 text-[10px] capitalize"
-                          disabled={releasingId === proj.id}
-                          onClick={async () => {
-                            if (!confirm(`Release verdict "${v.replace(/_/g, " ")}" for "${proj.title}"?`)) return;
-                            setReleasingId(proj.id);
-                            try {
-                              await releaseProjectVerdictAction(proj.id, v);
-                              toast.success(`Verdict released: ${v.replace(/_/g, " ")}`);
-                            } catch (err: unknown) {
-                              const msg = err instanceof Error ? err.message : "Failed";
-                              toast.error(msg);
-                            } finally {
-                              setReleasingId(null);
-                            }
-                          }}
-                        >
-                          {releasingId === proj.id ? <Loader2 className="h-3 w-3 animate-spin" /> : v.replace(/_/g, " ")}
-                        </Button>
-                      ))}
+                {projects.map((proj) => {
+                  const isExpanded = expandedConsensusId === proj.id;
+                  return (
+                    <div key={proj.id} className="p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-foreground">&ldquo;{proj.title}&rdquo;</p>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedConsensusId(isExpanded ? null : proj.id)}
+                            className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 mt-0.5 cursor-pointer"
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            <span>{isExpanded ? "Hide Consensus Analytics" : "View Panel Consensus & Discrepancy Analytics"}</span>
+                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {(["passed", "passed_minor", "passed_major", "failed", "conditional"] as const).map((v) => (
+                            <Button
+                              key={v}
+                              size="sm"
+                              variant={v.startsWith("passed") ? "default" : v === "failed" ? "danger" : "outline"}
+                              className="h-7 text-[10px] capitalize font-bold"
+                              disabled={releasingId === proj.id}
+                              onClick={async () => {
+                                if (!confirm(`Release verdict "${v.replace(/_/g, " ")}" for "${proj.title}"?`)) return;
+                                setReleasingId(proj.id);
+                                try {
+                                  await releaseProjectVerdictAction(proj.id, v);
+                                  toast.success(`Verdict released: ${v.replace(/_/g, " ")}`);
+                                } catch (err: unknown) {
+                                  const msg = err instanceof Error ? err.message : "Failed";
+                                  toast.error(msg);
+                                } finally {
+                                  setReleasingId(null);
+                                }
+                              }}
+                            >
+                              {releasingId === proj.id ? <Loader2 className="h-3 w-3 animate-spin" /> : v.replace(/_/g, " ")}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Expandable Consensus Metrics */}
+                      {isExpanded && (
+                        <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <ConsensusDashboard projectId={proj.id} />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           );

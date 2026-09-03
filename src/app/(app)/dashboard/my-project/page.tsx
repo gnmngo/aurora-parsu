@@ -10,17 +10,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { format } from "date-fns";
 import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
   Clock, Upload, User, Building2, GraduationCap, AlertCircle,
-  CheckCheck, ExternalLink, Copy, Check, Users, Crown
+  CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
+import { assignProjectAdviserAction } from "@/lib/projects/actions";
 
 interface ProjectData {
   id: string;
@@ -134,6 +143,58 @@ export default function MyProjectPage() {
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "documents" | "feedback" | "schedule" | "evaluations">("overview");
   const [joinCodeCopied, setJoinCodeCopied] = useState(false);
+  const [adviserModalOpen, setAdviserModalOpen] = useState(false);
+  const [facultyOptions, setFacultyOptions] = useState<Array<{ profile_id: string; name: string; email: string }>>([]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const [assigningAdviser, setAssigningAdviser] = useState(false);
+
+  const openAdviserModal = async () => {
+    setAdviserModalOpen(true);
+    try {
+      const { data, error } = await supabase
+        .from("faculty")
+        .select("profile_id, profiles(first_name, last_name, email, status)")
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        const list: Array<{ profile_id: string; name: string; email: string }> = [];
+        for (const item of data) {
+          const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+          if (prof && prof.status === "approved") {
+            list.push({
+              profile_id: item.profile_id,
+              name: `${prof.first_name} ${prof.last_name}`,
+              email: prof.email,
+            });
+          }
+        }
+        setFacultyOptions(list);
+      }
+    } catch (err) {
+      console.error("Failed to load faculty options:", err);
+    }
+  };
+
+  const handleAssignAdviser = async () => {
+    if (!project?.id || !selectedFacultyId) return;
+    setAssigningAdviser(true);
+    try {
+      const res = await assignProjectAdviserAction(project.id, selectedFacultyId);
+      if (!res.success) {
+        toast.error(res.error || "Failed to assign adviser.");
+        return;
+      }
+      toast.success("Research Adviser assigned successfully!");
+      setAdviserModalOpen(false);
+      setSelectedFacultyId("");
+      await loadProjectData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error assigning adviser";
+      toast.error(msg);
+    } finally {
+      setAssigningAdviser(false);
+    }
+  };
 
   const loadProjectData = useCallback(async function _loadProjectData() {
     if (!user) return;
@@ -192,7 +253,8 @@ export default function MyProjectPage() {
       }
       setProject(proj as any);
 
-      // 3. Fetch workflow stages for progress timeline
+      // 3. Fetch workflow stages for progress timeline (with fallback to default stages)
+      let fetchedStages: StageData[] = [];
       if (proj.workflow_template_id) {
         const { data: stageData } = await supabase
           .from("defense_stages")
@@ -200,8 +262,17 @@ export default function MyProjectPage() {
           .eq("workflow_template_id", proj.workflow_template_id)
           .eq("is_enabled", true)
           .order("sequence_order");
-        if (stageData) setStages(stageData);
+        if (stageData && stageData.length > 0) fetchedStages = stageData;
       }
+      if (fetchedStages.length === 0) {
+        const { data: defaultStages } = await supabase
+          .from("defense_stages")
+          .select("id, name, code, sequence_order, description, is_enabled")
+          .eq("is_enabled", true)
+          .order("sequence_order");
+        if (defaultStages) fetchedStages = defaultStages;
+      }
+      setStages(fetchedStages);
 
       // 4. Fetch documents + versions for this project
       const { data: docs } = await supabase
@@ -565,15 +636,25 @@ export default function MyProjectPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="flex items-start gap-2">
-                    <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-muted-foreground font-semibold">Adviser</p>
-                      <p className="font-bold text-foreground">{adviserName}</p>
-                      {adviser?.profiles?.email && (
-                        <p className="text-muted-foreground text-[10px]">{adviser.profiles.email}</p>
-                      )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                      <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-muted-foreground font-semibold">Adviser</p>
+                        <p className="font-bold text-foreground">{adviserName}</p>
+                        {adviser?.profiles?.email && (
+                          <p className="text-muted-foreground text-[10px]">{adviser.profiles.email}</p>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px] font-bold shrink-0"
+                      onClick={openAdviserModal}
+                    >
+                      {adviser ? "Change" : "Select Adviser"}
+                    </Button>
                   </div>
                   <Separator />
                   <div className="flex items-start gap-2">
@@ -987,6 +1068,61 @@ export default function MyProjectPage() {
             )}
           </div>
         )}
+
+        {/* Adviser Selection Modal */}
+        <Dialog open={adviserModalOpen} onOpenChange={setAdviserModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                {adviser ? "Change Research Adviser" : "Select Research Adviser"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Designate a verified faculty member to review and approve your defense manuscripts.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Select Faculty Adviser *</label>
+                <select
+                  value={selectedFacultyId}
+                  onChange={(e) => setSelectedFacultyId(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  <option value="">-- Choose Approved Faculty --</option>
+                  {facultyOptions.map((f) => (
+                    <option key={f.profile_id} value={f.profile_id}>
+                      {f.name} ({f.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAdviserModalOpen(false)}
+                  disabled={assigningAdviser}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="font-bold"
+                  disabled={!selectedFacultyId || assigningAdviser}
+                  onClick={handleAssignAdviser}
+                >
+                  {assigningAdviser ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                  ) : null}
+                  Confirm Adviser
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </RoleGuard>
   );

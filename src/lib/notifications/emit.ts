@@ -66,6 +66,45 @@ export interface EmitNotificationInput {
 }
 
 /**
+ * Maps granular application notification event types to the allowed PostgreSQL
+ * `notification_type` enum values:
+ * 'comment', 'schedule', 'grade_released', 'document_returned',
+ * 'revision_requested', 'final_verdict', 'assignment', 'reminder', 'system'
+ */
+function mapEventTypeToDbNotificationType(eventType: NotificationEventType): string {
+  switch (eventType) {
+    case "annotation_created":
+    case "annotation_replied":
+    case "annotation_resolved":
+      return "comment";
+    case "defense_scheduled":
+    case "defense_rescheduled":
+    case "defense_cancelled":
+      return "schedule";
+    case "evaluation_submitted":
+    case "grade_released":
+      return "grade_released";
+    case "revision_required":
+      return "revision_requested";
+    case "final_verdict_released":
+      return "final_verdict";
+    case "project_joined":
+    case "panel_assigned":
+      return "assignment";
+    case "document_returned":
+    case "document_rejected":
+      return "document_returned";
+    case "document_uploaded":
+    case "document_approved":
+    case "evaluation_signed":
+    case "certificate_issued":
+    case "system_announcement":
+    default:
+      return "system";
+  }
+}
+
+/**
  * Emit a notification to a single recipient.
  *
  * This function is non-blocking: it will log errors internally but
@@ -82,6 +121,12 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
     return;
   }
 
+  const dbType = mapEventTypeToDbNotificationType(eventType);
+  const combinedMetadata = {
+    ...(metadata || {}),
+    event_type: eventType,
+  };
+
   try {
     const { error } = await supabase
       .from("notifications")
@@ -89,9 +134,9 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
         profile_id: recipientProfileId,
         title: title.slice(0, 100),  // Guard against oversized titles
         message,
-        type: eventType,
+        type: dbType,
         ...(actionUrl ? { action_url: actionUrl } : {}),
-        ...(metadata ? { metadata } : {}),
+        metadata: combinedMetadata,
       });
 
     if (error) {
@@ -119,15 +164,20 @@ export async function emitNotificationToMany(
 ): Promise<void> {
   if (recipientProfileIds.length === 0) return;
 
+  const dbType = mapEventTypeToDbNotificationType(input.eventType);
+
   const rows = recipientProfileIds
     .filter(Boolean)
     .map((profileId) => ({
       profile_id: profileId,
       title: input.title.slice(0, 100),
       message: input.message,
-      type: input.eventType,
+      type: dbType,
       ...(input.actionUrl ? { action_url: input.actionUrl } : {}),
-      ...(input.metadata ? { metadata: input.metadata } : {}),
+      metadata: {
+        ...(input.metadata || {}),
+        event_type: input.eventType,
+      },
     }));
 
   try {
