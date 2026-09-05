@@ -55,10 +55,11 @@ export default function WorkspacePage() {
   const projectId = (params?.projectId as string) || "";
   const rawStageId = (params?.stageId as string) || "";
   const { roles } = useAuth();
+  const isAdviser = roles.includes("adviser") && !roles.includes("panelist") && !roles.includes("sys_admin");
   const isStudent =
     roles.includes("student") &&
-    !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
-  const backHref = isStudent ? "/dashboard/my-project" : "/dashboard/defenses";
+    !roles.some((r: string) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
+  const backHref = isStudent ? "/dashboard/my-project" : isAdviser ? "/dashboard" : "/dashboard/defenses";
 
   const [mounted, setMounted] = useState(false);
   const [project, setProject] = useState<any>(null);
@@ -295,11 +296,15 @@ export default function WorkspacePage() {
               </p>
               {isStudent ? (
                 <Badge variant="secondary" className="text-[9px] font-bold uppercase tracking-wider shrink-0">
-                  Feedback &amp; Suggestions
+                  Student Consultation &amp; Feedback
+                </Badge>
+              ) : isAdviser ? (
+                <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 border-emerald-300 bg-emerald-50/60 shrink-0">
+                  Adviser • Paperless Consultation
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider text-primary shrink-0">
-                  Evaluation Workspace
+                  Defense Panel • Evaluation Workspace
                 </Badge>
               )}
             </div>

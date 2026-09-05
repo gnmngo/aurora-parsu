@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -21,12 +20,14 @@ import {
   Sliders,
   CheckCircle2,
   Plus,
-  Award
+  Award,
+  Sparkles,
+  ShieldCheck,
+  BookOpen
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ import {
   createNewEvaluationVersionAction,
   saveEvaluationDraftAction 
 } from "@/lib/evaluations/actions";
+import { adviserApproveDocumentAction } from "@/lib/workflow/actions";
 import { updateAnnotationStatusAction, createAnnotationReplyAction } from "@/lib/annotations/actions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -100,7 +102,10 @@ export function GradingPanel({
 }: GradingPanelProps) {
   const { roles, isLoading: authLoading } = useAuth();
   const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
-  const isFacultyOrAdmin = !isStudent;
+
+  // Role detection state for this project
+  const [isProjectAdviser, setIsProjectAdviser] = useState(false);
+  const [isProjectPanelist, setIsProjectPanelist] = useState(false);
 
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [rubricTemplate, setRubricTemplate] = useState<any>(null);
@@ -123,6 +128,11 @@ export function GradingPanel({
   const [certificateDialogOpen, setCertificateDialogOpen] = useState(false);
   const [evaluationData, setEvaluationData] = useState<any>(null);
   const [panelistProfile, setPanelistProfile] = useState<any>(null);
+
+  // Adviser Endorsement state
+  const [documentData, setDocumentData] = useState<any>(null);
+  const [endorsing, setEndorsing] = useState(false);
+  const [adviserRemarks, setAdviserRemarks] = useState("");
 
   const supabase = createClient();
 
@@ -244,12 +254,11 @@ export function GradingPanel({
 
       setRubricTemplate(rubricData);
 
-      // 2. Fetch existing evaluation for current panelist
+      // 2. Fetch authenticated user details and project roles
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userId = authUser?.id;
 
       if (userId) {
-        // Fetch panelist profile details for signature display
         const { data: profile } = await supabase
           .from("profiles")
           .select("first_name, last_name")
@@ -259,6 +268,75 @@ export function GradingPanel({
           setPanelistProfile(profile);
         }
 
+        // Check project-specific role assignments
+        const [adviserCheck, panelistCheck] = await Promise.all([
+          supabase
+            .from("project_members")
+            .select("id")
+            .eq("project_id", validProjectId)
+            .eq("profile_id", userId)
+            .eq("member_role", "adviser")
+            .maybeSingle(),
+          supabase
+            .from("defense_panels")
+            .select("id")
+            .eq("project_id", validProjectId)
+            .eq("profile_id", userId)
+            .maybeSingle(),
+        ]);
+
+        if (adviserCheck.data) {
+          // Explicitly assigned as Adviser for this project
+          // Academic integrity: The adviser cannot evaluate their own advisee
+          setIsProjectAdviser(true);
+          setIsProjectPanelist(false);
+        } else {
+          const isGlobalAdv = roles.includes("adviser") && !roles.includes("panelist") && !roles.includes("sys_admin") && !roles.includes("coordinator");
+          const isPan = !!panelistCheck.data || roles.includes("sys_admin") || roles.includes("coordinator") || roles.includes("panelist");
+          setIsProjectAdviser(isGlobalAdv);
+          setIsProjectPanelist(isPan);
+        }
+
+        // 3. Fetch active document details for endorsement status
+        let docObj: any = null;
+        if (documentVersionId) {
+          const { data: ver } = await supabase
+            .from("document_versions")
+            .select("document_id")
+            .eq("id", documentVersionId)
+            .maybeSingle();
+          if (ver?.document_id) {
+            const { data: d } = await supabase
+              .from("documents")
+              .select("*")
+              .eq("id", ver.document_id)
+              .maybeSingle();
+            docObj = d;
+          }
+        }
+        if (!docObj && validProjectId) {
+          let docQuery = supabase
+            .from("documents")
+            .select("*")
+            .eq("project_id", validProjectId);
+          if (validStageId) {
+            docQuery = docQuery.eq("stage_id", validStageId);
+          }
+          const { data: d } = await docQuery
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          docObj = d;
+        }
+
+        if (docObj) {
+          setDocumentData(docObj);
+          if (docObj.approval_remarks) {
+            setAdviserRemarks(docObj.approval_remarks);
+          }
+        }
+
+        // 4. Fetch existing evaluation for current panelist
         let evalQuery = supabase
           .from("evaluations")
           .select("*")
@@ -363,7 +441,6 @@ export function GradingPanel({
 
       if (error) throw error;
       if (data) {
-        // Order nested replies and history
         const sorted = data.map((ann: any) => {
           if (ann.annotation_replies) {
             ann.annotation_replies.sort(
@@ -391,20 +468,17 @@ export function GradingPanel({
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [projectId, stageId, documentVersionId]);
 
   useEffect(() => {
     if (!documentVersionId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnnotations([]);
       return;
     }
 
     loadAnnotations();
 
-    // Subscribe to annotations and replies changes
     const channel = supabase
       .channel(`workspace-annotations-grading-${documentVersionId}-${Date.now()}`)
       .on(
@@ -458,7 +532,6 @@ export function GradingPanel({
         newStatus: newStatus as any,
       });
 
-      // Fire evaluation_events trigger to let DB scoring/readiness recompute
       const eventType = newStatus === "verified" ? "annotation_verified" : "annotation_updated";
       
       await supabase.from("evaluation_events").insert({
@@ -487,10 +560,7 @@ export function GradingPanel({
 
     setReplyingId(annotationId);
     try {
-      // Sprint 2E: Use server action — triggers annotation_replied notification
       await createAnnotationReplyAction(annotationId, text);
-
-      // Clear input
       setReplyTexts(prev => ({ ...prev, [annotationId]: "" }));
       setActiveReplyId(null);
       toast.success("Reply added successfully!");
@@ -504,6 +574,43 @@ export function GradingPanel({
     }
   };
 
+  const handleAdviserEndorsement = async (status: "approved" | "rejected") => {
+    if (!documentData?.id) {
+      toast.error("No manuscript document found for this project stage.");
+      return;
+    }
+
+    try {
+      setEndorsing(true);
+      await adviserApproveDocumentAction(
+        documentData.id,
+        status,
+        adviserRemarks || (status === "approved" ? "Endorsed for defense by research adviser." : "Revisions required.")
+      );
+
+      toast.success(
+        status === "approved"
+          ? "Manuscript endorsed for defense! Project is now eligible for defense scheduling."
+          : "Revisions requested. Student authors have been notified."
+      );
+
+      const { data: updatedDoc } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("id", documentData.id)
+        .maybeSingle();
+
+      if (updatedDoc) {
+        setDocumentData(updatedDoc);
+      }
+    } catch (err: any) {
+      console.error("Error submitting adviser endorsement:", err);
+      toast.error(err?.message || "Failed to submit adviser endorsement.");
+    } finally {
+      setEndorsing(false);
+    }
+  };
+
   const handleSaveEvaluation = async (submitStatus: "draft" | "submitted") => {
     if (!rubricTemplate) {
       toast.error("No rubric template loaded.");
@@ -512,7 +619,6 @@ export function GradingPanel({
 
     setSaving(true);
     try {
-      // BUG-H4: Use getUser() — validates against Auth server
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userId = authUser?.id;
       if (!userId) {
@@ -521,7 +627,6 @@ export function GradingPanel({
       }
 
       let targetRubricId = rubricTemplate.id;
-      // If using fallback placeholder id, persist a real rubric template row in DB
       if (targetRubricId === "00000000-0000-0000-0000-000000000001") {
         const { data: createdRubric, error: rubErr } = await supabase
           .from("rubric_templates")
@@ -543,7 +648,6 @@ export function GradingPanel({
         }
       }
 
-      // 1. Submit/upsert evaluation draft via secure server action
       const evalData = await saveEvaluationDraftAction({
         projectId,
         stageId,
@@ -643,6 +747,183 @@ export function GradingPanel({
     { value: "failed", label: "Failed" },
   ];
 
+  const renderAnnotationsList = (canVerify: boolean) => {
+    if (annotations.length === 0) {
+      return (
+        <div className="text-center py-6 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
+          <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
+          <p className="font-semibold text-foreground">No open comments on this version</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            No revision notes or annotations have been left on this manuscript version yet.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {annotations.map((ann) => (
+          <div
+            key={ann.id}
+            className="rounded-xl border border-border p-3.5 space-y-3 bg-card shadow-sm transition-all hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <Badge
+                variant={
+                  ann.severity === "critical"
+                    ? "danger"
+                    : ann.severity === "major"
+                      ? "warning"
+                      : ann.severity === "minor"
+                        ? "info"
+                        : "outline"
+                }
+                className="capitalize text-[10px] px-2 py-0.5 font-bold"
+              >
+                Page {ann.page_number} • {ann.severity}
+              </Badge>
+
+              <select
+                value={ann.status}
+                onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
+                className={cn(
+                  "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
+                  ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
+                  ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
+                  ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
+                  ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
+                  ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
+                  ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
+                )}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="addressed">Addressed</option>
+                {canVerify && (
+                  <>
+                    <option value="verified">Verified</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                <span className="text-foreground font-bold">
+                  {ann.profiles ? `${ann.profiles.first_name} ${ann.profiles.last_name}` : "Reviewer"}
+                </span>
+                <span>{new Date(ann.created_at).toLocaleDateString()}</span>
+              </div>
+              <p className="text-xs text-foreground bg-muted/40 rounded-lg p-2.5 leading-relaxed font-medium">
+                {ann.content}
+              </p>
+            </div>
+
+            {/* Replies List */}
+            {ann.annotation_replies && ann.annotation_replies.length > 0 && (
+              <div className="pl-3 border-l-2 border-border/80 space-y-2 mt-2">
+                {ann.annotation_replies.map((reply: any) => (
+                  <div key={reply.id} className="text-xs space-y-1">
+                    <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
+                      <span className="text-foreground flex items-center gap-1 font-bold">
+                        <CornerDownRight className="h-3 w-3 inline text-muted-foreground" />
+                        {reply.profiles ? `${reply.profiles.first_name} ${reply.profiles.last_name}` : "User"}
+                      </span>
+                      <span>{new Date(reply.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground pl-4 bg-muted/10 rounded-lg py-1 px-2.5 font-medium leading-relaxed">
+                      {reply.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Status History */}
+            {ann.annotation_history && ann.annotation_history.length > 0 && (
+              <div className="pl-3 border-l-2 border-primary/20 space-y-1.5 mt-2 bg-primary/5 p-2 rounded-r-lg border-y border-r border-primary/10">
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1">Status History</p>
+                {ann.annotation_history.map((hist: any) => {
+                  const changerName = hist.profiles
+                    ? Array.isArray(hist.profiles)
+                      ? `${hist.profiles[0]?.first_name} ${hist.profiles[0]?.last_name}`
+                      : `${hist.profiles.first_name} ${hist.profiles.last_name}`
+                    : "User";
+                  return (
+                    <div key={hist.id} className="text-[10px] text-slate-700 leading-relaxed font-sans">
+                      <span className="font-bold text-slate-900">{changerName}</span> marked as{" "}
+                      <span className="font-extrabold capitalize text-primary">{hist.to_status}</span>
+                      <span className="text-[9px] text-muted-foreground ml-1.5">
+                        ({new Date(hist.changed_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })})
+                      </span>
+                      {hist.notes && (
+                        <p className="text-[9px] text-muted-foreground italic pl-2 mt-0.5">"{hist.notes}"</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Reply Textarea */}
+            <div className="pt-1">
+              {activeReplyId === ann.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    placeholder="Type your reply..."
+                    value={replyTexts[ann.id] || ""}
+                    onChange={(e) =>
+                      setReplyTexts((prev) => ({
+                        ...prev,
+                        [ann.id]: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                    rows={2}
+                  />
+                  <div className="flex justify-end gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[10px] px-2.5 rounded-lg text-muted-foreground hover:bg-muted"
+                      onClick={() => {
+                        setActiveReplyId(null);
+                        setReplyTexts((prev) => ({ ...prev, [ann.id]: "" }));
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 text-[10px] px-3 rounded-lg"
+                      onClick={() => handleAddReply(ann.id)}
+                      disabled={replyingId === ann.id || !replyTexts[ann.id]?.trim()}
+                    >
+                      {replyingId === ann.id ? "Adding..." : "Reply"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveReplyId(ann.id)}
+                  className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                  Reply to feedback
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-card p-6 text-sm text-muted-foreground gap-3">
@@ -652,7 +933,141 @@ export function GradingPanel({
     );
   }
 
-  if (!isFacultyOrAdmin) {
+  // ==========================================
+  // VIEW 1: RESEARCH ADVISER CONSULTATION PANEL
+  // ==========================================
+  if (isProjectAdviser && !isProjectPanelist) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="space-y-4 p-4">
+          {/* Paperless Consultation Banner */}
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs uppercase tracking-wider">
+              <Sparkles className="h-4 w-4 text-emerald-600" />
+              Paperless Manuscript Consultation
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              As the Research Adviser, you mentor advisees paperlessly. Review and annotate drafts directly in this split-screen workspace without printing manuscripts. When ready, endorse the manuscript for defense.
+            </p>
+          </div>
+
+          {/* Adviser Defense Endorsement Gate Card */}
+          <Card className="border border-border bg-card shadow-sm rounded-xl overflow-hidden">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-foreground">Defense Endorsement Gate</span>
+                </div>
+                {documentData?.adviser_approval_status === "approved" ? (
+                  <Badge variant="success" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                    <CheckCircle2 className="h-3 w-3" /> Endorsed for Defense
+                  </Badge>
+                ) : documentData?.adviser_approval_status === "rejected" ? (
+                  <Badge variant="warning" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                    <AlertCircle className="h-3 w-3" /> Revisions Requested
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="gap-1 px-2.5 py-0.5 text-[10px] text-muted-foreground">
+                    <Clock className="h-3 w-3" /> Under Consultation
+                  </Badge>
+                )}
+              </div>
+
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                {documentData?.adviser_approval_status === "approved"
+                  ? "This manuscript has been endorsed for defense. The defense coordinator can now proceed with scheduling."
+                  : documentData?.adviser_approval_status === "rejected"
+                    ? "Revisions requested. Advisees must address your inline comments and upload an updated revision before defense scheduling can proceed."
+                    : "Review the manuscript annotations and student responses below. When satisfied with the quality, endorse the manuscript to unlock defense scheduling."}
+              </p>
+
+              <div className="space-y-1.5 pt-1">
+                <label htmlFor="adviser-remarks" className="text-xs font-semibold text-foreground">
+                  Adviser Consultation Remarks / Endorsement Notes
+                </label>
+                <textarea
+                  id="adviser-remarks"
+                  placeholder="Provide guidance notes, revision instructions, or endorsement commendations..."
+                  value={adviserRemarks}
+                  onChange={(e) => setAdviserRemarks(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={endorsing || !documentData?.id}
+                  onClick={() => handleAdviserEndorsement("rejected")}
+                  className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                >
+                  <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                  {endorsing ? "Submitting..." : "Request Revisions"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={endorsing || !documentData?.id}
+                  onClick={() => handleAdviserEndorsement("approved")}
+                  className="flex-1 text-xs h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                  {endorsing ? "Endorsing..." : "Endorse for Defense"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Institutional separation note */}
+            <div className="bg-muted/40 border-t border-border/60 p-3 flex items-start gap-2 text-[10px] text-muted-foreground">
+              <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+              <span>
+                <strong>Academic Separation of Duties:</strong> As the research adviser, your role is mentorship, manuscript refinement, and defense readiness endorsement. Formal 100-point rubric scoring, criteria weight evaluation, and defense verdicts are independently conducted by assigned defense panelists during the scheduled defense.
+              </span>
+            </div>
+          </Card>
+
+          {/* Defense Stage Details */}
+          {projectInfo && (
+            <CollapsibleSection title="Defense Stage Details" defaultOpen={false}>
+              <dl className="grid gap-3 text-xs pt-1">
+                {[
+                  ["Student", projectInfo.studentName, <User key="user-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Program", projectInfo.program, <FileText key="prog-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Department", projectInfo.department, <Users key="dept-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
+                  ["Defense Stage", projectInfo.stageName, <Badge key="stage-icon" variant="outline">{projectInfo.stageName}</Badge>],
+                  ["Uploaded Date", projectInfo.submittedAt, null],
+                ].map(([label, value, icon]: any) => (
+                  <div key={label} className="flex justify-between items-center py-1 border-b border-border/40 last:border-0">
+                    <dt className="text-muted-foreground flex items-center font-medium">{label}</dt>
+                    <dd className="font-semibold text-foreground text-right flex items-center">
+                      {icon && typeof icon !== "string" && !value.props ? icon : null}
+                      {typeof value === "string" ? value : value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </CollapsibleSection>
+          )}
+
+          {/* Inline Annotations & Discussions */}
+          <CollapsibleSection title={`Manuscript Comments & Revision Discussions (${annotations.length})`} defaultOpen={true}>
+            <div className="pt-1">
+              {renderAnnotationsList(true)}
+            </div>
+          </CollapsibleSection>
+        </div>
+      </ScrollArea>
+    );
+  }
+
+  // ==========================================
+  // VIEW 2: STUDENT FEEDBACK & CONSULTATION PANEL
+  // ==========================================
+  if (isStudent) {
     return (
       <ScrollArea className="h-full">
         <div className="space-y-4 p-4">
@@ -667,165 +1082,44 @@ export function GradingPanel({
             </p>
           </div>
 
+          {/* Adviser Endorsement Status Card */}
+          <Card className="border border-border bg-card shadow-none rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Adviser Endorsement
+              </span>
+              {documentData?.adviser_approval_status === "approved" ? (
+                <Badge variant="success" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                  <CheckCircle2 className="h-3 w-3" /> Endorsed for Defense
+                </Badge>
+              ) : documentData?.adviser_approval_status === "rejected" ? (
+                <Badge variant="warning" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                  <AlertCircle className="h-3 w-3" /> Revisions Requested
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 px-2.5 py-0.5 text-[10px] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Under Consultation
+                </Badge>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {documentData?.adviser_approval_status === "approved"
+                ? "Your adviser has endorsed this manuscript for defense. It is eligible for defense scheduling."
+                : documentData?.adviser_approval_status === "rejected"
+                  ? `Revisions requested: ${documentData.approval_remarks || "Please review comments and update your draft."}`
+                  : "Your manuscript is currently under paperless consultation review with your adviser."}
+            </p>
+            {documentData?.approval_remarks && documentData?.adviser_approval_status === "approved" && (
+              <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100 text-[10px] text-emerald-900">
+                <span className="font-bold">Adviser note:</span> {documentData.approval_remarks}
+              </div>
+            )}
+          </Card>
+
           {/* Section 1: Annotations & Discussions */}
           <CollapsibleSection title={`Inline Annotations & Comments (${annotations.length})`} defaultOpen={true}>
-            <div className="space-y-4 pt-1">
-              {annotations.length === 0 ? (
-                <div className="text-center py-8 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
-                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
-                  <p className="font-semibold text-foreground">No open comments on this version</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Your advisers or panelists have not left any revision notes on this manuscript version yet.</p>
-                </div>
-              ) : (
-                annotations.map((ann) => (
-                  <div
-                    key={ann.id}
-                    className="rounded-xl border border-border p-3.5 space-y-3 bg-card shadow-sm transition-all hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <Badge
-                          variant={
-                            ann.severity === "critical"
-                              ? "danger"
-                              : ann.severity === "major"
-                                ? "warning"
-                                : ann.severity === "minor"
-                                  ? "info"
-                                  : "outline"
-                          }
-                          className="capitalize text-[10px] px-2 py-0.5 font-bold"
-                        >
-                          Page {ann.page_number} • {ann.severity}
-                        </Badge>
-                      </div>
-
-                      <select
-                        value={ann.status}
-                        onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
-                        className={cn(
-                          "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
-                          ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
-                          ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
-                          ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
-                          ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
-                          ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
-                          ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
-                        )}
-                      >
-                        <option value="open">Open</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="addressed">Addressed</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
-                        <span className="text-foreground font-bold">
-                          {ann.profiles ? `${ann.profiles.first_name} ${ann.profiles.last_name}` : "Reviewer"}
-                        </span>
-                        <span>{new Date(ann.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-xs text-foreground bg-muted/40 rounded-lg p-2.5 leading-relaxed font-medium">
-                        {ann.content}
-                      </p>
-                    </div>
-
-                    {/* Replies List */}
-                    {ann.annotation_replies && ann.annotation_replies.length > 0 && (
-                      <div className="pl-3 border-l-2 border-border/80 space-y-2 mt-2">
-                        {ann.annotation_replies.map((reply: any) => (
-                          <div key={reply.id} className="text-xs space-y-1">
-                            <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
-                              <span className="text-foreground flex items-center gap-1 font-bold">
-                                <CornerDownRight className="h-3 w-3 inline text-muted-foreground" />
-                                {reply.profiles ? `${reply.profiles.first_name} ${reply.profiles.last_name}` : "User"}
-                              </span>
-                              <span>{new Date(reply.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground pl-4 bg-muted/10 rounded-lg py-1 px-2.5 font-medium leading-relaxed">
-                              {reply.content}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Verification History */}
-                    {ann.annotation_history && ann.annotation_history.length > 0 && (
-                      <div className="pl-3 border-l-2 border-primary/20 space-y-1 mt-2 bg-primary/5 p-2 rounded-r-lg border-y border-r border-primary/10">
-                        <p className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1">Status History</p>
-                        {ann.annotation_history.map((hist: any) => {
-                          const changerName = hist.profiles
-                            ? (Array.isArray(hist.profiles) ? `${hist.profiles[0]?.first_name} ${hist.profiles[0]?.last_name}` : `${hist.profiles.first_name} ${hist.profiles.last_name}`)
-                            : "User";
-                          return (
-                            <div key={hist.id} className="text-[10px] text-slate-700 leading-relaxed">
-                              <span className="font-bold text-slate-900">{changerName}</span> marked as{" "}
-                              <span className="font-extrabold capitalize text-primary">{hist.to_status}</span>
-                              <span className="text-[9px] text-muted-foreground ml-1.5">
-                                ({new Date(hist.changed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Reply Textarea */}
-                    <div className="pt-1">
-                      {activeReplyId === ann.id ? (
-                        <div className="space-y-2">
-                          <textarea
-                            placeholder="Type your response to this comment..."
-                            value={replyTexts[ann.id] || ""}
-                            onChange={(e) =>
-                              setReplyTexts((prev) => ({
-                                ...prev,
-                                [ann.id]: e.target.value,
-                              }))
-                            }
-                            className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
-                            rows={2}
-                          />
-                          <div className="flex justify-end gap-1.5">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-[10px] px-2.5 rounded-lg text-muted-foreground hover:bg-muted"
-                              onClick={() => {
-                                setActiveReplyId(null);
-                                setReplyTexts((prev) => ({ ...prev, [ann.id]: "" }));
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="h-7 text-[10px] px-3 rounded-lg"
-                              onClick={() => handleAddReply(ann.id)}
-                              disabled={replyingId === ann.id || !replyTexts[ann.id]?.trim()}
-                            >
-                              {replyingId === ann.id ? "Adding..." : "Reply"}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setActiveReplyId(ann.id)}
-                          className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                          Reply to feedback
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="pt-1">
+              {renderAnnotationsList(false)}
             </div>
           </CollapsibleSection>
 
@@ -907,6 +1201,9 @@ export function GradingPanel({
     );
   }
 
+  // ==========================================
+  // VIEW 3: DEFENSE PANELIST RUBRIC GRADING SHEET
+  // ==========================================
   if (!rubricTemplate) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-card">
@@ -1173,7 +1470,7 @@ export function GradingPanel({
                   disabled={saving}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                  Create New Version (Version {evalVersion + 1})
+                  Create New Version (Version ${evalVersion + 1})
                 </Button>
               </div>
             ) : (
@@ -1202,171 +1499,8 @@ export function GradingPanel({
 
         {/* Section C - Annotations */}
         <CollapsibleSection title="Section C — Annotations" defaultOpen={true}>
-          <div className="space-y-4 pt-1">
-            {annotations.length === 0 ? (
-              <div className="text-center py-6 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
-                No annotations or comments on this version yet.
-              </div>
-            ) : (
-              annotations.map((ann) => (
-                <div
-                  key={ann.id}
-                  className="rounded-xl border border-border p-3 space-y-3 bg-card/60 shadow-sm transition-all hover:shadow-md"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Badge
-                        variant={
-                          ann.severity === "critical"
-                            ? "danger"
-                            : ann.severity === "major"
-                              ? "warning"
-                              : ann.severity === "minor"
-                                ? "info"
-                                : "outline"
-                        }
-                        className="capitalize text-[10px] px-2 py-0.5 font-bold"
-                      >
-                        p.{ann.page_number} • {ann.severity}
-                      </Badge>
-                    </div>
-
-                    <select
-                      value={ann.status}
-                      onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
-                      className={cn(
-                        "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
-                        ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
-                        ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
-                        ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
-                        ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
-                        ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
-                        ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
-                      )}
-                    >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="addressed">Addressed</option>
-                      {isFacultyOrAdmin && (
-                        <>
-                          <option value="verified">Verified</option>
-                          <option value="resolved">Resolved</option>
-                          <option value="closed">Closed</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
-                      <span className="text-foreground">
-                        {ann.profiles ? `${ann.profiles.first_name} ${ann.profiles.last_name}` : "Reviewer"}
-                      </span>
-                      <span>{new Date(ann.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-xs text-foreground bg-muted/40 rounded-lg p-2.5 leading-relaxed font-medium">
-                      {ann.content}
-                    </p>
-                  </div>
-
-                  {/* Replies List */}
-                  {ann.annotation_replies && ann.annotation_replies.length > 0 && (
-                    <div className="pl-3 border-l-2 border-border/80 space-y-2 mt-2">
-                      {ann.annotation_replies.map((reply: any) => (
-                        <div key={reply.id} className="text-xs space-y-1">
-                          <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
-                            <span className="text-foreground flex items-center gap-1">
-                              <CornerDownRight className="h-3 w-3 inline text-muted-foreground" />
-                              {reply.profiles ? `${reply.profiles.first_name} ${reply.profiles.last_name}` : "User"}
-                            </span>
-                            <span>{new Date(reply.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground pl-4 bg-muted/10 rounded-lg py-1 px-2.5 font-medium leading-relaxed">
-                            {reply.content}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Verification History logs list */}
-                  {ann.annotation_history && ann.annotation_history.length > 0 && (
-                    <div className="pl-3 border-l-2 border-primary/20 space-y-1.5 mt-2 bg-primary/5 p-2 rounded-r-lg border-y border-r border-primary/10">
-                      <p className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1">Status History</p>
-                      {ann.annotation_history.map((hist: any) => {
-                        const changerName = hist.profiles
-                          ? (Array.isArray(hist.profiles) ? `${hist.profiles[0]?.first_name} ${hist.profiles[0]?.last_name}` : `${hist.profiles.first_name} ${hist.profiles.last_name}`)
-                          : "User";
-                        return (
-                          <div key={hist.id} className="text-[10px] text-slate-700 leading-relaxed font-sans">
-                            <span className="font-bold text-slate-900">{changerName}</span> marked as{" "}
-                            <span className="font-extrabold capitalize text-primary">{hist.to_status}</span>
-                            <span className="text-[9px] text-muted-foreground ml-1.5">
-                              ({new Date(hist.changed_at).toLocaleString()})
-                            </span>
-                            {hist.notes && (
-                              <p className="text-[9px] text-muted-foreground italic pl-2 mt-0.5">"{hist.notes}"</p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Reply Button / Textarea */}
-                  <div className="pt-1">
-                    {activeReplyId === ann.id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          placeholder="Type your reply..."
-                          value={replyTexts[ann.id] || ""}
-                          onChange={(e) =>
-                            setReplyTexts((prev) => ({
-                              ...prev,
-                              [ann.id]: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
-                          rows={2}
-                        />
-                        <div className="flex justify-end gap-1.5">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[10px] px-2.5 rounded-lg text-muted-foreground hover:bg-muted"
-                            onClick={() => {
-                              setActiveReplyId(null);
-                              setReplyTexts((prev) => ({ ...prev, [ann.id]: "" }));
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="h-7 text-[10px] px-3 rounded-lg"
-                            onClick={() => handleAddReply(ann.id)}
-                            disabled={replyingId === ann.id || !replyTexts[ann.id]?.trim()}
-                          >
-                            {replyingId === ann.id ? "Adding..." : "Reply"}
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setActiveReplyId(ann.id)}
-                        className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                        Reply to comment
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="pt-1">
+            {renderAnnotationsList(true)}
           </div>
         </CollapsibleSection>
 

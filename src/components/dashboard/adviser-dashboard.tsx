@@ -192,7 +192,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           </div>
           <div>
             <p className="text-2xl font-black text-slate-900">{pendingManuscripts.length}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Papers to Review</p>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase">Paperless Consultations</p>
           </div>
         </Card>
 
@@ -229,7 +229,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           onClick={() => setActiveTab("queue")}
           className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "queue" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
         >
-          Manuscripts Review ({pendingManuscripts.length})
+          Paperless Review Queue ({pendingManuscripts.length})
         </button>
         <button
           onClick={() => setActiveTab("activity")}
@@ -279,7 +279,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                           </div>
                           <Link href={`/workspace/${adv.id}/${adv.current_stage_id || adv.defense_stages?.id || ""}`}>
                             <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1 rounded-lg">
-                              Open Workspace <ChevronRight className="h-3.5 w-3.5" />
+                              Open Paperless Workspace <ChevronRight className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
                         </div>
@@ -295,14 +295,14 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
-                  <FileText className="h-4 w-4 text-primary" /> Active Manuscripts Review Queue
+                  <FileText className="h-4 w-4 text-primary" /> Active Paperless Manuscripts Review Queue
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {pendingManuscripts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-muted-foreground">
                     <Inbox className="h-8 w-8 opacity-30 mb-2" />
-                    <p>All guidance papers have been evaluated!</p>
+                    <p>All advisee manuscripts have been reviewed and endorsed!</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
@@ -324,7 +324,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                               }
                               className="text-[8px] font-extrabold uppercase"
                             >
-                              Adviser Status: {m.approvalStatus}
+                              Adviser Endorsement: {m.approvalStatus === "approved" ? "Endorsed for Defense" : m.approvalStatus === "rejected" ? "Revisions Requested" : "Pending Consultation"}
                             </Badge>
                           </div>
                         </div>
@@ -341,7 +341,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                                     size="sm" 
                                     className="h-8 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-0.5"
                                   >
-                                    <CheckCircle2 className="h-3 w-3" /> Approve
+                                    <CheckCircle2 className="h-3 w-3" /> Endorse for Defense
                                   </Button>
                                   <Button 
                                     onClick={() => handleApproval(m.documentId, "rejected")}
@@ -349,7 +349,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                                     variant="danger"
                                     className="h-8 text-[10px] rounded-lg flex items-center gap-0.5"
                                   >
-                                    <XCircle className="h-3 w-3" /> Reject
+                                    <XCircle className="h-3 w-3" /> Request Revisions
                                   </Button>
                                 </>
                               )}
@@ -357,7 +357,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                           )}
                           <Link href={`/workspace/${m.projectId}/${m.stageId}`}>
                             <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg">
-                              Workspace
+                              Open Paperless Workspace
                             </Button>
                           </Link>
                         </div>
