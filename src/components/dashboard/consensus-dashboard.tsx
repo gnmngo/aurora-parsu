@@ -64,7 +64,14 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
   }
 
   // Statistical Calculations
-  const scores = evaluations.map((ev) => Number(ev.total_score || 0));
+  const scores = evaluations.map((ev) => {
+    if (Number(ev.total_score || 0) > 0) return Number(ev.total_score);
+    if (ev.scores && typeof ev.scores === "object") {
+      const vals = Object.values(ev.scores).map(Number).filter((v) => !isNaN(v));
+      if (vals.length > 0) return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
+    }
+    return 0;
+  });
   const count = scores.length;
 
   const average = Number((scores.reduce((a, b) => a + b, 0) / count).toFixed(2));
@@ -86,7 +93,12 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
 
   // Derive Consensus Verdict
   const failCount = evaluations.filter((ev) => ev.verdict_code === "failed").length;
-  const revisionCount = evaluations.filter((ev) => ev.verdict_code === "passed_with_revisions").length;
+  const revisionCount = evaluations.filter(
+    (ev) =>
+      ev.verdict_code === "passed_minor" ||
+      ev.verdict_code === "passed_major" ||
+      ev.verdict_code === "passed_with_revisions"
+  ).length;
   
   let consensusVerdict = "Accepted";
   if (failCount > count / 2) {
@@ -192,10 +204,16 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
                   ? `${ev.profiles.first_name} ${ev.profiles.last_name}` 
                   : "Unknown Panelist";
                 
+                const displayScore = Number(ev.total_score || 0) > 0
+                  ? Number(ev.total_score).toFixed(1)
+                  : ev.scores && typeof ev.scores === "object" && Object.values(ev.scores).length > 0
+                    ? (Object.values(ev.scores).map(Number).filter((v) => !isNaN(v)).reduce((a, b) => a + b, 0) / Object.values(ev.scores).length).toFixed(1)
+                    : "0.0";
+                
                 return (
                   <tr key={ev.id} className="hover:bg-slate-50/50">
                     <td className="p-3 font-bold text-slate-900">{name}</td>
-                    <td className="p-3 text-center text-primary font-black">{Number(ev.total_score).toFixed(1)}</td>
+                    <td className="p-3 text-center text-primary font-black">{displayScore}</td>
                     <td className="p-3 text-center">
                       <Badge variant="outline" className="capitalize text-[8px] font-extrabold">{ev.verdict_code.replace(/_/g, " ")}</Badge>
                     </td>

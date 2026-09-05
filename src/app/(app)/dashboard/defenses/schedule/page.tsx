@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { createDefenseScheduleAction } from "@/lib/scheduler/actions";
+import { getApprovedFacultyListAction } from "@/lib/projects/actions";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Calendar, Clock, MapPin, Loader2, ArrowLeft, Users, Video } from "lucide-react";
@@ -37,10 +38,11 @@ export default function SchedulePage() {
   useEffect(() => {
     async function loadFormLookups() {
       try {
-        // Fetch projects
+        // Fetch projects with document approval status
         const { data: projs } = await supabase
           .from("projects")
-          .select("id, title");
+          .select("id, title, status, documents(id, stage_id, adviser_approval_status)")
+          .order("title");
         if (projs) setProjects(projs);
 
         // Fetch stages
@@ -50,18 +52,14 @@ export default function SchedulePage() {
           .order("sequence_order");
         if (stgs) setStages(stgs);
 
-        // Fetch faculty (for panelists)
-        const { data: fac } = await supabase
-          .from("faculty")
-          .select("profile_id, profiles(first_name, last_name)")
-          .eq("is_panelist", true);
-        if (fac) {
-          const formatted = fac.map((f: any) => ({
+        // Fetch faculty (for panelists) via getApprovedFacultyListAction
+        const approvedFaculty = await getApprovedFacultyListAction();
+        setFacultyList(
+          approvedFaculty.map((f) => ({
             id: f.profile_id,
-            name: f.profiles ? `${f.profiles.first_name} ${f.profiles.last_name}` : "Unknown Faculty",
-          }));
-          setFacultyList(formatted);
-        }
+            name: `${f.name} (${f.email})`,
+          }))
+        );
       } catch (err) {
         console.error("Error loading lookups:", err);
         toast.error("Failed to load setup dropdowns.");
@@ -168,11 +166,19 @@ export default function SchedulePage() {
                 required
               >
                 <option value="">-- Choose Project --</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
+                {projects.map((p) => {
+                  const hasApprovedDoc = p.documents?.some(
+                    (d: any) => d.adviser_approval_status === "approved"
+                  );
+                  const statusTag = hasApprovedDoc
+                    ? "✓ Ready for Defense"
+                    : "⚠️ Adviser Approval Pending";
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.title} [{statusTag}]
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

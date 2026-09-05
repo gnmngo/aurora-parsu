@@ -36,7 +36,11 @@ import { RubricBuilder } from "@/components/grading/rubric-builder";
 import { computeWeightedScore, deriveScoreLabel } from "@/lib/rubric/scoring";
 import { SignatureDialog } from "@/components/workspace/signature-dialog";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
-import { signEvaluationAction, createNewEvaluationVersionAction } from "@/lib/evaluations/actions";
+import { 
+  signEvaluationAction, 
+  createNewEvaluationVersionAction,
+  saveEvaluationDraftAction 
+} from "@/lib/evaluations/actions";
 import { updateAnnotationStatusAction, createAnnotationReplyAction } from "@/lib/annotations/actions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -539,27 +543,18 @@ export function GradingPanel({
         }
       }
 
-      // 1. Submit/upsert evaluation record
-      const { data: evalData, error: evalError } = await supabase
-        .from("evaluations")
-        .upsert({
-          project_id: projectId,
-          stage_id: stageId,
-          panelist_id: userId,
-          rubric_template_id: targetRubricId,
-          status: "draft",
-          scores: scores,
-          verdict_code: verdict,
-          panel_notes: notes,
-          recommendations: recommendations,
-          version: evalVersion,
-        }, {
-          onConflict: "project_id, stage_id, panelist_id, version"
-        })
-        .select()
-        .maybeSingle();
-
-      if (evalError || !evalData) throw evalError || new Error("Failed to save evaluation.");
+      // 1. Submit/upsert evaluation draft via secure server action
+      const evalData = await saveEvaluationDraftAction({
+        projectId,
+        stageId,
+        rubricTemplateId: targetRubricId,
+        scores,
+        totalScore: weightedScore,
+        verdictCode: verdict,
+        panelNotes: notes,
+        recommendations,
+        version: evalVersion,
+      });
 
       setEvalId(evalData.id);
       setEvalStatus(evalData.status);
@@ -598,6 +593,7 @@ export function GradingPanel({
         printedName: sig.printedName,
         positionRole: sig.positionRole,
         scores,
+        totalScore: weightedScore,
         verdictCode: verdict,
         panelNotes: notes,
         recommendations,

@@ -6,6 +6,143 @@ import { createClient } from "@/lib/supabase/server";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotification } from "@/lib/notifications/emit";
+import { computeWeightedScore } from "@/lib/rubric/scoring";
+
+export interface SaveEvaluationDraftInput {
+  projectId: string;
+  stageId: string;
+  rubricTemplateId?: string | null;
+  scores: Record<string, number>;
+  verdictCode: string;
+  panelNotes: string;
+  recommendations: string;
+  version?: number;
+  totalScore?: number;
+}
+
+/**
+ * Saves or updates a draft evaluation with authorization checks and score calculation
+ */
+export async function saveEvaluationDraftAction(input: SaveEvaluationDraftInput) {
+  const supabase = await createClient();
+
+  // 1. Authenticate user
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    throw new Error("Unauthorized. Please sign in again.");
+  }
+  const userId = user.id;
+
+  // 2. Verify panelist authorization & role
+  const { data: userRolesData } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", userId);
+
+  const roleCodes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
+    ?.map((ur) => { const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles; return r?.code as string | undefined; })
+    .filter(Boolean) ?? [];
+
+  const isSysAdmin = roleCodes.includes("sys_admin");
+
+  if (!isSysAdmin) {
+    if (!roleCodes.includes("panelist")) {
+      throw new Error("Permission denied. Only faculty panel members can evaluate defenses.");
+    }
+
+    // Check defense_panels assignment
+    const { data: panelAssignment } = await supabase
+      .from("defense_panels")
+      .select("id")
+      .eq("project_id", input.projectId)
+      .eq("profile_id", userId)
+      .maybeSingle();
+
+    if (!panelAssignment) {
+      throw new Error("Permission denied. You are not an assigned defense panelist for this project.");
+    }
+
+    // Check that user is not project adviser
+    const { data: adviserMember } = await supabase
+      .from("project_members")
+      .select("id")
+      .eq("project_id", input.projectId)
+      .eq("profile_id", userId)
+      .eq("member_role", "adviser")
+      .maybeSingle();
+
+    if (adviserMember) {
+      throw new Error("Academic integrity violation: The project adviser cannot evaluate their advisee's defense.");
+    }
+  }
+
+  const version = input.version || 1;
+
+  // 3. Check if existing version is already locked
+  const { data: existingEval } = await supabase
+    .from("evaluations")
+    .select("id, status")
+    .eq("project_id", input.projectId)
+    .eq("panelist_id", userId)
+    .eq("version", version)
+    .maybeSingle();
+
+  if (existingEval?.status === "submitted") {
+    throw new Error("This evaluation version is already signed and submitted. It is locked against modifications.");
+  }
+
+  // 4. Compute weighted score
+  let computedScore = 0;
+  if (input.rubricTemplateId) {
+    const { data: rubric } = await supabase
+      .from("rubric_templates")
+      .select("criteria")
+      .eq("id", input.rubricTemplateId)
+      .maybeSingle();
+    if (rubric?.criteria && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
+      computedScore = computeWeightedScore(rubric.criteria, input.scores);
+    }
+  }
+
+  if (computedScore === 0 && input.scores) {
+    const scoreVals = Object.values(input.scores).map(Number).filter((v) => !isNaN(v));
+    if (scoreVals.length > 0) {
+      computedScore = Number((scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length).toFixed(2));
+    }
+  }
+
+  if (computedScore === 0 && typeof input.totalScore === "number" && input.totalScore > 0) {
+    computedScore = input.totalScore;
+  }
+
+  // 5. Upsert draft evaluation
+  const { data: evalData, error: evalError } = await supabase
+    .from("evaluations")
+    .upsert({
+      project_id: input.projectId,
+      stage_id: input.stageId,
+      panelist_id: userId,
+      rubric_template_id: input.rubricTemplateId || null,
+      status: "draft",
+      scores: input.scores,
+      total_score: computedScore,
+      weighted_score: computedScore,
+      verdict_code: input.verdictCode,
+      panel_notes: input.panelNotes,
+      recommendations: input.recommendations,
+      version: version,
+    }, {
+      onConflict: "project_id, stage_id, panelist_id, version"
+    })
+    .select()
+    .single();
+
+  if (evalError || !evalData) {
+    throw new Error(`Failed to save evaluation draft: ${evalError?.message}`);
+  }
+
+  return evalData;
+}
 
 export interface SignEvaluationInput {
   evaluationId: string;
@@ -17,6 +154,7 @@ export interface SignEvaluationInput {
   verdictCode: string;
   panelNotes: string;
   recommendations: string;
+  totalScore?: number;
 }
 
 /**
@@ -52,6 +190,49 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
 
   if (currentEval.status === "submitted") {
     throw new Error("This evaluation version is already signed and locked.");
+  }
+
+  // 2b. Verify panelist authorization & role
+  const { data: userRolesData } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", userId);
+
+  const roleCodes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
+    ?.map((ur) => { const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles; return r?.code as string | undefined; })
+    .filter(Boolean) ?? [];
+
+  const isSysAdmin = roleCodes.includes("sys_admin");
+
+  if (!isSysAdmin) {
+    if (!roleCodes.includes("panelist")) {
+      throw new Error("Permission denied. Only faculty panel members can submit evaluations.");
+    }
+
+    // Check defense_panels assignment
+    const { data: panelAssignment } = await supabase
+      .from("defense_panels")
+      .select("id")
+      .eq("project_id", currentEval.project_id)
+      .eq("profile_id", userId)
+      .maybeSingle();
+
+    if (!panelAssignment) {
+      throw new Error("Permission denied. You are not an assigned defense panelist for this project.");
+    }
+
+    // Check that user is not the project adviser
+    const { data: adviserMember } = await supabase
+      .from("project_members")
+      .select("id")
+      .eq("project_id", currentEval.project_id)
+      .eq("profile_id", userId)
+      .eq("member_role", "adviser")
+      .maybeSingle();
+
+    if (adviserMember) {
+      throw new Error("Academic integrity violation: The project adviser cannot serve as an evaluation panelist.");
+    }
   }
 
   // 3. Generate certificate serial via DB sequence (atomic — no race condition)
@@ -96,13 +277,38 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     }
   }
 
-  // 5. Build deterministic signing payload + SHA-256 hash
+  // 5. Authoritatively compute total and weighted score
+  let computedScore = 0;
+  if (currentEval.rubric_template_id) {
+    const { data: rubric } = await supabase
+      .from("rubric_templates")
+      .select("criteria")
+      .eq("id", currentEval.rubric_template_id)
+      .maybeSingle();
+    if (rubric?.criteria && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
+      computedScore = computeWeightedScore(rubric.criteria, input.scores);
+    }
+  }
+
+  if (computedScore === 0 && input.scores) {
+    const scoreVals = Object.values(input.scores).map(Number).filter((v) => !isNaN(v));
+    if (scoreVals.length > 0) {
+      computedScore = Number((scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length).toFixed(2));
+    }
+  }
+
+  if (computedScore === 0 && typeof input.totalScore === "number" && input.totalScore > 0) {
+    computedScore = input.totalScore;
+  }
+
+  // 6. Build deterministic signing payload + SHA-256 hash
   const signingPayload = {
     evaluationId: input.evaluationId,
     projectId: currentEval.project_id,
     stageId: currentEval.stage_id,
     panelistId: userId,
     scores: input.scores,
+    totalScore: computedScore,
     verdictCode: input.verdictCode,
     panelNotes: input.panelNotes,
     recommendations: input.recommendations,
@@ -115,11 +321,13 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   const payloadHash = crypto.createHash("sha256").update(payloadJson, "utf8").digest("hex");
   const certificateHash = crypto.createHash("sha256").update(`${certificateSerial}|${payloadHash}`).digest("hex");
 
-  // 6. Update Evaluation Record — server is authoritative
+  // 7. Update Evaluation Record — server is authoritative
   const { data: updatedEval, error: updateError } = await supabase
     .from("evaluations")
     .update({
       scores: input.scores,
+      total_score: computedScore,
+      weighted_score: computedScore,
       verdict_code: input.verdictCode,
       panel_notes: input.panelNotes,
       recommendations: input.recommendations,
@@ -145,7 +353,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error(`Failed to update evaluation score sheet: ${updateError?.message}`);
   }
 
-  // 7. Create immutable digital_signatures record (Sprint 2D — non-blocking)
+  // 8. Create immutable digital_signatures record (Sprint 2D — non-blocking)
   try {
     const { error: sigErr } = await supabase
       .from("digital_signatures")
@@ -170,7 +378,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     console.error("[signEvaluationAction] digital_signatures exception:", dsEx instanceof Error ? dsEx.message : dsEx);
   }
 
-  // 8. Insert audit log
+  // 9. Insert audit log
   const { data: profile } = await supabase
     .from("profiles")
     .select("email")
@@ -191,7 +399,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
       version: updatedEval.version,
       certificate_serial: certificateSerial,
       signature_hash: payloadHash,
-      total_score: updatedEval.total_score,
+      total_score: computedScore,
       verdict_code: input.verdictCode,
     },
     ip_address: ip,
@@ -199,19 +407,19 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     academic_year: currentAcademicYear(),
   });
 
-  // 9. Fire evaluation event trigger
+  // 10. Fire evaluation event trigger
   await supabase.from("evaluation_events").insert({
     project_id: updatedEval.project_id,
     stage_id: updatedEval.stage_id,
     event_type: "evaluation_submitted",
     payload: {
       evaluation_id: input.evaluationId,
-      total_score: updatedEval.total_score,
+      total_score: computedScore,
       rubric_template_id: updatedEval.rubric_template_id,
     },
   });
 
-  // 10. Record workflow history (Sprint 2G — non-blocking)
+  // 11. Record workflow history (Sprint 2G — non-blocking)
   await recordWorkflowTransition(supabase, {
     projectId: currentEval.project_id,
     fromStageId: currentEval.stage_id,
@@ -225,22 +433,42 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     metadata: { evaluationId: input.evaluationId, certificateSerial },
   });
 
-  // 11. Notify coordinator (Sprint 2E — centralized dispatcher, non-blocking)
+  // 12. Notify coordinator and student co-authors (Sprint 2E — centralized dispatcher, non-blocking)
   try {
     const { data: projectMeta } = await supabase
       .from("projects")
-      .select("coordinator_profile_id")
+      .select("coordinator_profile_id, student_id, title")
       .eq("id", currentEval.project_id)
       .maybeSingle();
+
     if (projectMeta?.coordinator_profile_id) {
       await emitNotification({
         supabase,
         recipientProfileId: projectMeta.coordinator_profile_id,
         title: "Evaluation Signed & Submitted",
-        message: `A panel evaluator has signed an evaluation. Certificate: ${certificateSerial}.`,
+        message: `A panel evaluator has signed an evaluation for "${projectMeta.title || 'Research Project'}". Certificate: ${certificateSerial}.`,
         eventType: "evaluation_signed",
-        metadata: { certificateSerial, evaluationId: input.evaluationId },
+        metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
       });
+    }
+
+    // Also notify primary student
+    if (projectMeta?.student_id) {
+      const { data: studentRecord } = await supabase
+        .from("students")
+        .select("profile_id")
+        .eq("id", projectMeta.student_id)
+        .maybeSingle();
+      if (studentRecord?.profile_id) {
+        await emitNotification({
+          supabase,
+          recipientProfileId: studentRecord.profile_id,
+          title: "Defense Evaluation Signed",
+          message: `A panelist has completed and digitally signed their evaluation for your defense.`,
+          eventType: "grade_released",
+          metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
+        });
+      }
     }
   } catch (notifEx: unknown) {
     console.error("[signEvaluationAction] Notification failed:", notifEx instanceof Error ? notifEx.message : notifEx);

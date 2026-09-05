@@ -149,3 +149,157 @@ export async function createAnnotationReplyAction(annotationId: string, content:
 
   return { success: true };
 }
+
+export interface CreateAnnotationInput {
+  documentVersionId: string;
+  pageNumber: number;
+  content: string;
+  severity?: "info" | "minor" | "major" | "critical";
+  selectedText?: string;
+  coordinates?: { left: number; top: number; width: number; height: number };
+  boundingBoxes?: any;
+  type?: string;
+}
+
+/**
+ * Creates a coordinate or text annotation on a document version, logs history,
+ * and notifies all project student authors.
+ */
+export async function createAnnotationAction(input: CreateAnnotationInput) {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error("Unauthorized. Please log in.");
+  if (!input.content?.trim()) throw new Error("Annotation content cannot be empty.");
+
+  // 1. Resolve document, project, and stage details
+  const { data: docVer, error: verErr } = await supabase
+    .from("document_versions")
+    .select("document_id, documents(id, stage_id, project_id, projects(id, title, student_id))")
+    .eq("id", input.documentVersionId)
+    .single();
+
+  if (verErr || !docVer) {
+    throw new Error("Target document version not found.");
+  }
+
+  const doc = Array.isArray(docVer.documents) ? docVer.documents[0] : docVer.documents;
+  const project = doc?.projects ? (Array.isArray(doc.projects) ? doc.projects[0] : doc.projects) : null;
+  const projectId = project?.id;
+  const stageId = doc?.stage_id;
+
+  // 2. Insert annotation
+  const { data: newAnnotation, error: insertErr } = await supabase
+    .from("annotations")
+    .insert({
+      document_version_id: input.documentVersionId,
+      type: input.type || "text_comment",
+      page_number: input.pageNumber || 1,
+      selected_text: input.selectedText?.trim() || null,
+      content: input.content.trim(),
+      severity: input.severity || "minor",
+      status: "open",
+      coordinates: input.coordinates || { left: 10, top: 10, width: 80, height: 5 },
+      bounding_boxes: input.boundingBoxes || null,
+      created_by: user.id,
+    })
+    .select()
+    .single();
+
+  if (insertErr || !newAnnotation) {
+    throw new Error(`Failed to create annotation: ${insertErr?.message}`);
+  }
+
+  // 3. Record in annotation_history
+  await supabase.from("annotation_history").insert({
+    annotation_id: newAnnotation.id,
+    from_status: null,
+    to_status: "open",
+    notes: "Initial feedback comment created",
+    changed_by: user.id,
+  });
+
+  // 4. Log evaluation event if projectId & stageId exist
+  if (projectId && stageId) {
+    await supabase.from("evaluation_events").insert({
+      project_id: projectId,
+      stage_id: stageId,
+      event_type: "annotation_created",
+      payload: {
+        annotation_id: newAnnotation.id,
+        page_number: input.pageNumber || 1,
+        severity: input.severity || "minor",
+      },
+    });
+  }
+
+  // 5. Notify all student members of the project
+  if (projectId) {
+    try {
+      const { data: members } = await supabase
+        .from("project_members")
+        .select("profile_id")
+        .eq("project_id", projectId)
+        .in("member_role", ["student_leader", "student"]);
+
+      const studentIds = members?.map((m: any) => m.profile_id).filter(Boolean) || [];
+
+      if (project?.student_id) {
+        const { data: studentRecord } = await supabase
+          .from("students")
+          .select("profile_id")
+          .eq("id", project.student_id)
+          .maybeSingle();
+
+        if (studentRecord?.profile_id && !studentIds.includes(studentRecord.profile_id)) {
+          studentIds.push(studentRecord.profile_id);
+        }
+      }
+
+      const otherStudentIds = studentIds.filter((id) => id !== user.id);
+
+      if (otherStudentIds.length > 0) {
+        const { emitNotificationToMany } = await import("@/lib/notifications/emit");
+        const preview = input.content.trim().slice(0, 70);
+        await emitNotificationToMany(supabase, otherStudentIds, {
+          title: `New Feedback Comment (p. ${input.pageNumber || 1})`,
+          message: `A ${input.severity || "minor"} feedback remark was added: "${preview}..."`,
+          eventType: "annotation_created",
+          actionUrl: `/dashboard/my-project`,
+          metadata: {
+            annotationId: newAnnotation.id,
+            pageNumber: input.pageNumber || 1,
+            severity: input.severity || "minor",
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error("[createAnnotationAction] Notification warning:", notifErr);
+    }
+  }
+
+  // 6. Audit trail
+  await supabase.from("audit_logs").insert({
+    profile_id: user.id,
+    user_email: user.email || "unknown",
+    user_role: "faculty",
+    action_type: "INSERT",
+    module: "revisions",
+    entity_type: "annotations",
+    entity_id: newAnnotation.id,
+    description: `Added ${input.severity || "minor"} annotation on page ${input.pageNumber || 1}`,
+    new_value: { content: input.content.slice(0, 100), severity: input.severity },
+    ip_address: ip,
+    user_agent: userAgent,
+    academic_year: currentAcademicYear(),
+  });
+
+  return { success: true, annotation: newAnnotation };
+}
+

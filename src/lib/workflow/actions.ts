@@ -28,7 +28,7 @@ export async function adviserApproveDocumentAction(
   // Fetch document details and project membership
   const { data: doc, error: docErr } = await supabase
     .from("documents")
-    .select("*, projects(id, title)")
+    .select("*, projects(id, title, student_id)")
     .eq("id", documentId)
     .single();
 
@@ -49,18 +49,27 @@ export async function adviserApproveDocumentAction(
     throw new Error("Permission denied. Only the assigned Adviser can approve manuscripts.");
   }
 
-  // 2. Update status
+  // 2. Update document and project status
   const { error: updateErr } = await supabase
     .from("documents")
     .update({
       adviser_approval_status: status === "approved" ? "approved" : "rejected",
-      approval_remarks: remarks || null
+      status: status === "approved" ? "approved" : "revision_required",
+      approval_remarks: remarks || null,
     })
     .eq("id", documentId);
 
   if (updateErr) {
     throw new Error(`Failed to update approval status: ${updateErr.message}`);
   }
+
+  // Update project status accordingly
+  await supabase
+    .from("projects")
+    .update({
+      status: status === "approved" ? "submitted" : "revision_required",
+    })
+    .eq("id", doc.projects.id);
 
   // 3. Log Audit trail
   await supabase.from("audit_logs").insert({
@@ -79,24 +88,35 @@ export async function adviserApproveDocumentAction(
     academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear()
   });
 
-  // 4. Create Notifications — BUG-H7 fix: `projects.student_id` is `students.id`,
-  //    NOT `profiles.id`. Must join students table to get the actual profile_id.
-  //    Sprint 2E: Use centralized emitNotification() dispatcher.
-  const { data: studentRecord } = await supabase
-    .from("students")
+  // 4. Create Notifications for student leader and team members
+  const { data: teamMembers } = await supabase
+    .from("project_members")
     .select("profile_id")
-    .eq("id", doc.projects.student_id)
-    .maybeSingle();
+    .eq("project_id", doc.projects.id)
+    .in("member_role", ["student_leader", "student"]);
 
-  if (studentRecord?.profile_id) {
-    await emitNotification({
-      supabase,
-      recipientProfileId: studentRecord.profile_id,
+  const studentProfileIds = teamMembers?.map((m: any) => m.profile_id).filter(Boolean) || [];
+
+  if (doc.projects?.student_id) {
+    const { data: studentRecord } = await supabase
+      .from("students")
+      .select("profile_id")
+      .eq("id", doc.projects.student_id)
+      .maybeSingle();
+
+    if (studentRecord?.profile_id && !studentProfileIds.includes(studentRecord.profile_id)) {
+      studentProfileIds.push(studentRecord.profile_id);
+    }
+  }
+
+  if (studentProfileIds.length > 0) {
+    const { emitNotificationToMany } = await import("@/lib/notifications/emit");
+    await emitNotificationToMany(supabase, studentProfileIds, {
       title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
-      message: `Your adviser has ${status === "approved" ? "approved" : "reviewed"} your manuscript submission. Remarks: ${remarks || "None"}.`,
-      // Map "rejected" → "revision_required" notification (they are semantically the same in AURORA).
-      // "approved" uses document_approved; rejection always means revise-and-resubmit.
+      message: `Your adviser has ${status === "approved" ? "approved" : "requested revisions on"} your manuscript "${doc.title}". Remarks: ${remarks || "None"}.`,
       eventType: status === "approved" ? "document_approved" : "revision_required",
+      actionUrl: `/dashboard/my-project`,
+      metadata: { documentId, projectId: doc.projects.id, remarks: remarks || null },
     });
   }
 
@@ -188,8 +208,10 @@ export async function releaseProjectVerdictAction(
     academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear(),
   });
 
-  // 5. Notify student — non-blocking
+  // 5. Notify all student team members — non-blocking
   try {
+    const recipientIds = new Set<string>();
+
     const { data: studentRecord } = await supabase
       .from("students")
       .select("profile_id")
@@ -197,9 +219,22 @@ export async function releaseProjectVerdictAction(
       .maybeSingle();
 
     if (studentRecord?.profile_id) {
+      recipientIds.add(studentRecord.profile_id);
+    }
+
+    const { data: members } = await supabase
+      .from("project_members")
+      .select("profile_id")
+      .eq("project_id", projectId);
+
+    (members || []).forEach((m) => {
+      if (m.profile_id) recipientIds.add(m.profile_id);
+    });
+
+    for (const recipientId of recipientIds) {
       await emitNotification({
         supabase,
-        recipientProfileId: studentRecord.profile_id,
+        recipientProfileId: recipientId,
         title: "Final Verdict Released",
         message: `Your defense outcome has been officially recorded: ${verdictCode.replace(/_/g, " ").toUpperCase()}. Remarks: ${remarks || "None"}.`,
         eventType: "final_verdict_released",

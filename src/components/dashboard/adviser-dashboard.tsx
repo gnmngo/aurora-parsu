@@ -62,6 +62,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           id,
           title,
           status,
+          current_stage_id,
           defense_stages ( id, name ),
           students ( 
             student_number, 

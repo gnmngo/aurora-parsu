@@ -77,8 +77,9 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     .eq("stage_id", input.stageId)
     .maybeSingle();
 
-  if (doc && doc.adviser_approval_status !== "approved") {
-    throw new Error("Adviser Approval Gate: The uploaded manuscript for this stage has not been approved by the adviser yet. Scheduling is locked.");
+  // Check Adviser Approval Gate (Hard Gate)
+  if (!doc || doc.adviser_approval_status !== "approved") {
+    throw new Error("Adviser Approval Gate: A manuscript for this defense stage must be uploaded and officially approved by the research adviser before a defense can be scheduled.");
   }
 
   const studentProfileId = Array.isArray(project.students)
@@ -123,7 +124,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
       const activeProjIds = activeSchedules.map(s => s.project_id);
       const { data: conflictingPanels } = await supabase
         .from("defense_panels")
-        .select("profile_id, project_id, profiles(first_name, last_name)")
+        .select("profile_id, project_id, profiles!defense_panels_profile_id_fkey(first_name, last_name)")
         .in("project_id", activeProjIds)
         .in("profile_id", input.panelistIds);
 
@@ -151,7 +152,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
       // Check if adviser is a panelist on conflicting slots
       const { data: adviserPanel } = await supabase
         .from("defense_panels")
-        .select("profile_id, profiles(first_name, last_name)")
+        .select("profile_id, profiles!defense_panels_profile_id_fkey(first_name, last_name)")
         .in("project_id", activeProjIds)
         .eq("profile_id", adviserProfileId)
         .maybeSingle();
@@ -263,7 +264,16 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
   // 10. Emit defense_scheduled notifications to all participants (Sprint 2E)
   try {
+    const { data: teamMembers } = await supabase
+      .from("project_members")
+      .select("profile_id")
+      .eq("project_id", input.projectId)
+      .in("member_role", ["student_leader", "student"]);
+
+    const teamProfileIds = teamMembers?.map((m: any) => m.profile_id).filter(Boolean) || [];
+
     const recipientIds = [
+      ...teamProfileIds,
       ...(studentProfileId ? [studentProfileId] : []),
       ...(adviserProfileId ? [adviserProfileId] : []),
       ...input.panelistIds,
@@ -404,7 +414,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       const activeProjIds = activeSchedules.map(s => s.project_id);
       const { data: conflictingPanels } = await supabase
         .from("defense_panels")
-        .select("profile_id, project_id, profiles(first_name, last_name)")
+        .select("profile_id, project_id, profiles!defense_panels_profile_id_fkey(first_name, last_name)")
         .in("project_id", activeProjIds)
         .in("profile_id", input.panelistIds);
 

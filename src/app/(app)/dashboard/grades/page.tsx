@@ -269,7 +269,12 @@ export default function GradesPage() {
                 : "Unknown Panelist";
               const criteria: CriterionScore[] = evalItem.rubric_templates?.criteria || [];
               const scoresMap = evalItem.scores || {};
-              const totalScore = Number(evalItem.total_score || 0);
+              const rawTotal = Number(evalItem.total_score || 0);
+              const totalScore = rawTotal > 0
+                ? rawTotal
+                : scoresMap && typeof scoresMap === "object" && Object.values(scoresMap).length > 0
+                  ? Object.values(scoresMap).map(Number).filter((v) => !isNaN(v)).reduce((a, b) => a + b, 0) / Object.values(scoresMap).length
+                  : 0;
 
               // BUG-H2: Use rubric's configurable passing_score instead of hardcoded 75
               const passingScore = Number(evalItem.rubric_templates?.passing_score ?? 75);

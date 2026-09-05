@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { createAnnotationAction } from "@/lib/annotations/actions";
 
 interface PdfViewerPanelProps {
   title: string;
@@ -133,35 +134,18 @@ export function PdfViewerPanel({
       const userId = user?.id;
       if (!userId) throw new Error("No active session.");
 
-      // 1. Save annotation record
-      const { data, error } = await supabase
-        .from("annotations")
-        .insert({
-          document_version_id: documentVersionId,
-          type: "text_comment",
-          page_number: pageNumber || 1,
-          selected_text: sectionRef.trim() || null,
-          content: commentText.trim(),
-          severity: severity,
-          status: "open",
-          created_by: userId,
-        })
-        .select()
-        .single();
+      // 1. Save annotation record via server action (audited + notifies students)
+      const res = await createAnnotationAction({
+        documentVersionId,
+        pageNumber: pageNumber || 1,
+        content: commentText.trim(),
+        severity: severity,
+        selectedText: sectionRef.trim() || undefined,
+        type: "text_comment",
+      });
 
-      if (error) throw error;
-
-      // 2. Fire evaluation_events trigger
-      if (projectId && stageId) {
-        await supabase.from("evaluation_events").insert({
-          project_id: projectId,
-          stage_id: stageId,
-          event_type: "annotation_created",
-          payload: {
-            annotation_id: data.id,
-            page_number: pageNumber || 1,
-          },
-        });
+      if (!res.success) {
+        throw new Error("Failed to create annotation.");
       }
 
       toast.success("Revision comment added successfully!");
