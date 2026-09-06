@@ -415,7 +415,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     profile_id: userId,
     user_email: profile?.email ?? user.email ?? "unknown",
     user_role: "panelist",
-    action_type: "GRADE",
+    action_type: "SUBMIT",
     module: "grading",
     entity_type: "evaluations",
     entity_id: input.evaluationId,

@@ -384,7 +384,7 @@ export async function signEvaluationV2Action(
     profile_id: user.id,
     user_email: user.email ?? "unknown",
     user_role: "panelist",
-    action_type: "SIGN",
+    action_type: "SUBMIT",
     module: "digital_signatures",
     entity_type: "evaluations",
     entity_id: input.evaluationId,
