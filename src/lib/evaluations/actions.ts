@@ -405,15 +405,9 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   }
 
   // 9. Insert audit log
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .single();
-
   await supabase.from("audit_logs").insert({
     profile_id: userId,
-    user_email: profile?.email ?? user.email ?? "unknown",
+    user_email: user.email || "unknown",
     user_role: "panelist",
     action_type: "SUBMIT",
     module: "grading",
@@ -563,15 +557,9 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
   }
 
   // 4. Log audit event
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .single();
-
   await supabase.from("audit_logs").insert({
     profile_id: userId,
-    user_email: profile?.email || user.email || "unknown",
+    user_email: user.email || "unknown",
     user_role: "panelist",
     action_type: "CREATE",
     module: "grading",

@@ -6,7 +6,7 @@ import { currentAcademicYear } from "@/lib/utils/academic-year";
 
 export interface UpdateAnnotationStatusInput {
   annotationId: string;
-  newStatus: "open" | "in_progress" | "addressed" | "verified" | "resolved" | "closed";
+  newStatus: "open" | "in_progress" | "addressed" | "verified" | "resolved" | "archived" | "closed";
   notes?: string;
 }
 

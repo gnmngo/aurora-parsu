@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -118,7 +118,7 @@ export function InteractivePdfViewer({
   const [submittingReply, setSubmittingReply] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // 1. Fetch Annotations with replies
   const fetchAnnotations = useCallback(async () => {
@@ -145,7 +145,7 @@ export function InteractivePdfViewer({
             content,
             created_at,
             created_by,
-            profiles ( first_name, last_name )
+            profiles!created_by ( first_name, last_name )
           )
         `)
         .eq("document_version_id", documentVersionId)
