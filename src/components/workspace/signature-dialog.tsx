@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PenTool, Type, ShieldCheck } from "lucide-react";
+import { PenTool, Type, ShieldCheck, Upload, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface SignatureDialogProps {
@@ -39,72 +39,105 @@ export function SignatureDialog({
   panelistName,
   panelistRole,
 }: SignatureDialogProps) {
-  const [activeTab, setActiveTab] = useState<string>("draw");
+  const [activeTab, setActiveTab] = useState<"draw" | "type" | "upload">("draw");
   const [printedName, setPrintedName] = useState(panelistName);
-  const [positionRole, setPositionRole] = useState(panelistRole || "Panel Member");
+  const [positionRole, setPositionRole] = useState(panelistRole || "Defense Panel Member");
   const [typedText, setTypedText] = useState(panelistName);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Dedicated canvas references to eliminate ref collisions across tabs
+  const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const typeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Initialize Canvas settings
+  // Keep name synced if prop changes
   useEffect(() => {
-    if (!open || activeTab !== "draw") return;
+    if (panelistName) {
+      setPrintedName(panelistName);
+      setTypedText(panelistName);
+    }
+    if (panelistRole) {
+      setPositionRole(panelistRole);
+    }
+  }, [panelistName, panelistRole]);
+
+  // High-DPI Draw Canvas Initialization
+  const initDrawCanvas = useCallback(() => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 440;
+    const height = rect.height || 160;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = "#1e3a8a"; // PSU Navy / Royal Blue
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  }, []);
+
+  // High-DPI Typed Canvas Renderer
+  const renderTypedSignature = useCallback(() => {
+    const canvas = typeCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 440;
+    const height = rect.height || 160;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = "italic 38px 'Great Vibes', 'Brush Script MT', cursive, Georgia, serif";
+    ctx.fillStyle = "#1e3a8a";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(typedText || "Sign Here", width / 2, height / 2);
+  }, [typedText]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const timer = setTimeout(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Set canvas size matching display size
-      canvas.width = canvas.offsetWidth || 400;
-      canvas.height = canvas.offsetHeight || 150;
-
-      // Draw background grid lines/line helper
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(20, canvas.height - 40);
-      ctx.lineTo(canvas.width - 20, canvas.height - 40);
-      ctx.stroke();
-    }, 100);
+      if (activeTab === "draw") {
+        initDrawCanvas();
+      } else if (activeTab === "type") {
+        renderTypedSignature();
+      }
+    }, 120);
 
     return () => clearTimeout(timer);
-  }, [open, activeTab]);
+  }, [open, activeTab, initDrawCanvas, renderTypedSignature]);
 
-  // Handle Typed Signature rendering on canvas
+  // Handle Typed Text live re-render
   useEffect(() => {
-    if (!open || activeTab !== "type") return;
+    if (open && activeTab === "type") {
+      renderTypedSignature();
+    }
+  }, [typedText, open, activeTab, renderTypedSignature]);
 
-    const timer = setTimeout(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      canvas.width = 400;
-      canvas.height = 150;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = "italic 36px cursive, 'Brush Script MT', 'Great Vibes', sans-serif";
-      ctx.fillStyle = "#1e3a8a"; // Royal blue color
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(typedText || "Sign Here", canvas.width / 2, canvas.height / 2);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [open, activeTab, typedText]);
-
-  // Drawing event coords helper
+  // Drawing Coordinate Helper
   const getEventCoords = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
 
@@ -126,13 +159,13 @@ export function SignatureDialog({
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
     e.preventDefault();
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.strokeStyle = "#1e3a8a"; // Royal Blue
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#1e3a8a";
+    ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
@@ -140,6 +173,7 @@ export function SignatureDialog({
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
+    setHasDrawn(true);
   };
 
   const draw = (
@@ -147,7 +181,7 @@ export function SignatureDialog({
   ) => {
     if (!isDrawing) return;
     e.preventDefault();
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -162,51 +196,97 @@ export function SignatureDialog({
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (activeTab === "draw") {
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(20, canvas.height - 40);
-      ctx.lineTo(canvas.width - 20, canvas.height - 40);
-      ctx.stroke();
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+    setHasDrawn(false);
+  };
+
+  // Upload signature handler
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file (PNG, JPG, WebP).");
+      return;
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Signature image must be under 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const dataUrl = loadEvt.target?.result as string;
+      setUploadedImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSignSubmit = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     if (!printedName.trim()) {
-      toast.error("Please enter your printed name.");
+      toast.error("Please enter your printed full name.");
+      return;
+    }
+
+    if (!positionRole.trim()) {
+      toast.error("Please specify your position or academic role.");
       return;
     }
 
     if (!isAgreed) {
-      toast.error("You must agree to the electronic signature policy check.");
+      toast.error("You must accept the institutional signature policy certification.");
+      return;
+    }
+
+    let finalSignatureImage = "";
+
+    if (activeTab === "draw") {
+      const canvas = drawCanvasRef.current;
+      if (!canvas || !hasDrawn) {
+        toast.error("Please draw your signature before submitting.");
+        return;
+      }
+      finalSignatureImage = canvas.toDataURL("image/png");
+    } else if (activeTab === "type") {
+      const canvas = typeCanvasRef.current;
+      if (!canvas || !typedText.trim()) {
+        toast.error("Please enter text for your stylized signature.");
+        return;
+      }
+      finalSignatureImage = canvas.toDataURL("image/png");
+    } else if (activeTab === "upload") {
+      if (!uploadedImage) {
+        toast.error("Please select a signature image to upload.");
+        return;
+      }
+      finalSignatureImage = uploadedImage;
+    }
+
+    if (!finalSignatureImage) {
+      toast.error("Missing signature image.");
       return;
     }
 
     setSubmitting(true);
     try {
-      // Export signature as PNG Base64 data URL
-      const signatureImage = canvas.toDataURL("image/png");
-
       await onSignComplete({
-        signatureType: activeTab as "drawn" | "typed" | "uploaded",
-        signatureImage,
+        signatureType: activeTab === "draw" ? "drawn" : activeTab === "type" ? "typed" : "uploaded",
+        signatureImage: finalSignatureImage,
         printedName: printedName.trim(),
         positionRole: positionRole.trim(),
       });
 
       onOpenChange(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit signature.");
+      const msg = err instanceof Error ? err.message : "Failed to apply electronic signature.";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -214,23 +294,23 @@ export function SignatureDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground font-bold">
+          <DialogTitle className="flex items-center gap-2 text-foreground font-bold text-base">
             <ShieldCheck className="h-5 w-5 text-primary" />
             Verified Electronic Signature
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4 pt-1">
           {/* Grade Summary Box */}
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex justify-between items-center">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex justify-between items-center">
             <div>
-              <p className="text-xs font-semibold text-primary uppercase tracking-wider">Evaluation Verdict</p>
-              <h4 className="text-sm font-bold text-foreground mt-0.5">{verdictLabel}</h4>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Evaluation Verdict</p>
+              <h4 className="text-xs font-bold text-foreground mt-0.5">{verdictLabel}</h4>
             </div>
             <div className="text-right">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wider">Total Score</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Total Score</p>
               <h4 className="text-2xl font-black text-primary">{totalScore.toFixed(1)}</h4>
             </div>
           </div>
@@ -238,21 +318,23 @@ export function SignatureDialog({
           {/* Printed Name & Role Input */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="printed-name" className="text-xs">Printed Full Name</Label>
+              <Label htmlFor="printed-name" className="text-xs font-semibold">Printed Full Name</Label>
               <Input
                 id="printed-name"
                 value={printedName}
                 onChange={(e) => {
                   setPrintedName(e.target.value);
-                  setTypedText(e.target.value);
+                  if (activeTab === "type" && typedText === printedName) {
+                    setTypedText(e.target.value);
+                  }
                 }}
                 className="h-8 text-xs"
-                placeholder="e.g. Dr. Juan Dela Cruz"
+                placeholder="e.g. Dr. Maria Santos"
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="position-role" className="text-xs">Position / Academic Role</Label>
+              <Label htmlFor="position-role" className="text-xs font-semibold">Position / Role</Label>
               <Input
                 id="position-role"
                 value={positionRole}
@@ -265,20 +347,24 @@ export function SignatureDialog({
           </div>
 
           {/* Signature Type Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="draw" className="text-xs gap-1.5 py-1">
-                <PenTool className="h-3.5 w-3.5" /> Draw Signature
+                <PenTool className="h-3.5 w-3.5" /> Draw
               </TabsTrigger>
               <TabsTrigger value="type" className="text-xs gap-1.5 py-1">
-                <Type className="h-3.5 w-3.5" /> Type Signature
+                <Type className="h-3.5 w-3.5" /> Type
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="text-xs gap-1.5 py-1">
+                <Upload className="h-3.5 w-3.5" /> Upload
               </TabsTrigger>
             </TabsList>
 
+            {/* TAB 1: DRAW SIGNATURE */}
             <TabsContent value="draw" className="mt-2 space-y-2">
               <div className="relative border border-border rounded-xl overflow-hidden bg-muted/10 h-36">
                 <canvas
-                  ref={canvasRef}
+                  ref={drawCanvasRef}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
@@ -286,14 +372,19 @@ export function SignatureDialog({
                   onTouchStart={startDrawing}
                   onTouchMove={draw}
                   onTouchEnd={stopDrawing}
-                  className="w-full h-full block touch-none cursor-crosshair"
+                  className="w-full h-full block touch-none cursor-crosshair relative z-10"
                 />
+                {/* Visual guideline (rendered as CSS element so it does not bake into signature PNG) */}
+                <div className="absolute bottom-8 left-6 right-6 border-b border-dashed border-slate-300 pointer-events-none z-0" />
+                <span className="absolute bottom-2 left-6 text-[9px] text-muted-foreground pointer-events-none select-none z-0">
+                  Signature Line
+                </span>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={clearCanvas}
-                  className="absolute bottom-2 right-2 h-6 text-[10px] rounded-lg px-2"
+                  className="absolute bottom-2 right-2 h-6 text-[10px] rounded-lg px-2 z-20"
                 >
                   Clear
                 </Button>
@@ -303,35 +394,78 @@ export function SignatureDialog({
               </p>
             </TabsContent>
 
+            {/* TAB 2: TYPE SIGNATURE */}
             <TabsContent value="type" className="mt-2 space-y-2">
               <div className="space-y-2">
                 <div className="relative border border-border rounded-xl overflow-hidden bg-muted/10 h-36 flex items-center justify-center">
-                  <canvas ref={canvasRef} className="hidden" />
-                  <p className="italic text-4xl text-primary text-center select-none font-serif font-medium" style={{ fontFamily: "cursive, 'Brush Script MT', serif" }}>
-                    {typedText || "Sign Here"}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={clearCanvas}
-                    className="absolute bottom-2 right-2 h-6 text-[10px] rounded-lg px-2"
-                  >
-                    Reset
-                  </Button>
+                  <canvas ref={typeCanvasRef} className="w-full h-full" />
+                  <div className="absolute bottom-8 left-6 right-6 border-b border-dashed border-slate-300 pointer-events-none" />
                 </div>
                 <Input
                   value={typedText}
                   onChange={(e) => setTypedText(e.target.value)}
                   className="h-8 text-xs"
-                  placeholder="Enter text to stylize..."
+                  placeholder="Enter name to stylize as electronic signature..."
+                />
+              </div>
+            </TabsContent>
+
+            {/* TAB 3: UPLOAD SIGNATURE */}
+            <TabsContent value="upload" className="mt-2 space-y-2">
+              <div className="relative border border-dashed border-border rounded-xl p-4 bg-muted/10 min-h-[144px] flex flex-col items-center justify-center text-center">
+                {uploadedImage ? (
+                  <div className="space-y-2 w-full">
+                    <div className="h-24 max-w-[240px] mx-auto p-2 bg-white rounded-lg border border-border flex items-center justify-center">
+                      <img
+                        src={uploadedImage}
+                        alt="Uploaded Signature Preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setUploadedImage(null);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="h-7 text-[10px] text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                      >
+                        <X className="h-3 w-3 mr-1" /> Remove Image
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="h-7 w-7 text-muted-foreground mx-auto" />
+                    <p className="text-xs font-semibold text-foreground">Upload Scanned Signature</p>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG, or WebP with transparent background recommended (max 2MB)</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-7 text-[10px] rounded-lg mt-1"
+                    >
+                      Browse Files
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={handleFileUpload}
+                  className="hidden"
                 />
               </div>
             </TabsContent>
           </Tabs>
 
           {/* Legal Consent Checkbox */}
-          <div className="flex items-start gap-2.5 rounded-xl border border-warning/20 bg-warning/5 p-3.5 text-xs text-warning-foreground leading-relaxed">
+          <div className="flex items-start gap-2.5 rounded-xl border border-warning/20 bg-warning/5 p-3 text-xs text-warning-foreground leading-relaxed">
             <input
               type="checkbox"
               id="legal-checkbox"
@@ -340,17 +474,17 @@ export function SignatureDialog({
               className="mt-0.5 h-4 w-4 rounded border-warning text-primary focus:ring-primary/20 accent-amber-600 cursor-pointer"
             />
             <Label htmlFor="legal-checkbox" className="text-[11px] text-amber-900 font-medium select-none cursor-pointer">
-              I authorize this electronic signature to be permanently locked to this evaluation sheet. I certify that these scores and feedback comments represent my authentic review of the research manuscript and are legally binding under Partido State University policies.
+              I certify that these scores and comments represent my authentic academic evaluation under Partido State University policies. I understand that submitting this verified electronic signature permanently locks this evaluation sheet from further modification.
             </Label>
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 pt-1">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs rounded-xl" disabled={submitting}>
             Cancel
           </Button>
           <Button onClick={handleSignSubmit} className="h-9 text-xs rounded-xl shadow-lg shadow-primary/15" disabled={submitting || !isAgreed}>
-            {submitting ? "Signing & Submitting..." : "Sign & Submit Grade"}
+            {submitting ? "Applying Signature..." : "Sign & Submit Grade"}
           </Button>
         </DialogFooter>
       </DialogContent>

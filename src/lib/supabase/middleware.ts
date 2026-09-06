@@ -38,9 +38,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("MIDDLEWARE - Pathname:", pathname);
-  console.log("MIDDLEWARE SESSION - User ID:", user?.id || "None");
-
   const isAuthRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/forgot-password") ||
@@ -55,7 +52,6 @@ export async function updateSession(request: NextRequest) {
 
   // 1. Session check
   if (!user && isProtectedRoute) {
-    console.log("MIDDLEWARE - No user on protected route. Redirecting to /login");
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", pathname);
@@ -63,7 +59,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    console.log("MIDDLEWARE - Authenticated user on auth route. Redirecting to /dashboard");
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -77,11 +72,7 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    console.log("MIDDLEWARE PROFILE - fetched profile:", profile);
-    console.log("MIDDLEWARE STATUS - profile?.status:", profile?.status);
-
     if (profile && profile.status !== "approved") {
-      console.log("MIDDLEWARE - User status is not approved. Signing out and redirecting to /login");
       // Sign out on unauthorized access and redirect to login with error parameter
       await supabase.auth.signOut();
       const url = request.nextUrl.clone();
@@ -97,20 +88,16 @@ export async function updateSession(request: NextRequest) {
         .select("roles(code)")
         .eq("profile_id", user.id);
 
-      console.log("MIDDLEWARE ROLE - user_roles result:", JSON.stringify(userRoles));
-
       const roles = userRoles?.map((ur: { roles: { code: string } | { code: string }[] | null }) => {
         const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
         return role?.code;
       }).filter(Boolean) || [];
 
-      console.log("MIDDLEWARE ROLE - Extracted codes:", roles);
       const hasAdminAccess = roles.some((r) =>
         r && ["sys_admin", "coordinator"].includes(r)
       );
 
       if (!hasAdminAccess) {
-        console.log("MIDDLEWARE - No admin access for roles. Redirecting to /dashboard");
         const url = request.nextUrl.clone();
         url.pathname = "/dashboard";
         return NextResponse.redirect(url);

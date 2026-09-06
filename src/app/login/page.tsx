@@ -127,7 +127,6 @@ function LoginForm() {
   // Safe redirect only after session and profile are fully resolved
   useEffect(() => {
     if (!authLoading && session && profile) {
-      console.log("LOGIN REDIRECT: Hydration confirmed. Redirecting to dashboard.");
       router.replace("/dashboard");
     }
   }, [session, profile, authLoading, router]);

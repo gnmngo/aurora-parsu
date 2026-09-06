@@ -128,6 +128,7 @@ export function GradingPanel({
   const [certificateDialogOpen, setCertificateDialogOpen] = useState(false);
   const [evaluationData, setEvaluationData] = useState<any>(null);
   const [panelistProfile, setPanelistProfile] = useState<any>(null);
+  const [signatureDisplayUrl, setSignatureDisplayUrl] = useState<string | null>(null);
 
   // Adviser Endorsement state
   const [documentData, setDocumentData] = useState<any>(null);
@@ -135,6 +136,32 @@ export function GradingPanel({
   const [adviserRemarks, setAdviserRemarks] = useState("");
 
   const supabase = createClient();
+
+  useEffect(() => {
+    async function resolveSignatureUrl() {
+      if (!evaluationData?.signature_image) {
+        setSignatureDisplayUrl(null);
+        return;
+      }
+      const sig = evaluationData.signature_image as string;
+      if (sig.startsWith("data:image") || sig.startsWith("http")) {
+        setSignatureDisplayUrl(sig);
+        return;
+      }
+      try {
+        const cleanPath = sig.replace(/^signatures\//, "").replace(/^\/+/, "");
+        const { data } = await supabase.storage.from("signatures").createSignedUrl(cleanPath, 7200);
+        if (data?.signedUrl) {
+          setSignatureDisplayUrl(data.signedUrl);
+        } else {
+          setSignatureDisplayUrl(null);
+        }
+      } catch {
+        setSignatureDisplayUrl(null);
+      }
+    }
+    resolveSignatureUrl();
+  }, [evaluationData?.signature_image, supabase]);
 
   const loadData = async () => {
     try {
@@ -1420,9 +1447,9 @@ export function GradingPanel({
                     </div>
                   </div>
                   
-                  {evaluationData?.signature_image && (
+                  {(signatureDisplayUrl || evaluationData?.signature_image) && (
                     <div className="bg-white border border-emerald-100 rounded-lg p-2 flex justify-center items-center h-16 max-w-[200px] mx-auto select-none">
-                      <img src={evaluationData.signature_image} alt="Electronic Signature" className="h-full object-contain pointer-events-none" />
+                      <img src={signatureDisplayUrl || evaluationData.signature_image} alt="Electronic Signature" className="h-full object-contain pointer-events-none" />
                     </div>
                   )}
 

@@ -85,22 +85,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = useCallback(async (userId: string) => {
     if (loadedUserRef.current === userId) {
-      console.log("AUTH: Profile already loaded for", userId);
       setIsLoading(false);
       return;
     }
 
     if (loadingRef.current === userId) {
-      console.log("AUTH: Profile already loading for", userId);
-      // Do NOT hang — ensure loading spinner resolves even if we bail early
-      // The in-flight call will call setIsLoading(false) when it finishes
       return;
     }
     loadingRef.current = userId;
 
     try {
-      console.log("AUTH STEP 3: profile fetch started for", userId);
-
       // 1. PROFILE
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -109,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (profileError) {
-        console.error("AUTH PROFILE ERROR (STEP 3):", profileError.message);
+        console.error("AUTH PROFILE ERROR:", profileError.message);
         toast.error("Failed to load profile: " + profileError.message);
         clearAuthState();
         setIsLoading(false);
@@ -117,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!profileData) {
-        console.error("AUTH PROFILE ERROR (STEP 3): Profile not found in DB");
+        console.error("AUTH PROFILE ERROR: Profile not found in DB");
         toast.error("Profile not found");
         clearAuthState();
         setIsLoading(false);
@@ -125,10 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Allow both 'approved' (standard approval flow) and 'active' (legacy/seeded accounts).
-      // user_status enum: active | inactive | suspended | pending | approved | rejected
       const allowedStatuses = ["approved", "active"];
       if (!allowedStatuses.includes(profileData.status)) {
-        console.warn("AUTH PROFILE (STEP 3) - Account status not allowed:", profileData.status);
+        console.warn("AUTH PROFILE: Account status not allowed:", profileData.status);
         toast.error(`Account is ${profileData.status}. Contact your administrator.`);
         await supabase.auth.signOut();
         clearAuthState();
@@ -137,10 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(profileData);
-      console.log("AUTH STEP 3: profile fetched successfully:", profileData);
 
       // 2. ROLES
-      console.log("AUTH STEP 4: role fetch started");
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("roles(code)")
@@ -161,7 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .filter((code): code is string => Boolean(code)) ?? [];
 
       setRoles(roleCodes);
-      console.log("AUTH STEP 4: roles fetched successfully:", roleCodes);
 
       // 3. STUDENT PROFILE
       if (roleCodes.includes("student")) {
@@ -218,7 +208,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      console.log("AUTH STEP 5: final auth state populated");
       loadedUserRef.current = userId;
       setIsLoading(false);
     } catch (err: unknown) {
@@ -247,20 +236,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("AUTH EVENT:", event, "| User:", session?.user?.email ?? "none");
-
       if (!mounted) return;
 
       if (event === "INITIAL_SESSION") {
         if (!session) {
-          // No session on initial load
-          console.log("AUTH INITIAL_SESSION: no session");
           clearAuthState();
           setIsLoading(false);
           return;
         }
-        // Session found — load profile
-        console.log("AUTH INITIAL_SESSION: session found for", session.user.email);
         setSession(session);
         setUser(session.user);
         await loadUserProfile(session.user.id);
@@ -268,7 +251,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!session) {
-        console.log("AUTH: No session in auth event, clearing state");
         clearAuthState();
         setIsLoading(false);
         return;

@@ -1,185 +1,179 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Search, 
-  Loader2, 
-  ShieldCheck, 
-  Calendar, 
-  Award, 
-  User 
-} from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  ShieldCheck,
+  Search,
+  ArrowRight,
+  FileCheck,
+  Lock,
+  QrCode,
+  GraduationCap,
+} from "lucide-react";
 
-export default function VerifyCertificatePage() {
-  const [serial, setSerial] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [searched, setSearched] = useState(false);
-  
-  const supabase = createClient();
+export default function VerifyPortalPage() {
+  const router = useRouter();
+  const [serialInput, setSerialInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!serial.trim()) return;
-    setLoading(true);
-    setSearched(true);
-    setResult(null);
+    const clean = serialInput.trim().toUpperCase();
 
-    try {
-      const { data, error } = await supabase
-        .from("evaluations")
-        .select(`
-          id,
-          total_score,
-          verdict_code,
-          signed_at,
-          certificate_serial,
-          signature_hash,
-          projects ( title ),
-          defense_stages ( name ),
-          profiles ( first_name, last_name )
-        `)
-        .eq("certificate_serial", serial.trim())
-        .eq("status", "submitted")
-        .maybeSingle();
-
-      if (error) throw error;
-      setResult(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (!clean) {
+      setError("Please enter a certificate serial number.");
+      return;
     }
+
+    // Standard AURORA serial regex: AURORA-YYYY-XXXXXX
+    if (!clean.startsWith("AURORA-")) {
+      setError('Serial number must start with "AURORA-" (e.g. AURORA-2026-000049)');
+      return;
+    }
+
+    setError(null);
+    router.push(`/verify/${encodeURIComponent(clean)}`);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-xs font-semibold text-foreground">
-      <div className="w-full max-w-xl space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-black text-foreground tracking-tight">AURORA Registry</h1>
-          <p className="text-sm text-muted-foreground font-medium">
-            Digital Certificate & Signatures Verification Portal
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-8">
+      {/* Top Brand Bar */}
+      <header className="max-w-5xl mx-auto w-full flex items-center justify-between py-4 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <GraduationCap className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <span className="text-sm font-black tracking-wider uppercase text-white block">
+              AURORA
+            </span>
+            <span className="text-[10px] text-white/50 block tracking-wider uppercase">
+              Partido State University
+            </span>
+          </div>
+        </div>
+
+        <Link
+          href="/login"
+          className="text-xs text-white/70 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+        >
+          Faculty / Student Login
+        </Link>
+      </header>
+
+      {/* Main Container */}
+      <div className="max-w-3xl mx-auto w-full my-auto py-12">
+        {/* Title & Badge */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 mb-4">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-bold text-emerald-300 tracking-wider uppercase">
+              Institutional Document Verification Portal
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Verify Defense Certificates
+          </h1>
+          <p className="text-sm sm:text-base text-white/60 mt-2 max-w-xl mx-auto leading-relaxed">
+            Verify the authenticity of undergraduate thesis, capstone, and graduate defense certificates issued by Partido State University.
           </p>
         </div>
 
-        <Card className="border border-border/80 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
-              Verify Certificate Serial
-            </CardTitle>
-            <CardDescription className="text-[10px]">
-              Enter the unique certificate serial number printed on the student's grading evaluation sheet
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleVerify} className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="e.g. AURORA-CERT-100001"
-                  value={serial}
-                  onChange={(e) => setSerial(e.target.value)}
-                  className="h-9 text-xs"
+        {/* Verification Form Card */}
+        <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
+          <form onSubmit={handleVerify} className="space-y-4">
+            <div>
+              <label
+                htmlFor="serial-input"
+                className="block text-xs font-semibold text-white/70 uppercase tracking-wider mb-2"
+              >
+                Certificate Serial Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-white/40" />
+                </div>
+                <input
+                  id="serial-input"
+                  type="text"
+                  placeholder="e.g. AURORA-2026-000049"
+                  value={serialInput}
+                  onChange={(e) => {
+                    setSerialInput(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-900/90 border border-white/15 rounded-xl text-white placeholder-white/30 font-mono text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase"
                 />
-                <Button type="submit" size="sm" className="h-9 px-4 rounded-xl gap-1" disabled={loading}>
-                  {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-                  Verify
-                </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+              {error && (
+                <p className="text-xs text-rose-400 mt-2 font-medium">
+                  {error}
+                </p>
+              )}
+            </div>
 
-        {searched && !loading && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-200">
-            {result ? (
-              <Card className="border-emerald-200 bg-emerald-50/10 shadow-md">
-                <CardHeader className="border-b border-emerald-100 pb-3 flex flex-row items-center justify-between">
-                  <div>
-                    <Badge variant="success" className="text-[9px] font-extrabold uppercase gap-1">
-                      <ShieldCheck className="h-3 w-3" /> VERIFIED BY AURORA
-                    </Badge>
-                  </div>
-                  <span className="font-mono text-[10px] font-bold text-emerald-800 bg-emerald-100/50 px-2 py-0.5 rounded">
-                    {result.certificate_serial}
-                  </span>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4 text-xs font-medium text-slate-700">
-                  <div className="space-y-1">
-                    <p className="text-muted-foreground uppercase text-[9px] font-bold">Research Title</p>
-                    <p className="font-extrabold text-slate-900 text-sm">"{result.projects?.title}"</p>
-                  </div>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-900/30 transition-all cursor-pointer text-sm"
+            >
+              <span>Verify Authenticity</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
 
-                  <div className="grid grid-cols-2 gap-4 pt-1">
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase text-[9px] font-bold">Defense Stage</p>
-                      <p className="font-bold text-slate-800">{result.defense_stages?.name}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase text-[9px] font-bold">Signed Panelist</p>
-                      <p className="font-bold text-slate-800">
-                        {result.profiles?.first_name} {result.profiles?.last_name}
-                      </p>
-                    </div>
-                  </div>
+          {/* Quick Info / Security Seal */}
+          <div className="mt-8 pt-6 border-t border-white/10 grid sm:grid-cols-3 gap-4 text-center sm:text-left">
+            <div className="space-y-1">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
+                <Lock className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs font-bold">SHA-256 Integrity</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                Cryptographically hashed score sheets prevent post-defense modification.
+              </p>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4 border-t border-emerald-100 pt-3">
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase text-[9px] font-bold">Final Verdict</p>
-                      <Badge variant="success" className="capitalize font-bold text-[9px]">
-                        {result.verdict_code}
-                      </Badge>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase text-[9px] font-bold">Total Score</p>
-                      <p className="text-lg font-black text-primary">{Number(result.total_score).toFixed(1)}</p>
-                    </div>
-                  </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
+                <QrCode className="h-4 w-4 text-teal-400" />
+                <span className="text-xs font-bold">Instant QR Verification</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                Direct lookup via scannable QR code embedded on certificates.
+              </p>
+            </div>
 
-                  <div className="border-t border-emerald-100 pt-3 space-y-2">
-                    <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" /> Digitally signed on {new Date(result.signed_at).toLocaleString()}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase text-[8px] font-bold">Cryptographic SHA-256 Integrity Hash</p>
-                      <p className="font-mono text-[9px] text-muted-foreground truncate bg-muted/60 p-2 rounded border border-border/40">
-                        {result.signature_hash ?? "Hash not available"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-red-200 bg-red-50/10 shadow-md">
-                <CardContent className="p-6 text-center space-y-3">
-                  <XCircle className="h-10 w-10 text-red-500 mx-auto" />
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-900 uppercase">Invalid Certificate</h3>
-                    <p className="text-xs text-muted-foreground">
-                      This certificate serial number is not registered in the AURORA academic defense logs.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <div className="space-y-1">
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
+                <FileCheck className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs font-bold">Immutable Audit Trail</span>
+              </div>
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                Every defense approval is permanently sealed in the institutional ledger.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
 
-        <div className="text-center print:hidden">
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-slate-800">
-              Return to Login Portal
-            </Button>
-          </Link>
+        {/* Verification Guidance */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-white/40">
+            Having trouble? You can also scan the QR code located at the bottom-right corner of any physical or PDF certificate.
+          </p>
         </div>
       </div>
-    </div>
+
+      {/* Footer */}
+      <footer className="max-w-5xl mx-auto w-full py-4 text-center border-t border-white/10 text-white/40 text-xs">
+        <p>
+          AURORA — Academic Unified Review, Observation, Rating, and Assessment System
+        </p>
+        <p className="mt-1 text-[11px] text-white/30">
+          Partido State University • Goa, Camarines Sur, Philippines
+        </p>
+      </footer>
+    </main>
   );
 }
