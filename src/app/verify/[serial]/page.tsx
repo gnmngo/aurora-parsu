@@ -1,6 +1,6 @@
 /**
  * AURORA Certificate Verification Page
- * Phase 7 Production Hardened
+ * Institutional Document Verification
  *
  * Public (unauthenticated) page accessible at:
  *   /verify/[serial]

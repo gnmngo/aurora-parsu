@@ -120,7 +120,7 @@ export async function adviserApproveDocumentAction(
     });
   }
 
-  // 5. Record workflow transition history (Sprint 2G)
+  // 5. Record workflow transition history
   await recordWorkflowTransition(supabase, {
     projectId: doc.projects.id,
     fromStageId: null,
@@ -139,7 +139,7 @@ export async function adviserApproveDocumentAction(
 
 
 /**
- * Sprint 3: Coordinator releases the final verdict for a project.
+ * Coordinator releases the final verdict for a project.
  * Sets projects.final_verdict + projects.status, then emits
  * final_verdict_released notification to the student.
  *

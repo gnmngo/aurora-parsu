@@ -2,7 +2,6 @@
 
 /**
  * AURORA Centralized Notification Dispatcher
- * Sprint 2E
  *
  * Single function: emitNotification()
  * All notification inserts across AURORA must use this dispatcher.

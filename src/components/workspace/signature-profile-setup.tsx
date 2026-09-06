@@ -2,7 +2,7 @@
 
 /**
  * Signature Profile Setup Wizard
- * Sprint 2D — Verified Electronic Signature System
+ * Verified Electronic Signature System
  *
  * Shown to panelists who have not yet registered an official signature.
  * This is a one-time setup that creates their `signature_profiles` record.

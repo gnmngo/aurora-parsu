@@ -110,7 +110,7 @@ export async function updateAnnotationStatusAction(input: UpdateAnnotationStatus
 
 
 /**
- * Creates annotation reply + emits annotation_replied notification. Sprint 2E.
+ * Creates annotation reply + emits annotation_replied notification.
  * Non-blocking notification: reply succeeds even if notification fails.
  */
 export async function createAnnotationReplyAction(annotationId: string, content: string) {

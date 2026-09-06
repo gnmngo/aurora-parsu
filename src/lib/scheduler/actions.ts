@@ -262,7 +262,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     academic_year: currentAcademicYear()
   });
 
-  // 10. Emit defense_scheduled notifications to all participants (Sprint 2E)
+  // 10. Emit defense_scheduled notifications to all participants
   try {
     const { data: teamMembers } = await supabase
       .from("project_members")
@@ -556,7 +556,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     academic_year: currentAcademicYear()
   });
 
-  // 10. Emit defense_rescheduled notifications to all participants (Sprint 2E)
+  // 10. Emit defense_rescheduled notifications to all participants
   try {
     const studentProfileIdUpd = Array.isArray(project.students)
       ? (project.students[0] as { profile_id?: string })?.profile_id
@@ -594,7 +594,6 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
 /**
  * Cancels a defense schedule and notifies all participants.
  * Only coordinators or sys_admin can cancel a schedule.
- * Sprint 3: wires defense_cancelled notification.
  */
 export async function cancelDefenseScheduleAction(
   scheduleId: string,

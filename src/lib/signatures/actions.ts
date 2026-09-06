@@ -2,7 +2,6 @@
 
 /**
  * AURORA Verified Electronic Signature System — Server Actions
- * Sprint 2D
  *
  * Handles the complete signing workflow:
  * 1. Signature profile registration (one-time per panelist)

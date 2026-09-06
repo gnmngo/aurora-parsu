@@ -353,7 +353,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error(`Failed to update evaluation score sheet: ${updateError?.message}`);
   }
 
-  // 8. Create immutable digital_signatures record (Sprint 2D — non-blocking)
+  // 8. Create immutable digital_signatures record (non-blocking)
   try {
     const { error: sigErr } = await supabase
       .from("digital_signatures")
@@ -419,7 +419,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     },
   });
 
-  // 11. Record workflow history (Sprint 2G — non-blocking)
+  // 11. Record workflow history (non-blocking)
   await recordWorkflowTransition(supabase, {
     projectId: currentEval.project_id,
     fromStageId: currentEval.stage_id,
@@ -433,7 +433,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     metadata: { evaluationId: input.evaluationId, certificateSerial },
   });
 
-  // 12. Notify coordinator and student co-authors (Sprint 2E — centralized dispatcher, non-blocking)
+  // 12. Notify coordinator and student co-authors (centralized dispatcher, non-blocking)
   try {
     const { data: projectMeta } = await supabase
       .from("projects")

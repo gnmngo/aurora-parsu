@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * VerificationQRCode — Sprint 2F/10
+ * VerificationQRCode
  *
  * Generates a real QR code linking to /verify/{certificateSerial}
  * Uses the `qrcode` package to produce a data URL, displayed as an img.

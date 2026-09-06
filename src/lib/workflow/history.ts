@@ -1,6 +1,5 @@
 /**
  * AURORA Workflow History Service
- * Sprint 2G
  *
  * Provides functions to record immutable workflow stage transitions.
  * Every call to this module produces an INSERT-only record in
