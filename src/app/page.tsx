@@ -29,45 +29,79 @@ const features = [
   {
     icon: FileText,
     title: "Split-Screen Workspace",
-    description: "Read the manuscript PDF while grading or adding annotations side-by-side in a single, high-fidelity responsive workspace.",
+    description: "Review manuscript PDFs on the left while scoring rubrics on the right in a responsive dual-pane interface with draggable split ratio and toggleable view modes.",
   },
   {
     icon: MessageSquare,
-    title: "Anchored Annotations",
-    description: "Point-and-click coordinate highlighting with threaded comments, severity labels (major/critical), and compliance verification.",
+    title: "Google Docs-Style Highlighting",
+    description: "Highlight any text span directly on the PDF to trigger a floating comment pill, leaving persistent yellow overlays with percentage-based coordinates and threaded replies.",
+  },
+  {
+    icon: FileCheck,
+    title: "Adviser Endorsement Gate",
+    description: "Strict institutional separation of duties: Advisers conduct paperless consultations and hold the defense endorsement gate, strictly isolated from panelist grading.",
   },
   {
     icon: BarChart3,
-    title: "Consensus Analytics",
-    description: "Live dashboard tracking score deviations, median averages, consensus levels, and auto-computed grading verdicts.",
+    title: "Weighted Rubric Scoring",
+    description: "Database-driven criterion rubrics (0-100) with custom weights, passing thresholds, consensus mean calculation, and discrepancy alerts (>15 pts).",
   },
   {
     icon: Shield,
-    title: "Cryptographic Verification",
-    description: "Immutable audit trails tracking all workflow events with verified electronic signatures and public certificate checkers.",
+    title: "Cryptographic E-Signatures",
+    description: "Multi-mode digital signature canvas (Draw, Type, Upload) sealed with SHA-256 integrity hashes and locked permanently by PostgreSQL immutability triggers.",
+  },
+  {
+    icon: Award,
+    title: "Public Verification Portal",
+    description: "Public accreditation portal (/verify) with instant SHA-256 cryptographic replay and scannable QR codes for CHED, ISO, and registrar compliance.",
   },
 ];
 
 const faqs = [
   {
-    q: "How does the Adviser Approval Gate work?",
-    a: "Before any manuscript can be scheduled for a defense, the research adviser must review and sign off on the draft. If rejected, it returns to the student for modifications.",
+    q: "How does the Google Docs-style PDF highlighting work?",
+    a: "Reviewers can highlight any text passage directly inside the manuscript PDF. A floating [+ Add comment] button appears at the selection edge. Saving creates a persistent yellow highlight overlay mapped to relative percentage coordinates, ensuring exact text alignment across all devices and zoom levels.",
   },
   {
-    q: "Are the grading rubrics database-driven?",
-    a: "Yes. Coordinators can design custom grading rubrics dynamically. Different academic programs (e.g. BSIT vs. BSEd) can enforce completely different rubric sets.",
+    q: "What is the Adviser Consultation & Endorsement Gate?",
+    a: "To preserve academic integrity, research advisers mentor students through paperless PDF annotations but are strictly barred from scoring rubrics for their advisees. The defense scheduler is locked until the adviser explicitly endorses the manuscript ('Endorse for Defense' vs 'Request Revisions').",
   },
   {
-    q: "What is the consensus validation model?",
-    a: "If the standard deviation of scores submitted by panelists exceeds a predefined threshold (e.g., 15 points), the system triggers a discrepancy alert for arbitration.",
+    q: "How are defense evaluations cryptographically secured?",
+    a: "When a panelist submits their score sheet, they provide a digital e-signature (Draw, Type, or Upload). AURORA generates a deterministic SHA-256 payload hash, mints an official institutional serial (AURORA-YYYY-XXXXXX), and activates a PostgreSQL trigger (tr_evaluations_immutable) preventing any future edits.",
+  },
+  {
+    q: "How do external accreditors (CHED / ISO) verify certificates?",
+    a: "Anyone can navigate to the public verification portal (/verify) or scan the QR code printed on the official defense certificate. The system re-hashes the stored evaluation payload and displays a verifiable cryptographic audit certificate with evaluator signatures and timestamps.",
   },
 ];
 
 const roles = [
-  { title: "Student", desc: "Upload manuscripts, track defense schedules, and view feedback." },
-  { title: "Adviser", desc: "Approve manuscripts before scheduling, mentor students." },
-  { title: "Panelist", desc: "Evaluate defenses using rubrics and annotate PDFs." },
-  { title: "Coordinator", desc: "Manage workflow templates, schedule defenses, resolve conflicts." }
+  { 
+    title: "Student / Author", 
+    desc: "Uploads manuscript PDFs, views live yellow text highlights, submits threaded replies, marks feedback as 'Addressed', and downloads official certificates." 
+  },
+  { 
+    title: "Research Adviser", 
+    desc: "Mentors advisees paperlessly via PDF highlights. Holds the defense scheduling gate ('Endorse' vs 'Request Revisions'), with strict separation from panel grading." 
+  },
+  { 
+    title: "Defense Panelist", 
+    desc: "Evaluates manuscripts in the split-screen workspace, scores weighted criteria rubrics, enters panel remarks, and digitally signs the official evaluation." 
+  },
+  { 
+    title: "Research Coordinator", 
+    desc: "Configures college rubric templates, manages defense calendar schedules, assigns panel chairs and panelists, and audits score consensus deviations." 
+  },
+  { 
+    title: "College Dean", 
+    desc: "Monitors cross-departmental defense analytics, completion rates, and institutional compliance reports across all college academic programs." 
+  },
+  { 
+    title: "System Administrator", 
+    desc: "Manages user role assignments, institutional security policies, defense stage progression templates, and tamper-proof audit trail logs." 
+  }
 ];
 
 export default function HomePage() {
@@ -233,7 +267,7 @@ export default function HomePage() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-100px" }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             {features.map((feature) => (
               <motion.div
@@ -259,8 +293,8 @@ export default function HomePage() {
       <section id="workflow" className="py-24 border-y border-border bg-background">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center max-w-md mx-auto mb-16 space-y-2">
-            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Dynamic Defense Workflow</h2>
-            <p className="text-sm text-muted-foreground font-medium">Strict database-driven progression stages from proposal to archiving</p>
+            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Paperless Defense Workflow</h2>
+            <p className="text-sm text-muted-foreground font-medium">Stage-by-stage progression from submission to institutional verification</p>
           </div>
 
           <motion.div 
@@ -273,11 +307,11 @@ export default function HomePage() {
             <div className="absolute top-[28px] left-8 right-8 h-0.5 bg-border hidden md:block -z-10" />
             
             {[
-              { num: "01", step: "Manuscript Submit", desc: "Students upload PDF manuscript and select adviser." },
-              { num: "02", step: "Adviser Gate", desc: "Research adviser reviews and signs approval to schedule." },
-              { num: "03", step: "Panel Evaluation", desc: "Panelists review in split-screen and submit score rubrics." },
-              { num: "04", step: "Consensus Verdict", desc: "Coordinators run discrepancy audits and verify signatures." },
-              { num: "05", step: "Certificate Issue", desc: "Cryptographically hashed PDF certificates issued to students." }
+              { num: "01", step: "Manuscript Submit", desc: "Students upload PDF manuscript; versioning tree tracks iterative drafts." },
+              { num: "02", step: "Adviser Endorsement", desc: "Adviser annotates paperlessly and approves defense gate eligibility." },
+              { num: "03", step: "Defense Scheduling", desc: "Coordinators assign panel chair, panelists, schedule date, time, and venue." },
+              { num: "04", step: "Evaluation & Sign", desc: "Panelists score weighted rubrics, provide digital signature, and submit verdict." },
+              { num: "05", step: "Public Verification", desc: "Postgres trigger locks record; minted serial verified via QR code and /verify." }
             ].map((s, idx) => (
               <motion.div 
                 key={idx} 
@@ -302,7 +336,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center max-w-md mx-auto mb-16 space-y-2">
             <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Role-Based Access</h2>
-            <p className="text-sm text-muted-foreground font-medium">Four distinct permission levels driving the ecosystem</p>
+            <p className="text-sm text-muted-foreground font-medium">Six institutional roles enforcing academic separation of duties</p>
           </div>
 
           <motion.div 
