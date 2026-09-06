@@ -20,6 +20,9 @@ async function applyGrants() {
     "signature_profiles",
     "certificate_verifications",
     "project_score_cache",
+    "annotations",
+    "annotation_replies",
+    "annotation_history",
   ];
 
   for (const t of tables) {

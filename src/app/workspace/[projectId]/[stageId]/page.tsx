@@ -59,6 +59,11 @@ export default function WorkspacePage() {
   const isStudent =
     roles.includes("student") &&
     !roles.some((r: string) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
+  const currentUserRole: "student" | "adviser" | "panelist" | "coordinator" | "sys_admin" =
+    roles.includes("sys_admin") ? "sys_admin" :
+    roles.includes("coordinator") ? "coordinator" :
+    roles.includes("panelist") ? "panelist" :
+    roles.includes("adviser") ? "adviser" : "student";
   const backHref = isStudent ? "/dashboard/my-project" : isAdviser ? "/dashboard" : "/dashboard/defenses";
 
   const [mounted, setMounted] = useState(false);
@@ -377,6 +382,7 @@ export default function WorkspacePage() {
                   pdfUrl={pdfUrl}
                   projectId={projectId}
                   stageId={stageId}
+                  currentUserRole={currentUserRole}
                   onAnnotationChange={handleAnnotationChange}
                 />
               ) : (
@@ -468,6 +474,7 @@ export default function WorkspacePage() {
                   pdfUrl={pdfUrl}
                   projectId={projectId}
                   stageId={stageId}
+                  currentUserRole={currentUserRole}
                   onAnnotationChange={handleAnnotationChange}
                 />
               ) : (

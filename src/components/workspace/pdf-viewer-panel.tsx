@@ -15,6 +15,8 @@ import {
   Maximize2,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createAnnotationAction } from "@/lib/annotations/actions";
+import { InteractivePdfViewer } from "./interactive-pdf-viewer";
 
 interface PdfViewerPanelProps {
   title: string;
@@ -32,6 +35,7 @@ interface PdfViewerPanelProps {
   stageId: string;
   documentVersionId: string;
   pdfUrl: string;
+  currentUserRole?: "student" | "adviser" | "panelist" | "coordinator" | "sys_admin";
   onAnnotationChange?: () => void;
 }
 
@@ -41,8 +45,11 @@ export function PdfViewerPanel({
   stageId,
   documentVersionId,
   pdfUrl,
+  currentUserRole,
   onAnnotationChange,
 }: PdfViewerPanelProps) {
+  const [viewMode, setViewMode] = useState<"interactive" | "native">("interactive");
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [loadingAnnotations, setLoadingAnnotations] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -75,7 +82,7 @@ export function PdfViewerPanel({
           selected_text,
           coordinates,
           created_at,
-          profiles ( first_name, last_name )
+          profiles!created_by ( first_name, last_name )
         `)
         .eq("document_version_id", documentVersionId)
         .order("created_at", { ascending: false });
@@ -186,6 +193,40 @@ export function PdfViewerPanel({
       {/* Top Action Toolbar */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0 z-10">
         <div className="flex items-center gap-2">
+          {/* Mode Switcher: Google Docs Mode vs Native PDF */}
+          <div className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 mr-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("interactive")}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                viewMode === "interactive"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Google Docs-style text selection and inline highlighting"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <span className="hidden sm:inline">Docs Mode</span>
+              <span className="sm:hidden">Docs</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("native")}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                viewMode === "native"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Browser native PDF reader"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Native PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -193,7 +234,8 @@ export function PdfViewerPanel({
             onClick={() => setShowAddModal(true)}
           >
             <MessageSquarePlus className="h-3.5 w-3.5 text-primary" />
-            <span>Add Revision Remark</span>
+            <span className="hidden sm:inline">Add General Remark</span>
+            <span className="sm:hidden">Remark</span>
           </Button>
 
           <Button
@@ -203,7 +245,7 @@ export function PdfViewerPanel({
             onClick={() => setShowRemarksDrawer(!showRemarksDrawer)}
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            <span>Remarks</span>
+            <span className="hidden sm:inline">Remarks</span>
             <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold">
               {annotations.length}
             </Badge>
@@ -243,11 +285,27 @@ export function PdfViewerPanel({
       {/* Main PDF Viewer Container */}
       <div className="flex-1 min-h-0 relative bg-slate-100 dark:bg-slate-900/40">
         {pdfUrl ? (
-          <iframe
-            src={`${pdfUrl}#toolbar=1&navpanes=1&zoom=100`}
-            className="w-full h-full border-0"
-            title={title || "Manuscript PDF"}
-          />
+          viewMode === "interactive" ? (
+            <InteractivePdfViewer
+              pdfUrl={pdfUrl}
+              documentVersionId={documentVersionId}
+              projectId={projectId}
+              stageId={stageId}
+              currentUserRole={currentUserRole}
+              selectedAnnotationId={selectedAnnotationId}
+              onSelectAnnotation={setSelectedAnnotationId}
+              onAnnotationCreated={() => {
+                loadAnnotations();
+                onAnnotationChange?.();
+              }}
+            />
+          ) : (
+            <iframe
+              src={`${pdfUrl}#toolbar=1&navpanes=1&zoom=100`}
+              className="w-full h-full border-0"
+              title={title || "Manuscript PDF"}
+            />
+          )
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center p-6 text-muted-foreground">
             <AlertCircle className="h-10 w-10 text-muted-foreground/40" />
@@ -311,7 +369,18 @@ export function PdfViewerPanel({
                   return (
                     <div
                       key={ann.id}
-                      className="p-3 rounded-xl border border-border bg-card shadow-xs space-y-1.5 text-xs group relative hover:border-primary/40 transition-colors"
+                      onClick={() => {
+                        setSelectedAnnotationId(ann.id);
+                        if (viewMode !== "interactive") {
+                          setViewMode("interactive");
+                        }
+                      }}
+                      className={cn(
+                        "p-3 rounded-xl border bg-card shadow-xs space-y-1.5 text-xs group relative transition-colors cursor-pointer",
+                        selectedAnnotationId === ann.id
+                          ? "border-amber-500 ring-1 ring-amber-400/50 bg-amber-500/5"
+                          : "border-border hover:border-primary/40"
+                      )}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
@@ -333,7 +402,10 @@ export function PdfViewerPanel({
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteAnnotation(ann.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAnnotation(ann.id);
+                          }}
                           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-danger p-0.5 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
