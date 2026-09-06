@@ -20,17 +20,21 @@ export default function VerifyPortalPage() {
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = serialInput.trim().toUpperCase();
+    let clean = serialInput.trim().toUpperCase();
 
     if (!clean) {
       setError("Please enter a certificate serial number.");
       return;
     }
 
-    // Standard AURORA serial regex: AURORA-YYYY-XXXXXX
+    // Automatically prepend AURORA- if user entered only the year & serial (e.g. 2026-000052)
     if (!clean.startsWith("AURORA-")) {
-      setError('Serial number must start with "AURORA-" (e.g. AURORA-2026-000049)');
-      return;
+      if (/^\d{4}-\d+$/.test(clean)) {
+        clean = `AURORA-${clean}`;
+      } else {
+        setError('Serial number format should be AURORA-YYYY-XXXXXX (e.g. AURORA-2026-000052)');
+        return;
+      }
     }
 
     setError(null);
@@ -88,7 +92,7 @@ export default function VerifyPortalPage() {
                 <input
                   id="serial-input"
                   type="text"
-                  placeholder="e.g. AURORA-2026-000049"
+                  placeholder="e.g. AURORA-2026-000052"
                   value={serialInput}
                   onChange={(e) => {
                     setSerialInput(e.target.value);
@@ -96,6 +100,19 @@ export default function VerifyPortalPage() {
                   }}
                   className="w-full pl-11 pr-4 py-3.5 bg-slate-900/90 border border-white/15 rounded-xl text-white placeholder-white/30 font-mono text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase"
                 />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-[10px] text-white/40 uppercase font-semibold">Try sample:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSerialInput("AURORA-2026-000052");
+                    setError(null);
+                  }}
+                  className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded cursor-pointer transition-colors"
+                >
+                  AURORA-2026-000052
+                </button>
               </div>
               {error && (
                 <p className="text-xs text-rose-400 mt-2 font-medium">
