@@ -506,35 +506,52 @@ export function GradingPanel({
 
     loadAnnotations();
 
-    const channel = supabase
-      .channel(`workspace-annotations-grading-${documentVersionId}-${Date.now()}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "annotations",
-          filter: `document_version_id=eq.${documentVersionId}`,
-        },
-        () => {
-          loadAnnotations();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "annotation_replies",
-        },
-        () => {
-          loadAnnotations();
-        }
-      )
-      .subscribe();
+    let channel: any = null;
+    try {
+      const channelUnique = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const channelName = `workspace-annotations-grading-${documentVersionId}-${channelUnique}`;
+
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "annotations",
+            filter: `document_version_id=eq.${documentVersionId}`,
+          },
+          () => {
+            loadAnnotations();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "annotation_replies",
+          },
+          () => {
+            loadAnnotations();
+          }
+        );
+
+      channel.subscribe();
+    } catch (err) {
+      console.warn("[GradingPanel] Realtime subscription init error:", err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {
+          // ignore cleanup error
+        }
+      }
     };
   }, [documentVersionId, annotationRefreshKey]);
 

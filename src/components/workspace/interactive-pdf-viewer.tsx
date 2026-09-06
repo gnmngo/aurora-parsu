@@ -164,57 +164,83 @@ export function InteractivePdfViewer({
         setAnnotations(mapped);
 
         // Keep active annotation in sync
-        if (activeAnnotation) {
-          const refreshed = mapped.find((item: AnnotationItem) => item.id === activeAnnotation.id);
-          if (refreshed) setActiveAnnotation(refreshed);
-        }
+        setActiveAnnotation((prev) => {
+          if (!prev) return null;
+          return mapped.find((item: AnnotationItem) => item.id === prev.id) || prev;
+        });
       }
     } catch (err: unknown) {
       console.error("[InteractivePdfViewer] Error loading annotations:", err);
     } finally {
       setLoadingAnnotations(false);
     }
-  }, [documentVersionId, supabase, activeAnnotation]);
+  }, [documentVersionId, supabase]);
+
+  const onAnnotationCreatedRef = useRef(onAnnotationCreated);
+  useEffect(() => {
+    onAnnotationCreatedRef.current = onAnnotationCreated;
+  }, [onAnnotationCreated]);
+
+  const fetchAnnotationsRef = useRef(fetchAnnotations);
+  useEffect(() => {
+    fetchAnnotationsRef.current = fetchAnnotations;
+  }, [fetchAnnotations]);
 
   // Sync on mount & Realtime subscription
   useEffect(() => {
-    fetchAnnotations();
+    fetchAnnotationsRef.current?.();
 
     if (!documentVersionId) return;
 
-    const channelName = `interactive-pdf-annotations-${documentVersionId}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "annotations",
-          filter: `document_version_id=eq.${documentVersionId}`,
-        },
-        () => {
-          fetchAnnotations();
-          onAnnotationCreated?.();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "annotation_replies",
-        },
-        () => {
-          fetchAnnotations();
-        }
-      )
-      .subscribe();
+    let channel: any = null;
+    try {
+      const channelUnique = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const channelName = `interactive-pdf-annotations-${documentVersionId}-${channelUnique}`;
+
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "annotations",
+            filter: `document_version_id=eq.${documentVersionId}`,
+          },
+          () => {
+            fetchAnnotationsRef.current?.();
+            onAnnotationCreatedRef.current?.();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "annotation_replies",
+          },
+          () => {
+            fetchAnnotationsRef.current?.();
+          }
+        );
+
+      channel.subscribe();
+    } catch (err) {
+      console.warn("[InteractivePdfViewer] Realtime subscription init error:", err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {
+          // ignore cleanup error
+        }
+      }
     };
-  }, [documentVersionId, fetchAnnotations, onAnnotationCreated, supabase]);
+  }, [documentVersionId, supabase]);
 
   // External selection syncing
   useEffect(() => {
