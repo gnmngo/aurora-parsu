@@ -157,7 +157,6 @@ export interface CreateAnnotationInput {
   severity?: "info" | "minor" | "major" | "critical";
   selectedText?: string;
   coordinates?: { left: number; top: number; width: number; height: number };
-  boundingBoxes?: any;
   type?: string;
 }
 
@@ -206,7 +205,6 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
       severity: input.severity || "minor",
       status: "open",
       coordinates: input.coordinates || { left: 10, top: 10, width: 80, height: 5 },
-      bounding_boxes: input.boundingBoxes || null,
       created_by: user.id,
     })
     .select()
@@ -289,7 +287,7 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "faculty",
-    action_type: "INSERT",
+    action_type: "CREATE",
     module: "revisions",
     entity_type: "annotations",
     entity_id: newAnnotation.id,
