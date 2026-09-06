@@ -115,27 +115,53 @@ export async function saveEvaluationDraftAction(input: SaveEvaluationDraftInput)
     computedScore = input.totalScore;
   }
 
-  // 5. Upsert draft evaluation
-  const { data: evalData, error: evalError } = await supabase
-    .from("evaluations")
-    .upsert({
-      project_id: input.projectId,
-      stage_id: input.stageId,
-      panelist_id: userId,
-      rubric_template_id: input.rubricTemplateId || null,
-      status: "draft",
-      scores: input.scores,
-      total_score: computedScore,
-      weighted_score: computedScore,
-      verdict_code: input.verdictCode,
-      panel_notes: input.panelNotes,
-      recommendations: input.recommendations,
-      version: version,
-    }, {
-      onConflict: "project_id, stage_id, panelist_id, version"
-    })
-    .select()
-    .single();
+  // 5. Save draft evaluation — update if exists, insert if new
+  const evalPayload = {
+    project_id: input.projectId,
+    stage_id: input.stageId,
+    panelist_id: userId,
+    rubric_template_id: input.rubricTemplateId || null,
+    status: "draft" as const,
+    scores: input.scores,
+    total_score: computedScore,
+    weighted_score: computedScore,
+    verdict_code: input.verdictCode,
+    panel_notes: input.panelNotes,
+    recommendations: input.recommendations,
+    version: version,
+  };
+
+  let evalData: any = null;
+  let evalError: any = null;
+
+  if (existingEval?.id) {
+    // Update the existing draft record
+    const { data, error } = await supabase
+      .from("evaluations")
+      .update({
+        rubric_template_id: evalPayload.rubric_template_id,
+        scores: evalPayload.scores,
+        total_score: evalPayload.total_score,
+        weighted_score: evalPayload.weighted_score,
+        verdict_code: evalPayload.verdict_code,
+        panel_notes: evalPayload.panel_notes,
+        recommendations: evalPayload.recommendations,
+      })
+      .eq("id", existingEval.id)
+      .select()
+      .single();
+    evalData = data;
+    evalError = error;
+  } else {
+    // Insert a new draft record
+    const { data, error } = await supabase
+      .from("evaluations")
+      .insert(evalPayload)
+      .select()
+      .single();
+    evalData = data;
+    evalError = error;
+  }
 
   if (evalError || !evalData) {
     throw new Error(`Failed to save evaluation draft: ${evalError?.message}`);
