@@ -28,6 +28,7 @@ import {
   Award,
   Building2,
 } from "lucide-react";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { PrintButton } from "./print-button";
 
 interface VerifyPageProps {
@@ -143,25 +144,30 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
       {/* Top Header Navigation */}
       <div className="w-full max-w-2xl mx-auto flex items-center justify-between mb-6 print:hidden">
         <Link
-          href="/verify"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10"
+          href="/"
+          className="hover:opacity-90 transition-opacity"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Search Another Certificate</span>
+          <AuroraLogo size="sm" showText={true} textColor="text-white" subtext="Partido State University" />
         </Link>
 
-        {isValid && <PrintButton />}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/verify"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Search Another</span>
+          </Link>
+          {isValid && <PrintButton />}
+        </div>
       </div>
 
       <div className="w-full max-w-2xl mx-auto my-auto print:max-w-none print:w-full">
         {/* Institutional Branding */}
-        <div className="text-center mb-6 print:mb-4">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-1.5 mb-3 print:hidden">
-            <GraduationCap className="h-4 w-4 text-emerald-400" />
-            <span className="text-[11px] font-bold text-white/90 tracking-widest uppercase">
-              Partido State University
-            </span>
-          </div>
+        <div className="text-center mb-6 print:mb-4 flex flex-col items-center">
+          <Link href="/" className="mb-3 hover:scale-105 transition-transform print:hidden">
+            <AuroraLogo size="lg" showText={false} />
+          </Link>
           <h1 className="text-2xl sm:text-3xl font-black text-white print:text-slate-900">
             Partido State University
           </h1>

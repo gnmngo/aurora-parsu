@@ -10,8 +10,8 @@ import {
   FileCheck,
   Lock,
   QrCode,
-  GraduationCap,
 } from "lucide-react";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
 
 export default function VerifyPortalPage() {
   const router = useRouter();
@@ -41,19 +41,9 @@ export default function VerifyPortalPage() {
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-8">
       {/* Top Brand Bar */}
       <header className="max-w-5xl mx-auto w-full flex items-center justify-between py-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <span className="text-sm font-black tracking-wider uppercase text-white block">
-              AURORA
-            </span>
-            <span className="text-[10px] text-white/50 block tracking-wider uppercase">
-              Partido State University
-            </span>
-          </div>
-        </div>
+        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <AuroraLogo size="md" showText={true} textColor="text-white" subtext="Partido State University" />
+        </Link>
 
         <Link
           href="/login"
