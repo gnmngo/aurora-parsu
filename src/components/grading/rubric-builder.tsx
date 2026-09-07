@@ -1,4 +1,3 @@
-/* eslint-disable */  
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,25 +13,59 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sliders, Plus, Trash } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Sliders, Plus, Trash2, CheckCircle2, AlertCircle, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { createRubricAction, updateRubricAction } from "@/lib/rubrics/actions";
 
-export function RubricBuilder({ 
-  onRubricCreated, 
-  projectId 
-}: { 
-  onRubricCreated: () => void; 
+export interface RubricCriterionItem {
+  id: string;
+  name: string;
+  weight: number;
+}
+
+export interface RubricTemplateModel {
+  id?: string;
+  project_id?: string;
+  title: string;
+  criteria: RubricCriterionItem[];
+  passing_score?: number;
+  excellent_score?: number;
+  target_compliance_rate?: number;
+  min_compliance_rate?: number;
+  max_major_unresolved?: number;
+}
+
+export interface RubricEditorDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  rubric?: RubricTemplateModel | null;
   projectId?: string;
-}) {
-  const [open, setOpen] = useState(false);
+  onSaved?: (savedRubric: any) => void;
+  triggerButton?: React.ReactNode;
+}
+
+export function RubricEditorDialog({
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  rubric,
+  projectId,
+  onSaved,
+  triggerButton,
+}: RubricEditorDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
+
   const [projects, setProjects] = useState<any[]>([]);
-  const [selectedProject, setSelectedProject] = useState(projectId || "");
-  const [title, setTitle] = useState("Default Rubric");
-  const [criteria, setCriteria] = useState<any[]>([
-    { id: "c1", name: "Content Quality", weight: 40 },
-    { id: "c2", name: "Technical Merit", weight: 30 },
-    { id: "c3", name: "Presentation", weight: 20 },
-    { id: "c4", name: "Q&A", weight: 10 }
+  const [selectedProject, setSelectedProject] = useState(projectId || rubric?.project_id || "");
+  const [title, setTitle] = useState("Defense Rubric");
+  const [criteria, setCriteria] = useState<RubricCriterionItem[]>([
+    { id: "c1", name: "Technical Rigor & Architecture", weight: 35 },
+    { id: "c2", name: "Research Methodology & Execution", weight: 30 },
+    { id: "c3", name: "Presentation & Manuscript Quality", weight: 20 },
+    { id: "c4", name: "Defense Mastery & Response to Inquiries", weight: 15 },
   ]);
   const [passingScore, setPassingScore] = useState(75);
   const [excellentScore, setExcellentScore] = useState(85);
@@ -43,12 +76,49 @@ export function RubricBuilder({
 
   const supabase = createClient();
 
+  // Populate when rubric or open state changes
   useEffect(() => {
-    if (projectId) {
-      setSelectedProject(projectId);
-    }
-  }, [projectId]);
+    if (rubric) {
+      setTitle(rubric.title || "Custom Rubric");
+      if (rubric.project_id) {
+        setSelectedProject(rubric.project_id);
+      } else if (projectId) {
+        setSelectedProject(projectId);
+      }
 
+      if (Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
+        setCriteria(
+          rubric.criteria.map((c, idx) => ({
+            id: c.id || `crit_${Date.now()}_${idx}`,
+            name: c.name || "",
+            weight: Number(c.weight || 0),
+          }))
+        );
+      }
+      if (rubric.passing_score !== undefined) setPassingScore(Number(rubric.passing_score));
+      if (rubric.excellent_score !== undefined) setExcellentScore(Number(rubric.excellent_score));
+      if (rubric.target_compliance_rate !== undefined) setTargetCompliance(Number(rubric.target_compliance_rate));
+      if (rubric.min_compliance_rate !== undefined) setMinCompliance(Number(rubric.min_compliance_rate));
+      if (rubric.max_major_unresolved !== undefined) setMaxMajor(Number(rubric.max_major_unresolved));
+    } else {
+      // Default reset
+      if (projectId) setSelectedProject(projectId);
+      setTitle("Project Defense Rubric");
+      setCriteria([
+        { id: "c1", name: "Technical Rigor & Architecture", weight: 35 },
+        { id: "c2", name: "Research Methodology & Execution", weight: 30 },
+        { id: "c3", name: "Presentation & Manuscript Quality", weight: 20 },
+        { id: "c4", name: "Defense Mastery & Response to Inquiries", weight: 15 },
+      ]);
+      setPassingScore(75);
+      setExcellentScore(85);
+      setTargetCompliance(90);
+      setMinCompliance(70);
+      setMaxMajor(2);
+    }
+  }, [rubric, projectId, open]);
+
+  // Load project list if needed
   useEffect(() => {
     if (!open) return;
 
@@ -61,21 +131,26 @@ export function RubricBuilder({
         if (error) throw error;
         if (data) {
           setProjects(data);
-          if (!projectId && data.length > 0) {
-            setSelectedProject((prev) => prev || data[0].id);
+          if (!selectedProject && data.length > 0) {
+            setSelectedProject(data[0].id);
           }
         }
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Unknown error";
         console.error("Error loading projects:", err);
-        toast.error(`Failed to load projects: ${message}`);
       }
     }
-    loadProjects();
-  }, [open, supabase, projectId]);
+
+    if (!selectedProject || projects.length === 0) {
+      loadProjects();
+    }
+  }, [open, supabase, selectedProject, projects.length]);
+
+  const totalWeight = criteria.reduce((sum, c) => sum + Number(c.weight || 0), 0);
+  const isWeightValid = totalWeight >= 99.9 && totalWeight <= 100.1;
+  const remainingWeight = +(100 - totalWeight).toFixed(1);
 
   const addCriterion = () => {
-    const nextId = `c${criteria.length + 1}`;
+    const nextId = `c_${Date.now()}_${criteria.length + 1}`;
     setCriteria([...criteria, { id: nextId, name: "", weight: 0 }]);
   };
 
@@ -87,60 +162,98 @@ export function RubricBuilder({
     setCriteria(criteria.filter((_, i) => i !== index));
   };
 
-  const updateCriterion = (index: number, key: string, val: any) => {
-    const newCriteria = [...criteria];
-    newCriteria[index] = { ...newCriteria[index], [key]: val };
-    setCriteria(newCriteria);
+  const updateCriterion = (index: number, field: "name" | "weight", val: string | number) => {
+    const updated = [...criteria];
+    if (field === "name") {
+      updated[index] = { ...updated[index], name: String(val) };
+    } else {
+      updated[index] = { ...updated[index], weight: Number(val) };
+    }
+    setCriteria(updated);
+  };
+
+  const handleAutoBalance = () => {
+    if (criteria.length === 0) return;
+    const baseWeight = Math.floor(100 / criteria.length);
+    const remainder = 100 - baseWeight * criteria.length;
+    const balanced = criteria.map((c, idx) => ({
+      ...c,
+      weight: idx === 0 ? baseWeight + remainder : baseWeight,
+    }));
+    setCriteria(balanced);
+    toast.info(`Weights balanced across ${criteria.length} criteria.`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedProject) {
-      toast.error("Please select a project.");
+    if (!selectedProject && !rubric?.id) {
+      toast.error("Please select a research project.");
       return;
     }
 
-    const totalWeight = criteria.reduce((sum, c) => sum + Number(c.weight || 0), 0);
-    if (totalWeight < 99.90 || totalWeight > 100.10) {
-      toast.error(`Total weight must equal 100%. Current total is ${totalWeight}%`);
+    if (!title.trim()) {
+      toast.error("Please provide a rubric title.");
+      return;
+    }
+
+    // Validate non-empty criterion names
+    for (let i = 0; i < criteria.length; i++) {
+      if (!criteria[i].name.trim()) {
+        toast.error(`Criterion #${i + 1} cannot have an empty name.`);
+        return;
+      }
+    }
+
+    if (!isWeightValid) {
+      toast.error(
+        `Total criteria weight must sum to 100%. Currently: ${totalWeight.toFixed(1)}% (${
+          remainingWeight > 0 ? `${remainingWeight}% remaining` : `${Math.abs(remainingWeight)}% over`
+        })`
+      );
       return;
     }
 
     setSubmitting(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const userId = user?.id;
-      if (!userId) {
-        throw new Error("You must be logged in to create a rubric.");
+      let savedResult: any = null;
+
+      if (rubric?.id) {
+        // Edit / Customize Existing Rubric
+        savedResult = await updateRubricAction({
+          templateId: rubric.id,
+          title: title.trim(),
+          criteria,
+          passingScore: Number(passingScore),
+          excellentScore: Number(excellentScore),
+          targetComplianceRate: Number(targetCompliance),
+          minComplianceRate: Number(minCompliance),
+          maxMajorUnresolved: Number(maxMajor),
+        });
+        toast.success("Rubric criteria and settings updated successfully!");
+      } else {
+        // Create New Rubric Template
+        savedResult = await createRubricAction({
+          projectId: selectedProject,
+          title: title.trim(),
+          criteria,
+          passingScore: Number(passingScore),
+          excellentScore: Number(excellentScore),
+          targetComplianceRate: Number(targetCompliance),
+          minComplianceRate: Number(minCompliance),
+          maxMajorUnresolved: Number(maxMajor),
+        });
+        toast.success("Custom rubric created and published successfully!");
       }
 
-      const { error } = await supabase.from("rubric_templates").insert({
-        project_id: selectedProject,
-        title: title.trim(),
-        criteria: criteria.map((c) => ({
-          id: c.id,
-          name: c.name.trim(),
-          weight: Number(c.weight),
-        })),
-        passing_score: Number(passingScore),
-        excellent_score: Number(excellentScore),
-        target_compliance_rate: Number(targetCompliance),
-        min_compliance_rate: Number(minCompliance),
-        max_major_unresolved: Number(maxMajor),
-        created_by: userId,
-      });
-
-      if (error) throw error;
-
-      toast.success("Rubric created and activated successfully!");
       setOpen(false);
-      onRubricCreated();
-    } catch (err: any) {
+      if (onSaved) {
+        onSaved(savedResult);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save rubric.";
       console.error(err);
-      toast.error(`Error saving rubric: ${err.message}`);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -148,154 +261,291 @@ export function RubricBuilder({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Sliders className="mr-1.5 h-4 w-4" />
-          Create Rubric
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+      {triggerButton ? (
+        <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="gap-1.5 h-8">
+            <Sliders className="h-4 w-4" />
+            {rubric?.id ? "Customize Criteria" : "Create Rubric"}
+          </Button>
+        </DialogTrigger>
+      ) : null}
+
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Configure Custom Project Rubric</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <Sliders className="h-5 w-5 text-primary" />
+            {rubric?.id ? "Customize Rubric Criteria" : "Configure Custom Rubric Template"}
+          </DialogTitle>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <Label htmlFor="project">Select Project</Label>
-            <select
-              id="project"
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              disabled={!!projectId}
-              className="w-full rounded-xl border border-border bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-75 disabled:cursor-not-allowed"
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-            {projects.length === 0 && (
-              <p className="text-xs text-danger">No projects found. Create a project first.</p>
-            )}
-          </div>
+          {/* Project selector if creating new without fixed projectId */}
+          {!rubric?.id && !projectId && (
+            <div className="space-y-1">
+              <Label htmlFor="rubric-project" className="text-xs font-semibold">
+                Associated Research Project
+              </Label>
+              <select
+                id="rubric-project"
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="w-full rounded-xl border border-border bg-card p-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+                required
+              >
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="space-y-1">
-            <Label htmlFor="rubric-title">Rubric Title</Label>
+            <Label htmlFor="rubric-title" className="text-xs font-semibold">
+              Rubric Title
+            </Label>
             <Input
               id="rubric-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Proposal Defense Rubric"
+              className="text-xs"
               required
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Grading Criteria & Weights (Must sum to 100%)</Label>
-              <Button type="button" size="sm" variant="ghost" onClick={addCriterion} className="h-8 px-2 text-xs">
-                <Plus className="mr-1 h-3.5 w-3.5" /> Add Row
-              </Button>
+          {/* Criteria Management Header */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between pb-1 border-b border-border/50">
+              <div>
+                <Label className="text-xs font-bold text-foreground">
+                  Grading Criteria &amp; Weights
+                </Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Customize criteria names and adjust weights to total 100%.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleAutoBalance}
+                  className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+                  title="Evenly distribute 100% across all criteria"
+                >
+                  <Wand2 className="h-3 w-3" /> Auto Balance
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addCriterion}
+                  className="h-7 px-2.5 text-[10px] gap-1 font-semibold"
+                >
+                  <Plus className="h-3 w-3" /> Add Criterion
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Total Weight Status Indicator */}
+            <div
+              className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border ${
+                isWeightValid
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-800 dark:text-emerald-300"
+                  : "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-300"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                {isWeightValid ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                )}
+                <span>
+                  {isWeightValid
+                    ? "Weight allocation valid (100%)"
+                    : remainingWeight > 0
+                    ? `Allocation incomplete: ${remainingWeight}% remaining`
+                    : `Over allocated: ${Math.abs(remainingWeight)}% excess`}
+                </span>
+              </div>
+              <Badge
+                variant={isWeightValid ? "success" : "warning"}
+                className="text-[10px] font-extrabold font-mono"
+              >
+                {totalWeight.toFixed(1)}% / 100%
+              </Badge>
+            </div>
+
+            {/* Criteria rows */}
+            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
               {criteria.map((c, idx) => (
-                <div key={c.id} className="flex gap-2 items-center">
+                <div
+                  key={c.id || idx}
+                  className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border border-border/70 hover:border-border transition-colors"
+                >
+                  <span className="text-[10px] font-bold text-muted-foreground w-4 text-center">
+                    {idx + 1}
+                  </span>
                   <Input
                     value={c.name}
                     onChange={(e) => updateCriterion(idx, "name", e.target.value)}
-                    placeholder="Criterion Name"
-                    className="flex-1 text-sm"
+                    placeholder="Criterion name (e.g., Technical Depth)"
+                    className="flex-1 text-xs h-8"
                     required
                   />
-                  <div className="flex items-center gap-1.5 w-24">
+                  <div className="flex items-center gap-1 w-20">
                     <Input
                       type="number"
+                      min={1}
+                      max={100}
                       value={c.weight || ""}
-                      onChange={(e) => updateCriterion(idx, "weight", Number(e.target.value))}
-                      placeholder="Weight"
-                      className="text-center text-sm"
+                      onChange={(e) => updateCriterion(idx, "weight", e.target.value)}
+                      placeholder="0"
+                      className="text-center text-xs h-8 font-bold"
                       required
                     />
-                    <span className="text-xs text-muted-foreground">%</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">%</span>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => removeCriterion(idx)}
-                    className="h-8 w-8 text-danger hover:bg-danger/10 hover:text-danger"
+                    disabled={criteria.length <= 1}
+                    className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                    title="Remove criterion"
                   >
-                    <Trash className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Configurable Thresholds */}
           <div className="border-t border-border pt-3 space-y-2">
-            <Label>Configurable Readiness Thresholds</Label>
+            <Label className="text-xs font-bold text-foreground">
+              Configurable Passing &amp; Quality Thresholds
+            </Label>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="space-y-1">
-                <Label htmlFor="pass-score">Passing Grade (0-100)</Label>
+                <Label htmlFor="pass-score" className="text-[10px] text-muted-foreground font-semibold">
+                  Passing Score (0-100)
+                </Label>
                 <Input
                   type="number"
                   id="pass-score"
+                  min={0}
+                  max={100}
                   value={passingScore}
                   onChange={(e) => setPassingScore(Number(e.target.value))}
+                  className="text-xs h-8"
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="excel-score">Excellent Grade (0-100)</Label>
+                <Label htmlFor="excel-score" className="text-[10px] text-muted-foreground font-semibold">
+                  Excellent Score (0-100)
+                </Label>
                 <Input
                   type="number"
                   id="excel-score"
+                  min={0}
+                  max={100}
                   value={excellentScore}
                   onChange={(e) => setExcellentScore(Number(e.target.value))}
+                  className="text-xs h-8"
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="min-comp">Min Compliance Rate (%)</Label>
+                <Label htmlFor="min-comp" className="text-[10px] text-muted-foreground font-semibold">
+                  Min Compliance Rate (%)
+                </Label>
                 <Input
                   type="number"
                   id="min-comp"
+                  min={0}
+                  max={100}
                   value={minCompliance}
                   onChange={(e) => setMinCompliance(Number(e.target.value))}
+                  className="text-xs h-8"
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="target-comp">Target Compliance Rate (%)</Label>
+                <Label htmlFor="target-comp" className="text-[10px] text-muted-foreground font-semibold">
+                  Target Compliance Rate (%)
+                </Label>
                 <Input
                   type="number"
                   id="target-comp"
+                  min={0}
+                  max={100}
                   value={targetCompliance}
                   onChange={(e) => setTargetCompliance(Number(e.target.value))}
+                  className="text-xs h-8"
                 />
               </div>
               <div className="space-y-1 col-span-2">
-                <Label htmlFor="max-maj">Max Major Unresolved Comments allowed for "Almost Ready"</Label>
+                <Label htmlFor="max-maj" className="text-[10px] text-muted-foreground font-semibold">
+                  Max Major Unresolved Comments allowed for "Almost Ready"
+                </Label>
                 <Input
                   type="number"
                   id="max-maj"
+                  min={0}
+                  max={10}
                   value={maxMajor}
                   onChange={(e) => setMaxMajor(Number(e.target.value))}
+                  className="text-xs h-8"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" size="sm" className="h-8 text-xs">
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={submitting || projects.length === 0}>
-              {submitting ? "Saving..." : "Save Rubric"}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={submitting || !isWeightValid}
+              className="h-8 text-xs font-semibold gap-1.5"
+            >
+              {submitting ? "Saving Rubric..." : rubric?.id ? "Update Criteria" : "Create Rubric"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Keep RubricBuilder export for backward compatibility with Submissions page
+export function RubricBuilder({
+  onRubricCreated,
+  projectId,
+}: {
+  onRubricCreated: () => void;
+  projectId?: string;
+}) {
+  return (
+    <RubricEditorDialog
+      projectId={projectId}
+      onSaved={() => onRubricCreated()}
+      triggerButton={
+        <Button size="sm" variant="outline" className="gap-1.5 h-8">
+          <Sliders className="h-4 w-4" />
+          Create Rubric
+        </Button>
+      }
+    />
   );
 }

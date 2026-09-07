@@ -33,7 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { RubricBuilder } from "@/components/grading/rubric-builder";
+import { RubricBuilder, RubricEditorDialog } from "@/components/grading/rubric-builder";
 import { computeWeightedScore, deriveScoreLabel } from "@/lib/rubric/scoring";
 import { SignatureDialog } from "@/components/workspace/signature-dialog";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
@@ -1294,19 +1294,43 @@ export function GradingPanel({
           <div className="space-y-5 pt-1">
             {/* Status bar */}
             <div className="flex items-center justify-between pb-2 border-b border-border/40">
-              <span className="text-xs text-muted-foreground font-medium">Evaluation Status</span>
-              {evalStatus === "submitted" ? (
-                <Badge variant="success" className="gap-1 px-2.5 py-0.5 text-[10px]">
-                  <Check className="h-3 w-3" /> Submitted
-                </Badge>
-              ) : evalStatus === "draft" ? (
-                <Badge variant="warning" className="gap-1 px-2.5 py-0.5 text-[10px]">
-                  <Clock className="h-3 w-3" /> Draft
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-muted-foreground px-2.5 py-0.5 text-[10px]">
-                  Unevaluated
-                </Badge>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Evaluation Status:</span>
+                {evalStatus === "submitted" ? (
+                  <Badge variant="success" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                    <Check className="h-3 w-3" /> Submitted
+                  </Badge>
+                ) : evalStatus === "draft" ? (
+                  <Badge variant="warning" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                    <Clock className="h-3 w-3" /> Draft
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground px-2.5 py-0.5 text-[10px]">
+                    Unevaluated
+                  </Badge>
+                )}
+              </div>
+
+              {/* Rubric Customizer Button (available when evaluation is not submitted) */}
+              {evalStatus !== "submitted" && (
+                <RubricEditorDialog
+                  rubric={rubricTemplate}
+                  projectId={projectId}
+                  onSaved={(updated) => {
+                    setRubricTemplate(updated);
+                    toast.success("Rubric criteria updated! You can now grade with the updated criteria.");
+                  }}
+                  triggerButton={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[10px] gap-1 font-semibold text-primary hover:text-primary hover:bg-primary/5"
+                    >
+                      <Sliders className="h-3 w-3" /> Customize Criteria
+                    </Button>
+                  }
+                />
               )}
             </div>
 

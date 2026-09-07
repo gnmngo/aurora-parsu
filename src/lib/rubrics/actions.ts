@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
+import { validateCriteriaWeights } from "@/lib/rubric/scoring";
 
 /** Helper to authorize coordinator/sys_admin roles using secure getUser() */
-async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
+/** Helper to authorize coordinator/sys_admin/panelist roles using secure getUser() */
+async function authorizeRubricManager(supabase: SupabaseClient, allowPanelist = false) {
   // Use getUser() which validates JWT with Supabase Auth server (not just cookie)
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
@@ -23,10 +25,15 @@ async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
     return r?.code as string | undefined;
   }).filter(Boolean) ?? [];
 
-  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
+  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin") || (allowPanelist && codes.includes("panelist"));
   if (!isAuthorized) {
-    throw new Error("Permission denied. Only coordinators can manage rubrics.");
+    throw new Error("Permission denied. Only defense committee members or coordinators can manage rubrics.");
   }
+  return { user, roles: codes };
+}
+
+async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
+  const { user } = await authorizeRubricManager(supabase, false);
   return user;
 }
 
@@ -233,3 +240,203 @@ export async function deleteRubricAction(templateId: string) {
   await logAudit(supabase, user, "DELETE", templateId, `Deleted rubric template`, { template_id: templateId }, null);
   return { softDeleted: false };
 }
+
+export interface RubricCriterionInput {
+  id?: string;
+  name: string;
+  weight: number;
+}
+
+export interface CreateRubricInput {
+  projectId: string;
+  title: string;
+  criteria: RubricCriterionInput[];
+  passingScore?: number;
+  excellentScore?: number;
+  targetComplianceRate?: number;
+  minComplianceRate?: number;
+  maxMajorUnresolved?: number;
+}
+
+export async function createRubricAction(input: CreateRubricInput) {
+  const supabase = await createClient();
+  const { user } = await authorizeRubricManager(supabase, true);
+
+  if (!input.projectId) {
+    throw new Error("Project ID is required to associate rubric template.");
+  }
+  if (!input.title?.trim()) {
+    throw new Error("Rubric title is required.");
+  }
+  if (!input.criteria || input.criteria.length === 0) {
+    throw new Error("At least one grading criterion is required.");
+  }
+
+  // Ensure criteria names are non-empty
+  const sanitizedCriteria = input.criteria.map((c, idx) => {
+    const name = c.name?.trim();
+    if (!name) {
+      throw new Error(`Criterion #${idx + 1} must have a non-empty name.`);
+    }
+    const weight = Number(c.weight);
+    if (isNaN(weight) || weight <= 0) {
+      throw new Error(`Criterion "${name}" must have a positive weight.`);
+    }
+    return {
+      id: c.id?.trim() || `c_${Date.now()}_${idx}`,
+      name,
+      weight,
+    };
+  });
+
+  // Strict 100% weight validation
+  const validation = validateCriteriaWeights(sanitizedCriteria);
+  if (!validation.valid) {
+    throw new Error(
+      `Criteria weights must total exactly 100%. Current total is ${validation.total.toFixed(1)}%.`
+    );
+  }
+
+  const { data: created, error: insertErr } = await supabase
+    .from("rubric_templates")
+    .insert({
+      project_id: input.projectId,
+      title: input.title.trim(),
+      criteria: sanitizedCriteria,
+      passing_score: input.passingScore ?? 75,
+      excellent_score: input.excellentScore ?? 85,
+      target_compliance_rate: input.targetComplianceRate ?? 90,
+      min_compliance_rate: input.minComplianceRate ?? 70,
+      max_major_unresolved: input.maxMajorUnresolved ?? 2,
+      created_by: user.id,
+      is_published: true,
+      is_active: true,
+      is_archived: false,
+      version: 1,
+    })
+    .select()
+    .single();
+
+  if (insertErr || !created) {
+    throw new Error(`Failed to create rubric template: ${insertErr?.message || "Unknown error"}`);
+  }
+
+  await logAudit(
+    supabase,
+    user,
+    "CREATE",
+    created.id,
+    `Created customizable rubric template "${created.title}" with ${sanitizedCriteria.length} criteria`,
+    null,
+    created
+  );
+
+  return created;
+}
+
+export interface UpdateRubricInput {
+  templateId: string;
+  title?: string;
+  criteria: RubricCriterionInput[];
+  passingScore?: number;
+  excellentScore?: number;
+  targetComplianceRate?: number;
+  minComplianceRate?: number;
+  maxMajorUnresolved?: number;
+}
+
+export async function updateRubricAction(input: UpdateRubricInput) {
+  const supabase = await createClient();
+  const { user } = await authorizeRubricManager(supabase, true);
+
+  if (!input.templateId) {
+    throw new Error("Template ID is required to update rubric.");
+  }
+  if (!input.criteria || input.criteria.length === 0) {
+    throw new Error("At least one grading criterion is required.");
+  }
+
+  // Fetch current rubric
+  const { data: existing, error: fetchErr } = await supabase
+    .from("rubric_templates")
+    .select("*")
+    .eq("id", input.templateId)
+    .single();
+
+  if (fetchErr || !existing) {
+    throw new Error("Rubric template not found.");
+  }
+
+  // Sanitize and validate criteria
+  const sanitizedCriteria = input.criteria.map((c, idx) => {
+    const name = c.name?.trim();
+    if (!name) {
+      throw new Error(`Criterion #${idx + 1} must have a non-empty name.`);
+    }
+    const weight = Number(c.weight);
+    if (isNaN(weight) || weight <= 0) {
+      throw new Error(`Criterion "${name}" must have a positive weight.`);
+    }
+    return {
+      id: c.id?.trim() || `c_${Date.now()}_${idx}`,
+      name,
+      weight,
+    };
+  });
+
+  // Strict 100% weight check
+  const validation = validateCriteriaWeights(sanitizedCriteria);
+  if (!validation.valid) {
+    throw new Error(
+      `Criteria weights must total exactly 100%. Current total is ${validation.total.toFixed(1)}%.`
+    );
+  }
+
+  const updatePayload: Record<string, any> = {
+    criteria: sanitizedCriteria,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.title?.trim()) {
+    updatePayload.title = input.title.trim();
+  }
+  if (input.passingScore !== undefined) {
+    updatePayload.passing_score = Number(input.passingScore);
+  }
+  if (input.excellentScore !== undefined) {
+    updatePayload.excellent_score = Number(input.excellentScore);
+  }
+  if (input.targetComplianceRate !== undefined) {
+    updatePayload.target_compliance_rate = Number(input.targetComplianceRate);
+  }
+  if (input.minComplianceRate !== undefined) {
+    updatePayload.min_compliance_rate = Number(input.minComplianceRate);
+  }
+  if (input.maxMajorUnresolved !== undefined) {
+    updatePayload.max_major_unresolved = Number(input.maxMajorUnresolved);
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from("rubric_templates")
+    .update(updatePayload)
+    .eq("id", input.templateId)
+    .select()
+    .single();
+
+  if (updateErr || !updated) {
+    throw new Error(`Failed to update rubric template: ${updateErr?.message || "Unknown error"}`);
+  }
+
+  await logAudit(
+    supabase,
+    user,
+    "UPDATE",
+    input.templateId,
+    `Updated criteria and configurations for rubric "${updated.title}"`,
+    existing,
+    updated
+  );
+
+  return updated;
+}
+

@@ -15,7 +15,8 @@ import {
   CheckCircle2, 
   XCircle, 
   Trash2,
-  Loader2 
+  Loader2,
+  Sliders
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -26,6 +27,7 @@ import {
   archiveRubricAction,
   deleteRubricAction
 } from "@/lib/rubrics/actions";
+import { RubricEditorDialog } from "@/components/grading/rubric-builder";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 
@@ -97,12 +99,24 @@ export default function RubricsPage() {
   return (
     <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Rubrics Manager</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage configured grading criteria, publish changes, clone layouts, and version templates.
           </p>
+        </div>
+        <div>
+          <RubricEditorDialog
+            onSaved={async () => {
+              await loadRubrics();
+            }}
+            triggerButton={
+              <Button size="sm" className="gap-1.5 h-9 font-semibold">
+                <Plus className="h-4 w-4" /> Create Rubric
+              </Button>
+            }
+          />
         </div>
       </div>
 
@@ -160,6 +174,22 @@ export default function RubricsPage() {
                           {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Publish
                         </Button>
                       )}
+                      <RubricEditorDialog
+                        rubric={rubric}
+                        onSaved={async () => {
+                          await loadRubrics();
+                        }}
+                        triggerButton={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 rounded-lg"
+                            disabled={actioningId === rubric.id}
+                          >
+                            <Sliders className="h-3.5 w-3.5 text-primary" /> Customize
+                          </Button>
+                        }
+                      />
                       <Button
                         onClick={() => handleAction(rubric.id, () => cloneRubricAction(rubric.id), "Rubric cloned successfully!")}
                         variant="outline"
