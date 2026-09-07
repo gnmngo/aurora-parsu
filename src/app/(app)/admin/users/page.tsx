@@ -69,13 +69,13 @@ export default function UsersPage() {
           email,
           status,
           created_at,
-          user_roles (
+          user_roles!user_roles_profile_id_fkey (
             roles ( code, name )
           ),
           faculty (
             employee_number,
             specialization,
-            academic_rank
+            rank
           ),
           departments ( name )
         `)
@@ -171,12 +171,12 @@ export default function UsersPage() {
 
   const pendingUsers = users.filter((u) => u.status === "pending");
   const facultyUsers = users.filter((u) => {
-    const code = u.user_roles?.[0]?.roles?.code;
-    return ["adviser", "panelist", "coordinator", "dean", "sys_admin"].includes(code);
+    const codes = (u.user_roles || []).map((ur: any) => ur.roles?.code).filter(Boolean);
+    return codes.some((c: string) => ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(c));
   });
   const studentUsers = users.filter((u) => {
-    const code = u.user_roles?.[0]?.roles?.code;
-    return code === "student" || !code;
+    const codes = (u.user_roles || []).map((ur: any) => ur.roles?.code).filter(Boolean);
+    return codes.includes("student") || codes.length === 0;
   });
 
   const displayedUsers = 
@@ -414,13 +414,21 @@ export default function UsersPage() {
             ) : (
               <div className="divide-y divide-border">
                 {displayedUsers.map((user) => {
-                  const roleLink = user.user_roles?.[0]?.roles;
-                  const currentRole = roleLink?.code || "student";
-                  const currentRoleName = roleLink?.name || "Student";
+                  const roleLinks: Array<{ code: string; name: string }> = (user.user_roles || [])
+                    .map((ur: any) => Array.isArray(ur.roles) ? ur.roles[0] : ur.roles)
+                    .filter(Boolean);
+                  
+                  const rolePriority = ["sys_admin", "college_dean", "coordinator", "adviser", "panelist", "student"];
+                  const sortedRoles = [...roleLinks].sort(
+                    (a, b) => rolePriority.indexOf(a.code) - rolePriority.indexOf(b.code)
+                  );
+                  const currentRole = sortedRoles[0]?.code || "student";
+                  const currentRoleName = sortedRoles[0]?.name || "Student";
                   const name = `${user.first_name} ${user.last_name}`;
                   const isPending = user.status === "pending";
-                  const isFaculty = ["adviser", "panelist", "coordinator"].includes(currentRole);
-                  const employeeNum = user.faculty?.[0]?.employee_number || user.faculty?.employee_number;
+                  const employeeNum = Array.isArray(user.faculty)
+                    ? user.faculty[0]?.employee_number
+                    : user.faculty?.employee_number;
 
                   return (
                     <div 
@@ -448,9 +456,21 @@ export default function UsersPage() {
                           <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
                           
                           <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                            <Badge variant="info" className="text-[8px] font-extrabold uppercase">
-                              {currentRoleName}
-                            </Badge>
+                            {sortedRoles.length > 0 ? (
+                              sortedRoles.map((r, idx) => (
+                                <Badge 
+                                  key={idx} 
+                                  variant={["sys_admin", "coordinator", "college_dean"].includes(r.code) ? "info" : "secondary"} 
+                                  className="text-[8px] font-extrabold uppercase"
+                                >
+                                  {r.name}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="info" className="text-[8px] font-extrabold uppercase">
+                                {currentRoleName}
+                              </Badge>
+                            )}
 
                             <Badge 
                               variant={
@@ -528,6 +548,7 @@ export default function UsersPage() {
                               <option value="adviser">Adviser</option>
                               <option value="panelist">Panelist</option>
                               <option value="coordinator">Coordinator</option>
+                              <option value="college_dean">College Dean</option>
                               <option value="sys_admin">System Admin</option>
                             </select>
                           </div>

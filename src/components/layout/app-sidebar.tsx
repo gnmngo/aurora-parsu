@@ -43,7 +43,7 @@ const mainNav = [
 ];
 
 const adminNav = [
-  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/users", label: "User Management & Security", icon: Users },
   { href: "/admin/rubrics", label: "Rubrics", icon: ClipboardList },
   { href: "/admin/stages", label: "Defense Stages", icon: Layers },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
@@ -91,9 +91,10 @@ function NavItem({
 export function AppSidebar({ className }: { className?: string }) {
   const { roles, hasRole, isLoading } = useAuth();
 
-  // Use centralized permission matrix — single source of truth
-  const primaryRole = (roles[0] || "student") as RoleCode;
-  const allowedHrefs = ROLE_SIDEBAR_LINKS[primaryRole] ?? ROLE_SIDEBAR_LINKS.student;
+  // Aggregate allowed links across all user roles (e.g. Coordinator who is also an Adviser)
+  const allowedHrefs = roles.length > 0
+    ? Array.from(new Set(roles.flatMap((r) => ROLE_SIDEBAR_LINKS[r as RoleCode] ?? [])))
+    : ROLE_SIDEBAR_LINKS.student;
 
   const filteredMainNav = isLoading
     ? []

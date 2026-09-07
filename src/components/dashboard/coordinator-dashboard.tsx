@@ -14,7 +14,8 @@ import {
   Inbox, 
   Loader2, 
   ChevronRight, 
-  Plus
+  Plus,
+  Shield
 } from "lucide-react";
 import Link from "next/link";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -25,6 +26,7 @@ export function CoordinatorDashboard() {
   const [workloads, setWorkloads] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
+  const [pendingUserCount, setPendingUserCount] = useState(0);
   const supabase = createClient();
 
   useEffect(() => {
@@ -85,6 +87,15 @@ export function CoordinatorDashboard() {
           setWorkloads(Object.values(countsMap).sort((a, b) => b.count - a.count));
         }
 
+        // 5. Fetch count of pending accounts for security console
+        const { count: pendingCount } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending");
+
+        if (pendingCount !== null) {
+          setPendingUserCount(pendingCount);
+        }
       } catch (err) {
         console.error("Error loading coordinator dashboard:", err);
       } finally {
@@ -105,6 +116,37 @@ export function CoordinatorDashboard() {
 
   return (
     <div className="space-y-6 text-xs font-semibold text-slate-800">
+      {/* Coordinator Management Hub & Security Console Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-2xl border border-primary/20">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" /> Coordinator Management Hub
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Oversee defense milestones, schedule committee panels, and manage departmental faculty evaluators.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/users">
+            <Button size="sm" className="gap-2 font-bold shadow-sm">
+              <Users className="h-4 w-4" />
+              User Management &amp; Security Console
+              {pendingUserCount > 0 && (
+                <Badge variant="warning" className="ml-1 text-[9px] px-1.5 py-0.5">
+                  {pendingUserCount} Pending
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          <Link href="/dashboard/defenses/schedule">
+            <Button size="sm" variant="outline" className="gap-1.5 font-bold">
+              <Calendar className="h-4 w-4" />
+              Schedule Defense
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       {/* KPI stats bar */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="p-4 flex flex-row items-center gap-4">

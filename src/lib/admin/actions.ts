@@ -15,11 +15,12 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate and authorize (sys_admin only)
-  const caller = await requireRole(supabase, ["sys_admin"]);
+  // 1. Authenticate and authorize (sys_admin or coordinator)
+  const caller = await requireRole(supabase, ["sys_admin", "coordinator"]);
+  const serviceClient = createServiceClient();
 
   // 2. Fetch role ID of selected code
-  const { data: targetRole, error: roleErr } = await supabase
+  const { data: targetRole, error: roleErr } = await serviceClient
     .from("roles")
     .select("id, name")
     .eq("code", roleCode)
@@ -30,7 +31,7 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   }
 
   // Fetch target user's details for logging
-  const { data: profile } = await supabase
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("first_name, last_name, email")
     .eq("id", profileId)
@@ -39,7 +40,7 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   const userName = profile ? `${profile.first_name} ${profile.last_name}` : "Unknown User";
 
   // Fetch current role code
-  const { data: currentRoleLink } = await supabase
+  const { data: currentRoleLink } = await serviceClient
     .from("user_roles")
     .select("roles(code)")
     .eq("profile_id", profileId)
@@ -50,12 +51,12 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   const oldRoleCode = (Array.isArray(r) ? r[0]?.code : r?.code) || "none";
 
   // 3. Update role (delete old linkage and insert new)
-  await supabase
+  await serviceClient
     .from("user_roles")
     .delete()
     .eq("profile_id", profileId);
 
-  const { error: insertErr } = await supabase
+  const { error: insertErr } = await serviceClient
     .from("user_roles")
     .insert({
       profile_id: profileId,
@@ -67,10 +68,10 @@ export async function updateUserRoleAction(profileId: string, roleCode: string) 
   }
 
   // 4. Log audit log
-  await supabase.from("audit_logs").insert({
+  await serviceClient.from("audit_logs").insert({
     profile_id: caller.id,
     user_email: caller.email,
-    user_role: "sys_admin",
+    user_role: "coordinator",
     action_type: "UPDATE",
     module: "users",
     entity_type: "user_roles",
@@ -102,8 +103,10 @@ export async function updateUserStatusAction(
   // 1. Authenticate (sys_admin or coordinator)
   const caller = await requireRole(supabase, ["sys_admin", "coordinator"]);
 
+  const serviceClient = createServiceClient();
+
   // 2. Fetch target profile
-  const { data: profile, error: fetchErr } = await supabase
+  const { data: profile, error: fetchErr } = await serviceClient
     .from("profiles")
     .select("first_name, last_name, email, status")
     .eq("id", profileId)
@@ -117,7 +120,7 @@ export async function updateUserStatusAction(
   const userName = `${profile.first_name} ${profile.last_name}`;
 
   // 3. Update status in database
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await serviceClient
     .from("profiles")
     .update({
       status: newStatus,
@@ -130,10 +133,10 @@ export async function updateUserStatusAction(
   }
 
   // 4. Audit Log
-  await supabase.from("audit_logs").insert({
+  await serviceClient.from("audit_logs").insert({
     profile_id: caller.id,
     user_email: caller.email,
-    user_role: "sys_admin",
+    user_role: "coordinator",
     action_type: "UPDATE",
     module: "users",
     entity_type: "profiles",
