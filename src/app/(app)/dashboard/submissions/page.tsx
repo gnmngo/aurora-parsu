@@ -55,7 +55,7 @@ export default function SubmissionsPage() {
   );
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "adviser", "sys_admin"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

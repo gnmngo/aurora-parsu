@@ -253,7 +253,7 @@ function LoginForm() {
     }
   };
 
-  const handleDemoLogin = async (roleType: "student" | "adviser" | "panelist" | "coordinator" | "admin") => {
+  const handleDemoLogin = async (roleType: "student" | "adviser" | "panelist" | "coordinator" | "dean" | "admin") => {
     setLoading(true);
     let targetEmail = "";
     let targetPass = "Panel123!";
@@ -266,6 +266,9 @@ function LoginForm() {
       targetEmail = "panelist1@aurora.test";
     } else if (roleType === "coordinator") {
       targetEmail = "coord@aurora.test";
+    } else if (roleType === "dean") {
+      targetEmail = "erpadayao@parsu.edu.ph";
+      targetPass = "Password123!";
     } else if (roleType === "admin") {
       targetEmail = "admin@aurora.test";
     }
@@ -418,6 +421,7 @@ function LoginForm() {
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("adviser")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Adviser</Button>
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("panelist")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Panelist</Button>
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("coordinator")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Coordinator</Button>
+                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("dean")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">College Dean</Button>
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("admin")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50 col-span-2">System Admin</Button>
                 </div>
               </div>

@@ -74,6 +74,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard",
     "/dashboard/search",
     "/dashboard/defenses",
+    "/dashboard/submissions",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/analytics",
