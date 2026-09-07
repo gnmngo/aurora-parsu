@@ -449,7 +449,7 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
   try {
     const { data, error } = await serviceClient
       .from("faculty")
-      .select("profile_id, profiles(first_name, last_name, email, status)")
+      .select("profile_id, specialization, profiles(first_name, last_name, email, status, department_id, departments(name))")
       .order("created_at", { ascending: true });
 
     if (error || !data) return [];
@@ -458,14 +458,17 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
     for (const item of data) {
       const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
       if (prof && prof.status === "approved") {
+        const profAny = prof as Record<string, any>;
+        const dept = Array.isArray(profAny?.departments) ? profAny.departments[0]?.name : profAny?.departments?.name;
         list.push({
           profile_id: item.profile_id,
           name: `${prof.first_name} ${prof.last_name}`,
           email: prof.email,
+          department: dept || item.specialization || undefined,
         });
       }
     }
-    return list;
+    return list.sort((a, b) => a.name.localeCompare(b.name));
   } catch (err) {
     console.error("Failed to load approved faculty list:", err);
     return [];

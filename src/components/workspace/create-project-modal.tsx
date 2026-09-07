@@ -31,6 +31,7 @@ interface FacultyOption {
   profile_id: string;
   name: string;
   email: string;
+  department?: string;
 }
 
 interface CreateProjectModalProps {
@@ -226,7 +227,7 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
                 <option value="">-- Select Research Adviser (Optional) --</option>
                 {facultyList.map((f) => (
                   <option key={f.profile_id} value={f.profile_id}>
-                    {f.name} ({f.email})
+                    {f.name} {f.department ? `(${f.department})` : `(${f.email})`}
                   </option>
                 ))}
               </select>

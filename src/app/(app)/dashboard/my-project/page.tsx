@@ -144,7 +144,7 @@ export default function MyProjectPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "documents" | "feedback" | "schedule" | "evaluations">("overview");
   const [joinCodeCopied, setJoinCodeCopied] = useState(false);
   const [adviserModalOpen, setAdviserModalOpen] = useState(false);
-  const [facultyOptions, setFacultyOptions] = useState<Array<{ profile_id: string; name: string; email: string }>>([]);
+  const [facultyOptions, setFacultyOptions] = useState<Array<{ profile_id: string; name: string; email: string; department?: string }>>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [assigningAdviser, setAssigningAdviser] = useState(false);
 
@@ -1076,7 +1076,7 @@ export default function MyProjectPage() {
                   <option value="">-- Choose Approved Faculty --</option>
                   {facultyOptions.map((f) => (
                     <option key={f.profile_id} value={f.profile_id}>
-                      {f.name} ({f.email})
+                      {f.name} {f.department ? `(${f.department})` : `(${f.email})`}
                     </option>
                   ))}
                 </select>

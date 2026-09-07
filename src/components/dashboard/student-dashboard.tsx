@@ -295,11 +295,16 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
               </div>
 
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Assigned Adviser</p>
-                <p className="font-extrabold text-slate-900 mt-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Assigned Adviser</p>
+                  <Link href="/dashboard/my-project" className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5">
+                    {adviser ? "Change" : "Choose"} &rarr;
+                  </Link>
+                </div>
+                <p className="font-extrabold text-slate-900 mt-1 truncate">
                   {adviser?.profiles 
-                    ? `Dr. ${adviser.profiles.first_name} ${adviser.profiles.last_name}` 
-                    : "No adviser linked"}
+                    ? `${adviser.profiles.first_name} ${adviser.profiles.last_name}` 
+                    : "No adviser assigned yet"}
                 </p>
               </div>
             </div>

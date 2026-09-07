@@ -214,11 +214,17 @@ export async function fetchProjectLookups(
       profile_id: s.profile_id,
       profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles,
     })),
-    faculty: (facultyRes.data ?? []).map((f: { id: string; profile_id: string; profiles: unknown }) => ({
-      id: f.id,
-      profile_id: f.profile_id,
-      profiles: Array.isArray(f.profiles) ? f.profiles[0] : f.profiles,
-    })),
+    faculty: (facultyRes.data ?? [])
+      .map((f: { id: string; profile_id: string; profiles: unknown }) => ({
+        id: f.id,
+        profile_id: f.profile_id,
+        profiles: Array.isArray(f.profiles) ? f.profiles[0] : f.profiles,
+      }))
+      .sort((a: { profiles?: { first_name?: string; last_name?: string } | null }, b: { profiles?: { first_name?: string; last_name?: string } | null }) => {
+        const nameA = `${a.profiles?.first_name ?? ""} ${a.profiles?.last_name ?? ""}`;
+        const nameB = `${b.profiles?.first_name ?? ""} ${b.profiles?.last_name ?? ""}`;
+        return nameA.localeCompare(nameB);
+      }),
     departments: deptRes.data ?? [],
     programs: programsRes.data ?? [],
     workflow_templates: (templatesRes.data ?? []).map((t: { id: string; name: string; program_id: string; defense_stages: { id: string; name: string; sequence_order: number }[] }) => ({
