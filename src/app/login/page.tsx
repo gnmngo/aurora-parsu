@@ -418,6 +418,7 @@ function LoginForm() {
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("adviser")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Adviser</Button>
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("panelist")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Panelist</Button>
                   <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("coordinator")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Coordinator</Button>
+                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("admin")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50 col-span-2">System Admin</Button>
                 </div>
               </div>
             </form>
