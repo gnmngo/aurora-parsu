@@ -188,9 +188,9 @@ export function KpiCards() {
         } else {
           // Coordinator / sys_admin — full global KPIs
           const [papers, pending, completed, annCount, schedCount] = await Promise.all([
-            supabase.from("projects").select("*", { count: "exact", head: true }),
-            supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "under_review"),
-            supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "completed"),
+            supabase.from("projects").select("*", { count: "exact", head: true }).is("archived_at", null),
+            supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "under_review").is("archived_at", null),
+            supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "completed").is("archived_at", null),
             supabase.from("annotations").select("*", { count: "exact", head: true }),
             supabase.from("defense_schedules").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
           ]);

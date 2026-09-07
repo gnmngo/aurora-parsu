@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { emitNotificationToMany } from "@/lib/notifications/emit";
@@ -697,3 +697,382 @@ export async function cancelDefenseScheduleAction(
 
   return { success: true };
 }
+
+export interface BatchCandidateProject {
+  id: string;
+  title: string;
+  status: string;
+  academicYear: string;
+  collegeId?: string;
+  departmentId?: string;
+  programId?: string;
+  college?: string;
+  department?: string;
+  program?: string;
+  programCode?: string;
+  studentName: string;
+  studentEmail?: string;
+  adviserName: string;
+  hasApprovedDoc: boolean;
+  adviserApprovalStatus: string;
+  existingSchedule: {
+    id: string;
+    scheduledAt: string;
+    endAt?: string;
+    room?: string;
+    status: string;
+  } | null;
+}
+
+export interface BatchScheduleSlotAllocation {
+  projectId: string;
+  stageId: string;
+  scheduledAt: string; // ISO String
+  endAt: string;       // ISO String
+  durationMinutes: number;
+}
+
+export interface BatchScheduleInput {
+  collegeId?: string;
+  departmentId?: string;
+  programId?: string;
+  stageId: string;
+  room: string;
+  building: string;
+  isOnline: boolean;
+  meetingUrl?: string;
+  panelistIds: string[];
+  allocations: BatchScheduleSlotAllocation[];
+  allowPendingAdviserApproval?: boolean;
+}
+
+/**
+ * Returns full university academic hierarchy (colleges, departments, programs, stages)
+ */
+export async function getAcademicHierarchyAction() {
+  const serviceClient = createServiceClient();
+  const [collegesRes, deptsRes, progsRes, stagesRes] = await Promise.all([
+    serviceClient.from("colleges").select("id, name, code").order("name"),
+    serviceClient.from("departments").select("id, name, code, college_id").order("name"),
+    serviceClient.from("programs").select("id, name, code, department_id").order("name"),
+    serviceClient.from("defense_stages").select("id, name, code, sequence_order").order("sequence_order"),
+  ]);
+
+  return {
+    colleges: collegesRes.data || [],
+    departments: deptsRes.data || [],
+    programs: progsRes.data || [],
+    stages: stagesRes.data || [],
+  };
+}
+
+/**
+ * Retrieves eligible project candidates for batch defense scheduling
+ */
+export async function getBatchDefenseCandidatesAction(filters: {
+  collegeId?: string;
+  departmentId?: string;
+  programId?: string;
+  stageId?: string;
+}): Promise<BatchCandidateProject[]> {
+  const serviceClient = createServiceClient();
+  let query = serviceClient
+    .from("projects")
+    .select(`
+      id,
+      title,
+      status,
+      academic_year,
+      college_id,
+      department_id,
+      program_id,
+      current_stage_id,
+      colleges ( id, name, code ),
+      departments ( id, name, code ),
+      programs ( id, name, code ),
+      students (
+        id,
+        student_number,
+        profiles ( id, first_name, last_name, email )
+      ),
+      project_members (
+        id,
+        member_role,
+        profiles!project_members_profile_id_fkey ( id, first_name, last_name, email )
+      ),
+      documents (
+        id,
+        stage_id,
+        adviser_approval_status
+      ),
+      defense_schedules (
+        id,
+        stage_id,
+        scheduled_at,
+        end_at,
+        room,
+        status
+      )
+    `)
+    .is("archived_at", null);
+
+  if (filters.collegeId) {
+    query = query.eq("college_id", filters.collegeId);
+  }
+  if (filters.departmentId) {
+    query = query.eq("department_id", filters.departmentId);
+  }
+  if (filters.programId) {
+    query = query.eq("program_id", filters.programId);
+  }
+
+  const { data, error } = await query.order("title");
+  if (error) {
+    console.error("[getBatchDefenseCandidatesAction] Error:", error);
+    throw new Error(`Failed to load batch candidate projects: ${error.message}`);
+  }
+
+  return (data || []).map((proj: any) => {
+    const studentProfile = proj.students?.profiles;
+    const studentName = studentProfile
+      ? `${studentProfile.first_name || ""} ${studentProfile.last_name || ""}`.trim()
+      : "Unknown Student";
+
+    const adviserMember = (proj.project_members as any[])?.find(
+      (m: any) => m.member_role === "adviser"
+    );
+    const adviserProfile = adviserMember?.profiles;
+    const adviserName = adviserProfile
+      ? `${adviserProfile.first_name || ""} ${adviserProfile.last_name || ""}`.trim()
+      : "No Adviser Assigned";
+
+    const docForStage = filters.stageId
+      ? (proj.documents as any[])?.find((d: any) => d.stage_id === filters.stageId)
+      : (proj.documents as any[])?.[0];
+
+    const hasApprovedDoc = docForStage?.adviser_approval_status === "approved";
+    const existingSched = filters.stageId
+      ? (proj.defense_schedules as any[])?.find(
+          (s: any) => s.stage_id === filters.stageId && s.status !== "cancelled"
+        )
+      : (proj.defense_schedules as any[])?.find(
+          (s: any) => s.status !== "cancelled"
+        );
+
+    return {
+      id: proj.id,
+      title: proj.title,
+      status: proj.status,
+      academicYear: proj.academic_year,
+      collegeId: proj.college_id,
+      departmentId: proj.department_id,
+      programId: proj.program_id,
+      college: proj.colleges?.name,
+      department: proj.departments?.name,
+      program: proj.programs?.name,
+      programCode: proj.programs?.code,
+      studentName,
+      studentEmail: studentProfile?.email,
+      adviserName,
+      hasApprovedDoc,
+      adviserApprovalStatus: docForStage?.adviser_approval_status || "not_uploaded",
+      existingSchedule: existingSched
+        ? {
+            id: existingSched.id,
+            scheduledAt: existingSched.scheduled_at,
+            endAt: existingSched.end_at,
+            room: existingSched.room,
+            status: existingSched.status,
+          }
+        : null,
+    };
+  });
+}
+
+/**
+ * Batch schedules defense sessions for multiple projects across a dedicated venue & date window.
+ */
+export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  // 1. Authenticate user and verify coordinator or admin role
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    throw new Error("Unauthorized. Please log in.");
+  }
+
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", user.id);
+
+  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) ?? [];
+  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
+  if (!isAuthorized) {
+    throw new Error("Permission denied. Only coordinators or administrators can schedule batch defenses.");
+  }
+
+  if (!input.allocations || input.allocations.length === 0) {
+    throw new Error("Please select at least one project to batch schedule.");
+  }
+
+  const scheduledResults: any[] = [];
+
+  // Process each allocation
+  for (const alloc of input.allocations) {
+    // 2. Resolve project details
+    const { data: project } = await supabase
+      .from("projects")
+      .select("title, student_id, students(profile_id)")
+      .eq("id", alloc.projectId)
+      .single();
+
+    if (!project) continue;
+
+    const studentProfileId = Array.isArray(project.students)
+      ? (project.students[0] as { profile_id?: string })?.profile_id
+      : (project.students as { profile_id?: string })?.profile_id;
+
+    const { data: adviserMember } = await supabase
+      .from("project_members")
+      .select("profile_id")
+      .eq("project_id", alloc.projectId)
+      .eq("member_role", "adviser")
+      .maybeSingle();
+
+    const adviserProfileId = adviserMember?.profile_id;
+
+    // Remove any existing active schedule for this project and stage
+    await supabase
+      .from("defense_schedules")
+      .delete()
+      .eq("project_id", alloc.projectId)
+      .eq("stage_id", alloc.stageId);
+
+    // 3. Insert new schedule
+    const { data: newSchedule, error: schedError } = await supabase
+      .from("defense_schedules")
+      .insert({
+        project_id: alloc.projectId,
+        stage_id: alloc.stageId,
+        scheduled_at: alloc.scheduledAt,
+        end_at: alloc.endAt,
+        room: input.room,
+        building: input.building,
+        is_online: input.isOnline,
+        meeting_url: input.isOnline ? input.meetingUrl : null,
+        duration_minutes: alloc.durationMinutes,
+        status: "scheduled",
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (schedError || !newSchedule) {
+      console.error(`[batchScheduleDefensesAction] Error scheduling ${alloc.projectId}:`, schedError);
+      continue;
+    }
+
+    // 4. Assign panel committee members
+    if (input.panelistIds.length > 0) {
+      await supabase
+        .from("defense_panels")
+        .delete()
+        .eq("project_id", alloc.projectId)
+        .eq("stage_id", alloc.stageId);
+
+      const panelsToInsert = input.panelistIds.map((pid) => ({
+        project_id: alloc.projectId,
+        stage_id: alloc.stageId,
+        profile_id: pid,
+        panel_role: "member" as const,
+        assigned_by: user.id,
+      }));
+
+      await supabase.from("defense_panels").insert(panelsToInsert);
+    }
+
+    // 5. Update project status
+    await supabase
+      .from("projects")
+      .update({
+        status: "scheduled",
+        current_stage_id: alloc.stageId,
+      })
+      .eq("id", alloc.projectId);
+
+    // 6. Write audit log
+    await supabase.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: "coordinator",
+      action_type: "CREATE",
+      module: "scheduling",
+      entity_type: "defense_schedules",
+      entity_id: newSchedule.id,
+      description: `Batch scheduled defense for "${project.title}" in room ${input.room}`,
+      new_value: {
+        schedule_id: newSchedule.id,
+        project_id: alloc.projectId,
+        stage_id: alloc.stageId,
+        scheduled_at: alloc.scheduledAt,
+        end_at: alloc.endAt,
+        room: input.room,
+        panelist_count: input.panelistIds.length,
+        batch: true,
+      },
+      ip_address: ip,
+      user_agent: userAgent,
+      academic_year: currentAcademicYear(),
+    });
+
+    // 7. Emit notifications
+    try {
+      const { data: teamMembers } = await supabase
+        .from("project_members")
+        .select("profile_id")
+        .eq("project_id", alloc.projectId)
+        .in("member_role", ["student_leader", "student"]);
+
+      const teamProfileIds = teamMembers?.map((m: any) => m.profile_id).filter(Boolean) || [];
+
+      const recipientIds = [
+        ...teamProfileIds,
+        ...(studentProfileId ? [studentProfileId] : []),
+        ...(adviserProfileId ? [adviserProfileId] : []),
+        ...input.panelistIds,
+      ].filter((id, i, arr) => arr.indexOf(id) === i);
+
+      const formattedDate = new Date(alloc.scheduledAt).toLocaleString("en-US", {
+        dateStyle: "long",
+        timeStyle: "short",
+      });
+
+      if (recipientIds.length > 0) {
+        await emitNotificationToMany(supabase, recipientIds, {
+          title: "Defense Scheduled",
+          message: `Your defense for "${project.title}" has been scheduled on ${formattedDate} at ${input.room}${input.building ? ", " + input.building : ""}.`,
+          eventType: "defense_scheduled",
+          metadata: { scheduleId: newSchedule.id, projectId: alloc.projectId, stageId: alloc.stageId, batch: true },
+        });
+      }
+    } catch (notifErr) {
+      console.error("[batchScheduleDefensesAction] Notification failed for project:", alloc.projectId, notifErr);
+    }
+
+    scheduledResults.push(newSchedule);
+  }
+
+  return {
+    success: true,
+    count: scheduledResults.length,
+    schedules: scheduledResults,
+  };
+}
+
