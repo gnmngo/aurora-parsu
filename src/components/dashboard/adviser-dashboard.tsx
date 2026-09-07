@@ -69,6 +69,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
             profiles ( first_name, last_name, email ) 
           )
         `)
+        .is("archived_at", null)
         .in("id", projectIds);
 
       if (projs) {

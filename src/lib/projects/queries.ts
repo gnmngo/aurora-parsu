@@ -107,6 +107,7 @@ export async function fetchSubmissions(
       )
     `
     )
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {

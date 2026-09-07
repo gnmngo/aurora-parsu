@@ -70,7 +70,8 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
       let projQuery = supabase
         .from("projects")
-        .select("*, defense_stages ( id, name )");
+        .select("*, defense_stages ( id, name )")
+        .is("archived_at", null);
 
       if (memberProjId) {
         projQuery = projQuery.eq("id", memberProjId);

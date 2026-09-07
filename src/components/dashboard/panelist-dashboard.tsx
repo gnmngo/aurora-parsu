@@ -61,6 +61,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               profiles ( first_name, last_name )
             )
           `)
+          .is("archived_at", null)
           .order("created_at", { ascending: false });
 
         if (assignedProjectIds.length > 0) {

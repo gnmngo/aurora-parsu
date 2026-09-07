@@ -79,7 +79,7 @@ export default function GradesPage() {
             scores,
             panelist_id,
             project_id,
-            projects ( id, title, student_id ),
+            projects ( id, title, student_id, archived_at ),
             profiles!panelist_id ( first_name, last_name, email ),
             rubric_templates ( title, criteria, passing_score )
           `)
@@ -90,7 +90,8 @@ export default function GradesPage() {
           // Full access
           const { data, error } = await baseQuery;
           if (error) throw error;
-          setEvaluations((data as unknown as EvaluationRow[]) || []);
+          const activeEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
+          setEvaluations(activeEvals);
 
         } else if (isPanelist) {
           // BUG-C2: Filter by `panelist_id` not `profile_id`

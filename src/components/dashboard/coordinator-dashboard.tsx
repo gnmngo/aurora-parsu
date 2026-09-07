@@ -40,21 +40,25 @@ export function CoordinatorDashboard() {
             defense_stages ( name, id ),
             students ( profiles ( first_name, last_name ) )
           `)
+          .is("archived_at", null)
           .eq("status", "submitted");
         if (pending) setPendingApprovals(pending);
 
         // 2. Fetch defense schedules
         const { data: scheds } = await supabase
           .from("defense_schedules")
-          .select("*, projects(title)")
+          .select("*, projects(title, archived_at)")
           .order("scheduled_at", { ascending: true })
           .limit(10);
-        if (scheds) setSchedules(scheds);
+        if (scheds) {
+          setSchedules(scheds.filter((s: any) => !s.projects?.archived_at));
+        }
 
-        // 3. Fetch all projects for status stats
+        // 3. Fetch all active projects for status stats
         const { data: allProjs } = await supabase
           .from("projects")
-          .select("status");
+          .select("status")
+          .is("archived_at", null);
         
         if (allProjs) {
           const counts: Record<string, number> = {};
