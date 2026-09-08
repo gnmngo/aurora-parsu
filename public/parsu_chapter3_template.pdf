@@ -1,0 +1,648 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 612. 792.]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 3878
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 13 Tf
+14.9499999999999993 TL
+0.055 0.149 0.361 rg
+104. 748. Td
+(PARTIDO STATE) Tj
+ET
+BT
+/F2 15 Tf
+17.25 TL
+0.055 0.149 0.361 rg
+104. 734. Td
+(UNIVERSITY) Tj
+ET
+BT
+/F5 10 Tf
+11.5 TL
+0.157 g
+402.0000000000000568 738. Td
+(Technical Background 46) Tj
+ET
+0.05 0.15 0.36 RG
+1.2 w
+99. 743. m
+99. 750.1797017478003227 93.1797017478003085 756. 86. 756. c
+78.8202982521996915 756. 73. 750.1797017478003227 73. 743. c
+73. 735.8202982521996773 78.8202982521996915 730. 86. 730. c
+93.1797017478003085 730. 99. 735.8202982521996773 99. 743. c
+S
+BT
+/F2 5.5 Tf
+6.3249999999999993 TL
+0.157 g
+79. 741. Td
+(PARSU) Tj
+ET
+0.05 0.15 0.36 rg
+74. 724. m
+538. 724. l
+539.1045694996615794 724. 540. 723.1045694996615794 540. 722. c
+540. 716. l
+540. 714.8954305003384206 538.8954305003384206 714. 538. 714. c
+74. 714. l
+72.8954305003384064 714. 72. 715.1045694996615794 72. 716. c
+72. 722. l
+72. 723.1045694996615794 73.1045694996615936 724. 74. 724. c
+h
+f
+BT
+/F2 5.2 Tf
+5.9799999999999995 TL
+1. g
+74.1320000000002324 717. Td
+(PARTIDO STATE UNIVERSITY · COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES · DEPARTMENT OF COMPUTATIONAL SCIENCES · CAPSTONE AND RESEARCH PROJECT) Tj
+ET
+0.05 0.15 0.36 rg
+74. 62. m
+538. 62. l
+539.1045694996615794 62. 540. 61.1045694996615794 540. 60. c
+540. 55. l
+540. 53.8954305003384206 538.8954305003384206 53. 538. 53. c
+74. 53. l
+72.8954305003384064 53. 72. 54.1045694996615794 72. 55. c
+72. 60. l
+72. 61.1045694996615794 73.1045694996615936 62. 74. 62. c
+h
+f
+BT
+/F2 5.2 Tf
+5.9799999999999995 TL
+1. g
+74.1320000000002324 55.5 Td
+(PARTIDO STATE UNIVERSITY · COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES · DEPARTMENT OF COMPUTATIONAL SCIENCES · CAPSTONE AND RESEARCH PROJECT) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+72. 44. Td
+(San Juan Bautista, Goa, Camarines Sur, Philippines 4422) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+72. 35. Td
+(Contact No.: \(054\) 871-2090; +63 969 608 7792; +63 945 413 9825) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+459.5299999999999727 44. Td
+(Website: www.parsu.edu.ph) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+470.7099999999999795 35. Td
+(ISO 9001:2015 Certified) Tj
+ET
+BT
+/F5 12 Tf
+13.7999999999999989 TL
+0. g
+273.6000000000000227 677. Td
+(Chapter 3) Tj
+ET
+BT
+/F6 12 Tf
+13.7999999999999989 TL
+0. g
+234.0000000000000284 651. Td
+(TECHNICAL BACKGROUND) Tj
+ET
+BT
+/F5 11 Tf
+17.6000000000000014 TL
+0. g
+72. 619. Td
+(        Chapter 3 provides a detailed overview of the technical) Tj
+T* (components required to implement your project. It serves as a) Tj
+T* (foundational reference for readers—particularly technical) Tj
+T* (evaluators—by presenting the technologies, tools, and platforms that) Tj
+T* (support your system or application. This chapter demonstrates your) Tj
+T* (awareness of the infrastructure needed to build and operate the) Tj
+T* (solution you propose from various sources.) Tj
+ET
+BT
+/F6 11 Tf
+12.6499999999999986 TL
+0. g
+72. 473.8000000000000114 Td
+(Software Requirements) Tj
+ET
+BT
+/F5 11 Tf
+17.6000000000000014 TL
+0. g
+72. 449.8000000000000114 Td
+(        Start with the Software Requirements, where you list and) Tj
+T* (describe all software components necessary for development,) Tj
+T* (deployment, and use of the system. This may include programming) Tj
+T* (languages, frameworks, libraries, development environments, content) Tj
+T* (management systems, database platforms, operating systems, or any) Tj
+T* (third-party services and APIs. For each software item, indicate its) Tj
+T* (specific role in the project, why it was chosen over alternatives, and) Tj
+T* (any versioning requirements. Where applicable, explain compatibility) Tj
+T* (considerations, licensing constraints, and dependencies between) Tj
+T* (components. This section should reflect careful planning and technical) Tj
+T* (knowledge of your project's backend and frontend environment.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 612. 792.]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 4312
+>>
+stream
+1.2 w
+0.05 0.15 0.36 RG
+BT
+/F2 13 Tf
+14.9499999999999993 TL
+0.055 0.149 0.361 rg
+104. 748. Td
+(PARTIDO STATE) Tj
+ET
+BT
+/F2 15 Tf
+17.25 TL
+0.055 0.149 0.361 rg
+104. 734. Td
+(UNIVERSITY) Tj
+ET
+BT
+/F5 10 Tf
+11.5 TL
+0.157 g
+402.0000000000000568 738. Td
+(Technical Background 47) Tj
+ET
+0.05 0.15 0.36 RG
+1.2 w
+99. 743. m
+99. 750.1797017478003227 93.1797017478003085 756. 86. 756. c
+78.8202982521996915 756. 73. 750.1797017478003227 73. 743. c
+73. 735.8202982521996773 78.8202982521996915 730. 86. 730. c
+93.1797017478003085 730. 99. 735.8202982521996773 99. 743. c
+S
+BT
+/F2 5.5 Tf
+6.3249999999999993 TL
+0.157 g
+79. 741. Td
+(PARSU) Tj
+ET
+0.05 0.15 0.36 rg
+74. 724. m
+538. 724. l
+539.1045694996615794 724. 540. 723.1045694996615794 540. 722. c
+540. 716. l
+540. 714.8954305003384206 538.8954305003384206 714. 538. 714. c
+74. 714. l
+72.8954305003384064 714. 72. 715.1045694996615794 72. 716. c
+72. 722. l
+72. 723.1045694996615794 73.1045694996615936 724. 74. 724. c
+h
+f
+BT
+/F2 5.2 Tf
+5.9799999999999995 TL
+1. g
+74.1320000000002324 717. Td
+(PARTIDO STATE UNIVERSITY · COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES · DEPARTMENT OF COMPUTATIONAL SCIENCES · CAPSTONE AND RESEARCH PROJECT) Tj
+ET
+0.05 0.15 0.36 rg
+74. 62. m
+538. 62. l
+539.1045694996615794 62. 540. 61.1045694996615794 540. 60. c
+540. 55. l
+540. 53.8954305003384206 538.8954305003384206 53. 538. 53. c
+74. 53. l
+72.8954305003384064 53. 72. 54.1045694996615794 72. 55. c
+72. 60. l
+72. 61.1045694996615794 73.1045694996615936 62. 74. 62. c
+h
+f
+BT
+/F2 5.2 Tf
+5.9799999999999995 TL
+1. g
+74.1320000000002324 55.5 Td
+(PARTIDO STATE UNIVERSITY · COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES · DEPARTMENT OF COMPUTATIONAL SCIENCES · CAPSTONE AND RESEARCH PROJECT) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+72. 44. Td
+(San Juan Bautista, Goa, Camarines Sur, Philippines 4422) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+72. 35. Td
+(Contact No.: \(054\) 871-2090; +63 969 608 7792; +63 945 413 9825) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+459.5299999999999727 44. Td
+(Website: www.parsu.edu.ph) Tj
+ET
+BT
+/F1 6.5 Tf
+7.4749999999999996 TL
+0.157 g
+470.7099999999999795 35. Td
+(ISO 9001:2015 Certified) Tj
+ET
+BT
+/F6 11 Tf
+12.6499999999999986 TL
+0. g
+72. 677. Td
+(Hardware Requirements) Tj
+ET
+BT
+/F5 11 Tf
+17.6000000000000014 TL
+0. g
+72. 653. Td
+(        Follow with the Hardware Requirements, which outlines the) Tj
+T* (physical and technical specifications of the equipment needed to run) Tj
+T* (or test the system. This includes details such as computer or server) Tj
+T* (specifications \(CPU, RAM, storage\), input/output devices, networking) Tj
+T* (equipment, mobile devices, or any other hardware relevant to the) Tj
+T* (system's functionality. Distinguish between development hardware and) Tj
+T* (deployment hardware, if applicable. Include minimum and recommended) Tj
+T* (specifications when relevant, and justify your choices based on the) Tj
+T* (needs of your system in terms of performance, scalability, or) Tj
+T* (portability.) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 453. Td
+(Table 1) Tj
+ET
+BT
+/F7 11 Tf
+12.6499999999999986 TL
+0. g
+72. 435. Td
+(Label of the table) Tj
+ET
+0. G
+1. w
+72. 423. m
+540. 423. l
+S
+BT
+/F6 11 Tf
+12.6499999999999986 TL
+0. g
+72. 407. Td
+(Hardware) Tj
+ET
+BT
+/F6 11 Tf
+12.6499999999999986 TL
+0. g
+222. 407. Td
+(Description) Tj
+ET
+0.5 w
+72. 399. m
+540. 399. l
+S
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 381. Td
+(Processor) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+222. 381. Td
+(Intel Core i5-6200U Processor 2.3GHz) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 357. Td
+(RAM) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+222. 357. Td
+(8098 MB DDR4 SDRAM 1065MHz) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 333. Td
+(Graphics) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+222. 333. Td
+(NVIDIA GEFORCE 920MX \(2GB DDR3L\)) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 309. Td
+(Storage Capacity) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+222. 309. Td
+(1TB 5400RPM HDD) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+72. 285. Td
+(Smart phone camera) Tj
+ET
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+222. 285. Td
+(8 megapixels) Tj
+ET
+1. w
+72. 261. m
+540. 261. l
+S
+BT
+/F5 11 Tf
+12.6499999999999986 TL
+0. g
+112. 235. Td
+(Table 1 shows the hardware blah blah blah.) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R ]
+/Count 2
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+/F3 9 0 R
+/F4 10 0 R
+/F5 11 0 R
+/F6 12 0 R
+/F7 13 0 R
+/F8 14 0 R
+/F9 15 0 R
+/F10 16 0 R
+/F11 17 0 R
+/F12 18 0 R
+/F13 19 0 R
+/F14 20 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+21 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260907130546+08'00')
+>>
+endobj
+22 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000008519 00000 n 
+0000010344 00000 n 
+0000000015 00000 n 
+0000000120 00000 n 
+0000004050 00000 n 
+0000004155 00000 n 
+0000008582 00000 n 
+0000008707 00000 n 
+0000008837 00000 n 
+0000008970 00000 n 
+0000009108 00000 n 
+0000009232 00000 n 
+0000009361 00000 n 
+0000009493 00000 n 
+0000009629 00000 n 
+0000009757 00000 n 
+0000009884 00000 n 
+0000010013 00000 n 
+0000010146 00000 n 
+0000010248 00000 n 
+0000010594 00000 n 
+0000010680 00000 n 
+trailer
+<<
+/Size 23
+/Root 22 0 R
+/Info 21 0 R
+/ID [ <CC5E765E7640B6220EFE8457A00F455F> <CC5E765E7640B6220EFE8457A00F455F> ]
+>>
+startxref
+10784
+%%EOF

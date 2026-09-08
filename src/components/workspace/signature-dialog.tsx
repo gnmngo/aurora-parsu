@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PenTool, Type, ShieldCheck, Upload, X, CheckCircle2 } from "lucide-react";
+import { PenTool, Type, ShieldCheck, Upload, X, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface SignatureDialogProps {
@@ -23,6 +23,7 @@ interface SignatureDialogProps {
     signatureImage: string;
     printedName: string;
     positionRole: string;
+    password: string;
   }) => Promise<void>;
   totalScore: number;
   verdictLabel: string;
@@ -43,6 +44,9 @@ export function SignatureDialog({
   const [printedName, setPrintedName] = useState(panelistName);
   const [positionRole, setPositionRole] = useState(panelistRole || "Defense Panel Member");
   const [typedText, setTypedText] = useState(panelistName);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const strokePointsRef = useRef<number>(0);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -173,7 +177,10 @@ export function SignatureDialog({
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
-    setHasDrawn(true);
+    strokePointsRef.current += 1;
+    if (strokePointsRef.current >= 12) {
+      setHasDrawn(true);
+    }
   };
 
   const draw = (
@@ -189,6 +196,10 @@ export function SignatureDialog({
     const coords = getEventCoords(e);
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+    strokePointsRef.current += 1;
+    if (strokePointsRef.current >= 12) {
+      setHasDrawn(true);
+    }
   };
 
   const stopDrawing = () => {
@@ -203,6 +214,7 @@ export function SignatureDialog({
 
     const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+    strokePointsRef.current = 0;
     setHasDrawn(false);
   };
 
@@ -245,12 +257,17 @@ export function SignatureDialog({
       return;
     }
 
+    if (!password.trim()) {
+      toast.error("Please enter your account password to verify your identity under RA 8792.");
+      return;
+    }
+
     let finalSignatureImage = "";
 
     if (activeTab === "draw") {
       const canvas = drawCanvasRef.current;
-      if (!canvas || !hasDrawn) {
-        toast.error("Please draw your signature before submitting.");
+      if (!canvas || !hasDrawn || strokePointsRef.current < 12) {
+        toast.error("Please draw a complete signature before submitting.");
         return;
       }
       finalSignatureImage = canvas.toDataURL("image/png");
@@ -281,6 +298,7 @@ export function SignatureDialog({
         signatureImage: finalSignatureImage,
         printedName: printedName.trim(),
         positionRole: positionRole.trim(),
+        password: password.trim(),
       });
 
       onOpenChange(false);
@@ -477,14 +495,53 @@ export function SignatureDialog({
               I certify that these scores and comments represent my authentic academic evaluation under Partido State University policies. I understand that submitting this verified electronic signature permanently locks this evaluation sheet from further modification.
             </Label>
           </div>
+
+          {/* Password Re-Authentication Field (RA 8792 Legal Non-Repudiation) */}
+          <div className="space-y-2 rounded-xl border border-primary/20 bg-slate-50/80 p-3.5 dark:bg-slate-900/50">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sig-password" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-primary" />
+                Confirm ParSU Password
+              </Label>
+              <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                RA 8792 Non-Repudiation
+              </span>
+            </div>
+            <div className="relative">
+              <Input
+                id="sig-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your account password to confirm..."
+                className="h-9 pr-9 text-xs font-mono"
+                disabled={submitting}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              Re-entering your password legally certifies your identity at the moment of signing and prevents unauthorized submissions from unattended sessions.
+            </p>
+          </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0 pt-1">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs rounded-xl" disabled={submitting}>
             Cancel
           </Button>
-          <Button onClick={handleSignSubmit} className="h-9 text-xs rounded-xl shadow-lg shadow-primary/15" disabled={submitting || !isAgreed}>
-            {submitting ? "Applying Signature..." : "Sign & Submit Grade"}
+          <Button
+            onClick={handleSignSubmit}
+            className="h-9 text-xs rounded-xl shadow-lg shadow-primary/15"
+            disabled={submitting || !isAgreed || !password.trim()}
+          >
+            {submitting ? "Verifying & Signing..." : "Sign & Submit Grade"}
           </Button>
         </DialogFooter>
       </DialogContent>

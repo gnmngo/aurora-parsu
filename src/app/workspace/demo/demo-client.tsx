@@ -291,6 +291,7 @@ export default function DemoClient() {
                     pdfUrl={pdfUrl} 
                     projectId={DEMO_PROJECT_ID} 
                     stageId={stageId} 
+                    currentUserRole="panelist"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">
@@ -323,6 +324,7 @@ export default function DemoClient() {
               pdfUrl={pdfUrl} 
               projectId={DEMO_PROJECT_ID} 
               stageId={stageId} 
+              currentUserRole="panelist"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-muted/30 text-sm text-muted-foreground">

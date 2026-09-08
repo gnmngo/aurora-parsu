@@ -726,6 +726,7 @@ export function GradingPanel({
     signatureImage: string;
     printedName: string;
     positionRole: string;
+    password: string;
   }) => {
     if (!evalId) {
       toast.error("Save your draft evaluation first.");
@@ -733,13 +734,14 @@ export function GradingPanel({
     }
 
     try {
-      toast.loading("Securing signature and locking evaluation...");
+      toast.loading("Verifying credentials & securing signature under RA 8792...");
       const updated = await signEvaluationAction({
         evaluationId: evalId,
         signatureType: sig.signatureType,
         signatureImage: sig.signatureImage,
         printedName: sig.printedName,
         positionRole: sig.positionRole,
+        password: sig.password,
         scores,
         totalScore: weightedScore,
         verdictCode: verdict,

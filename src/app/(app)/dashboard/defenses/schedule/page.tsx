@@ -30,6 +30,7 @@ import {
   Layers,
   CheckCircle2,
   AlertCircle,
+  ShieldAlert,
   Building2,
   GraduationCap,
 } from "lucide-react";
@@ -104,7 +105,7 @@ export default function SchedulePage() {
           getApprovedFacultyListAction(),
           supabase
             .from("projects")
-            .select("id, title, status, documents(id, stage_id, adviser_approval_status)")
+            .select("id, title, status, documents(id, stage_id, adviser_approval_status), project_members(profile_id, member_role, profiles!project_members_profile_id_fkey(first_name, last_name))")
             .is("archived_at", null)
             .order("title"),
         ]);
@@ -321,10 +322,66 @@ export default function SchedulePage() {
   };
 
   // -------------------------------------------------------------
+  // CONFLICT OF INTEREST (COI) RESOLUTION
+  // -------------------------------------------------------------
+  // Single Project Adviser calculation
+  const singleSelectedProjectObj = useMemo(() => {
+    return singleProjects.find((p) => p.id === singleSelectedProject);
+  }, [singleProjects, singleSelectedProject]);
+
+  const singleProjectAdviser = useMemo(() => {
+    if (!singleSelectedProjectObj?.project_members) return null;
+    const members = Array.isArray(singleSelectedProjectObj.project_members)
+      ? singleSelectedProjectObj.project_members
+      : [singleSelectedProjectObj.project_members];
+    const adv = members.find((m: any) => m?.member_role === "adviser");
+    if (!adv) return null;
+    const prof = Array.isArray(adv.profiles) ? adv.profiles[0] : adv.profiles;
+    return {
+      profileId: adv.profile_id as string,
+      name: prof ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim() : "Project Adviser",
+    };
+  }, [singleSelectedProjectObj]);
+
+  // If adviser is selected as a panelist in single mode, auto-remove them
+  useEffect(() => {
+    if (singleProjectAdviser?.profileId && singlePanelists.includes(singleProjectAdviser.profileId)) {
+      setSinglePanelists((prev) => prev.filter((id) => id !== singleProjectAdviser.profileId));
+      toast.warning(
+        `Auto-removed ${singleProjectAdviser.name} from panel pool (Conflict of Interest: research advisers cannot evaluate their own project).`
+      );
+    }
+  }, [singleProjectAdviser?.profileId, singlePanelists]);
+
+  // Batch Mode Conflicts calculation
+  const batchConflicts = useMemo(() => {
+    if (batchPanelists.length === 0 || selectedCandidateIds.length === 0) return [];
+    const conflicts: { projectId: string; projectTitle: string; adviserName: string; adviserProfileId: string }[] = [];
+    for (const id of selectedCandidateIds) {
+      const cand = candidates.find((c) => c.id === id);
+      if (cand?.adviserProfileId && batchPanelists.includes(cand.adviserProfileId)) {
+        conflicts.push({
+          projectId: cand.id,
+          projectTitle: cand.title,
+          adviserName: cand.adviserName,
+          adviserProfileId: cand.adviserProfileId,
+        });
+      }
+    }
+    return conflicts;
+  }, [batchPanelists, selectedCandidateIds, candidates]);
+
+  // -------------------------------------------------------------
   // SUBMIT HANDLERS
   // -------------------------------------------------------------
   const handleBatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (batchConflicts.length > 0) {
+      const first = batchConflicts[0];
+      return toast.error(
+        `Conflict of Interest: ${first.adviserName} is selected as a panelist but advises "${first.projectTitle}". Please remove this adviser from the panel pool or exclude this project.`
+      );
+    }
     if (!selectedStageId) return toast.error("Please select a defense stage.");
     if (!batchIsOnline && (!batchRoom || !batchRoom.trim())) {
       return toast.error("Please specify the single venue / room for this batch.");
@@ -388,6 +445,11 @@ export default function SchedulePage() {
   const handleSingleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!singleSelectedProject) return toast.error("Please select a project.");
+    if (singleProjectAdviser && singlePanelists.includes(singleProjectAdviser.profileId)) {
+      return toast.error(
+        `Conflict of Interest: ${singleProjectAdviser.name} is the assigned research adviser for this project and cannot evaluate it.`
+      );
+    }
     if (!singleSelectedStage) return toast.error("Please select a defense stage.");
     if (!singleScheduledAt) return toast.error("Please specify date and time.");
 
@@ -773,27 +835,48 @@ export default function SchedulePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-border p-3 rounded-xl bg-muted/10">
                 {facultyList.map((fac) => {
                   const isChecked = batchPanelists.includes(fac.profile_id);
+                  const advisesSelectedCount = candidates.filter(
+                    (c) => selectedCandidateIds.includes(c.id) && c.adviserProfileId === fac.profile_id
+                  ).length;
+                  const hasConflict = isChecked && advisesSelectedCount > 0;
+
                   return (
                     <label
                       key={fac.profile_id}
-                      className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer border transition-all select-none ${
-                        isChecked
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border transition-all select-none ${
+                        hasConflict
+                          ? "bg-rose-500/10 border-rose-500/50 text-rose-800 dark:text-rose-200 font-semibold"
+                          : isChecked
                           ? "bg-primary/5 border-primary/40 text-foreground font-semibold"
                           : "border-transparent hover:bg-muted/40 text-muted-foreground"
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleBatchPanelistToggle(fac.profile_id)}
-                        className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
-                      />
-                      <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-                        <span className="text-[11px] block">{fac.name}</span>
-                        <span className="text-[9px] text-muted-foreground block truncate">
-                          {fac.department || fac.email}
-                        </span>
+                      <div className="flex items-center gap-2.5 overflow-hidden">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleBatchPanelistToggle(fac.profile_id)}
+                          className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                        />
+                        <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+                          <span className="text-[11px] block">{fac.name}</span>
+                          <span className="text-[9px] text-muted-foreground block truncate">
+                            {fac.department || fac.email}
+                          </span>
+                        </div>
                       </div>
+                      {advisesSelectedCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] px-1.5 py-0 shrink-0 ml-1.5 ${
+                            isChecked
+                              ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                          }`}
+                        >
+                          {isChecked ? "⚠️ COI Conflict" : `Advises ${advisesSelectedCount}`}
+                        </Badge>
+                      )}
                     </label>
                   );
                 })}
@@ -881,12 +964,20 @@ export default function SchedulePage() {
                         {candidates.map((proj) => {
                           const isSelected = selectedCandidateIds.includes(proj.id);
                           const slot = projectTimeSlots[proj.id];
+                          const hasPanelConflict =
+                            isSelected &&
+                            !!proj.adviserProfileId &&
+                            batchPanelists.includes(proj.adviserProfileId);
 
                           return (
                             <tr
                               key={proj.id}
                               className={`transition-colors ${
-                                isSelected ? "bg-primary/[0.02]" : "opacity-60 bg-muted/5"
+                                hasPanelConflict
+                                  ? "bg-rose-500/10 border-l-4 border-l-rose-500"
+                                  : isSelected
+                                  ? "bg-primary/[0.02]"
+                                  : "opacity-60 bg-muted/5"
                               }`}
                             >
                               <td className="p-3 text-center">
@@ -902,9 +993,22 @@ export default function SchedulePage() {
                                 <div className="text-[11px] text-muted-foreground mt-0.5">
                                   Author: {proj.studentName}
                                 </div>
+                                {hasPanelConflict && (
+                                  <Badge
+                                    variant="danger"
+                                    className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 text-[10px] font-medium mt-1 inline-flex items-center gap-1"
+                                  >
+                                    <ShieldAlert className="h-3 w-3" />
+                                    Panel Conflict: Adviser {proj.adviserName} is selected in Committee Pool
+                                  </Badge>
+                                )}
                               </td>
                               <td className="p-3">
-                                <span className="text-muted-foreground font-medium">
+                                <span
+                                  className={`font-medium ${
+                                    hasPanelConflict ? "text-rose-600 font-semibold" : "text-muted-foreground"
+                                  }`}
+                                >
                                   {proj.adviserName}
                                 </span>
                               </td>

@@ -259,6 +259,8 @@ export function InteractivePdfViewer({
 
   // 2. Handle Text Selection MouseUp (Google Docs trigger)
   const handleMouseUp = () => {
+    // Students can select text to read/copy, but cannot create reviewer annotations
+    if (currentUserRole === "student") return;
     if (showComposer) return; // Keep composer open while typing
 
     const selection = window.getSelection();
@@ -450,10 +452,21 @@ export function InteractivePdfViewer({
         {/* Guidance badge */}
         <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
           <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-          <span className="hidden md:inline font-medium">
-            Highlight any text in the PDF to leave an inline comment
-          </span>
-          <span className="md:hidden font-medium">Highlight text to comment</span>
+          {currentUserRole === "student" ? (
+            <>
+              <span className="hidden md:inline font-medium">
+                Click any highlighted text to view faculty suggestions &amp; reply
+              </span>
+              <span className="md:hidden font-medium">Click highlights to view feedback</span>
+            </>
+          ) : (
+            <>
+              <span className="hidden md:inline font-medium">
+                Highlight any text in the PDF to leave an inline comment
+              </span>
+              <span className="md:hidden font-medium">Highlight text to comment</span>
+            </>
+          )}
           <Badge variant="outline" className="text-[10px] ml-1 font-bold">
             {annotations.length} Highlights
           </Badge>

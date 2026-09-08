@@ -251,16 +251,18 @@ export function PdfViewerPanel({
             </button>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 rounded-lg text-xs font-semibold shadow-xs"
-            onClick={() => setShowAddModal(true)}
-          >
-            <MessageSquarePlus className="h-3.5 w-3.5 text-primary" />
-            <span className="hidden sm:inline">Add General Remark</span>
-            <span className="sm:hidden">Remark</span>
-          </Button>
+          {currentUserRole !== "student" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 rounded-lg text-xs font-semibold shadow-xs"
+              onClick={() => setShowAddModal(true)}
+            >
+              <MessageSquarePlus className="h-3.5 w-3.5 text-primary" />
+              <span className="hidden sm:inline">Add General Remark</span>
+              <span className="sm:hidden">Remark</span>
+            </Button>
+          )}
 
           <Button
             variant={showRemarksDrawer ? "secondary" : "ghost"}

@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import { headers } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
@@ -176,6 +177,7 @@ export interface SignEvaluationInput {
   signatureImage: string;
   printedName: string;
   positionRole: string;
+  password?: string;
   scores: Record<string, number>;
   verdictCode: string;
   panelNotes: string;
@@ -198,6 +200,27 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error("Unauthorized. Please sign in again.");
   }
   const userId = user.id;
+
+  // 1b. Step-Up Credential Re-Authentication (RA 8792 Legal Non-Repudiation)
+  if (!input.password || !input.password.trim()) {
+    throw new Error("Password re-authentication is required to certify and affix your electronic signature.");
+  }
+
+  // Defensively check password against Supabase Auth without mutating the active session
+  const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().replace(/^["']|["']$/g, "");
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+  const authVerifier = createSupabaseClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data: reAuthData, error: reAuthErr } = await authVerifier.auth.signInWithPassword({
+    email: user.email!,
+    password: input.password.trim(),
+  });
+
+  if (reAuthErr || !reAuthData.user || reAuthData.user.id !== userId) {
+    throw new Error("Password re-authentication failed. Incorrect account password. Electronic signature authorization denied under Republic Act No. 8792.");
+  }
 
   // 2. Fetch evaluation and verify ownership + lock status
   const { data: currentEval, error: fetchError } = await supabase
@@ -421,6 +444,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
       signature_hash: payloadHash,
       total_score: computedScore,
       verdict_code: input.verdictCode,
+      reauthentication_method: "password_verified",
     },
     ip_address: ip,
     user_agent: userAgent,

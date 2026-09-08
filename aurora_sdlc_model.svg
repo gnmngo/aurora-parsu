@@ -1,0 +1,131 @@
+<svg viewBox="0 0 1280 720" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff; font-family:'Times New Roman', Georgia, serif;">
+  <!-- Pure White Background -->
+  <rect width="1280" height="720" fill="#ffffff" />
+
+  <defs>
+    <!-- Shadow filter for clean presentation -->
+    <filter id="subtle-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.12" />
+    </filter>
+
+    <!-- Curved Text Paths for the 4 Loop Segments -->
+    <!-- Arc for Build and Design (Bottom Right: ~-70 deg to ~-15 deg) -->
+    <path id="path-build-design" d="M 640 565 A 225 225 0 0 0 850 425" fill="none" />
+    
+    <!-- Arc for Development of Main Features (Right/Top Right: ~-10 deg to ~65 deg) -->
+    <path id="path-dev-features" d="M 855 410 A 225 225 0 0 0 750 145" fill="none" />
+    
+    <!-- Arc for Make Improvements (Top/Top Left: ~75 deg to ~165 deg) -->
+    <path id="path-improvements" d="M 735 135 A 225 225 0 0 0 445 205" fill="none" />
+    
+    <!-- Arc for Testing and Troubleshooting (Left/Bottom Left: ~175 deg to ~255 deg) -->
+    <path id="path-testing" d="M 435 220 A 225 225 0 0 0 485 515" fill="none" />
+  </defs>
+
+  <!-- ======================================================== -->
+  <!-- 1. BOTTOM-LEFT INPUT CHEVRON: REQUIREMENTS AND PLANNING   -->
+  <!-- ======================================================== -->
+  <!-- Points: (100, 560) -> (580, 560) -> (630, 625) -> (580, 690) -> (100, 690) -> (160, 625) -->
+  <path d="M 90 560 L 590 560 L 650 625 L 590 690 L 90 690 L 155 625 Z" 
+        fill="#8c52b8" filter="url(#subtle-shadow)" />
+  <text x="360" y="633" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="'Times New Roman', serif;">Requirements and Planning</text>
+
+  <!-- ======================================================== -->
+  <!-- 2. CIRCULAR SPRINT LOOP SEGMENTS (CLOCKWISE CHEVRONS)     -->
+  <!-- ======================================================== -->
+
+  <!-- SEGMENT A: BUILD AND DESIGN (Bottom Arc: Blue) -->
+  <!-- Arc from bottom to lower-right with chevron notch -->
+  <path d="M 610 615 
+           A 275 275 0 0 0 910 405 
+           L 965 435 
+           L 870 380 
+           L 815 350
+           A 175 175 0 0 1 610 515 
+           Z" 
+        fill="#2c6eb5" />
+
+  <!-- SEGMENT B: DEVELOPMENT OF MAIN FEATURES (Right to Top-Right: Cyan) -->
+  <path d="M 870 380
+           A 275 275 0 0 0 740 85 
+           L 755 25 
+           L 695 100 
+           L 680 165
+           A 175 175 0 0 1 815 350
+           Z" 
+        fill="#00a3e8" />
+
+  <!-- SEGMENT C: MAKE IMPROVEMENTS (Top to Upper-Left: Orange) -->
+  <path d="M 695 100
+           A 275 275 0 0 0 385 240 
+           L 340 195 
+           L 380 290 
+           L 445 280
+           A 175 175 0 0 1 680 165
+           Z" 
+        fill="#f07126" />
+
+  <!-- SEGMENT D: TESTING AND TROUBLESHOOTING (Left to Bottom-Left: Green) -->
+  <path d="M 380 290
+           A 275 275 0 0 0 495 565 
+           L 460 620 
+           L 550 580 
+           L 535 505
+           A 175 175 0 0 1 445 280
+           Z" 
+        fill="#60a137" />
+
+  <!-- ======================================================== -->
+  <!-- 3. BOTTOM-RIGHT OUTPUT CHEVRON: DEPLOYMENT                -->
+  <!-- ======================================================== -->
+  <!-- Emerges from bottom arc and points right to completion -->
+  <path d="M 610 560 L 1140 560 L 1205 625 L 1140 690 L 610 690 L 675 625 Z" 
+        fill="#ba147c" filter="url(#subtle-shadow)" />
+  <text x="915" y="633" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="'Times New Roman', serif;">Deployment</text>
+
+  <!-- ======================================================== -->
+  <!-- 4. TEXT ON CURVED PATHS INSIDE THE LOOP SEGMENTS          -->
+  <!-- ======================================================== -->
+  <text font-size="21" font-weight="bold" fill="#ffffff" font-family="'Times New Roman', serif;">
+    <textPath href="#path-build-design" startOffset="50%" text-anchor="middle">
+      Build and Design
+    </textPath>
+  </text>
+
+  <text font-size="21" font-weight="bold" fill="#ffffff" font-family="'Times New Roman', serif;">
+    <textPath href="#path-dev-features" startOffset="50%" text-anchor="middle">
+      Development of Main Features
+    </textPath>
+  </text>
+
+  <text font-size="21" font-weight="bold" fill="#ffffff" font-family="'Times New Roman', serif;">
+    <textPath href="#path-improvements" startOffset="50%" text-anchor="middle">
+      Make Improvements
+    </textPath>
+  </text>
+
+  <text font-size="21" font-weight="bold" fill="#ffffff" font-family="'Times New Roman', serif;">
+    <textPath href="#path-testing" startOffset="50%" text-anchor="middle">
+      Testing and Troubleshooting
+    </textPath>
+  </text>
+
+  <!-- ======================================================== -->
+  <!-- 5. CENTER WHITE CIRCLE & AURORA BRANDING                 -->
+  <!-- ======================================================== -->
+  <circle cx="640" cy="340" r="172" fill="#ffffff" stroke="#f1f5f9" stroke-width="2" filter="url(#subtle-shadow)" />
+
+  <!-- Center Text exactly formatted matching Page 69 center style -->
+  <text x="640" y="295" font-size="26" font-weight="bold" fill="#000000" text-anchor="middle" font-family="'Times New Roman', Georgia, serif;">
+    Academic Defense
+  </text>
+  <text x="640" y="330" font-size="26" font-weight="bold" fill="#000000" text-anchor="middle" font-family="'Times New Roman', Georgia, serif;">
+    Workflow System
+  </text>
+  <text x="640" y="380" font-size="32" font-weight="bold" fill="#002060" text-anchor="middle" font-family="'Times New Roman', Georgia, serif;">
+    (AURORA)
+  </text>
+  <text x="640" y="420" font-size="14" font-style="italic" fill="#555555" text-anchor="middle" font-family="'Times New Roman', serif;">
+    Partido State University – Goa Campus
+  </text>
+</svg>

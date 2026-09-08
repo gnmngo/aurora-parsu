@@ -177,6 +177,29 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
   if (authErr || !user) throw new Error("Unauthorized. Please log in.");
   if (!input.content?.trim()) throw new Error("Annotation content cannot be empty.");
 
+  // Verify role authorization: only faculty / admins can create reviewer annotations
+  const { data: userRolesData } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", user.id);
+
+  const codes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
+    ?.map((ur) => {
+      const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+      return r?.code as string | undefined;
+    })
+    .filter(Boolean) as string[] ?? [];
+
+  const isStudentOnly =
+    codes.includes("student") &&
+    !codes.some((c) => ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(c));
+
+  if (isStudentOnly) {
+    throw new Error(
+      "Permission denied: Students cannot create reviewer annotations on the manuscript. You can review comments and submit replies."
+    );
+  }
+
   // 1. Resolve document, project, and stage details
   const { data: docVer, error: verErr } = await supabase
     .from("document_versions")

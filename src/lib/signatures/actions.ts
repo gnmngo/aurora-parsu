@@ -19,6 +19,7 @@
 
 import crypto from "crypto";
 import { headers } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
@@ -84,6 +85,7 @@ export interface SignEvaluationV2Input {
   signatureType: "drawn" | "typed" | "uploaded" | "profile";
   signatureImageBase64?: string;    // Used only for upload to storage
   reAuthToken?: string;             // OTP token or password confirmation token
+  password?: string;
 }
 
 // ─── Compute SHA-256 hash ─────────────────────────────────────────────────────
@@ -263,6 +265,23 @@ export async function signEvaluationV2Action(
   // 1. Verify identity
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error("Unauthorized. Please log in.");
+
+  // 1b. Step-Up Re-Authentication if password provided
+  const candidatePass = input.password || input.reAuthToken;
+  if (candidatePass) {
+    const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().replace(/^["']|["']$/g, "");
+    const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+    const authVerifier = createSupabaseClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: reAuthData, error: reAuthErr } = await authVerifier.auth.signInWithPassword({
+      email: user.email!,
+      password: candidatePass.trim(),
+    });
+    if (reAuthErr || !reAuthData.user || reAuthData.user.id !== user.id) {
+      throw new Error("Password re-authentication failed. Incorrect account password. Electronic signature authorization denied under Republic Act No. 8792.");
+    }
+  }
 
   // 2. Load evaluation
   const { data: evaluation, error: evalErr } = await supabase

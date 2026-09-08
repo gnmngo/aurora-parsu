@@ -88,12 +88,25 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
   const { data: adviserMember } = await supabase
     .from("project_members")
-    .select("profile_id")
+    .select("profile_id, profiles!project_members_profile_id_fkey(first_name, last_name)")
     .eq("project_id", input.projectId)
     .eq("member_role", "adviser")
     .maybeSingle();
 
   const adviserProfileId = adviserMember?.profile_id;
+
+  // Conflict of Interest Guard: An adviser cannot be a panel evaluator for their own advisee
+  if (adviserProfileId && input.panelistIds.includes(adviserProfileId)) {
+    const prof = Array.isArray(adviserMember?.profiles)
+      ? adviserMember.profiles[0]
+      : adviserMember?.profiles;
+    const adviserName = prof
+      ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim()
+      : "The designated research adviser";
+    throw new Error(
+      `Conflict of Interest Violation: ${adviserName} is the assigned research adviser for this project. Academic policy strictly prohibits an adviser from serving on the evaluation panel for their own advisee's defense.`
+    );
+  }
 
   // 3. Validation A: Room / Venue Conflict
   const { data: roomConflict } = await supabase
@@ -379,12 +392,25 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
 
   const { data: adviserMember } = await supabase
     .from("project_members")
-    .select("profile_id")
+    .select("profile_id, profiles!project_members_profile_id_fkey(first_name, last_name)")
     .eq("project_id", input.projectId)
     .eq("member_role", "adviser")
     .maybeSingle();
 
   const adviserProfileId = adviserMember?.profile_id;
+
+  // Conflict of Interest Guard: An adviser cannot be a panel evaluator for their own advisee
+  if (adviserProfileId && input.panelistIds.includes(adviserProfileId)) {
+    const prof = Array.isArray(adviserMember?.profiles)
+      ? adviserMember.profiles[0]
+      : adviserMember?.profiles;
+    const adviserName = prof
+      ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim()
+      : "The designated research adviser";
+    throw new Error(
+      `Conflict of Interest Violation: ${adviserName} is the assigned research adviser for this project. Academic policy strictly prohibits an adviser from serving on the evaluation panel for their own advisee's defense.`
+    );
+  }
 
   // 3. Validation A: Room / Venue Conflict
   const { data: roomConflict } = await supabase
@@ -713,6 +739,7 @@ export interface BatchCandidateProject {
   studentName: string;
   studentEmail?: string;
   adviserName: string;
+  adviserProfileId?: string;
   hasApprovedDoc: boolean;
   adviserApprovalStatus: string;
   existingSchedule: {
@@ -845,6 +872,7 @@ export async function getBatchDefenseCandidatesAction(filters: {
     const adviserName = adviserProfile
       ? `${adviserProfile.first_name || ""} ${adviserProfile.last_name || ""}`.trim()
       : "No Adviser Assigned";
+    const adviserProfileId = adviserMember?.profile_id || adviserProfile?.id || undefined;
 
     const docForStage = filters.stageId
       ? (proj.documents as any[])?.find((d: any) => d.stage_id === filters.stageId)
@@ -874,6 +902,7 @@ export async function getBatchDefenseCandidatesAction(filters: {
       studentName,
       studentEmail: studentProfile?.email,
       adviserName,
+      adviserProfileId,
       hasApprovedDoc,
       adviserApprovalStatus: docForStage?.adviser_approval_status || "not_uploaded",
       existingSchedule: existingSched
@@ -920,6 +949,30 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
 
   if (!input.allocations || input.allocations.length === 0) {
     throw new Error("Please select at least one project to batch schedule.");
+  }
+
+  // 1.5 Conflict of Interest Check upfront for all allocations in the batch
+  if (input.panelistIds && input.panelistIds.length > 0) {
+    const allocProjIds = input.allocations.map((a) => a.projectId);
+    const { data: batchAdvisers } = await supabase
+      .from("project_members")
+      .select("project_id, profile_id, projects(title), profiles!project_members_profile_id_fkey(first_name, last_name)")
+      .in("project_id", allocProjIds)
+      .eq("member_role", "adviser");
+
+    if (batchAdvisers && batchAdvisers.length > 0) {
+      const conflictingAdvisers = batchAdvisers.filter((adv) => input.panelistIds.includes(adv.profile_id));
+      if (conflictingAdvisers.length > 0) {
+        const first = conflictingAdvisers[0];
+        const prof = Array.isArray(first.profiles) ? first.profiles[0] : first.profiles;
+        const advName = prof ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim() : "A research adviser";
+        const proj = Array.isArray(first.projects) ? first.projects[0] : first.projects;
+        const projTitle = proj?.title || "one of the selected projects";
+        throw new Error(
+          `Conflict of Interest Detected: ${advName} is the assigned research adviser for "${projTitle}". Academic policy strictly prohibits an adviser from evaluating their own advisee's defense. Please remove this faculty member from the panel committee or exclude this project from the batch.`
+        );
+      }
+    }
   }
 
   const scheduledResults: any[] = [];
@@ -979,15 +1032,16 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
       continue;
     }
 
-    // 4. Assign panel committee members
-    if (input.panelistIds.length > 0) {
+    // 4. Assign panel committee members (safely excluding project adviser if present)
+    const safePanelistIds = input.panelistIds.filter((pid) => pid !== adviserProfileId);
+    if (safePanelistIds.length > 0) {
       await supabase
         .from("defense_panels")
         .delete()
         .eq("project_id", alloc.projectId)
         .eq("stage_id", alloc.stageId);
 
-      const panelsToInsert = input.panelistIds.map((pid) => ({
+      const panelsToInsert = safePanelistIds.map((pid) => ({
         project_id: alloc.projectId,
         stage_id: alloc.stageId,
         profile_id: pid,

@@ -212,6 +212,8 @@ export function PdfUploader({
           .update({
             title: file.name.replace(/\.[^/.]+$/, ""),
             status: "under_review",
+            adviser_approval_status: "pending",
+            approval_remarks: null,
           })
           .eq("id", existingDoc.id)
           .select()
@@ -227,6 +229,8 @@ export function PdfUploader({
             stage_id: targetStageId,
             title: file.name.replace(/\.[^/.]+$/, ""),
             status: "under_review",
+            adviser_approval_status: "pending",
+            approval_remarks: null,
             created_by: userId,
           })
           .select()
