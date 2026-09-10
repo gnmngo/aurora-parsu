@@ -21,7 +21,7 @@ import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { format } from "date-fns";
 import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
-  Clock, Upload, User, Building2, GraduationCap, AlertCircle,
+  Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2
 } from "lucide-react";
 import Link from "next/link";
@@ -68,6 +68,10 @@ interface DocumentVersion {
 interface DocumentData {
   id: string;
   stage_id: string;
+  title?: string;
+  status?: string;
+  adviser_approval_status?: string | null;
+  approval_remarks?: string | null;
   document_versions: DocumentVersion[];
 }
 
@@ -261,7 +265,7 @@ export default function MyProjectPage() {
       const { data: docs } = await supabase
         .from("documents")
         .select(`
-          id, stage_id,
+          id, stage_id, title, status, adviser_approval_status, approval_remarks,
           document_versions (
             id, version_number, file_name, file_size, created_at, is_current, checksum_sha256
           )
@@ -500,6 +504,59 @@ export default function MyProjectPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ── Revision Required Alert Banner ─────────────────────── */}
+        {documents.some((d) => d.adviser_approval_status === "rejected") && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-50/90 dark:bg-amber-950/40 p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-amber-950 dark:text-amber-100 uppercase tracking-wide">
+                    Adviser Revision Required
+                  </h3>
+                  <Badge variant="warning" className="text-[9px] font-bold">
+                    Action Required
+                  </Badge>
+                </div>
+                {documents.filter((d) => d.adviser_approval_status === "rejected").map((d) => (
+                  <div key={d.id} className="text-xs text-amber-900/90 dark:text-amber-200">
+                    <p className="font-semibold">{d.title || "Manuscript"}:</p>
+                    <p className="mt-1 italic font-medium bg-amber-100/70 dark:bg-amber-900/50 p-2.5 rounded-lg border border-amber-300/40">
+                      &ldquo;{d.approval_remarks || "Revisions required. Please address adviser remarks and upload a revised draft."}&rdquo;
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end md:self-center">
+              {documents.filter((d) => d.adviser_approval_status === "rejected").map((d) => (
+                <Button
+                  key={d.id}
+                  size="sm"
+                  className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs"
+                  asChild
+                >
+                  <Link href={`/workspace/${project.id}/${d.stage_id}`}>
+                    <FileText className="h-4 w-4" />
+                    Open Feedback &amp; Annotations
+                  </Link>
+                </Button>
+              ))}
+              <PdfUploader
+                projectId={project.id}
+                stageId={project.current_stage_id || undefined}
+                buttonText="Upload Revised PDF"
+                buttonVariant="outline"
+                className="font-bold text-xs border-amber-400 dark:border-amber-700"
+                onUploadCompleted={loadProjectData}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Tab navigation */}
         <div className="flex items-center gap-0.5 border-b border-border overflow-x-auto">
@@ -803,7 +860,42 @@ export default function MyProjectPage() {
                     (a, b) => b.version_number - a.version_number
                   );
                   return (
-                    <Card key={doc.id} className="rounded-2xl border border-border">
+                    <Card key={doc.id} className="rounded-2xl border border-border overflow-hidden">
+                      {/* Document Header with Title & Adviser Status */}
+                      <div className="px-5 py-3 border-b border-border bg-muted/20 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-bold text-sm text-foreground">{doc.title || "Manuscript"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {doc.adviser_approval_status === "approved" ? (
+                            <Badge variant="success" className="text-[10px] font-bold">
+                              Adviser Endorsed
+                            </Badge>
+                          ) : doc.adviser_approval_status === "rejected" ? (
+                            <Badge variant="warning" className="text-[10px] font-bold">
+                              Revisions Required
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
+                              Under Review
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {doc.approval_remarks && (
+                        <div className={cn(
+                          "px-5 py-2.5 text-xs border-b border-border flex items-start gap-2",
+                          doc.adviser_approval_status === "rejected"
+                            ? "bg-amber-500/10 text-amber-950 dark:text-amber-200"
+                            : "bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
+                        )}>
+                          <span className="font-bold shrink-0">Adviser Remarks:</span>
+                          <span className="font-medium">{doc.approval_remarks}</span>
+                        </div>
+                      )}
+
                       <CardContent className="p-0">
                         <div className="overflow-hidden rounded-2xl">
                           {versions.map((v, vi) => (

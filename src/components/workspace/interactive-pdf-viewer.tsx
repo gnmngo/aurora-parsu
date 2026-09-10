@@ -22,6 +22,9 @@ import {
   AlertCircle,
   HelpCircle,
   Sparkles,
+  PenTool,
+  MousePointer,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +42,22 @@ if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 }
 
+function pointsToSvgPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) {
+    return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} L ${(points[0].x + 0.1).toFixed(2)} ${(points[0].y + 0.1).toFixed(2)}`;
+  }
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const xc = (points[i].x + points[i + 1].x) / 2;
+    const yc = (points[i].y + points[i + 1].y) / 2;
+    path += ` Q ${points[i].x.toFixed(2)} ${points[i].y.toFixed(2)}, ${xc.toFixed(2)} ${yc.toFixed(2)}`;
+  }
+  path += ` L ${points[points.length - 1].x.toFixed(2)} ${points[points.length - 1].y.toFixed(2)}`;
+  return path;
+}
+
 export interface AnnotationItem {
   id: string;
   document_version_id: string;
@@ -49,6 +68,10 @@ export interface AnnotationItem {
   content: string;
   selected_text?: string | null;
   coordinates?: {
+    isDrawing?: boolean;
+    svgPath?: string;
+    strokeColor?: string;
+    strokeWidth?: number;
     left: number;
     top: number;
     width: number;
@@ -116,6 +139,28 @@ export function InteractivePdfViewer({
   // Reply Input
   const [replyInput, setReplyInput] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Freehand Pen Drawing State
+  const [activeTool, setActiveTool] = useState<"select" | "pen">("select");
+  const [penColor, setPenColor] = useState<string>("#ef4444");
+  const [penWidth, setPenWidth] = useState<number>(3);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [currentDrawingPage, setCurrentDrawingPage] = useState<number | null>(null);
+  const [currentPoints, setCurrentPoints] = useState<Array<{ x: number; y: number }>>([]);
+
+  // Pending Drawing Annotation (composer modal)
+  const [pendingDrawing, setPendingDrawing] = useState<{
+    pageNumber: number;
+    svgPath: string;
+    bounds: { left: number; top: number; width: number; height: number };
+    strokeColor: string;
+    strokeWidth: number;
+    popoverPosition: { x: number; y: number };
+  } | null>(null);
+
+  const [drawingCommentInput, setDrawingCommentInput] = useState("");
+  const [drawingSeverity, setDrawingSeverity] = useState<"info" | "minor" | "major" | "critical">("minor");
+  const [submittingDrawing, setSubmittingDrawing] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
@@ -257,8 +302,141 @@ export function InteractivePdfViewer({
     }
   }, [selectedAnnotationId, annotations]);
 
+  // 1b. Freehand Pen Drawing Handlers
+  const getNormalizedPoint = (e: React.PointerEvent<SVGSVGElement>, svgEl: SVGSVGElement) => {
+    const rect = svgEl.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    return { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>, pageNum: number) => {
+    if (activeTool !== "pen" || currentUserRole === "student") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // pointer capture fallback
+    }
+
+    const pt = getNormalizedPoint(e, e.currentTarget);
+    setIsDrawing(true);
+    setCurrentDrawingPage(pageNum);
+    setCurrentPoints([pt]);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>, pageNum: number) => {
+    if (!isDrawing || currentDrawingPage !== pageNum) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pt = getNormalizedPoint(e, e.currentTarget);
+    setCurrentPoints((prev) => {
+      const last = prev[prev.length - 1];
+      if (last) {
+        const dx = pt.x - last.x;
+        const dy = pt.y - last.y;
+        if (dx * dx + dy * dy < 0.04) return prev;
+      }
+      return [...prev, pt];
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>, pageNum: number) => {
+    if (!isDrawing || currentDrawingPage !== pageNum) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsDrawing(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    if (currentPoints.length < 2) {
+      setCurrentPoints([]);
+      setCurrentDrawingPage(null);
+      return;
+    }
+
+    const pathStr = pointsToSvgPath(currentPoints);
+
+    let minX = 100, maxX = 0, minY = 100, maxY = 0;
+    currentPoints.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+
+    const pad = 1.2;
+    const left = Math.max(0, minX - pad);
+    const top = Math.max(0, minY - pad);
+    const width = Math.min(100 - left, (maxX - minX) + pad * 2);
+    const height = Math.min(100 - top, (maxY - minY) + pad * 2);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverX = rect.left + (maxX / 100) * rect.width;
+    const popoverY = rect.top + (maxY / 100) * rect.height + 10;
+
+    setPendingDrawing({
+      pageNumber: pageNum,
+      svgPath: pathStr,
+      bounds: { left, top, width, height },
+      strokeColor: penColor,
+      strokeWidth: penWidth,
+      popoverPosition: { x: popoverX, y: popoverY },
+    });
+
+    setCurrentPoints([]);
+    setCurrentDrawingPage(null);
+  };
+
+  const handleSaveDrawing = async () => {
+    if (!pendingDrawing || !documentVersionId) return;
+    setSubmittingDrawing(true);
+    try {
+      const res = await createAnnotationAction({
+        documentVersionId,
+        pageNumber: pendingDrawing.pageNumber,
+        content: drawingCommentInput.trim() || "Freehand pen markup note",
+        severity: drawingSeverity,
+        selectedText: `[Pen Drawing Markup - Page ${pendingDrawing.pageNumber}]`,
+        type: "correction_note",
+        coordinates: {
+          isDrawing: true,
+          svgPath: pendingDrawing.svgPath,
+          strokeColor: pendingDrawing.strokeColor,
+          strokeWidth: pendingDrawing.strokeWidth,
+          left: Number(pendingDrawing.bounds.left.toFixed(2)),
+          top: Number(pendingDrawing.bounds.top.toFixed(2)),
+          width: Number(pendingDrawing.bounds.width.toFixed(2)),
+          height: Number(pendingDrawing.bounds.height.toFixed(2)),
+        },
+      });
+
+      if (!res.success) throw new Error("Failed to save drawing annotation.");
+
+      toast.success("Freehand pen drawing saved!");
+      setPendingDrawing(null);
+      setDrawingCommentInput("");
+      await fetchAnnotations();
+      onAnnotationCreated?.();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error saving drawing";
+      toast.error(msg);
+    } finally {
+      setSubmittingDrawing(false);
+    }
+  };
+
   // 2. Handle Text Selection MouseUp (Google Docs trigger)
   const handleMouseUp = () => {
+    if (activeTool === "pen") return;
     // Students can select text to read/copy, but cannot create reviewer annotations
     if (currentUserRole === "student") return;
     if (showComposer) return; // Keep composer open while typing
@@ -447,6 +625,100 @@ export function InteractivePdfViewer({
           >
             Reset (100%)
           </Button>
+
+          {/* Tool Switcher (Faculty only) */}
+          {!isStudent && (
+            <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setActiveTool("select");
+                  setPendingDrawing(null);
+                }}
+                className={cn(
+                  "h-7 text-xs font-bold gap-1 px-2.5 rounded-md cursor-pointer transition-all",
+                  activeTool === "select"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Cursor / Text Selection Mode"
+              >
+                <MousePointer className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Select</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setActiveTool("pen");
+                  setPendingSelection(null);
+                  setShowComposer(false);
+                }}
+                className={cn(
+                  "h-7 text-xs font-bold gap-1 px-2.5 rounded-md cursor-pointer transition-all",
+                  activeTool === "pen"
+                    ? "bg-primary text-primary-foreground shadow-xs font-black"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Live Freehand Pen Drawing Mode"
+              >
+                <PenTool className="h-3.5 w-3.5" />
+                <span>Pen</span>
+              </Button>
+            </div>
+          )}
+
+          {/* Pen Styling Bar (When Pen tool is active) */}
+          {!isStudent && activeTool === "pen" && (
+            <div className="flex items-center gap-2 bg-card px-2 py-0.5 rounded-lg border border-border shadow-xs animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center gap-1">
+                {[
+                  { color: "#ef4444", label: "Red" },
+                  { color: "#2563eb", label: "Blue" },
+                  { color: "#d97706", label: "Amber" },
+                  { color: "#059669", label: "Emerald" },
+                  { color: "#7c3aed", label: "Purple" },
+                ].map((c) => (
+                  <button
+                    key={c.color}
+                    type="button"
+                    onClick={() => setPenColor(c.color)}
+                    style={{ backgroundColor: c.color }}
+                    className={cn(
+                      "h-4 w-4 rounded-full transition-transform cursor-pointer",
+                      penColor === c.color ? "ring-2 ring-offset-1 ring-primary scale-110" : "opacity-80 hover:opacity-100"
+                    )}
+                    title={c.label}
+                  />
+                ))}
+              </div>
+
+              <div className="h-3.5 w-px bg-border mx-0.5" />
+
+              <div className="flex items-center gap-1">
+                {[
+                  { width: 2, label: "Fine" },
+                  { width: 3.5, label: "Medium" },
+                  { width: 5, label: "Bold" },
+                ].map((w) => (
+                  <button
+                    key={w.width}
+                    type="button"
+                    onClick={() => setPenWidth(w.width)}
+                    className={cn(
+                      "px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-all",
+                      penWidth === w.width
+                        ? "bg-muted text-foreground ring-1 ring-border"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Guidance badge */}
@@ -455,9 +727,16 @@ export function InteractivePdfViewer({
           {currentUserRole === "student" ? (
             <>
               <span className="hidden md:inline font-medium">
-                Click any highlighted text to view faculty suggestions &amp; reply
+                Click any highlights or pen drawings to view faculty suggestions &amp; reply
               </span>
-              <span className="md:hidden font-medium">Click highlights to view feedback</span>
+              <span className="md:hidden font-medium">Click markups to view feedback</span>
+            </>
+          ) : activeTool === "pen" ? (
+            <>
+              <span className="hidden md:inline font-medium text-primary font-semibold">
+                Draw anywhere on the manuscript to circle diagrams or leave margin notes
+              </span>
+              <span className="md:hidden font-medium text-primary font-semibold">Draw freehand markup</span>
             </>
           ) : (
             <>
@@ -468,7 +747,7 @@ export function InteractivePdfViewer({
             </>
           )}
           <Badge variant="outline" className="text-[10px] ml-1 font-bold">
-            {annotations.length} Highlights
+            {annotations.length} Markups
           </Badge>
         </div>
       </div>
@@ -518,38 +797,136 @@ export function InteractivePdfViewer({
                   className="rounded-md overflow-hidden"
                 />
 
-                {/* Persistent Google Docs Style Yellow Highlight Overlays */}
-                {pageAnnotations.map((ann) => {
-                  if (!ann.coordinates) return null;
-                  const isActive = activeAnnotation?.id === ann.id;
-                  const isResolved = ["verified", "resolved", "closed"].includes(ann.status);
+                {/* Persistent Google Docs Style Yellow Highlight Overlays (Text comments) */}
+                {pageAnnotations
+                  .filter((ann) => ann.coordinates && !ann.coordinates.isDrawing)
+                  .map((ann) => {
+                    const isActive = activeAnnotation?.id === ann.id;
+                    const isResolved = ["verified", "resolved", "closed"].includes(ann.status);
 
-                  return (
-                    <div
-                      key={ann.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveAnnotation(ann);
-                        onSelectAnnotation?.(ann.id);
-                      }}
-                      style={{
-                        left: `${ann.coordinates.left}%`,
-                        top: `${ann.coordinates.top}%`,
-                        width: `${ann.coordinates.width}%`,
-                        height: `${ann.coordinates.height}%`,
-                      }}
-                      title={`"${ann.selected_text || "Highlighted text"}" — ${ann.content}`}
-                      className={cn(
-                        "absolute rounded-xs cursor-pointer transition-all z-10 pointer-events-auto",
-                        isResolved
-                          ? "bg-emerald-200/35 border-b-2 border-emerald-500 hover:bg-emerald-300/50"
-                          : isActive
-                          ? "bg-yellow-400/75 border-b-2 border-yellow-600 ring-2 ring-yellow-400 shadow-sm"
-                          : "bg-yellow-300/45 border-b-2 border-yellow-500 hover:bg-yellow-400/65"
-                      )}
+                    return (
+                      <div
+                        key={ann.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveAnnotation(ann);
+                          onSelectAnnotation?.(ann.id);
+                        }}
+                        style={{
+                          left: `${ann.coordinates!.left}%`,
+                          top: `${ann.coordinates!.top}%`,
+                          width: `${ann.coordinates!.width}%`,
+                          height: `${ann.coordinates!.height}%`,
+                        }}
+                        title={`"${ann.selected_text || "Highlighted text"}" — ${ann.content}`}
+                        className={cn(
+                          "absolute rounded-xs cursor-pointer transition-all z-10 pointer-events-auto",
+                          isResolved
+                            ? "bg-emerald-200/35 border-b-2 border-emerald-500 hover:bg-emerald-300/50"
+                            : isActive
+                            ? "bg-yellow-400/75 border-b-2 border-yellow-600 ring-2 ring-yellow-400 shadow-sm"
+                            : "bg-yellow-300/45 border-b-2 border-yellow-500 hover:bg-yellow-400/65"
+                        )}
+                      />
+                    );
+                  })}
+
+                {/* Freehand Vector SVG Overlay Layer */}
+                <svg
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  onPointerDown={(e) => handlePointerDown(e, pageNum)}
+                  onPointerMove={(e) => handlePointerMove(e, pageNum)}
+                  onPointerUp={(e) => handlePointerUp(e, pageNum)}
+                  className={cn(
+                    "absolute inset-0 w-full h-full z-20 touch-none",
+                    activeTool === "pen" && !isStudent
+                      ? "pointer-events-auto cursor-crosshair"
+                      : "pointer-events-none"
+                  )}
+                >
+                  {/* 1. Saved Vector Ink Drawings on this page */}
+                  {pageAnnotations
+                    .filter((ann) => ann.coordinates?.isDrawing && ann.coordinates.svgPath)
+                    .map((ann) => {
+                      const coords = ann.coordinates!;
+                      const isSelected = activeAnnotation?.id === ann.id;
+                      const isResolved = ["verified", "resolved", "closed"].includes(ann.status);
+                      const strokeColor = isResolved ? "#10b981" : (coords.strokeColor || "#ef4444");
+
+                      return (
+                        <g key={`drawing_${ann.id}`} className="pointer-events-auto">
+                          {isSelected && (
+                            <path
+                              d={coords.svgPath}
+                              stroke="#f59e0b"
+                              strokeWidth={(coords.strokeWidth || 3) + 3}
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="opacity-70 animate-pulse"
+                            />
+                          )}
+                          <path
+                            d={coords.svgPath}
+                            stroke={strokeColor}
+                            strokeWidth={coords.strokeWidth || 3}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={cn(
+                              "cursor-pointer transition-all hover:stroke-[4.5px]",
+                              isSelected && "filter drop-shadow-md"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAnnotation(ann);
+                              onSelectAnnotation?.(ann.id);
+                            }}
+                          >
+                            <title>{`${ann.content} (by ${ann.profiles?.first_name || "Faculty"})`}</title>
+                          </path>
+                        </g>
+                      );
+                    })}
+
+                  {/* 2. Active stroke currently being drawn by user */}
+                  {isDrawing && currentDrawingPage === pageNum && currentPoints.length > 1 && (
+                    <path
+                      d={pointsToSvgPath(currentPoints)}
+                      stroke={penColor}
+                      strokeWidth={penWidth}
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="pointer-events-none drop-shadow-sm"
                     />
-                  );
-                })}
+                  )}
+
+                  {/* 3. Pending completed stroke awaiting saving */}
+                  {pendingDrawing && pendingDrawing.pageNumber === pageNum && (
+                    <g className="pointer-events-none">
+                      <path
+                        d={pendingDrawing.svgPath}
+                        stroke={pendingDrawing.strokeColor}
+                        strokeWidth={pendingDrawing.strokeWidth + 2}
+                        strokeOpacity={0.3}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeDasharray="3 3"
+                      />
+                      <path
+                        d={pendingDrawing.svgPath}
+                        stroke={pendingDrawing.strokeColor}
+                        strokeWidth={pendingDrawing.strokeWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                  )}
+                </svg>
 
                 {/* Page Number Label in Footer */}
                 <div className="absolute -bottom-5 right-2 text-[10px] font-bold text-muted-foreground">
@@ -683,6 +1060,95 @@ export function InteractivePdfViewer({
         )}
 
         {/* ------------------------------------------------------------- */}
+        {/* Freehand Pen Drawing Markup Composer Card                    */}
+        {/* ------------------------------------------------------------- */}
+        {pendingDrawing && (
+          <div
+            style={{
+              left: Math.min(Math.max(16, pendingDrawing.popoverPosition.x - 140), typeof window !== "undefined" ? window.innerWidth - 320 : 400),
+              top: Math.max(60, pendingDrawing.popoverPosition.y),
+            }}
+            className="fixed z-50 w-72 bg-card rounded-xl border border-border shadow-2xl p-3 text-xs space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <PenTool className="h-3.5 w-3.5 text-primary" />
+                <span>Save Pen Markup</span>
+                <Badge variant="outline" className="text-[9px] px-1 py-0">
+                  Page {pendingDrawing.pageNumber}
+                </Badge>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingDrawing(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded"
+                title="Discard markup"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <textarea
+              autoFocus
+              rows={2}
+              value={drawingCommentInput}
+              onChange={(e) => setDrawingCommentInput(e.target.value)}
+              placeholder="Add revision remark or instructions for this drawing..."
+              className="w-full text-xs p-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase">Severity:</span>
+              <div className="flex gap-1">
+                {(["info", "minor", "major", "critical"] as const).map((sev) => (
+                  <button
+                    key={sev}
+                    type="button"
+                    onClick={() => setDrawingSeverity(sev)}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded text-[9px] font-bold capitalize transition-all cursor-pointer",
+                      drawingSeverity === sev
+                        ? sev === "critical"
+                          ? "bg-rose-500 text-white"
+                          : sev === "major"
+                          ? "bg-amber-500 text-white"
+                          : sev === "minor"
+                          ? "bg-sky-500 text-white"
+                          : "bg-slate-700 text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {sev}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs cursor-pointer"
+                onClick={() => setPendingDrawing(null)}
+              >
+                Discard
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs font-bold gap-1 bg-primary text-primary-foreground cursor-pointer"
+                disabled={submittingDrawing}
+                onClick={handleSaveDrawing}
+              >
+                {submittingDrawing && <Loader2 className="h-3 w-3 animate-spin" />}
+                <Check className="h-3 w-3" />
+                <span>Save</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
         {/* Active Highlight Popover / Comment Details & Replies Card    */}
         {/* ------------------------------------------------------------- */}
         {activeAnnotation && !pendingSelection && (
@@ -731,12 +1197,22 @@ export function InteractivePdfViewer({
               </button>
             </div>
 
-            {/* Quoted Highlight Snippet */}
-            {activeAnnotation.selected_text && (
+            {/* Quoted Highlight Snippet or Drawing Badge */}
+            {activeAnnotation.coordinates?.isDrawing ? (
+              <div className="bg-primary/5 border border-primary/20 p-2 rounded-lg text-xs flex items-center gap-2">
+                <PenTool className="h-4 w-4 text-primary shrink-0" />
+                <span className="font-bold text-foreground">Freehand Pen Markup</span>
+                <span
+                  className="h-3.5 w-3.5 rounded-full border border-black/20 ml-auto shrink-0 shadow-xs"
+                  style={{ backgroundColor: activeAnnotation.coordinates.strokeColor || "#ef4444" }}
+                  title="Stroke Color"
+                />
+              </div>
+            ) : activeAnnotation.selected_text ? (
               <div className="bg-yellow-500/10 border-l-2 border-yellow-500 p-2 rounded text-[11px] text-muted-foreground italic">
                 &ldquo;{activeAnnotation.selected_text}&rdquo;
               </div>
-            )}
+            ) : null}
 
             {/* Reviewer Comment Content */}
             <div className="space-y-1">

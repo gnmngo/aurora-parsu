@@ -212,6 +212,8 @@ export async function createProjectAction(
         title: "Selected as Research Adviser",
         message: `${creatorName} has registered you as Research Adviser for their project "${project.title}".`,
         eventType: "project_joined",
+        actionUrl: `/dashboard`,
+        metadata: { projectId: project.id },
       });
     }
 
@@ -353,6 +355,8 @@ export async function assignProjectAdviserAction(
       title: "Assigned as Research Adviser",
       message: `${assignerName} designated you as the official Research Adviser for "${project.title}".`,
       eventType: "project_joined",
+      actionUrl: `/dashboard`,
+      metadata: { projectId: project.id },
     });
 
     // 6. Log audit trail
@@ -407,7 +411,7 @@ export async function notifyAdviserManuscriptUploadedAction(
     // Fetch project title
     const { data: project } = await serviceClient
       .from("projects")
-      .select("title")
+      .select("title, current_stage_id")
       .eq("id", projectId)
       .maybeSingle();
 
@@ -427,6 +431,8 @@ export async function notifyAdviserManuscriptUploadedAction(
       title: "New Manuscript Uploaded",
       message: `${uploaderName} submitted manuscript v${versionNumber} for "${project?.title || "your advised project"}" for review.`,
       eventType: "document_uploaded",
+      actionUrl: `/workspace/${projectId}/${project?.current_stage_id || ""}`,
+      metadata: { projectId, versionNumber },
     });
   } catch (err) {
     console.error("Failed to notify adviser of manuscript upload:", err);

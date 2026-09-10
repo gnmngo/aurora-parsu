@@ -115,7 +115,7 @@ export async function adviserApproveDocumentAction(
       title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
       message: `Your adviser has ${status === "approved" ? "approved" : "requested revisions on"} your manuscript "${doc.title}". Remarks: ${remarks || "None"}.`,
       eventType: status === "approved" ? "document_approved" : "revision_required",
-      actionUrl: `/dashboard/my-project`,
+      actionUrl: `/workspace/${doc.projects.id}/${doc.stage_id || ""}`,
       metadata: { documentId, projectId: doc.projects.id, remarks: remarks || null },
     });
   }
@@ -238,6 +238,7 @@ export async function releaseProjectVerdictAction(
         title: "Final Verdict Released",
         message: `Your defense outcome has been officially recorded: ${verdictCode.replace(/_/g, " ").toUpperCase()}. Remarks: ${remarks || "None"}.`,
         eventType: "final_verdict_released",
+        actionUrl: `/dashboard/grades`,
         metadata: { projectId, verdictCode },
       });
     }

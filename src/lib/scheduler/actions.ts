@@ -302,6 +302,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
         title: "Defense Schedule Set",
         message: `Your defense for "${project.title}" has been scheduled on ${formattedDate} in ${input.room}${input.building ? ", " + input.building : ""}.`,
         eventType: "defense_scheduled",
+        actionUrl: `/dashboard/defenses`,
         metadata: { scheduleId: newSchedule.id, projectId: input.projectId, stageId: input.stageId },
       });
     }
@@ -607,6 +608,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
         title: "Defense Rescheduled",
         message: `Your defense for "${project.title}" has been rescheduled to ${formattedDate} in ${input.room}${input.building ? ", " + input.building : ""}.`,
         eventType: "defense_rescheduled",
+        actionUrl: `/dashboard/defenses`,
         metadata: { scheduleId: input.scheduleId, projectId: input.projectId, stageId: input.stageId },
       });
     }
@@ -713,6 +715,7 @@ export async function cancelDefenseScheduleAction(
         title: "Defense Cancelled",
         message: "The defense schedule for " + JSON.stringify(project?.title || "your project") + " has been cancelled. Reason: " + (reason || "None") + ".",
         eventType: "defense_cancelled",
+        actionUrl: `/dashboard/defenses`,
         metadata: { scheduleId, projectId, stageId, reason },
       });
     }

@@ -492,6 +492,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
         title: "Evaluation Signed & Submitted",
         message: `A panel evaluator has signed an evaluation for "${projectMeta.title || 'Research Project'}". Certificate: ${certificateSerial}.`,
         eventType: "evaluation_signed",
+        actionUrl: `/dashboard/grades`,
         metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
       });
     }
@@ -510,6 +511,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
           title: "Defense Evaluation Signed",
           message: `A panelist has completed and digitally signed their evaluation for your defense.`,
           eventType: "grade_released",
+          actionUrl: `/dashboard/grades`,
           metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
         });
       }

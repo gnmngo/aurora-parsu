@@ -17,7 +17,7 @@ import { PdfUploader } from "@/components/documents/pdf-uploader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { VersionComparison } from "@/components/workspace/version-comparison";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -52,6 +52,8 @@ const isUUID = (val: unknown) =>
 
 export default function WorkspacePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const targetAnnotationId = searchParams.get("annotation") || null;
   const projectId = (params?.projectId as string) || "";
   const rawStageId = (params?.stageId as string) || "";
   const { roles } = useAuth();
@@ -383,6 +385,7 @@ export default function WorkspacePage() {
                   projectId={projectId}
                   stageId={stageId}
                   currentUserRole={currentUserRole}
+                  initialSelectedAnnotationId={targetAnnotationId}
                   onAnnotationChange={handleAnnotationChange}
                 />
               ) : (
@@ -475,6 +478,7 @@ export default function WorkspacePage() {
                   projectId={projectId}
                   stageId={stageId}
                   currentUserRole={currentUserRole}
+                  initialSelectedAnnotationId={targetAnnotationId}
                   onAnnotationChange={handleAnnotationChange}
                 />
               ) : (

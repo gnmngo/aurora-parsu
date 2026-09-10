@@ -36,6 +36,7 @@ interface PdfViewerPanelProps {
   documentVersionId: string;
   pdfUrl: string;
   currentUserRole?: "student" | "adviser" | "panelist" | "coordinator" | "sys_admin";
+  initialSelectedAnnotationId?: string | null;
   onAnnotationChange?: () => void;
 }
 
@@ -46,10 +47,18 @@ export function PdfViewerPanel({
   documentVersionId,
   pdfUrl,
   currentUserRole,
+  initialSelectedAnnotationId,
   onAnnotationChange,
 }: PdfViewerPanelProps) {
   const [viewMode, setViewMode] = useState<"interactive" | "native">("interactive");
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(initialSelectedAnnotationId || null);
+
+  useEffect(() => {
+    if (initialSelectedAnnotationId) {
+      setSelectedAnnotationId(initialSelectedAnnotationId);
+    }
+  }, [initialSelectedAnnotationId]);
+
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [loadingAnnotations, setLoadingAnnotations] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);

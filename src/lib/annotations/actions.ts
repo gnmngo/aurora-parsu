@@ -129,10 +129,24 @@ export async function createAnnotationReplyAction(annotationId: string, content:
     const { emitNotification } = await import("@/lib/notifications/emit");
     const { data: ann } = await supabase
       .from("annotations")
-      .select("created_by")
+      .select(`
+        created_by,
+        document_version_id,
+        document_versions (
+          document_id,
+          documents ( project_id, stage_id )
+        )
+      `)
       .eq("id", annotationId)
       .maybeSingle();
     if (ann?.created_by && ann.created_by !== user.id) {
+      const doc = (ann.document_versions as any)?.documents;
+      const replyProjectId = doc?.project_id;
+      const replyStageId = doc?.stage_id;
+      const targetUrl = replyProjectId
+        ? `/workspace/${replyProjectId}/${replyStageId || ""}?annotation=${annotationId}`
+        : "/dashboard/my-project";
+
       const preview = content.trim().slice(0, 80) + (content.length > 80 ? "..." : "");
       await emitNotification({
         supabase,
@@ -140,6 +154,7 @@ export async function createAnnotationReplyAction(annotationId: string, content:
         title: "New Reply on Your Annotation",
         message: "A reply was added to your annotation: \"" + preview + "\"",
         eventType: "annotation_replied",
+        actionUrl: targetUrl,
         metadata: { annotationId, replyAuthorId: user.id },
       });
     }
@@ -156,7 +171,17 @@ export interface CreateAnnotationInput {
   content: string;
   severity?: "info" | "minor" | "major" | "critical";
   selectedText?: string;
-  coordinates?: { left: number; top: number; width: number; height: number };
+  coordinates?: {
+    isDrawing?: boolean;
+    svgPath?: string;
+    strokeColor?: string;
+    strokeWidth?: number;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    [key: string]: any;
+  };
   type?: string;
 }
 
@@ -288,11 +313,15 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
       if (otherStudentIds.length > 0) {
         const { emitNotificationToMany } = await import("@/lib/notifications/emit");
         const preview = input.content.trim().slice(0, 70);
+        const targetUrl = projectId
+          ? `/workspace/${projectId}/${stageId || ""}?annotation=${newAnnotation.id}`
+          : "/dashboard/my-project";
+
         await emitNotificationToMany(supabase, otherStudentIds, {
           title: `New Feedback Comment (p. ${input.pageNumber || 1})`,
           message: `A ${input.severity || "minor"} feedback remark was added: "${preview}..."`,
           eventType: "annotation_created",
-          actionUrl: `/dashboard/my-project`,
+          actionUrl: targetUrl,
           metadata: {
             annotationId: newAnnotation.id,
             pageNumber: input.pageNumber || 1,

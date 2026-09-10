@@ -58,8 +58,9 @@ export interface EmitNotificationInput {
   message: string;
   /** Typed event category */
   eventType: NotificationEventType;
-  /** Optional: link to navigate to on click */
+  /** Optional: link to navigate to on click (maps to DB column `link`) */
   actionUrl?: string;
+  link?: string;
   /** Optional: additional structured data for the notification */
   metadata?: Record<string, unknown>;
 }
@@ -113,7 +114,7 @@ function mapEventTypeToDbNotificationType(eventType: NotificationEventType): str
  * changing any call sites.
  */
 export async function emitNotification(input: EmitNotificationInput): Promise<void> {
-  const { supabase, recipientProfileId, title, message, eventType, actionUrl, metadata } = input;
+  const { supabase, recipientProfileId, title, message, eventType, actionUrl, link, metadata } = input;
 
   if (!recipientProfileId) {
     console.warn("[Notifications] Skipped: no recipientProfileId provided.", { title, eventType });
@@ -125,6 +126,7 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
     ...(metadata || {}),
     event_type: eventType,
   };
+  const targetLink = link || actionUrl;
 
   try {
     const { error } = await supabase
@@ -134,7 +136,7 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
         title: title.slice(0, 100),  // Guard against oversized titles
         message,
         type: dbType,
-        ...(actionUrl ? { action_url: actionUrl } : {}),
+        ...(targetLink ? { link: targetLink } : {}),
         metadata: combinedMetadata,
       });
 
@@ -164,6 +166,7 @@ export async function emitNotificationToMany(
   if (recipientProfileIds.length === 0) return;
 
   const dbType = mapEventTypeToDbNotificationType(input.eventType);
+  const targetLink = input.link || input.actionUrl;
 
   const rows = recipientProfileIds
     .filter(Boolean)
@@ -172,7 +175,7 @@ export async function emitNotificationToMany(
       title: input.title.slice(0, 100),
       message: input.message,
       type: dbType,
-      ...(input.actionUrl ? { action_url: input.actionUrl } : {}),
+      ...(targetLink ? { link: targetLink } : {}),
       metadata: {
         ...(input.metadata || {}),
         event_type: input.eventType,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,9 @@ import {
   Trash2,
   Search,
   CheckCheck,
-  Loader2
+  Loader2,
+  ArrowRight,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,6 +38,7 @@ const typeIcons = {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -163,6 +167,33 @@ export default function NotificationsPage() {
   });
 
   const unreadCount = notifications.filter((n) => !n.read_at && !n.metadata?.is_archived).length;
+  const counts = {
+    all: notifications.filter((n) => !n.metadata?.is_archived).length,
+    unread: unreadCount,
+    archived: notifications.filter((n) => !!n.metadata?.is_archived).length,
+  };
+
+  const handleNotificationClick = async (notif: any) => {
+    // If unread, mark as read optimistically
+    if (!notif.read_at) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
+      supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", notif.id)
+        .then();
+    }
+
+    const targetUrl =
+      notif.link ||
+      (notif.metadata?.projectId
+        ? `/workspace/${notif.metadata.projectId}`
+        : "/dashboard/my-project");
+
+    router.push(targetUrl);
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-xs font-semibold text-slate-800">
@@ -190,62 +221,74 @@ export default function NotificationsPage() {
         <CardContent className="pt-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/40">
               <button
                 onClick={() => setFilterTab("all")}
                 className={cn(
-                  "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer",
-                  filterTab === "all" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                  filterTab === "all"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Inbox
+                All ({counts.all})
               </button>
               <button
                 onClick={() => setFilterTab("unread")}
                 className={cn(
-                  "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer",
-                  filterTab === "unread" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                  filterTab === "unread"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Unread
+                {counts.unread > 0 && (
+                  <Badge variant="default" className="h-4 px-1 text-[10px] font-bold">
+                    {counts.unread}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setFilterTab("archived")}
                 className={cn(
-                  "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer",
-                  filterTab === "archived" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                  filterTab === "archived"
+                    ? "bg-card text-primary shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Archived
+                Archived ({counts.archived})
               </button>
             </div>
 
-            {/* Category selection */}
+            {/* Category Filter */}
             <div className="flex items-center gap-2">
-              <label className="text-[10px] uppercase text-muted-foreground">Category</label>
+              <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">Category:</span>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="h-8 rounded-lg border border-border bg-card px-2 text-[10px] font-bold focus:outline-none"
+                className="h-8 text-xs font-bold rounded-lg border border-input bg-background px-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="all">All Categories</option>
-                <option value="comment">Comments / Revisions</option>
-                <option value="schedule">Schedules</option>
-                <option value="grade_released">Grades</option>
+                <option value="all">All Types</option>
+                <option value="comment">Comments & Remarks</option>
+                <option value="revision_requested">Revision Requests</option>
+                <option value="schedule">Defense Schedules</option>
+                <option value="grade_released">Evaluation & Verdicts</option>
                 <option value="system">System Alerts</option>
               </select>
             </div>
           </div>
 
-          {/* Search Input */}
+          {/* Search Query Input */}
           <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search notifications title or message..."
+              placeholder="Search notifications by title or keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 pl-9 text-xs"
+              className="pl-8 h-8 text-xs bg-muted/40 border-border/60"
             />
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -275,15 +318,16 @@ export default function NotificationsPage() {
             return (
               <Card
                 key={notif.id}
+                onClick={() => handleNotificationClick(notif)}
                 className={cn(
-                  "transition-all border border-border/80",
-                  !isRead && "border-primary/20 bg-primary/5 shadow-sm"
+                  "transition-all border border-border/80 cursor-pointer hover:border-primary/50 hover:shadow-md hover:bg-muted/20 group relative",
+                  !isRead && "border-primary/30 bg-primary/5 shadow-xs"
                 )}
               >
                 <CardContent className="flex gap-4 p-4 items-center">
                   <div
                     className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
                       !isRead ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                     )}
                   >
@@ -291,23 +335,38 @@ export default function NotificationsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-bold text-slate-900 leading-tight">
-                        {notif.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight group-hover:text-primary transition-colors">
+                          {notif.title}
+                        </p>
+                        {notif.link && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-background shrink-0">
+                            {notif.type === "revision_requested" ? "Review Paper" : "Open Link"}
+                          </Badge>
+                        )}
+                      </div>
                       {!isRead && (
                         <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                       {notif.message}
                     </p>
-                    <p className="mt-2 text-[10px] text-muted-foreground font-semibold">
-                      {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                    </p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <p className="text-[10px] text-muted-foreground font-semibold">
+                        {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                      </p>
+                      <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        Click to view details <ArrowRight className="h-3 w-3 inline" />
+                      </span>
+                    </div>
                   </div>
 
                   {/* Actions buttons on card hover/side */}
-                  <div className="flex items-center gap-1.5 print:hidden">
+                  <div
+                    className="flex items-center gap-1.5 print:hidden shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {isRead ? (
                       <Button
                         onClick={() => handleMarkRead(notif.id, false)}

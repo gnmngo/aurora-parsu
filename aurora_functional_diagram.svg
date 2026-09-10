@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3900 937" width="100%" height="100%">
+<rect width="3900" height="937" fill="#FFFFFF"/>
+<style>
+  .root-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 36px; font-weight: bold; fill: #0f172a; text-anchor: middle; }
+  .sub-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 18px; fill: #475569; text-anchor: middle; }
+  .mod-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 23px; font-weight: bold; fill: #0f172a; text-anchor: middle; }
+  .item-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 18px; fill: #0f172a; text-anchor: middle; }
+  .caption { font-family: "Segoe UI", Arial, sans-serif; font-size: 38px; font-weight: bold; fill: #0f172a; text-anchor: middle; }
+  .box { fill: #FFFFFF; stroke: #1e293b; stroke-width: 1.5; rx: 4; ry: 4; }
+  .mod-box { fill: #f1f5f9; stroke: #1e293b; stroke-width: 2.5; rx: 6; ry: 6; }
+  .root-box { fill: #f8fafc; stroke: #1e293b; stroke-width: 3; rx: 8; ry: 8; }
+  .line { stroke: #0f172a; stroke-width: 2; fill: none; }
+  .bus-line { stroke: #0f172a; stroke-width: 3; fill: none; }
+</style>
+<defs>
+  <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="4" refY="8" orient="auto">
+    <path d="M0,0 L8,0 L4,8 z" fill="#0f172a" />
+  </marker>
+  <marker id="arrow-right" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M0,0 L0,8 L8,4 z" fill="#0f172a" />
+  </marker>
+</defs>
+<rect class="root-box" x="1780" y="50" width="340" height="72"/>
+<text class="root-text" x="1950.0" y="98">AURORA</text>
+<text class="sub-text" x="1950.0" y="146">Automated Unified Review and Operations for Research Archival</text>
+<line class="bus-line" x1="1950" y1="150" x2="1950" y2="186"/>
+<line class="bus-line" x1="278.8888888888889" y1="186" x2="3621.111111111111" y2="186"/>
+<line class="line" x1="278.8888888888889" y1="186" x2="278.8888888888889" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="95.88888888888891" y="238" width="366" height="76"/>
+<text class="mod-text" x="278.8888888888889" y="272">User & Identity</text>
+<text class="mod-text" x="278.8888888888889" y="298">Management</text>
+<line class="line" x1="119.88888888888891" y1="379.0" x2="143.8888888888889" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="143.8888888888889" y="346" width="318" height="66"/>
+<text class="item-text" x="302.8888888888889" y="374.0">Authentication</text>
+<text class="item-text" x="302.8888888888889" y="397.0">(Login / Logout / Step-Up)</text>
+<line class="line" x1="119.88888888888891" y1="474.5" x2="143.8888888888889" y2="474.5" marker-end="url(#arrow-right)"/>
+<rect class="box" x="143.8888888888889" y="430" width="318" height="89"/>
+<text class="item-text" x="302.8888888888889" y="458.0">Tier Role-Based Access Control</text>
+<text class="item-text" x="302.8888888888889" y="481.0">(Student, Adviser, Panelist,</text>
+<text class="item-text" x="302.8888888888889" y="504.0">Coordinator, Dean, Admin)</text>
+<line class="line" x1="119.88888888888891" y1="570.0" x2="143.8888888888889" y2="570.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="143.8888888888889" y="537" width="318" height="66"/>
+<text class="item-text" x="302.8888888888889" y="565.0">Profile Management &</text>
+<text class="item-text" x="302.8888888888889" y="588.0">Institutional Hierarchy</text>
+<line class="line" x1="119.88888888888891" y1="654.0" x2="143.8888888888889" y2="654.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="143.8888888888889" y="621" width="318" height="66"/>
+<text class="item-text" x="302.8888888888889" y="649.0">Team Join-Code Generation</text>
+<text class="item-text" x="302.8888888888889" y="672.0">& Group Linking</text>
+<line class="line" x1="119.88888888888891" y1="314" x2="119.88888888888891" y2="654.0"/>
+<line class="line" x1="696.6666666666666" y1="186" x2="696.6666666666666" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="513.6666666666666" y="238" width="366" height="76"/>
+<text class="mod-text" x="696.6666666666666" y="272">Manuscript &</text>
+<text class="mod-text" x="696.6666666666666" y="298">Document Handling</text>
+<line class="line" x1="537.6666666666666" y1="379.0" x2="561.6666666666666" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="561.6666666666666" y="346" width="318" height="66"/>
+<text class="item-text" x="720.6666666666666" y="374.0">PDF Upload & Pre-Flight</text>
+<text class="item-text" x="720.6666666666666" y="397.0">Format Validation</text>
+<line class="line" x1="537.6666666666666" y1="463.0" x2="561.6666666666666" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="561.6666666666666" y="430" width="318" height="66"/>
+<text class="item-text" x="720.6666666666666" y="458.0">Semantic Version Control</text>
+<text class="item-text" x="720.6666666666666" y="481.0">(v1, v2, v3...)</text>
+<line class="line" x1="537.6666666666666" y1="547.0" x2="561.6666666666666" y2="547.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="561.6666666666666" y="514" width="318" height="66"/>
+<text class="item-text" x="720.6666666666666" y="542.0">Cryptographic SHA-256</text>
+<text class="item-text" x="720.6666666666666" y="565.0">Checksum Hashing</text>
+<line class="line" x1="537.6666666666666" y1="631.0" x2="561.6666666666666" y2="631.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="561.6666666666666" y="598" width="318" height="66"/>
+<text class="item-text" x="720.6666666666666" y="626.0">Secure Cloud Storage &</text>
+<text class="item-text" x="720.6666666666666" y="649.0">Revision Archiving</text>
+<line class="line" x1="537.6666666666666" y1="314" x2="537.6666666666666" y2="631.0"/>
+<line class="line" x1="1114.4444444444443" y1="186" x2="1114.4444444444443" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="931.4444444444443" y="238" width="366" height="76"/>
+<text class="mod-text" x="1114.4444444444443" y="272">Split-Screen Review</text>
+<text class="mod-text" x="1114.4444444444443" y="298">& Annotations</text>
+<line class="line" x1="955.4444444444443" y1="379.0" x2="979.4444444444443" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="979.4444444444443" y="346" width="318" height="66"/>
+<text class="item-text" x="1138.4444444444443" y="374.0">Dual-Pane Interactive</text>
+<text class="item-text" x="1138.4444444444443" y="397.0">PDF Workspace</text>
+<line class="line" x1="955.4444444444443" y1="463.0" x2="979.4444444444443" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="979.4444444444443" y="430" width="318" height="66"/>
+<text class="item-text" x="1138.4444444444443" y="458.0">Real-Time In-Line Markup</text>
+<text class="item-text" x="1138.4444444444443" y="481.0">(Highlight, Underline, Note)</text>
+<line class="line" x1="955.4444444444443" y1="558.5" x2="979.4444444444443" y2="558.5" marker-end="url(#arrow-right)"/>
+<rect class="box" x="979.4444444444443" y="514" width="318" height="89"/>
+<text class="item-text" x="1138.4444444444443" y="542.0">Categorized Review Feedback</text>
+<text class="item-text" x="1138.4444444444443" y="565.0">(Grammar, Methodology,</text>
+<text class="item-text" x="1138.4444444444443" y="588.0">Formatting, Critical)</text>
+<line class="line" x1="955.4444444444443" y1="654.0" x2="979.4444444444443" y2="654.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="979.4444444444443" y="621" width="318" height="66"/>
+<text class="item-text" x="1138.4444444444443" y="649.0">Multi-Author Threaded</text>
+<text class="item-text" x="1138.4444444444443" y="672.0">Reply Chains</text>
+<line class="line" x1="955.4444444444443" y1="749.5" x2="979.4444444444443" y2="749.5" marker-end="url(#arrow-right)"/>
+<rect class="box" x="979.4444444444443" y="705" width="318" height="89"/>
+<text class="item-text" x="1138.4444444444443" y="733.0">Revision Status Tracking</text>
+<text class="item-text" x="1138.4444444444443" y="756.0">(Open, In-Progress,</text>
+<text class="item-text" x="1138.4444444444443" y="779.0">Addressed, Resolved, Verified)</text>
+<line class="line" x1="955.4444444444443" y1="314" x2="955.4444444444443" y2="749.5"/>
+<line class="line" x1="1532.2222222222222" y1="186" x2="1532.2222222222222" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="1349.2222222222222" y="238" width="366" height="76"/>
+<text class="mod-text" x="1532.2222222222222" y="272">Defense Workflow</text>
+<text class="mod-text" x="1532.2222222222222" y="298">& Scheduling</text>
+<line class="line" x1="1373.2222222222222" y1="390.5" x2="1397.2222222222222" y2="390.5" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1397.2222222222222" y="346" width="318" height="89"/>
+<text class="item-text" x="1556.2222222222222" y="374.0">Multi-Stage Tracking</text>
+<text class="item-text" x="1556.2222222222222" y="397.0">(Concept, Title, Proposal,</text>
+<text class="item-text" x="1556.2222222222222" y="420.0">WIP, Final Defense)</text>
+<line class="line" x1="1373.2222222222222" y1="486.0" x2="1397.2222222222222" y2="486.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1397.2222222222222" y="453" width="318" height="66"/>
+<text class="item-text" x="1556.2222222222222" y="481.0">Adviser Consultation &</text>
+<text class="item-text" x="1556.2222222222222" y="504.0">Endorsement Gate</text>
+<line class="line" x1="1373.2222222222222" y1="570.0" x2="1397.2222222222222" y2="570.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1397.2222222222222" y="537" width="318" height="66"/>
+<text class="item-text" x="1556.2222222222222" y="565.0">Coordinator Scheduling</text>
+<text class="item-text" x="1556.2222222222222" y="588.0">(Date, Room, Virtual Link)</text>
+<line class="line" x1="1373.2222222222222" y1="654.0" x2="1397.2222222222222" y2="654.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1397.2222222222222" y="621" width="318" height="66"/>
+<text class="item-text" x="1556.2222222222222" y="649.0">3-Member Panel Assignment</text>
+<text class="item-text" x="1556.2222222222222" y="672.0">with Automated COI Guard</text>
+<line class="line" x1="1373.2222222222222" y1="738.0" x2="1397.2222222222222" y2="738.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1397.2222222222222" y="705" width="318" height="66"/>
+<text class="item-text" x="1556.2222222222222" y="733.0">Institutional College</text>
+<text class="item-text" x="1556.2222222222222" y="756.0">Dean Oversight</text>
+<line class="line" x1="1373.2222222222222" y1="314" x2="1373.2222222222222" y2="738.0"/>
+<line class="line" x1="1950.0" y1="186" x2="1950.0" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="1767.0" y="238" width="366" height="76"/>
+<text class="mod-text" x="1950.0" y="272">Evaluation & Weighted</text>
+<text class="mod-text" x="1950.0" y="298">Rubric Scoring</text>
+<line class="line" x1="1791.0" y1="379.0" x2="1815.0" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1815.0" y="346" width="318" height="66"/>
+<text class="item-text" x="1974.0" y="374.0">Customizable Program</text>
+<text class="item-text" x="1974.0" y="397.0">Rubric Templates</text>
+<line class="line" x1="1791.0" y1="463.0" x2="1815.0" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1815.0" y="430" width="318" height="66"/>
+<text class="item-text" x="1974.0" y="458.0">Individual Panelist</text>
+<text class="item-text" x="1974.0" y="481.0">Live Criteria Scoring</text>
+<line class="line" x1="1791.0" y1="558.5" x2="1815.0" y2="558.5" marker-end="url(#arrow-right)"/>
+<rect class="box" x="1815.0" y="514" width="318" height="89"/>
+<text class="item-text" x="1974.0" y="542.0">Committee Consensus Verdict</text>
+<text class="item-text" x="1974.0" y="565.0">(Passed, Revisions Required,</text>
+<text class="item-text" x="1974.0" y="588.0">Re-Defense, Failed)</text>
+<line class="line" x1="1791.0" y1="314" x2="1791.0" y2="558.5"/>
+<line class="line" x1="2367.7777777777774" y1="186" x2="2367.7777777777774" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="2184.7777777777774" y="238" width="366" height="76"/>
+<text class="mod-text" x="2367.7777777777774" y="272">Cryptographic Clearance</text>
+<text class="mod-text" x="2367.7777777777774" y="298">& Certification</text>
+<line class="line" x1="2208.7777777777774" y1="379.0" x2="2232.7777777777774" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2232.7777777777774" y="346" width="318" height="66"/>
+<text class="item-text" x="2391.7777777777774" y="374.0">Cryptographic Digital</text>
+<text class="item-text" x="2391.7777777777774" y="397.0">E-Signature (SHA-256 Bound)</text>
+<line class="line" x1="2208.7777777777774" y1="463.0" x2="2232.7777777777774" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2232.7777777777774" y="430" width="318" height="66"/>
+<text class="item-text" x="2391.7777777777774" y="458.0">Step-Up Password</text>
+<text class="item-text" x="2391.7777777777774" y="481.0">Re-Authentication</text>
+<line class="line" x1="2208.7777777777774" y1="547.0" x2="2232.7777777777774" y2="547.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2232.7777777777774" y="514" width="318" height="66"/>
+<text class="item-text" x="2391.7777777777774" y="542.0">Official Defense Completion</text>
+<text class="item-text" x="2391.7777777777774" y="565.0">Certificate Issuance</text>
+<line class="line" x1="2208.7777777777774" y1="631.0" x2="2232.7777777777774" y2="631.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2232.7777777777774" y="598" width="318" height="66"/>
+<text class="item-text" x="2391.7777777777774" y="626.0">Public QR Code & Serial</text>
+<text class="item-text" x="2391.7777777777774" y="649.0">Verification (/verify/[serial])</text>
+<line class="line" x1="2208.7777777777774" y1="314" x2="2208.7777777777774" y2="631.0"/>
+<line class="line" x1="2785.555555555555" y1="186" x2="2785.555555555555" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="2602.555555555555" y="238" width="366" height="76"/>
+<text class="mod-text" x="2785.555555555555" y="272">Centralized</text>
+<text class="mod-text" x="2785.555555555555" y="298">Notification Engine</text>
+<line class="line" x1="2626.555555555555" y1="379.0" x2="2650.555555555555" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2650.555555555555" y="346" width="318" height="66"/>
+<text class="item-text" x="2809.555555555555" y="374.0">Real-Time In-App Alerts</text>
+<text class="item-text" x="2809.555555555555" y="397.0">& Activity Badges</text>
+<line class="line" x1="2626.555555555555" y1="463.0" x2="2650.555555555555" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2650.555555555555" y="430" width="318" height="66"/>
+<text class="item-text" x="2809.555555555555" y="458.0">Event-Driven Reminders</text>
+<text class="item-text" x="2809.555555555555" y="481.0">(Upload, Schedule, Verdict)</text>
+<line class="line" x1="2626.555555555555" y1="547.0" x2="2650.555555555555" y2="547.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="2650.555555555555" y="514" width="318" height="66"/>
+<text class="item-text" x="2809.555555555555" y="542.0">Automated Email Alerts &</text>
+<text class="item-text" x="2809.555555555555" y="565.0">Status Dispatches</text>
+<line class="line" x1="2626.555555555555" y1="314" x2="2626.555555555555" y2="547.0"/>
+<line class="line" x1="3203.333333333333" y1="186" x2="3203.333333333333" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="3020.333333333333" y="238" width="366" height="76"/>
+<text class="mod-text" x="3203.333333333333" y="272">Academic Analytics</text>
+<text class="mod-text" x="3203.333333333333" y="298">& Reporting</text>
+<line class="line" x1="3044.333333333333" y1="379.0" x2="3068.333333333333" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3068.333333333333" y="346" width="318" height="66"/>
+<text class="item-text" x="3227.333333333333" y="374.0">Department & College</text>
+<text class="item-text" x="3227.333333333333" y="397.0">Defense Statistics</text>
+<line class="line" x1="3044.333333333333" y1="463.0" x2="3068.333333333333" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3068.333333333333" y="430" width="318" height="66"/>
+<text class="item-text" x="3227.333333333333" y="458.0">Historical Pass, Revision</text>
+<text class="item-text" x="3227.333333333333" y="481.0">& Failure Rates</text>
+<line class="line" x1="3044.333333333333" y1="547.0" x2="3068.333333333333" y2="547.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3068.333333333333" y="514" width="318" height="66"/>
+<text class="item-text" x="3227.333333333333" y="542.0">Average Rubric Score &</text>
+<text class="item-text" x="3227.333333333333" y="565.0">Turnaround Metrics</text>
+<line class="line" x1="3044.333333333333" y1="631.0" x2="3068.333333333333" y2="631.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3068.333333333333" y="598" width="318" height="66"/>
+<text class="item-text" x="3227.333333333333" y="626.0">Institutional Defense</text>
+<text class="item-text" x="3227.333333333333" y="649.0">Summary Reports</text>
+<line class="line" x1="3044.333333333333" y1="314" x2="3044.333333333333" y2="631.0"/>
+<line class="line" x1="3621.111111111111" y1="186" x2="3621.111111111111" y2="238" marker-end="url(#arrow-down)"/>
+<rect class="mod-box" x="3438.111111111111" y="238" width="366" height="76"/>
+<text class="mod-text" x="3621.111111111111" y="272">System Administration</text>
+<text class="mod-text" x="3621.111111111111" y="298">& Configuration</text>
+<line class="line" x1="3462.111111111111" y1="379.0" x2="3486.111111111111" y2="379.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3486.111111111111" y="346" width="318" height="66"/>
+<text class="item-text" x="3645.111111111111" y="374.0">User Provisioning &</text>
+<text class="item-text" x="3645.111111111111" y="397.0">Role Assignments</text>
+<line class="line" x1="3462.111111111111" y1="463.0" x2="3486.111111111111" y2="463.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3486.111111111111" y="430" width="318" height="66"/>
+<text class="item-text" x="3645.111111111111" y="458.0">Dynamic Rubric Builder</text>
+<text class="item-text" x="3645.111111111111" y="481.0">(/admin/rubrics)</text>
+<line class="line" x1="3462.111111111111" y1="547.0" x2="3486.111111111111" y2="547.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3486.111111111111" y="514" width="318" height="66"/>
+<text class="item-text" x="3645.111111111111" y="542.0">Defense Workflow Stage</text>
+<text class="item-text" x="3645.111111111111" y="565.0">Config (/admin/stages)</text>
+<line class="line" x1="3462.111111111111" y1="631.0" x2="3486.111111111111" y2="631.0" marker-end="url(#arrow-right)"/>
+<rect class="box" x="3486.111111111111" y="598" width="318" height="66"/>
+<text class="item-text" x="3645.111111111111" y="626.0">Immutable Audit Trail &</text>
+<text class="item-text" x="3645.111111111111" y="649.0">System Telemetry</text>
+<line class="line" x1="3462.111111111111" y1="314" x2="3462.111111111111" y2="631.0"/>
+<text class="caption" x="1950.0" y="893">Figure 2. AURORA Functional Decomposition Diagram</text>
+</svg>

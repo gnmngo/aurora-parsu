@@ -1160,6 +1160,15 @@ export function GradingPanel({
                 <span className="font-bold">Adviser note:</span> {documentData.approval_remarks}
               </div>
             )}
+            {documentData?.approval_remarks && documentData?.adviser_approval_status === "rejected" && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-950 dark:text-amber-200">
+                <div className="flex items-center gap-1.5 font-bold mb-1 text-amber-800 dark:text-amber-400">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Adviser Revision Requirements:</span>
+                </div>
+                <p className="leading-relaxed whitespace-pre-wrap font-medium pl-5">{documentData.approval_remarks}</p>
+              </div>
+            )}
           </Card>
 
           {/* Section 1: Annotations & Discussions */}
