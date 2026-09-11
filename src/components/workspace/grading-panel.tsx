@@ -27,8 +27,10 @@ import {
   Crown,
   Calendar,
   GraduationCap,
-  Building2
+  Building2,
+  ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1764,6 +1766,35 @@ export function GradingPanel({
             {documentData?.approval_remarks && documentData?.adviser_approval_status === "approved" && (
               <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100 text-[10px] text-emerald-900">
                 <span className="font-bold">Adviser note:</span> {documentData.approval_remarks}
+              </div>
+            )}
+            {documentData?.adviser_approval_status === "approved" && (
+              <div className="mt-2.5 pt-2.5 border-t border-emerald-500/20 space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                  What Happens Next:
+                </p>
+                <div className="grid gap-1.5 text-[11px] text-muted-foreground">
+                  <div className="flex items-start gap-1.5">
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">1.</span>
+                    <span>Defense Coordinator assigns your 3-member panel &amp; confirms room/slot.</span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">2.</span>
+                    <span>Prepare 15-minute presentation slides using the 100-point rubric breakdown.</span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">3.</span>
+                    <span>Review all resolved comments in this viewer to be ready for panel Q&amp;A defense.</span>
+                  </div>
+                </div>
+                <div className="pt-1">
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1 cursor-pointer" asChild>
+                    <Link href="/dashboard/my-project">
+                      <span>View Defense Roadmap &amp; Clearance Slip</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             )}
             {documentData?.approval_remarks && documentData?.adviser_approval_status === "rejected" && (

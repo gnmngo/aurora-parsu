@@ -14,13 +14,20 @@ import {
   MessageSquare, 
   History, 
   Award,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  ArrowRight,
+  Clock,
+  UploadCloud,
+  Plus,
+  UserPlus,
+  Users,
+  Crown
 } from "lucide-react";
 import Link from "next/link";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
-import { UploadCloud, Plus, UserPlus, Users, Crown } from "lucide-react";
 
 interface StudentDashboardProps {
   userId: string;
@@ -333,6 +340,36 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         </Card>
       </div>
 
+      {/* Adviser Endorsement Alert Banner */}
+      {latestDoc?.adviser_approval_status === "approved" && (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-100">
+                  Manuscript Endorsed for Defense!
+                </p>
+                <Badge variant="success" className="text-[9px] font-bold">
+                  Cleared
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your adviser has endorsed your manuscript. Defense scheduling is in progress. View your roadmap and print your clearance slip in My Project.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/my-project" className="shrink-0 self-end sm:self-center">
+            <Button size="sm" className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs">
+              <span>View Next Steps Roadmap</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Tabs list menu */}
       <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
         <button
@@ -497,6 +534,21 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                       {new Date(schedule.scheduled_at).toLocaleString()}
                     </p>
                   </div>
+                </div>
+              ) : latestDoc?.adviser_approval_status === "approved" ? (
+                <div className="space-y-2 py-2">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                    <Clock className="h-4 w-4" />
+                    <span>In Coordinator Queue</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Your manuscript is endorsed and queued with the Defense Coordinator for panel assignment and timeslot scheduling.
+                  </p>
+                  <Link href="/dashboard/my-project">
+                    <Button variant="outline" size="sm" className="w-full text-[10px] h-7 font-bold mt-1 cursor-pointer">
+                      Check Defense Roadmap &rarr;
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="text-center text-xs text-muted-foreground py-6">

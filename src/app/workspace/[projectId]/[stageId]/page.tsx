@@ -449,7 +449,11 @@ export default function WorkspacePage() {
               )
             ) : (
               <div className="h-full p-4 overflow-y-auto">
-                <VersionComparison documentVersions={allVersions} />
+                <VersionComparison
+                  documentVersions={allVersions}
+                  projectId={projectId}
+                  stageId={stageId}
+                />
               </div>
             )}
           </div>
@@ -529,7 +533,11 @@ export default function WorkspacePage() {
               )
             ) : (
               <div className="h-full p-4 overflow-y-auto">
-                <VersionComparison documentVersions={allVersions} />
+                <VersionComparison
+                  documentVersions={allVersions}
+                  projectId={projectId}
+                  stageId={stageId}
+                />
               </div>
             )}
           </div>

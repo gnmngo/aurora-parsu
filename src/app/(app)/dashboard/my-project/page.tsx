@@ -22,7 +22,8 @@ import { format } from "date-fns";
 import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
-  CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil
+  CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
+  ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -157,6 +158,8 @@ export default function MyProjectPage() {
   const [teamNameModalOpen, setTeamNameModalOpen] = useState(false);
   const [teamNameInput, setTeamNameInput] = useState("");
   const [savingTeamName, setSavingTeamName] = useState(false);
+  const [endorsementSlipOpen, setEndorsementSlipOpen] = useState(false);
+  const [defenseGuideOpen, setDefenseGuideOpen] = useState(false);
 
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
@@ -425,6 +428,10 @@ export default function MyProjectPage() {
     ? `${adviser.profiles.first_name} ${adviser.profiles.last_name}`
     : "Not Assigned";
   const upcomingSchedule = schedules.find(s => s.status === "scheduled");
+  const endorsedDoc = documents.find(d => d.adviser_approval_status === "approved");
+  const endorsedVersion = endorsedDoc?.document_versions?.length
+    ? [...endorsedDoc.document_versions].sort((a, b) => b.version_number - a.version_number)[0]
+    : null;
 
   return (
     <RoleGuard allowedRoles={["student"]} fallback={<AccessDenied />}>
@@ -609,6 +616,161 @@ export default function MyProjectPage() {
                 className="font-bold text-xs border-amber-400 dark:border-amber-700"
                 onUploadCompleted={loadProjectData}
               />
+            </div>
+          </div>
+        )}
+
+        {/* ── Endorsement Success & Next Steps Roadmap Banner ─────────────────────── */}
+        {endorsedDoc && (
+          <div className="rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/90 via-background to-emerald-50/30 dark:from-emerald-950/40 dark:via-background dark:to-emerald-950/20 p-6 shadow-sm space-y-5">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+                  <ShieldCheck className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base md:text-lg font-black text-emerald-950 dark:text-emerald-100 tracking-tight">
+                      🎉 Manuscript Endorsed for Defense!
+                    </h2>
+                    <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-600 text-white shadow-xs">
+                      Adviser Cleared
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Your research adviser <strong className="text-foreground">{adviserName}</strong> has reviewed and officially endorsed{" "}
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">&ldquo;{endorsedDoc.title || "Manuscript"}&rdquo;</span> for oral defense.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-xs font-bold cursor-pointer"
+                  onClick={() => setEndorsementSlipOpen(true)}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Endorsement Clearance Slip
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  onClick={() => setDefenseGuideOpen(true)}
+                >
+                  <Presentation className="h-3.5 w-3.5" />
+                  Defense Prep Guide
+                </Button>
+              </div>
+            </div>
+
+            {/* Adviser Remarks / Commendation if provided */}
+            {endorsedDoc.approval_remarks && (
+              <div className="rounded-xl bg-emerald-100/60 dark:bg-emerald-900/40 border border-emerald-300/40 p-3.5 text-xs text-emerald-950 dark:text-emerald-200">
+                <span className="font-black uppercase tracking-wider text-[10px] text-emerald-800 dark:text-emerald-300 block mb-1">
+                  Adviser Endorsement Remarks
+                </span>
+                <p className="italic font-medium">&ldquo;{endorsedDoc.approval_remarks}&rdquo;</p>
+              </div>
+            )}
+
+            {/* 3-Step Next Steps Progression */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                What Happens Next? — Student Defense Roadmap
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {/* Step 1: Defense Coordination & Scheduling */}
+                <div className={cn(
+                  "rounded-xl p-4 border transition-all space-y-2.5",
+                  upcomingSchedule 
+                    ? "border-emerald-500/40 bg-card shadow-xs" 
+                    : "border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20"
+                )}>
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
+                      1
+                    </span>
+                    <Badge 
+                      variant={upcomingSchedule ? "success" : "info"} 
+                      className="text-[9px] font-black"
+                    >
+                      {upcomingSchedule ? "Defense Scheduled" : "In Coordinator Queue"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">
+                      {upcomingSchedule ? "Defense Timeslot Confirmed" : "Defense Scheduling Queue"}
+                    </h4>
+                    {upcomingSchedule ? (
+                      <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+                        <p className="font-semibold text-emerald-700 dark:text-emerald-300">
+                          📅 {format(new Date(upcomingSchedule.scheduled_at), "MMMM d, yyyy • h:mm a")}
+                        </p>
+                        <p>
+                          📍 {upcomingSchedule.is_online ? "Virtual Meeting" : `${upcomingSchedule.room || "TBA"}, ${upcomingSchedule.building || "Campus"}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                        Your manuscript is now in the Defense Coordinator&apos;s queue. The coordinator is assigning 3 panelists and booking your defense room.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 2: Slide Deck & Rubrics Preparation */}
+                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white">
+                      2
+                    </span>
+                    <Badge variant="outline" className="text-[9px] font-bold text-primary border-primary/30">
+                      15-Min Rubric
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">Prepare Presentation Deck</h4>
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      Prepare a 10-12 slide deck structured around your objectives, methodology, and demo. Keep presentation to exactly 15 minutes.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDefenseGuideOpen(true)}
+                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                  >
+                    View slide breakdown &rarr;
+                  </button>
+                </div>
+
+                {/* Step 3: Defense Day & Panel Verdict */}
+                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 dark:bg-slate-300 text-[11px] font-black text-white dark:text-slate-900">
+                      3
+                    </span>
+                    <Badge variant="outline" className="text-[9px] font-bold text-muted-foreground">
+                      Panel Evaluation
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">Oral Defense &amp; Rubric Scoring</h4>
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      Panelists evaluate your research live across criteria weights (100 pts) and submit their consensus verdict and revision notes.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/workspace/${project.id}/${endorsedDoc.stage_id}`}
+                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 pt-0.5"
+                  >
+                    Review annotations workspace &rarr;
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -976,9 +1138,20 @@ export default function MyProjectPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           {doc.adviser_approval_status === "approved" ? (
-                            <Badge variant="success" className="text-[10px] font-bold">
-                              Adviser Endorsed
-                            </Badge>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] gap-1 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 px-2 font-bold cursor-pointer"
+                                onClick={() => setEndorsementSlipOpen(true)}
+                              >
+                                <Printer className="h-3 w-3" />
+                                Clearance Slip
+                              </Button>
+                              <Badge variant="success" className="text-[10px] font-bold">
+                                Adviser Endorsed
+                              </Badge>
+                            </>
                           ) : doc.adviser_approval_status === "rejected" ? (
                             <Badge variant="warning" className="text-[10px] font-bold">
                               Revisions Required
@@ -1361,6 +1534,327 @@ export default function MyProjectPage() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Endorsement Clearance Slip Modal ─────────────────────── */}
+        <Dialog open={endorsementSlipOpen} onOpenChange={setEndorsementSlipOpen}>
+          <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-6">
+            <DialogHeader className="border-b pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base font-black tracking-tight">
+                      Adviser Endorsement Clearance Slip
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                      Official institutional clearance record for oral defense deliberations
+                    </DialogDescription>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs font-bold shrink-0 cursor-pointer"
+                  onClick={() => window.print()}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Print Slip
+                </Button>
+              </div>
+            </DialogHeader>
+
+            {/* Clearance Slip Document Body */}
+            <div className="mt-4 rounded-xl border border-emerald-500/30 bg-card p-6 space-y-6 shadow-xs relative overflow-hidden">
+              {/* Background Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none">
+                <ShieldCheck className="w-96 h-96 text-emerald-900" />
+              </div>
+
+              {/* Institutional Letterhead */}
+              <div className="text-center space-y-1 border-b border-border/80 pb-4 relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  Republic of the Philippines
+                </p>
+                <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
+                  Partido State University
+                </h3>
+                <p className="text-[11px] font-semibold text-muted-foreground">
+                  {project.departments?.name || "College of Computing and Information Technology"}
+                </p>
+                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                  AURORA Paperless Defense &amp; Research Repository Management System
+                </p>
+              </div>
+
+              {/* Slip Title */}
+              <div className="text-center relative z-10">
+                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                  Certificate of Adviser Endorsement
+                </span>
+                <h4 className="mt-2 text-sm font-bold text-foreground">
+                  ELIGIBILITY FOR ORAL DEFENSE DELIBERATION
+                </h4>
+              </div>
+
+              {/* Metadata Grid */}
+              <div className="grid grid-cols-2 gap-4 text-xs relative z-10 bg-muted/30 p-4 rounded-xl border border-border/60">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Research Title</p>
+                  <p className="font-bold text-foreground mt-0.5">{project.title}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Defense Stage</p>
+                  <p className="font-bold text-foreground mt-0.5">
+                    {project.defense_stages?.name || "Current Defense Stage"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Research Proponents</p>
+                  <p className="font-bold text-foreground mt-0.5">
+                    {allMembers
+                      .filter((m) => m.member_role !== "adviser")
+                      .map((m) => m.profiles ? `${m.profiles.first_name} ${m.profiles.last_name}` : "")
+                      .filter(Boolean)
+                      .join(", ") || (project.students?.profiles ? `${project.students.profiles.first_name} ${project.students.profiles.last_name}` : "Student Author")}
+                  </p>
+                  {project.team_name && (
+                    <p className="text-[10px] font-semibold text-primary mt-0.5">
+                      Team: {project.team_name}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Academic Year</p>
+                  <p className="font-bold text-foreground mt-0.5">{project.academic_year || "2026-2027"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Endorsing Adviser</p>
+                  <p className="font-bold text-foreground mt-0.5">{adviserName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Endorsed Manuscript</p>
+                  <p className="font-bold text-foreground mt-0.5">
+                    {endorsedVersion ? `Version ${endorsedVersion.version_number} (${endorsedVersion.file_name})` : "Latest Upload"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Certification Text */}
+              <div className="relative z-10 text-xs text-muted-foreground leading-relaxed bg-card p-3 rounded-lg border border-border/50">
+                <p>
+                  This is to officially certify that the research manuscript entitled above has been thoroughly examined, mentored, and reviewed through the AURORA paperless research management system. The research group has satisfactorily addressed all consultation annotations and recommendations, and the manuscript is hereby <strong className="text-foreground font-bold">OFFICIALLY ENDORSED</strong> for defense scheduling before the appointed Examination Panel.
+                </p>
+              </div>
+
+              {/* Adviser Remarks if any */}
+              {endorsedDoc?.approval_remarks && (
+                <div className="relative z-10 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-emerald-950 dark:text-emerald-200">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+                    Adviser Endorsement Remarks
+                  </p>
+                  <p className="italic">&ldquo;{endorsedDoc.approval_remarks}&rdquo;</p>
+                </div>
+              )}
+
+              {/* Official Clearance Stamp & Verification Footer */}
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-border/70">
+                <div className="text-left space-y-0.5">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Verification Serial</p>
+                  <p className="font-mono text-xs font-black text-foreground">
+                    AURORA-END-{project.id.slice(0, 8).toUpperCase()}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    System timestamped &amp; digitally recorded in Supabase audit log
+                  </p>
+                </div>
+
+                {/* Digital Stamp */}
+                <div className="border-2 border-dashed border-emerald-600 rounded-xl px-4 py-2 text-center bg-emerald-50/50 dark:bg-emerald-950/40">
+                  <div className="flex items-center gap-1.5 justify-center text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="text-[11px] font-black uppercase tracking-wider">
+                      ENDORSED FOR DEFENSE
+                    </span>
+                  </div>
+                  <p className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
+                    Certified by {adviserName}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Defense Preparation Guide Modal ─────────────────────── */}
+        <Dialog open={defenseGuideOpen} onOpenChange={setDefenseGuideOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <DialogHeader className="border-b pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Presentation className="h-5 w-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-base font-black tracking-tight">
+                    Oral Defense Preparation &amp; Rubric Guide
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
+                    Official guidelines for candidate proponents preparing for oral defense deliberations
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-5 text-xs">
+              {/* 1. Time Allocation Card */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="font-bold text-foreground">15-Minute Presentation</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Strict maximum for your oral presentation. Keep slides clear, visual, and concise. Practice timing beforehand.
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="font-bold text-foreground">15-Minute Q&amp;A Defense</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Panelists will question methodology, architecture, and defense readiness. All proponents must participate.
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. Recommended 10-12 Slide Deck Outline */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-foreground uppercase tracking-wider text-[11px] flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  Recommended 15-Minute Slide Deck Structure
+                </h4>
+                <div className="space-y-2">
+                  {[
+                    {
+                      slides: "Slide 1",
+                      title: "Title & Proponents",
+                      time: "30 sec",
+                      desc: "Project Title, Proponent Names, Research Adviser, and Department name.",
+                    },
+                    {
+                      slides: "Slide 2-3",
+                      title: "Problem Rationale & Significance",
+                      time: "2.5 mins",
+                      desc: "What real-world problem does this solve? Who is affected? Why is an automated solution necessary?",
+                    },
+                    {
+                      slides: "Slide 4",
+                      title: "Objectives & Scope",
+                      time: "1.5 mins",
+                      desc: "General and specific SMART objectives. Highlight system boundaries, delimitations, and target beneficiaries.",
+                    },
+                    {
+                      slides: "Slide 5",
+                      title: "Conceptual Framework & Literature",
+                      time: "1.5 mins",
+                      desc: "Input-Process-Output (IPO) model or conceptual diagram with key literature citations.",
+                    },
+                    {
+                      slides: "Slide 6-7",
+                      title: "Methodology & Architecture",
+                      time: "3.5 mins",
+                      desc: "System architecture, database schema (ERD), algorithm flowcharts, and hardware/software tech stack.",
+                    },
+                    {
+                      slides: "Slide 8-10",
+                      title: "Prototype Demo & Results",
+                      time: "4 mins",
+                      desc: "Showcase core working modules, test cases, and facial recognition or hardware outputs in action.",
+                    },
+                    {
+                      slides: "Slide 11-12",
+                      title: "Conclusions & Recommendations",
+                      time: "1.5 mins",
+                      desc: "Summary of accomplishments against objectives, current limitations, and future enhancement roadmap.",
+                    },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+                      <div className="flex flex-col items-center justify-center shrink-0 w-16 text-center">
+                        <span className="text-[10px] font-black text-primary">{item.slides}</span>
+                        <span className="text-[9px] text-muted-foreground font-semibold">{item.time}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-foreground text-xs">{item.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. 100-Point Institutional Rubric Breakdown */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-foreground uppercase tracking-wider text-[11px] flex items-center gap-2">
+                  <Award className="h-4 w-4 text-emerald-600" />
+                  Institutional Evaluation Rubrics (100 Points Total)
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg border border-border bg-card">
+                    <div className="flex justify-between font-bold">
+                      <span>Problem Formulation &amp; Literature</span>
+                      <span className="text-primary font-black">20 pts</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Clarity of problem, rationale, and cited literature</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg border border-border bg-card">
+                    <div className="flex justify-between font-bold">
+                      <span>Technical Rigor &amp; Architecture</span>
+                      <span className="text-primary font-black">30 pts</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Methodology, database design, system soundness</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg border border-border bg-card">
+                    <div className="flex justify-between font-bold">
+                      <span>System Output &amp; Prototype Demo</span>
+                      <span className="text-primary font-black">25 pts</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Working prototype, testing results, UI/UX execution</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg border border-border bg-card">
+                    <div className="flex justify-between font-bold">
+                      <span>Oral Defense Poise &amp; Q&amp;A Defense</span>
+                      <span className="text-primary font-black">15 pts</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Mastery, clarity of responses, equitable participation</p>
+                  </div>
+                  <div className="col-span-2 p-2.5 rounded-lg border border-border bg-card">
+                    <div className="flex justify-between font-bold">
+                      <span>Manuscript Quality &amp; Citations</span>
+                      <span className="text-primary font-black">10 pts</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Grammar, IEEE/APA format, resolution of adviser annotations</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Defense Day Pro Tips */}
+              <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300/40 space-y-2">
+                <h4 className="font-bold text-amber-950 dark:text-amber-200 text-xs flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                  Pro Tips for High Scores
+                </h4>
+                <ul className="text-[11px] text-amber-900/90 dark:text-amber-300/90 space-y-1 list-disc list-inside">
+                  <li><strong>Review all Adviser Annotations:</strong> Panelists can see your manuscript revision history. Be ready to explain how adviser feedback was incorporated.</li>
+                  <li><strong>Offline Prototype Readiness:</strong> Have a screen recording or local offline fallback of your system demo in case venue WiFi is unstable.</li>
+                  <li><strong>Equitable Participation:</strong> Each group member should present their assigned module so panelists see true teamwork.</li>
+                  <li><strong>One Member on Notes:</strong> Appoint one group member specifically to record all panel recommendations during Q&amp;A for your post-defense revisions.</li>
+                </ul>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
