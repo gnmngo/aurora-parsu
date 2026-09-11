@@ -276,15 +276,15 @@ export default function MyProjectPage() {
 
       // 5. Fetch ALL project members (students + adviser + panel roles)
       //    Display all to the student so they know who is on their project.
-      const { data: members } = await supabase
+      const { data: members, error: memErr } = await supabase
         .from("project_members")
-        .select("profile_id, member_role, is_primary, profiles ( first_name, last_name, email )")
+        .select("profile_id, member_role, is_primary, profiles:profiles!project_members_profile_id_fkey ( first_name, last_name, email )")
         .eq("project_id", proj.id)
         .order("assigned_at", { ascending: true });
       if (members) {
         setAllMembers(members as any);
         const adviserMember = members.find((m: any) => m.member_role === "adviser");
-        if (adviserMember) setAdviser(adviserMember as any);
+        setAdviser(adviserMember ? (adviserMember as any) : null);
       }
 
       // 6. Fetch defense schedules
@@ -709,14 +709,22 @@ export default function MyProjectPage() {
                 </CardContent>
               </Card>
 
-              {/* ── Project Members ─────────────────────── */}
+              {/* ── Research Proponents & Adviser ─────────────────────── */}
               {allMembers.length > 0 && (
-                <Card>
+                <Card className="border border-border shadow-xs">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      Project Members
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        Research Proponents &amp; Adviser
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-[10px] font-bold">
+                        {allMembers.filter(m => m.member_role !== "adviser").length} Proponents
+                      </Badge>
+                    </div>
+                    <CardDescription className="text-[11px] text-muted-foreground leading-tight">
+                      All group members linked via Join Code share real-time access to this project.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-xs">
                     {allMembers.map((m) => {
@@ -724,33 +732,41 @@ export default function MyProjectPage() {
                         ? `${m.profiles.first_name} ${m.profiles.last_name}`
                         : "Unknown";
                       const isLeader = m.is_primary || m.member_role === "student_leader";
+                      const isAdviser = m.member_role === "adviser";
                       const roleBadgeVariant =
-                        m.member_role === "adviser" ? "info" :
-                        m.member_role === "student_leader" ? "warning" :
-                        "outline";
+                        isAdviser ? "info" :
+                        isLeader ? "warning" :
+                        "secondary";
                       const roleLabel =
-                        m.member_role === "student_leader" ? "Leader" :
-                        m.member_role === "adviser" ? "Adviser" :
+                        isLeader ? "Team Lead" :
+                        isAdviser ? "Adviser" :
                         m.member_role === "panel_chair" ? "Chair" :
                         m.member_role === "panel_member" ? "Panelist" :
-                        "Member";
+                        "Co-Author";
                       return (
-                        <div key={m.profile_id} className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-black text-muted-foreground">
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              {isLeader && (
-                                <Crown className="h-3 w-3 text-amber-500 shrink-0" />
-                              )}
-                              <p className="font-bold text-foreground truncate">{name}</p>
+                        <div key={m.profile_id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 border border-border/50">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={cn(
+                              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
+                              isLeader ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" :
+                              isAdviser ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
+                              "bg-primary/10 text-primary"
+                            )}>
+                              {name.charAt(0).toUpperCase()}
                             </div>
-                            {m.profiles?.email && (
-                              <p className="text-[9px] text-muted-foreground truncate">{m.profiles.email}</p>
-                            )}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                {isLeader && (
+                                  <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                )}
+                                <p className="font-bold text-foreground truncate text-xs">{name}</p>
+                              </div>
+                              {m.profiles?.email && (
+                                <p className="text-[10px] text-muted-foreground truncate">{m.profiles.email}</p>
+                              )}
+                            </div>
                           </div>
-                          <Badge variant={roleBadgeVariant} className="text-[8px] shrink-0">
+                          <Badge variant={roleBadgeVariant} className="text-[9px] font-bold shrink-0">
                             {roleLabel}
                           </Badge>
                         </div>
@@ -762,22 +778,30 @@ export default function MyProjectPage() {
 
               {/* ── Join Code (visible to student members) ─── */}
               {project?.join_code && (
-                <Card className="border-primary/20 bg-primary/3">
+                <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-primary">Join Code</CardTitle>
-                    <CardDescription className="text-[10px]">
-                      Share this code with your team members so they can join this project.
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-bold text-primary flex items-center gap-1.5">
+                        <Users className="h-4 w-4" />
+                        Team Join Code
+                      </CardTitle>
+                      <Badge variant="outline" className="text-[9px] font-bold border-primary/30 text-primary bg-primary/10">
+                        Share with Teammates
+                      </Badge>
+                    </div>
+                    <CardDescription className="text-[11px] text-muted-foreground leading-normal">
+                      Share this code with your groupmates. When they sign up and enter this code, they will immediately be linked to this exact research project!
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 rounded-lg bg-background px-3 py-2 text-center text-base font-black tracking-[0.2em] text-foreground border border-border">
+                      <code className="flex-1 rounded-lg bg-background px-3 py-2 text-center text-lg font-mono font-black tracking-[0.25em] text-primary border border-primary/30 shadow-xs">
                         {project.join_code}
                       </code>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="shrink-0 h-9 w-9 p-0"
+                        className="shrink-0 h-10 px-3 gap-1.5 text-xs font-bold border-primary/30 hover:bg-primary/10"
                         onClick={() => {
                           navigator.clipboard.writeText(project.join_code || "");
                           setJoinCodeCopied(true);
@@ -785,10 +809,17 @@ export default function MyProjectPage() {
                         }}
                         title="Copy join code"
                       >
-                        {joinCodeCopied
-                          ? <Check className="h-3.5 w-3.5 text-success" />
-                          : <Copy className="h-3.5 w-3.5" />
-                        }
+                        {joinCodeCopied ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-success" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5" />
+                            <span>Copy</span>
+                          </>
+                        )}
                       </Button>
                     </div>
                   </CardContent>

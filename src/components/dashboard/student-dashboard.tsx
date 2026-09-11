@@ -20,7 +20,7 @@ import Link from "next/link";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
-import { UploadCloud, Plus, UserPlus } from "lucide-react";
+import { UploadCloud, Plus, UserPlus, Users, Crown } from "lucide-react";
 
 interface StudentDashboardProps {
   userId: string;
@@ -30,6 +30,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<any>(null);
   const [adviser, setAdviser] = useState<any>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<any>(null);
   const [latestDoc, setLatestDoc] = useState<any>(null);
   const [submissionsList, setSubmissionsList] = useState<any[]>([]);
@@ -101,14 +102,18 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           setStagesList(dbStages);
         }
 
-        // 2. Fetch adviser member
-        const { data: advMem } = await supabase
+        // 2. Fetch adviser and all team members
+        const { data: membersData } = await supabase
           .from("project_members")
-          .select("*, profiles(first_name, last_name, email)")
+          .select("*, profiles:profiles!project_members_profile_id_fkey(first_name, last_name, email)")
           .eq("project_id", proj.id)
-          .eq("member_role", "adviser")
-          .maybeSingle();
-        if (advMem) setAdviser(advMem);
+          .order("assigned_at", { ascending: true });
+
+        if (membersData) {
+          setTeamMembers(membersData);
+          const advMem = membersData.find((m: any) => m.member_role === "adviser");
+          setAdviser(advMem ? advMem : null);
+        }
 
         // 3. Fetch latest schedule
         const { data: sched } = await supabase
@@ -500,6 +505,52 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
               )}
             </CardContent>
           </Card>
+
+          {/* Team Proponents & Adviser */}
+          {teamMembers.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
+                    <Users className="h-4 w-4 text-primary" /> Research Proponents
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-[9px] font-bold">
+                    {teamMembers.filter((m: any) => m.member_role !== "adviser").length} Members
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {teamMembers.map((m: any) => {
+                  const name = m.profiles
+                    ? `${m.profiles.first_name} ${m.profiles.last_name}`
+                    : "Unknown";
+                  const isLeader = m.is_primary || m.member_role === "student_leader";
+                  const isAdv = m.member_role === "adviser";
+                  return (
+                    <div key={m.profile_id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary">
+                          {name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground truncate text-xs flex items-center gap-1">
+                            {name}
+                            {isLeader && <Crown className="h-3 w-3 text-amber-500 shrink-0" />}
+                          </p>
+                          {m.profiles?.email && (
+                            <p className="text-[9px] text-muted-foreground truncate">{m.profiles.email}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Badge variant={isAdv ? "info" : isLeader ? "warning" : "secondary"} className="text-[8px] font-bold shrink-0">
+                        {isLeader ? "Lead" : isAdv ? "Adviser" : "Member"}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
