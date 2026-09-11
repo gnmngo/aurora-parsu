@@ -731,15 +731,15 @@ export default function MyProjectPage() {
                       const name = m.profiles
                         ? `${m.profiles.first_name} ${m.profiles.last_name}`
                         : "Unknown";
-                      const isLeader = m.is_primary || m.member_role === "student_leader";
                       const isAdviser = m.member_role === "adviser";
+                      const isLeader = !isAdviser && (m.member_role === "student_leader" || m.is_primary);
                       const roleBadgeVariant =
                         isAdviser ? "info" :
                         isLeader ? "warning" :
                         "secondary";
                       const roleLabel =
+                        isAdviser ? "Research Adviser" :
                         isLeader ? "Team Lead" :
-                        isAdviser ? "Adviser" :
                         m.member_role === "panel_chair" ? "Chair" :
                         m.member_role === "panel_member" ? "Panelist" :
                         "Co-Author";

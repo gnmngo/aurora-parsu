@@ -190,7 +190,7 @@ export async function createProjectAction(
           project_id: project.id,
           profile_id: input.adviserProfileId.trim(),
           member_role: "adviser",
-          is_primary: true,
+          is_primary: false,
         },
         { onConflict: "project_id,profile_id,member_role" }
       );
@@ -331,7 +331,7 @@ export async function assignProjectAdviserAction(
         project_id: projectId,
         profile_id: facultyProfileId,
         member_role: "adviser",
-        is_primary: true,
+        is_primary: false,
       });
 
     if (insertAdviserErr) {

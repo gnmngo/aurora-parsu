@@ -524,8 +524,8 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                   const name = m.profiles
                     ? `${m.profiles.first_name} ${m.profiles.last_name}`
                     : "Unknown";
-                  const isLeader = m.is_primary || m.member_role === "student_leader";
                   const isAdv = m.member_role === "adviser";
+                  const isLeader = !isAdv && (m.member_role === "student_leader" || m.is_primary);
                   return (
                     <div key={m.profile_id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
