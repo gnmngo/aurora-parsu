@@ -22,18 +22,21 @@ import { format } from "date-fns";
 import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
-  CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2
+  CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
-import { assignProjectAdviserAction, getApprovedFacultyListAction } from "@/lib/projects/actions";
+import { assignProjectAdviserAction, getApprovedFacultyListAction, updateProjectTeamNameAction } from "@/lib/projects/actions";
 
 interface ProjectData {
   id: string;
   title: string;
+  team_name?: string | null;
   status: string;
   academic_year: string;
   created_at: string;
@@ -151,6 +154,9 @@ export default function MyProjectPage() {
   const [facultyOptions, setFacultyOptions] = useState<Array<{ profile_id: string; name: string; email: string; department?: string }>>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [assigningAdviser, setAssigningAdviser] = useState(false);
+  const [teamNameModalOpen, setTeamNameModalOpen] = useState(false);
+  const [teamNameInput, setTeamNameInput] = useState("");
+  const [savingTeamName, setSavingTeamName] = useState(false);
 
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
@@ -180,6 +186,26 @@ export default function MyProjectPage() {
       toast.error(msg);
     } finally {
       setAssigningAdviser(false);
+    }
+  };
+
+  const handleSaveTeamName = async () => {
+    if (!project?.id) return;
+    setSavingTeamName(true);
+    try {
+      const res = await updateProjectTeamNameAction(project.id, teamNameInput);
+      if (!res.success) {
+        toast.error(res.error || "Failed to update team name.");
+        return;
+      }
+      setProject((prev) => (prev ? { ...prev, team_name: res.team_name || null } : prev));
+      toast.success(res.team_name ? `Team name set to "${res.team_name}"` : "Team name removed.");
+      setTeamNameModalOpen(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error saving team name";
+      toast.error(msg);
+    } finally {
+      setSavingTeamName(false);
     }
   };
 
@@ -216,7 +242,7 @@ export default function MyProjectPage() {
       let projectQuery = supabase
         .from("projects")
         .select(`
-          id, title, status, academic_year, created_at,
+          id, title, team_name, status, academic_year, created_at,
           current_stage_id, workflow_template_id, join_code, student_id,
           defense_stages ( id, name, sequence_order ),
           departments ( id, name ),
@@ -416,6 +442,35 @@ export default function MyProjectPage() {
               {project.title}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
+              {project.team_name ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>Team: {project.team_name}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTeamNameInput(project.team_name || "");
+                      setTeamNameModalOpen(true);
+                    }}
+                    className="ml-0.5 text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                    title="Edit Team Name"
+                  >
+                    <Pencil className="h-2.5 w-2.5 inline" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTeamNameInput("");
+                    setTeamNameModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border hover:border-primary/50 bg-background hover:bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <Users className="h-3 w-3" />
+                  + Add Team Name
+                </button>
+              )}
               <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", statusClass)}>
                 {project.status.replace(/_/g, " ")}
               </span>
@@ -714,13 +769,34 @@ export default function MyProjectPage() {
                 <Card className="border border-border shadow-xs">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
-                        Research Proponents &amp; Adviser
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-[10px] font-bold">
-                        {allMembers.filter(m => m.member_role !== "adviser").length} Proponents
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <Users className="h-4 w-4 text-primary" />
+                          Research Proponents &amp; Adviser
+                        </CardTitle>
+                        {project.team_name && (
+                          <Badge variant="outline" className="text-[10px] font-bold bg-primary/5 text-primary border-primary/20">
+                            {project.team_name}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] font-semibold text-muted-foreground hover:text-primary px-2"
+                          onClick={() => {
+                            setTeamNameInput(project.team_name || "");
+                            setTeamNameModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-2.5 w-2.5 mr-1" />
+                          {project.team_name ? "Edit Team" : "Set Team Name"}
+                        </Button>
+                        <Badge variant="secondary" className="text-[10px] font-bold">
+                          {allMembers.filter(m => m.member_role !== "adviser").length} Proponents
+                        </Badge>
+                      </div>
                     </div>
                     <CardDescription className="text-[11px] text-muted-foreground leading-tight">
                       All group members linked via Join Code share real-time access to this project.
@@ -1227,6 +1303,64 @@ export default function MyProjectPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Team Name Modal */}
+        <Dialog open={teamNameModalOpen} onOpenChange={setTeamNameModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                {project.team_name ? "Edit Team Name" : "Set Team Name"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Designate an official group name for your research team to appear across defense schedules, rubrics, and deliberations.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveTeamName();
+              }}
+              className="space-y-4 pt-2"
+            >
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">Team / Group Name</Label>
+                <Input
+                  value={teamNameInput}
+                  onChange={(e) => setTeamNameInput(e.target.value)}
+                  placeholder="e.g. Team ByteCraft, SyntaxSquad, etc."
+                  disabled={savingTeamName}
+                  maxLength={60}
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Visible to all group members, panelists, and your research adviser.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTeamNameModalOpen(false)}
+                  disabled={savingTeamName}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="font-bold"
+                  disabled={savingTeamName}
+                >
+                  {savingTeamName && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                  Save Team Name
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>

@@ -42,6 +42,7 @@ interface CreateProjectModalProps {
 export function CreateProjectModal({ onSuccess, student }: CreateProjectModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [teamName, setTeamName] = useState("");
   const [abstract, setAbstract] = useState("");
   const [selectedAdviser, setSelectedAdviser] = useState("");
   const [facultyList, setFacultyList] = useState<FacultyOption[]>([]);
@@ -87,6 +88,7 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
     try {
       const res = await createProjectAction({
         title: title.trim(),
+        teamName: teamName.trim() || undefined,
         abstract: abstract.trim() || undefined,
         adviserProfileId: selectedAdviser || undefined,
       });
@@ -125,6 +127,7 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
   const handleClose = () => {
     setOpen(false);
     setTitle("");
+    setTeamName("");
     setAbstract("");
     setSelectedAdviser("");
     setCreatedProject(null);
@@ -204,6 +207,19 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
                 <p>Loading student profile information. Please wait a moment...</p>
               </div>
             )}
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">Team / Group Name (Optional)</Label>
+              <Input
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                placeholder="e.g. Team ByteCraft, SyntaxSquad, etc."
+                disabled={loading || missingHierarchy}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Give your research team an official identity for defense proceedings.
+              </p>
+            </div>
 
             <div className="space-y-1">
               <Label className="text-xs font-bold">Project Title / Working Title *</Label>

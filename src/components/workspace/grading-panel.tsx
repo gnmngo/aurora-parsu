@@ -23,7 +23,11 @@ import {
   Award,
   Sparkles,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  Crown,
+  Calendar,
+  GraduationCap,
+  Building2
 } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +89,170 @@ function CollapsibleSection({
         )}
       </AnimatePresence>
     </Card>
+  );
+}
+
+function DefenseStageDetailsCard({ projectInfo }: { projectInfo: any }) {
+  if (!projectInfo) return null;
+
+  return (
+    <div className="space-y-3 pt-1">
+      {/* 1. Header: Team Name & Defense Stage */}
+      <div className="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {projectInfo.teamName ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded-md">
+                <Users className="h-3 w-3" />
+                {projectInfo.teamName}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                <Users className="h-3 w-3" />
+                Individual Proponents
+              </span>
+            )}
+            <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
+              {projectInfo.academicYear || "AY 2026-2027"}
+            </Badge>
+          </div>
+          <h4 className="text-xs font-bold text-foreground leading-snug">
+            {projectInfo.title}
+          </h4>
+        </div>
+
+        <Badge variant="secondary" className="shrink-0 text-[10px] font-bold">
+          Stage {projectInfo.stageOrder || 1}: {projectInfo.stageName}
+        </Badge>
+      </div>
+
+      {/* 2. Research Proponents (All Members) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <Users className="h-3 w-3 text-primary" />
+            Research Proponents ({projectInfo.proponents?.length || 1})
+          </span>
+        </div>
+        <div className="space-y-1">
+          {projectInfo.proponents && projectInfo.proponents.length > 0 ? (
+            projectInfo.proponents.map((p: any, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-muted/30 border border-border/40 text-xs"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.isLeader ? (
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                      <Crown className="h-3 w-3" />
+                    </div>
+                  ) : (
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <User className="h-3 w-3" />
+                    </div>
+                  )}
+                  <span className="font-bold text-foreground truncate">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {p.isLeader ? (
+                    <Badge variant="warning" className="text-[9px] font-bold px-1.5 py-0">
+                      Leader
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[9px] font-semibold text-muted-foreground px-1.5 py-0">
+                      Co-Author
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-xs text-muted-foreground italic px-2 py-1">
+              {projectInfo.studentName || "No proponents linked"}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Research Adviser */}
+      <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+            <ShieldCheck className="h-3.5 w-3.5" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 block leading-tight">
+              Official Research Adviser
+            </span>
+            <span className="font-bold text-foreground truncate block">
+              {projectInfo.adviser?.name || "Pending Adviser Endorsement"}
+            </span>
+          </div>
+        </div>
+        {projectInfo.adviser?.email && (
+          <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+            {projectInfo.adviser.email}
+          </span>
+        )}
+      </div>
+
+      {/* 4. Academic Details & Manuscript Status */}
+      <dl className="grid gap-2 text-xs pt-1.5 border-t border-border/50">
+        <div className="flex justify-between items-center py-0.5">
+          <dt className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+            Program
+          </dt>
+          <dd className="font-semibold text-foreground text-right text-[11px] max-w-[65%] truncate">
+            {projectInfo.programCode ? `[${projectInfo.programCode}] ` : ""}{projectInfo.program}
+          </dd>
+        </div>
+
+        <div className="flex justify-between items-center py-0.5">
+          <dt className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+            Department / College
+          </dt>
+          <dd className="font-semibold text-foreground text-right text-[11px] max-w-[65%] truncate">
+            {projectInfo.department} • {projectInfo.college}
+          </dd>
+        </div>
+
+        <div className="flex justify-between items-center py-0.5">
+          <dt className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+            Manuscript Version
+          </dt>
+          <dd className="font-semibold text-foreground text-right text-[11px]">
+            v{projectInfo.versionNumber || 1} ({projectInfo.submittedAt})
+          </dd>
+        </div>
+
+        <div className="flex justify-between items-center py-0.5">
+          <dt className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            Defense Schedule
+          </dt>
+          <dd className="font-semibold text-foreground text-right text-[11px]">
+            {projectInfo.schedule ? (
+              <span className="text-primary font-bold">
+                {projectInfo.schedule.room ? `${projectInfo.schedule.room} • ` : ""}
+                {new Date(projectInfo.schedule.scheduledAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            ) : (
+              <span className="text-muted-foreground italic text-[11px]">
+                Pending Scheduling
+              </span>
+            )}
+          </dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -181,21 +349,56 @@ export function GradingPanel({
         return;
       }
 
-      // 1. Fetch project, stage, and rubric in parallel
+      // 1. Fetch project, stage, members, schedule, version, and rubric in parallel
       const stagePromise = validStageId
-        ? supabase.from("defense_stages").select("name").eq("id", validStageId).maybeSingle()
+        ? supabase.from("defense_stages").select("id, name, sequence_order").eq("id", validStageId).maybeSingle()
         : Promise.resolve({ data: null, error: null });
 
-      const [projResult, stageResult, rubricResult] = await Promise.all([
+      const membersPromise = supabase
+        .from("project_members")
+        .select(`
+          profile_id,
+          member_role,
+          is_primary,
+          assigned_at,
+          profiles:profiles!project_members_profile_id_fkey (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq("project_id", validProjectId)
+        .order("assigned_at", { ascending: true });
+
+      const schedulePromise = supabase
+        .from("defense_schedules")
+        .select("id, scheduled_at, end_at, room, building, is_online, meeting_url, status")
+        .eq("project_id", validProjectId)
+        .order("scheduled_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const versionPromise = documentVersionId
+        ? supabase.from("document_versions").select("id, version_number, file_name, created_at").eq("id", documentVersionId).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+
+      const [projResult, stageResult, rubricResult, membersResult, scheduleResult, verResult] = await Promise.all([
         supabase
           .from("projects")
           .select(`
+            id,
             title,
-            departments ( name ),
+            team_name,
+            academic_year,
+            workflow_template_id,
+            departments (
+              name,
+              colleges ( name, code )
+            ),
             students (
               program_id,
-              programs ( name ),
-              profiles ( first_name, last_name )
+              programs ( name, code ),
+              profiles ( first_name, last_name, email )
             )
           `)
           .eq("id", validProjectId)
@@ -207,7 +410,10 @@ export function GradingPanel({
           .eq("project_id", validProjectId)
           .order("created_at", { ascending: false })
           .limit(1)
-          .maybeSingle()
+          .maybeSingle(),
+        membersPromise,
+        schedulePromise,
+        versionPromise,
       ]);
 
       const projData = projResult.data;
@@ -242,42 +448,82 @@ export function GradingPanel({
       }
 
       let submittedDate = null;
-      if (documentVersionId) {
-        const { data: verData } = await supabase
-          .from("document_versions")
-          .select("created_at")
-          .eq("id", documentVersionId)
-          .maybeSingle();
-        if (verData) {
-          submittedDate = new Date(verData.created_at).toLocaleDateString();
-        }
+      let versionNumber = 1;
+      if (verResult?.data) {
+        submittedDate = new Date(verResult.data.created_at).toLocaleDateString();
+        versionNumber = verResult.data.version_number ?? 1;
       }
 
       if (projData) {
         const rawProj = projData as any;
-        const studentObj = Array.isArray(rawProj.students) 
-          ? rawProj.students[0] 
-          : rawProj.students;
-        
-        const profileObj = studentObj && Array.isArray(studentObj.profiles)
-          ? studentObj.profiles[0]
-          : studentObj?.profiles;
+        const membersList = (membersResult?.data || []) as any[];
 
-        const studentName = profileObj
-          ? `${profileObj.first_name} ${profileObj.last_name}` 
+        // Extract adviser from project_members
+        const adviserMember = membersList.find((m) => m.member_role === "adviser");
+        const adviserObj = adviserMember?.profiles
+          ? {
+              name: `${adviserMember.profiles.first_name} ${adviserMember.profiles.last_name}`,
+              email: adviserMember.profiles.email,
+            }
+          : null;
+
+        // Extract student proponents (exclude advisers and defense panel members)
+        const studentMembers = membersList.filter(
+          (m) => m.member_role !== "adviser" && !m.member_role?.startsWith("panel_")
+        );
+
+        let proponents: Array<{ name: string; email?: string; isLeader: boolean }> = [];
+        if (studentMembers.length > 0) {
+          proponents = studentMembers.map((m) => ({
+            name: m.profiles
+              ? `${m.profiles.first_name} ${m.profiles.last_name}`
+              : "Group Member",
+            email: m.profiles?.email,
+            isLeader: m.member_role === "student_leader" || m.is_primary,
+          }));
+        } else {
+          const studentObj = Array.isArray(rawProj.students) ? rawProj.students[0] : rawProj.students;
+          const profileObj = studentObj && Array.isArray(studentObj.profiles) ? studentObj.profiles[0] : studentObj?.profiles;
+          if (profileObj) {
+            proponents = [{
+              name: `${profileObj.first_name} ${profileObj.last_name}`,
+              email: profileObj.email,
+              isLeader: true,
+            }];
+          }
+        }
+
+        const studentObj = Array.isArray(rawProj.students) ? rawProj.students[0] : rawProj.students;
+        const programObj = Array.isArray(studentObj?.programs) ? studentObj.programs[0] : studentObj?.programs;
+        const deptObj = Array.isArray(rawProj.departments) ? rawProj.departments[0] : rawProj.departments;
+        const collegeObj = deptObj && Array.isArray(deptObj.colleges) ? deptObj.colleges[0] : deptObj?.colleges;
+
+        const studentName = proponents.length > 0
+          ? proponents[0].name
           : "Unknown Student";
-        
-        const programObj = Array.isArray(studentObj?.programs)
-          ? studentObj.programs[0]
-          : studentObj?.programs;
 
         setProjectInfo({
           title: rawProj.title,
+          teamName: rawProj.team_name || null,
+          proponents,
+          adviser: adviserObj,
           studentName,
-          program: programObj?.name || "Unknown Program",
-          department: rawProj.departments?.name || "General",
+          program: programObj?.name || "Information Technology",
+          programCode: programObj?.code || "BSIT",
+          department: deptObj?.name || "Department of Computational Sciences",
+          college: collegeObj?.code || collegeObj?.name || "CEC",
           stageName: stageData?.name || "Defense Stage",
+          stageOrder: (stageData as any)?.sequence_order ?? 1,
+          academicYear: rawProj.academic_year || "2026-2027",
           submittedAt: submittedDate || "No manuscript uploaded yet",
+          versionNumber,
+          schedule: scheduleResult?.data ? {
+            scheduledAt: scheduleResult.data.scheduled_at,
+            room: scheduleResult.data.room,
+            building: scheduleResult.data.building,
+            isOnline: scheduleResult.data.is_online,
+            status: scheduleResult.data.status,
+          } : null,
         });
       }
 
@@ -1197,24 +1443,8 @@ export function GradingPanel({
 
           {/* Defense Stage Details */}
           {projectInfo && (
-            <CollapsibleSection title="Defense Stage Details" defaultOpen={false}>
-              <dl className="grid gap-3 text-xs pt-1">
-                {[
-                  ["Student", projectInfo.studentName, <User key="user-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Program", projectInfo.program, <FileText key="prog-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Department", projectInfo.department, <Users key="dept-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Defense Stage", projectInfo.stageName, <Badge key="stage-icon" variant="outline">{projectInfo.stageName}</Badge>],
-                  ["Uploaded Date", projectInfo.submittedAt, null],
-                ].map(([label, value, icon]: any) => (
-                  <div key={label} className="flex justify-between items-center py-1 border-b border-border/40 last:border-0">
-                    <dt className="text-muted-foreground flex items-center font-medium">{label}</dt>
-                    <dd className="font-semibold text-foreground text-right flex items-center">
-                      {icon && typeof icon !== "string" && !value.props ? icon : null}
-                      {typeof value === "string" ? value : value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+            <CollapsibleSection title="Defense Stage Details" defaultOpen={true}>
+              <DefenseStageDetailsCard projectInfo={projectInfo} />
             </CollapsibleSection>
           )}
 
@@ -1299,24 +1529,8 @@ export function GradingPanel({
 
           {/* Section 2: Defense Information */}
           {projectInfo && (
-            <CollapsibleSection title="Defense Stage Details" defaultOpen={false}>
-              <dl className="grid gap-3 text-xs pt-1">
-                {[
-                  ["Student", projectInfo.studentName, <User key="user-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Program", projectInfo.program, <FileText key="prog-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Department", projectInfo.department, <Users key="dept-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                  ["Defense Stage", projectInfo.stageName, <Badge key="stage-icon" variant="outline">{projectInfo.stageName}</Badge>],
-                  ["Uploaded Date", projectInfo.submittedAt, null],
-                ].map(([label, value, icon]: any) => (
-                  <div key={label} className="flex justify-between items-center py-1 border-b border-border/40 last:border-0">
-                    <dt className="text-muted-foreground flex items-center font-medium">{label}</dt>
-                    <dd className="font-semibold text-foreground text-right flex items-center">
-                      {icon && typeof icon !== "string" && !value.props ? icon : null}
-                      {typeof value === "string" ? value : value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+            <CollapsibleSection title="Defense Stage Details" defaultOpen={true}>
+              <DefenseStageDetailsCard projectInfo={projectInfo} />
             </CollapsibleSection>
           )}
 
@@ -1398,24 +1612,8 @@ export function GradingPanel({
       <div className="space-y-4 p-4">
         {/* Section A - Defense Information */}
         {projectInfo && (
-          <CollapsibleSection title="Section A — Defense Information" defaultOpen={false}>
-            <dl className="grid gap-3 text-xs pt-1">
-              {[
-                ["Student", projectInfo.studentName, <User key="user-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                ["Program", projectInfo.program, <FileText key="prog-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                ["Department", projectInfo.department, <Users key="dept-icon" className="h-3.5 w-3.5 inline mr-1 text-muted-foreground" />],
-                ["Defense Stage", projectInfo.stageName, <Badge key="stage-icon" variant="outline">{projectInfo.stageName}</Badge>],
-                ["Uploaded Date", projectInfo.submittedAt, null],
-              ].map(([label, value, icon]: any) => (
-                <div key={label} className="flex justify-between items-center py-1 border-b border-border/40 last:border-0">
-                  <dt className="text-muted-foreground flex items-center font-medium">{label}</dt>
-                  <dd className="font-semibold text-foreground text-right flex items-center">
-                    {icon && typeof icon !== "string" && !value.props ? icon : null}
-                    {typeof value === "string" ? value : value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+          <CollapsibleSection title="Section A — Defense Information" defaultOpen={true}>
+            <DefenseStageDetailsCard projectInfo={projectInfo} />
           </CollapsibleSection>
         )}
 

@@ -7,6 +7,7 @@ import { emitNotification } from "@/lib/notifications/emit";
 
 export interface CreateProjectActionInput {
   title: string;
+  teamName?: string;
   abstract?: string;
   adviserProfileId?: string;
   stageId?: string;
@@ -17,6 +18,7 @@ export interface CreateProjectActionResult {
   project?: {
     id: string;
     title: string;
+    team_name?: string | null;
     join_code: string | null;
     current_stage_id: string | null;
   };
@@ -149,6 +151,7 @@ export async function createProjectAction(
       .from("projects")
       .insert({
         title: input.title.trim(),
+        team_name: input.teamName?.trim() || null,
         abstract: input.abstract?.trim() || null,
         student_id: student.id,
         campus_id: resolvedCampusId,
@@ -162,7 +165,7 @@ export async function createProjectAction(
         workflow_template_id: workflowTemplateId,
         created_by: user.id,
       })
-      .select("id, title, join_code, current_stage_id")
+      .select("id, title, team_name, join_code, current_stage_id")
       .single();
 
     if (insertProjErr || !project) {
@@ -630,5 +633,91 @@ export async function joinProjectAction(rawJoinCode: string): Promise<JoinProjec
   }
 }
 
+/**
+ * Updates or assigns a team name for a research project.
+ * Allows the student leader or linked project members to set/modify the team name.
+ */
+export async function updateProjectTeamNameAction(
+  projectId: string,
+  teamName: string
+): Promise<{ success: boolean; team_name?: string | null; error?: string }> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
 
+  try {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
 
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
+
+    if (!projectId) {
+      return { success: false, error: "Project ID is required." };
+    }
+
+    // Verify user is either project creator or an active project member
+    const [projRes, memberRes] = await Promise.all([
+      serviceClient
+        .from("projects")
+        .select("id, title, created_by")
+        .eq("id", projectId)
+        .maybeSingle(),
+      serviceClient
+        .from("project_members")
+        .select("id, member_role")
+        .eq("project_id", projectId)
+        .eq("profile_id", user.id)
+        .maybeSingle(),
+    ]);
+
+    const project = projRes.data;
+    if (!project) {
+      return { success: false, error: "Project not found." };
+    }
+
+    const isAuthorized =
+      project.created_by === user.id ||
+      memberRes.data !== null;
+
+    if (!isAuthorized) {
+      return { success: false, error: "You are not authorized to update this project's team name." };
+    }
+
+    const cleanTeamName = teamName.trim() || null;
+
+    const { error: updateErr } = await serviceClient
+      .from("projects")
+      .update({ team_name: cleanTeamName })
+      .eq("id", projectId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    // Audit log
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: "student",
+      action_type: "UPDATE",
+      module: "projects",
+      entity_type: "projects",
+      entity_id: projectId,
+      description: `Updated team name for "${project.title}" to "${cleanTeamName || "None"}"`,
+      ip_address: ip,
+      user_agent: userAgent,
+      academic_year: currentAcademicYear(),
+    });
+
+    return { success: true, team_name: cleanTeamName };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+    return { success: false, error: msg };
+  }
+}

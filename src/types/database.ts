@@ -108,9 +108,13 @@ export interface DefenseStage {
 export interface Project {
   id: string;
   campus_id: string;
+  college_id?: string | null;
   department_id: string;
+  program_id?: string | null;
+  major_id?: string | null;
   student_id: string;
   title: string;
+  team_name?: string | null;
   abstract: string | null;
   keywords: string[] | null;
   current_stage_id: string | null;
@@ -121,6 +125,8 @@ export interface Project {
   final_score: number | null;
   final_verdict: string | null;
   archived_at: string | null;
+  workflow_template_id?: string | null;
+  join_code?: string | null;
   created_at: string;
   updated_at: string;
 }
