@@ -18,6 +18,10 @@ export function WelcomeCard() {
     stageName?: string;
     status?: string;
   } | null>(null);
+  const [affiliation, setAffiliation] = useState<{
+    collegeName?: string;
+    departmentName?: string;
+  }>({});
   const supabase = createClient();
 
   useEffect(() => {
@@ -26,6 +30,35 @@ export function WelcomeCard() {
     async function fetchUserContext() {
       try {
         const isStudent = roles.includes("student");
+
+        // Load college & department affiliation
+        const collegeId = (profile as any).college_id;
+        const departmentId = (profile as any).department_id;
+        let cName: string | undefined;
+        let dName: string | undefined;
+
+        if (collegeId) {
+          const { data: c } = await supabase.from("colleges").select("code, name").eq("id", collegeId).maybeSingle();
+          if (c) cName = c.code ? `${c.code} - ${c.name}` : c.name;
+        }
+        if (departmentId) {
+          const { data: d } = await supabase.from("departments").select("code, name").eq("id", departmentId).maybeSingle();
+          if (d) dName = d.name;
+        }
+        if (!dName && isStudent) {
+          const { data: std } = await supabase
+            .from("students")
+            .select("programs(code, name), departments(name)")
+            .eq("profile_id", profile!.id)
+            .maybeSingle();
+          if ((std as any)?.departments?.name) {
+            dName = (std as any).departments.name;
+          } else if ((std as any)?.programs?.name) {
+            dName = (std as any).programs.code ? `[${(std as any).programs.code}] ${(std as any).programs.name}` : (std as any).programs.name;
+          }
+        }
+        setAffiliation({ collegeName: cName, departmentName: dName });
+
         if (isStudent) {
           // Check project_members first
           const { data: memberRows } = await supabase
@@ -84,8 +117,8 @@ export function WelcomeCard() {
     );
   }
 
-  const collegeName = (profile as any).colleges?.name || "Partido State University";
-  const departmentName = (profile as any).departments?.name || "Academic Programs";
+  const collegeName = affiliation.collegeName || (profile as any).colleges?.name || "CEC - College of Engineering and Computational Sciences";
+  const departmentName = affiliation.departmentName || (profile as any).departments?.name || "Department of Computational Sciences";
   const roleName = (roles[0] || "User").replace(/_/g, " ");
 
   return (
