@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, UserPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { joinProjectAction } from "@/lib/projects/actions";
 
 interface JoinProjectModalProps {
   onSuccess: () => void;
@@ -17,12 +17,11 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
   const [open, setOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const code = joinCode.trim().toUpperCase();
+    const code = joinCode.trim().toUpperCase().replace(/\s+/g, "");
     if (!code || code.length < 4) {
       toast.error("Please enter a valid join code");
       return;
@@ -30,79 +29,19 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
 
     setLoading(true);
     try {
-      // 1. Get current authenticated user
-      const {
-        data: { user },
-        error: authErr,
-      } = await supabase.auth.getUser();
+      const res = await joinProjectAction(code);
 
-      if (authErr || !user) {
-        toast.error("You must be signed in to join a project");
+      if (!res.success) {
+        toast.error(res.error || "Failed to join project.");
         return;
       }
 
-      // 2. Look up the project by join code
-      const { data: project, error: searchErr } = await supabase
-        .from("projects")
-        .select("id, title, student_id")
-        .eq("join_code", code)
-        .maybeSingle();
-
-      if (searchErr) {
-        toast.error(`Error searching for project: ${searchErr.message}`);
-        return;
-      }
-      if (!project) {
-        toast.error("Invalid join code. No project found with that code.");
-        return;
+      if (res.alreadyMember) {
+        toast.info(`You are already a member of "${res.project?.title}". Loading your project...`);
+      } else {
+        toast.success(`Successfully joined "${res.project?.title}"!`);
       }
 
-      // 3. Ensure student record exists
-      let profileId = user.id;
-      const { data: existingStudent } = await supabase
-        .from("students")
-        .select("id, profile_id")
-        .eq("profile_id", profileId)
-        .maybeSingle();
-
-      if (!existingStudent) {
-        // Create student row if missing
-        await supabase.from("students").insert({
-          profile_id: profileId,
-          year_level: 4,
-        });
-      }
-
-      // 4. Check for duplicate membership
-      const { data: existingMember } = await supabase
-        .from("project_members")
-        .select("id, member_role")
-        .eq("project_id", project.id)
-        .eq("profile_id", profileId)
-        .maybeSingle();
-
-      if (existingMember) {
-        toast.info(`You are already a member of "${project.title}". Loading your project...`);
-        setJoinCode("");
-        setOpen(false);
-        onSuccess();
-        return;
-      }
-
-      // 5. Insert project member
-      const { error: joinErr } = await supabase.from("project_members").insert({
-        project_id: project.id,
-        profile_id: profileId,
-        member_role: "student",
-        is_primary: false,
-      });
-
-      if (joinErr) {
-        toast.error(`Failed to join project: ${joinErr.message}`);
-        return;
-      }
-
-      toast.success(`Successfully joined "${project.title}"!`);
       setJoinCode("");
       setOpen(false);
       onSuccess();

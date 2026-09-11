@@ -481,4 +481,154 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
   }
 }
 
+export interface JoinProjectActionResult {
+  success: boolean;
+  project?: {
+    id: string;
+    title: string;
+  };
+  error?: string;
+  alreadyMember?: boolean;
+}
+
+/**
+ * Links an authenticated student to an existing research project via Join Code.
+ * Uses service client to bypass RLS restrictions on projects before membership exists.
+ */
+export async function joinProjectAction(rawJoinCode: string): Promise<JoinProjectActionResult> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  try {
+    // 1. Authenticate user
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return { success: false, error: "You must be signed in to join a project." };
+    }
+
+    const code = rawJoinCode.trim().toUpperCase().replace(/\s+/g, "");
+    if (!code || code.length < 4) {
+      return { success: false, error: "Please enter a valid join code." };
+    }
+
+    // 2. Look up the project by join code using serviceClient (bypasses RLS)
+    const { data: project, error: searchErr } = await serviceClient
+      .from("projects")
+      .select("id, title, student_id, join_code")
+      .eq("join_code", code)
+      .maybeSingle();
+
+    if (searchErr) {
+      return { success: false, error: `Error searching for project: ${searchErr.message}` };
+    }
+    if (!project) {
+      return { success: false, error: "Invalid join code. No project found with that code." };
+    }
+
+    // 3. Ensure student record exists for this user
+    let { data: existingStudent } = await serviceClient
+      .from("students")
+      .select("id, profile_id")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    if (!existingStudent) {
+      await serviceClient.from("students").insert({
+        profile_id: user.id,
+        year_level: 4,
+      });
+    }
+
+    // 4. Check for duplicate membership
+    const { data: existingMember } = await serviceClient
+      .from("project_members")
+      .select("id, member_role")
+      .eq("project_id", project.id)
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    if (existingMember) {
+      return {
+        success: true,
+        alreadyMember: true,
+        project: { id: project.id, title: project.title },
+      };
+    }
+
+    // 5. Insert new project member as student / co-author
+    const { error: joinErr } = await serviceClient.from("project_members").insert({
+      project_id: project.id,
+      profile_id: user.id,
+      member_role: "student",
+      is_primary: false,
+    });
+
+    if (joinErr) {
+      return { success: false, error: `Failed to join project: ${joinErr.message}` };
+    }
+
+    // 6. Notify project leader and existing members
+    const { data: userProfile } = await serviceClient
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const joinerName = userProfile
+      ? `${userProfile.first_name} ${userProfile.last_name}`
+      : "A new student";
+
+    const { data: otherMembers } = await serviceClient
+      .from("project_members")
+      .select("profile_id")
+      .eq("project_id", project.id)
+      .neq("profile_id", user.id);
+
+    if (otherMembers) {
+      for (const m of otherMembers) {
+        await emitNotification({
+          supabase: serviceClient,
+          recipientProfileId: m.profile_id,
+          title: "New Team Member Joined",
+          message: `${joinerName} joined "${project.title}" as a co-author.`,
+          eventType: "project_joined",
+          actionUrl: `/dashboard/my-project`,
+          metadata: { projectId: project.id },
+        });
+      }
+    }
+
+    // 7. Log audit trail
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: "student",
+      action_type: "CREATE",
+      module: "projects",
+      entity_type: "project_members",
+      entity_id: project.id,
+      description: `${joinerName} joined project "${project.title}" using code "${code}"`,
+      ip_address: ip,
+      user_agent: userAgent,
+      academic_year: currentAcademicYear(),
+    });
+
+    return {
+      success: true,
+      project: { id: project.id, title: project.title },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+    return { success: false, error: msg };
+  }
+}
+
+
 
