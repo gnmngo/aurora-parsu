@@ -22,6 +22,10 @@ import {
   Home,
   Shield,
   Sliders,
+  PanelRightClose,
+  PanelRightOpen,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
@@ -94,6 +98,7 @@ export default function WorkspacePage() {
 
   // Responsive Resizable Split-Screen State
   const [splitPercent, setSplitPercent] = useState<number>(62);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -380,14 +385,17 @@ export default function WorkspacePage() {
       >
         {/* Left Pane: Manuscript PDF & Version Comparison */}
         <div
-          style={{ width: `${splitPercent}%` }}
-          className="h-full overflow-hidden flex flex-col bg-slate-50/30 dark:bg-slate-900/20"
+          style={{ width: isRightPanelCollapsed ? "100%" : `${splitPercent}%` }}
+          className="h-full overflow-hidden flex flex-col bg-slate-50/30 dark:bg-slate-900/20 transition-[width] duration-200"
         >
           {/* Tab Selector */}
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0">
             <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40">
               <button
-                onClick={() => setLeftPaneTab("pdf")}
+                onClick={() => {
+                  setLeftPaneTab("pdf");
+                  setIsRightPanelCollapsed(false);
+                }}
                 className={cn(
                   "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer",
                   leftPaneTab === "pdf"
@@ -398,7 +406,10 @@ export default function WorkspacePage() {
                 PDF Manuscript
               </button>
               <button
-                onClick={() => setLeftPaneTab("compare")}
+                onClick={() => {
+                  setLeftPaneTab("compare");
+                  setIsRightPanelCollapsed(true);
+                }}
                 className={cn(
                   "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer",
                   leftPaneTab === "compare"
@@ -409,9 +420,33 @@ export default function WorkspacePage() {
                 Version Compare
               </button>
             </div>
-            <div className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-              <Columns className="h-3 w-3" />
-              <span>Split View ({Math.round(splitPercent)}% / {100 - Math.round(splitPercent)}%)</span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsRightPanelCollapsed(!isRightPanelCollapsed)}
+                className="h-7 text-[10px] font-bold gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                title={isRightPanelCollapsed ? "Show Review & Scoring Panel" : "Maximize Document Comparison View"}
+              >
+                {isRightPanelCollapsed ? (
+                  <>
+                    <PanelRightOpen className="h-3.5 w-3.5 text-primary" />
+                    <span>Show Review Panel</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span>Full Width</span>
+                  </>
+                )}
+              </Button>
+              {!isRightPanelCollapsed && (
+                <div className="text-[10px] font-semibold text-muted-foreground hidden sm:flex items-center gap-1">
+                  <Columns className="h-3 w-3" />
+                  <span>Split View ({Math.round(splitPercent)}% / {100 - Math.round(splitPercent)}%)</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -448,7 +483,7 @@ export default function WorkspacePage() {
                 </div>
               )
             ) : (
-              <div className="h-full p-4 overflow-y-auto">
+              <div className="h-full overflow-hidden p-2">
                 <VersionComparison
                   documentVersions={allVersions}
                   projectId={projectId}
@@ -460,29 +495,33 @@ export default function WorkspacePage() {
         </div>
 
         {/* Draggable Divider Handle */}
-        <div
-          onMouseDown={handleMouseDown}
-          className={cn(
-            "w-2 bg-border hover:bg-primary/50 active:bg-primary cursor-col-resize transition-colors flex items-center justify-center shrink-0 z-20 group relative",
-            isDragging && "bg-primary"
-          )}
-          title="Drag to resize panels"
-        >
-          <div className="h-8 w-1 rounded-full bg-muted-foreground/40 group-hover:bg-primary-foreground transition-colors" />
-        </div>
+        {!isRightPanelCollapsed && (
+          <div
+            onMouseDown={handleMouseDown}
+            className={cn(
+              "w-2 bg-border hover:bg-primary/50 active:bg-primary cursor-col-resize transition-colors flex items-center justify-center shrink-0 z-20 group relative",
+              isDragging && "bg-primary"
+            )}
+            title="Drag to resize panels"
+          >
+            <div className="h-8 w-1 rounded-full bg-muted-foreground/40 group-hover:bg-primary-foreground transition-colors" />
+          </div>
+        )}
 
         {/* Right Pane: Rubric Scoring, Calculations, Remarks & E-Signature */}
-        <div
-          style={{ width: `${100 - splitPercent}%` }}
-          className="h-full overflow-hidden border-l border-border bg-card"
-        >
-          <GradingPanel
-            projectId={projectId}
-            stageId={stageId}
-            documentVersionId={docVersion?.id || null}
-            annotationRefreshKey={annotationRefreshKey}
-          />
-        </div>
+        {!isRightPanelCollapsed && (
+          <div
+            style={{ width: `${100 - splitPercent}%` }}
+            className="h-full overflow-hidden border-l border-border bg-card"
+          >
+            <GradingPanel
+              projectId={projectId}
+              stageId={stageId}
+              documentVersionId={docVersion?.id || null}
+              annotationRefreshKey={annotationRefreshKey}
+            />
+          </div>
+        )}
       </div>
 
       {/* Mobile Stacked View (< 768px) */}
@@ -532,7 +571,7 @@ export default function WorkspacePage() {
                 </div>
               )
             ) : (
-              <div className="h-full p-4 overflow-y-auto">
+              <div className="h-full overflow-hidden p-2">
                 <VersionComparison
                   documentVersions={allVersions}
                   projectId={projectId}
