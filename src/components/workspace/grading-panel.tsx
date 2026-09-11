@@ -269,7 +269,7 @@ export function GradingPanel({
   documentVersionId,
   annotationRefreshKey = 0,
 }: GradingPanelProps) {
-  const { roles, isLoading: authLoading } = useAuth();
+  const { user, roles, isLoading: authLoading } = useAuth();
   const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
 
   // Role detection state for this project
@@ -701,14 +701,14 @@ export function GradingPanel({
           status,
           created_by,
           created_at,
-          profiles ( first_name, last_name ),
+          profiles:profiles!annotations_created_by_fkey ( first_name, last_name ),
           annotation_replies (
             id,
             annotation_id,
             content,
             created_by,
             created_at,
-            profiles ( first_name, last_name )
+            profiles:profiles!annotation_replies_created_by_fkey ( first_name, last_name )
           ),
           annotation_history (
             id,
@@ -725,6 +725,7 @@ export function GradingPanel({
       if (error) throw error;
       if (data) {
         const sorted = data.map((ann: any) => {
+          const profileObj = Array.isArray(ann.profiles) ? ann.profiles[0] : ann.profiles;
           if (ann.annotation_replies) {
             ann.annotation_replies.sort(
               (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -735,7 +736,10 @@ export function GradingPanel({
               (a: any, b: any) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime()
             );
           }
-          return ann;
+          return {
+            ...ann,
+            profiles: profileObj,
+          };
         });
         setAnnotations(sorted);
       }
@@ -792,6 +796,49 @@ export function GradingPanel({
           },
           () => {
             loadAnnotations();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "documents",
+          },
+          (payload: any) => {
+            if (payload.new && (payload.new.id === documentData?.id || payload.new.project_id === projectId)) {
+              setDocumentData(payload.new);
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+          },
+          (payload: any) => {
+            if (payload.new && payload.new.profile_id === user?.id) {
+              const notif = payload.new;
+              if (notif.type === "revision_requested" || notif.metadata?.event_type === "revision_required") {
+                toast.error(notif.title || "Revisions Requested", {
+                  description: notif.message,
+                  duration: 8000,
+                });
+              } else if (notif.type === "document_approved") {
+                toast.success(notif.title || "Manuscript Approved", {
+                  description: notif.message,
+                  duration: 8000,
+                });
+              } else {
+                toast.info(notif.title || "New Notification", {
+                  description: notif.message,
+                  duration: 6000,
+                });
+              }
+              loadData();
+            }
           }
         );
 
@@ -1385,13 +1432,32 @@ export function GradingPanel({
                 )}
               </div>
 
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                {documentData?.adviser_approval_status === "approved"
-                  ? "This manuscript has been endorsed for defense. The defense coordinator can now proceed with scheduling."
-                  : documentData?.adviser_approval_status === "rejected"
-                    ? "Revisions requested. Advisees must address your inline comments and upload an updated revision before defense scheduling can proceed."
-                    : "Review the manuscript annotations and student responses below. When satisfied with the quality, endorse the manuscript to unlock defense scheduling."}
-              </p>
+              {/* Status Alert Banner */}
+              {documentData?.adviser_approval_status === "rejected" ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs">Revisions Actively Pending from Authors</p>
+                    <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                      You requested revisions on this manuscript. Student authors have been notified and must resolve your inline comments before submitting an updated revision. <strong>Endorsement for defense is locked</strong> until authors upload a revised manuscript.
+                    </p>
+                  </div>
+                </div>
+              ) : documentData?.adviser_approval_status === "approved" ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs">Manuscript Officially Endorsed</p>
+                    <p className="text-[11px] leading-relaxed text-emerald-800 dark:text-emerald-300">
+                      This manuscript has been approved and endorsed for defense. The defense coordinator is authorized to schedule oral defense deliberations.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Review the manuscript annotations and student responses below. When satisfied with the quality, endorse the manuscript to unlock defense scheduling.
+                </p>
+              )}
 
               <div className="space-y-1.5 pt-1">
                 <label htmlFor="adviser-remarks" className="text-xs font-semibold text-foreground">
@@ -1408,28 +1474,99 @@ export function GradingPanel({
               </div>
 
               <div className="flex gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={endorsing || !documentData?.id}
-                  onClick={() => handleAdviserEndorsement("rejected")}
-                  className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20"
-                >
-                  <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
-                  {endorsing ? "Submitting..." : "Request Revisions"}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={endorsing || !documentData?.id}
-                  onClick={() => handleAdviserEndorsement("approved")}
-                  className="flex-1 text-xs h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                  {endorsing ? "Endorsing..." : "Endorse for Defense"}
-                </Button>
+                {documentData?.adviser_approval_status === "rejected" ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={endorsing || !documentData?.id}
+                      onClick={() => handleAdviserEndorsement("rejected")}
+                      className="flex-1 text-xs h-9 rounded-xl border-amber-300 text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                      {endorsing ? "Saving..." : "Update Revision Notes"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={true}
+                      className="flex-1 text-xs h-9 rounded-xl bg-muted text-muted-foreground border border-border/70 cursor-not-allowed opacity-60"
+                      title="Endorsement is locked because revisions are currently requested. Authors must upload a revised manuscript."
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                      Endorsement Locked
+                    </Button>
+                  </>
+                ) : documentData?.adviser_approval_status === "approved" ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={endorsing || !documentData?.id}
+                      onClick={() => {
+                        if (confirm("Are you sure you want to withdraw defense endorsement and request revisions on this manuscript?")) {
+                          handleAdviserEndorsement("rejected");
+                        }
+                      }}
+                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                      Withdraw Endorsement
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={true}
+                      className="flex-1 text-xs h-9 rounded-xl bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 cursor-default"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                      Endorsed for Defense
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={endorsing || !documentData?.id}
+                      onClick={() => handleAdviserEndorsement("rejected")}
+                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                      {endorsing ? "Submitting..." : "Request Revisions"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={endorsing || !documentData?.id}
+                      onClick={() => handleAdviserEndorsement("approved")}
+                      className="flex-1 text-xs h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                      {endorsing ? "Endorsing..." : "Endorse for Defense"}
+                    </Button>
+                  </>
+                )}
               </div>
+
+              {documentData?.adviser_approval_status === "rejected" && (
+                <div className="flex justify-end pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to bypass the revision requirement and endorse this manuscript for defense now?")) {
+                        handleAdviserEndorsement("approved");
+                      }
+                    }}
+                    className="text-[10px] text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
+                  >
+                    Override &amp; endorse now anyway
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Institutional separation note */}

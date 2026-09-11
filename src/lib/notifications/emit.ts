@@ -16,6 +16,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/server";
 
 // ─── Notification Event Types ─────────────────────────────────────────────────
 
@@ -129,7 +130,8 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
   const targetLink = link || actionUrl;
 
   try {
-    const { error } = await supabase
+    const client = createServiceClient ? createServiceClient() : supabase;
+    const { error } = await client
       .from("notifications")
       .insert({
         profile_id: recipientProfileId,
@@ -183,7 +185,8 @@ export async function emitNotificationToMany(
     }));
 
   try {
-    const { error } = await supabase
+    const client = createServiceClient ? createServiceClient() : supabase;
+    const { error } = await client
       .from("notifications")
       .insert(rows);
 

@@ -331,7 +331,7 @@ export default function MyProjectPage() {
           .from("annotations")
           .select(`
             id, content, type, severity, status, page_number, created_at,
-            profiles ( first_name, last_name )
+            profiles:profiles!annotations_created_by_fkey ( first_name, last_name )
           `)
           .in("document_version_id", versionIds)
           .order("created_at", { ascending: false })

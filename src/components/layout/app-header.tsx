@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/providers/theme-provider";
+import { toast } from "sonner";
 
 interface AppHeaderProps {
   title?: string;
@@ -60,8 +61,29 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
           table: "notifications",
           filter: `profile_id=eq.${profile.id}`,
         },
-        () => {
+        (payload) => {
           fetchUnreadCount();
+          if (payload.eventType === "INSERT" && payload.new) {
+            const notif = payload.new as any;
+            const notifTitle = notif.title || "New Notification";
+            const notifMessage = notif.message || notif.body || "";
+            if (notif.type === "revision_requested" || notifTitle.toLowerCase().includes("revision")) {
+              toast.error(notifTitle, {
+                description: notifMessage,
+                duration: 8000,
+              });
+            } else if (notif.type === "approved" || notifTitle.toLowerCase().includes("endorse")) {
+              toast.success(notifTitle, {
+                description: notifMessage,
+                duration: 6000,
+              });
+            } else {
+              toast.info(notifTitle, {
+                description: notifMessage,
+                duration: 5000,
+              });
+            }
+          }
         }
       )
       .subscribe();
