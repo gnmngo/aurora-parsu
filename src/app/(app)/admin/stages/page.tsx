@@ -105,7 +105,7 @@ export default function StagesPage() {
       // 1. Load templates
       const { data: tmpls } = await supabase
         .from("workflow_templates")
-        .select("id, name, program_id, programs(name)")
+        .select("id, name, program_id, programs(code, name)")
         .order("name");
 
       if (tmpls && tmpls.length > 0) {
@@ -324,19 +324,24 @@ export default function StagesPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {templates.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Program:</span>
               <select
                 value={selectedTemplateId}
                 onChange={(e) => setSelectedTemplateId(e.target.value)}
-                className="rounded-lg border border-input bg-background px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                className="rounded-lg border border-input bg-background px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
-                {templates.map((tmpl) => (
-                  <option key={tmpl.id} value={tmpl.id}>
-                    {tmpl.name}
-                  </option>
-                ))}
+                {templates.map((tmpl) => {
+                  const code = (tmpl.programs as any)?.code;
+                  const name = (tmpl.programs as any)?.name;
+                  return (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      {code ? `[${code}] ${name || tmpl.name}` : tmpl.name}
+                    </option>
+                  );
+                })}
               </select>
-            )}
+            </div>
 
             <Button onClick={handleOpenCreate} className="gap-2 shadow-sm">
               <Plus className="h-4 w-4" />

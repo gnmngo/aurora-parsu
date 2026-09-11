@@ -45,6 +45,7 @@ import {
 import { adviserApproveDocumentAction } from "@/lib/workflow/actions";
 import { updateAnnotationStatusAction, createAnnotationReplyAction } from "@/lib/annotations/actions";
 import { useAuth } from "@/hooks/use-auth";
+import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 
 function CollapsibleSection({
   title,
@@ -106,6 +107,7 @@ export function GradingPanel({
   // Role detection state for this project
   const [isProjectAdviser, setIsProjectAdviser] = useState(false);
   const [isProjectPanelist, setIsProjectPanelist] = useState(false);
+  const [isCoordinatorObserver, setIsCoordinatorObserver] = useState(false);
 
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [rubricTemplate, setRubricTemplate] = useState<any>(null);
@@ -317,11 +319,19 @@ export function GradingPanel({
           // Academic integrity: The adviser cannot evaluate their own advisee
           setIsProjectAdviser(true);
           setIsProjectPanelist(false);
+          setIsCoordinatorObserver(false);
+        } else if (panelistCheck.data) {
+          // Explicitly appointed as Panelist for this project/stage
+          setIsProjectAdviser(false);
+          setIsProjectPanelist(true);
+          setIsCoordinatorObserver(false);
         } else {
-          const isGlobalAdv = roles.includes("adviser") && !roles.includes("panelist") && !roles.includes("sys_admin") && !roles.includes("coordinator");
-          const isPan = !!panelistCheck.data || roles.includes("sys_admin") || roles.includes("coordinator") || roles.includes("panelist");
+          // User is neither appointed panelist nor project adviser
+          const isCoordinator = roles.includes("coordinator") || roles.includes("sys_admin") || roles.includes("college_dean");
+          const isGlobalAdv = roles.includes("adviser") && !isCoordinator;
           setIsProjectAdviser(isGlobalAdv);
-          setIsProjectPanelist(isPan);
+          setIsProjectPanelist(false);
+          setIsCoordinatorObserver(isCoordinator);
         }
 
         // 3. Fetch active document details for endorsement status
@@ -976,6 +986,115 @@ export function GradingPanel({
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span>Loading evaluation workspace...</span>
       </div>
+    );
+  }
+
+  // ========================================================
+  // VIEW 0: INSTITUTIONAL COORDINATOR / DEAN OVERSIGHT PANEL
+  // ========================================================
+  if (isCoordinatorObserver && !isProjectPanelist && !isProjectAdviser) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="space-y-4 p-4">
+          {/* Institutional Coordinator Banner */}
+          <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3.5 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider">
+              <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              Institutional Coordinator Oversight Mode
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              You are viewing this review workspace with institutional monitoring and oversight privileges. Under academic defense guidelines, evaluation scoring is strictly reserved for appointed panel members. You can review all manuscript annotations, deliberation consensus, and adviser endorsement below.
+            </p>
+          </div>
+
+          {/* Adviser Endorsement Status */}
+          <Card className="border border-border bg-card shadow-xs rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Adviser Endorsement Gate
+              </span>
+              {documentData?.adviser_approval_status === "approved" ? (
+                <Badge variant="success" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                  <CheckCircle2 className="h-3 w-3" /> Endorsed for Defense
+                </Badge>
+              ) : documentData?.adviser_approval_status === "rejected" ? (
+                <Badge variant="warning" className="gap-1 px-2.5 py-0.5 text-[10px]">
+                  <AlertCircle className="h-3 w-3" /> Revisions Requested
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 px-2.5 py-0.5 text-[10px] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Under Consultation
+                </Badge>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              {documentData?.adviser_approval_status === "approved"
+                ? "The research adviser has endorsed this manuscript for defense."
+                : documentData?.adviser_approval_status === "rejected"
+                  ? `Revisions requested by adviser: ${documentData.approval_remarks || "Awaiting student address."}`
+                  : "Manuscript is undergoing adviser consultation and has not been endorsed yet."}
+            </p>
+          </Card>
+
+          {/* Panel Consensus & Discrepancy Analytics */}
+          {projectId && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                <Users className="h-4 w-4 text-primary" />
+                <span>Panel Deliberation &amp; Consensus Metrics</span>
+              </div>
+              <ConsensusDashboard projectId={projectId} />
+            </div>
+          )}
+
+          {/* Rubric Criteria Overview (Read-Only) */}
+          {rubricTemplate && (
+            <Card className="border border-border bg-card shadow-xs rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">{rubricTemplate.title}</h4>
+                  <p className="text-[10px] text-muted-foreground">Passing threshold: {rubricTemplate.passing_score ?? 75}%</p>
+                </div>
+                <Badge variant="outline" className="text-[10px]">Evaluation Rubric</Badge>
+              </div>
+              <div className="space-y-2">
+                {(rubricTemplate.criteria || []).map((c: any) => (
+                  <div key={c.id || c.name} className="flex items-center justify-between text-xs py-1 border-b border-border/40 last:border-b-0">
+                    <span className="text-foreground font-medium">{c.name}</span>
+                    <span className="text-muted-foreground font-bold">{c.weight}%</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Review Annotations Summary */}
+          <CollapsibleSection title={`Reviewer Annotations & Remarks (${annotations.length})`}>
+            {annotations.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">No annotations recorded on this manuscript version yet.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {annotations.map((ann) => (
+                  <div key={ann.id} className="p-2.5 rounded-lg border border-border bg-muted/20 space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-foreground">
+                        {ann.profiles ? `${ann.profiles.first_name} ${ann.profiles.last_name}` : "Reviewer"}
+                      </span>
+                      <Badge variant={ann.severity === "critical" ? "danger" : ann.severity === "major" ? "warning" : "outline"} className="text-[9px]">
+                        {ann.severity}
+                      </Badge>
+                    </div>
+                    {ann.selected_text && (
+                      <p className="text-[11px] italic text-foreground bg-muted/40 p-1 rounded font-semibold">&ldquo;{ann.selected_text}&rdquo;</p>
+                    )}
+                    <p className="text-foreground text-xs leading-relaxed">{ann.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
+        </div>
+      </ScrollArea>
     );
   }
 

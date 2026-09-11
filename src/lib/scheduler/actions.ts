@@ -375,18 +375,6 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     throw new Error("Project not found.");
   }
 
-  // Check Adviser Approval Gate
-  const { data: doc } = await supabase
-    .from("documents")
-    .select("adviser_approval_status")
-    .eq("project_id", input.projectId)
-    .eq("stage_id", input.stageId)
-    .maybeSingle();
-
-  if (doc && doc.adviser_approval_status !== "approved") {
-    throw new Error("Adviser Approval Gate: The uploaded manuscript for this stage has not been approved by the adviser yet. Scheduling is locked.");
-  }
-
   const studentProfileId = Array.isArray(project.students)
     ? (project.students[0] as { profile_id?: string })?.profile_id
     : (project.students as { profile_id?: string })?.profile_id;
@@ -419,6 +407,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     .select("room, project_id, projects(title)")
     .eq("room", input.room)
     .neq("id", input.scheduleId) // Exclude current schedule!
+    .neq("status", "cancelled") // Exclude cancelled defenses
     .lt("scheduled_at", endTimeISO)
     .gt("end_at", startTimeISO)
     .maybeSingle();
@@ -434,6 +423,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       .from("defense_schedules")
       .select("project_id, stage_id, id, projects(title)")
       .neq("id", input.scheduleId) // Exclude current schedule!
+      .neq("status", "cancelled") // Exclude cancelled defenses
       .lt("scheduled_at", endTimeISO)
       .gt("end_at", startTimeISO);
 
@@ -461,6 +451,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       .from("defense_schedules")
       .select("project_id")
       .neq("id", input.scheduleId) // Exclude current schedule!
+      .neq("status", "cancelled") // Exclude cancelled defenses
       .lt("scheduled_at", endTimeISO)
       .gt("end_at", startTimeISO);
 
@@ -494,6 +485,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       .from("defense_schedules")
       .select("project_id")
       .neq("id", input.scheduleId) // Exclude current schedule!
+      .neq("status", "cancelled") // Exclude cancelled defenses
       .lt("scheduled_at", endTimeISO)
       .gt("end_at", startTimeISO);
 

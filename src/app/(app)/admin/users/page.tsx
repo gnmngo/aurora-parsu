@@ -125,8 +125,8 @@ export default function UsersPage() {
 
   const handleCreateFaculty = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteForm.firstName || !inviteForm.lastName || !inviteForm.email || !inviteForm.employeeNumber) {
-      toast.error("Please fill in all required fields (Name, Email, Employee ID)");
+    if (!inviteForm.firstName || !inviteForm.lastName || !inviteForm.email) {
+      toast.error("Please fill in all required fields (Name, Email)");
       return;
     }
 
@@ -262,12 +262,11 @@ export default function UsersPage() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[11px] font-bold">Employee ID Number *</Label>
+                    <Label className="text-[11px] font-bold">Employee ID Number (Optional)</Label>
                     <Input
-                      placeholder="e.g. PSU-FAC-2026-042"
+                      placeholder="e.g. PSU-FAC-2026-042 (optional)"
                       value={inviteForm.employeeNumber}
                       onChange={(e) => setInviteForm({ ...inviteForm, employeeNumber: e.target.value })}
-                      required
                     />
                   </div>
                 </div>

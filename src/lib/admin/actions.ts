@@ -158,7 +158,7 @@ export interface CreateFacultyInput {
   firstName: string;
   lastName: string;
   role: "adviser" | "panelist" | "coordinator";
-  employeeNumber: string;
+  employeeNumber?: string;
   campusId?: string | null;
   collegeId?: string | null;
   departmentId?: string | null;
@@ -176,12 +176,13 @@ export async function createFacultyAccountAction(input: CreateFacultyInput) {
   const serviceClient = await createServiceClient();
 
   const generatedPass = input.password || "ParSU-" + Math.random().toString(36).slice(-8) + "!";
+  const resolvedEmpNumber = input.employeeNumber?.trim() || `PSU-FAC-${Math.random().toString(36).slice(-6).toUpperCase()}`;
 
   const metaData = {
     first_name: input.firstName.trim(),
     last_name: input.lastName.trim(),
     role: input.role,
-    employee_number: input.employeeNumber.trim(),
+    employee_number: resolvedEmpNumber,
     campus_id: input.campusId || null,
     college_id: input.collegeId || null,
     department_id: input.departmentId || null,

@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const { profile, signOut, isLoading: authLoading } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [departments, setDepartments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const supabase = createClient();
 
@@ -21,8 +23,22 @@ export default function SettingsPage() {
     if (profile) {
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
+      setDepartmentId((profile as any).department_id || "");
     }
   }, [profile]);
+
+  useEffect(() => {
+    async function loadDepartments() {
+      const { data } = await supabase
+        .from("departments")
+        .select("id, name, code, colleges(name, code)")
+        .order("name");
+      if (data) {
+        setDepartments(data);
+      }
+    }
+    loadDepartments();
+  }, [supabase]);
 
   if (authLoading || !profile) {
     return (
@@ -32,8 +48,6 @@ export default function SettingsPage() {
       </div>
     );
   }
-
-  const departmentName = (profile as any).departments?.name || "General Department";
 
   const handleSaveChanges = async () => {
     if (!firstName || !lastName) {
@@ -48,6 +62,7 @@ export default function SettingsPage() {
         .update({
           first_name: firstName,
           last_name: lastName,
+          department_id: departmentId || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", profile.id);
@@ -112,8 +127,19 @@ export default function SettingsPage() {
             <Input defaultValue={profile.email} className="mt-1" disabled />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Department</label>
-            <Input defaultValue={departmentName} className="mt-1" disabled />
+            <label className="text-xs text-muted-foreground font-bold">Department</label>
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            >
+              <option value="">-- Select Department --</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.code}) {d.colleges?.code ? `• ${d.colleges.code}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
           <Button onClick={handleSaveChanges} disabled={isSaving}>
             {isSaving ? (

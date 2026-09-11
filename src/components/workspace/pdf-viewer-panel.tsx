@@ -63,6 +63,7 @@ export function PdfViewerPanel({
   const [loadingAnnotations, setLoadingAnnotations] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRemarksDrawer, setShowRemarksDrawer] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
 
   // Form states for new remark
@@ -436,26 +437,27 @@ export function PdfViewerPanel({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteAnnotation(ann.id);
+                            setDeleteConfirmId(ann.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-danger p-0.5 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-danger p-0.5 transition-opacity cursor-pointer"
+                          title="Delete annotation"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
 
                       {ann.selected_text && (
-                        <p className="text-[11px] font-medium italic text-muted-foreground bg-muted/40 p-1.5 rounded">
+                        <p className="text-[11px] font-semibold italic text-foreground bg-muted/70 p-2 rounded border border-border/50">
                           &ldquo;{ann.selected_text}&rdquo;
                         </p>
                       )}
 
-                      <p className="text-slate-800 dark:text-slate-200 text-xs whitespace-pre-wrap">
+                      <p className="text-foreground font-medium text-xs whitespace-pre-wrap leading-relaxed">
                         {ann.content}
                       </p>
 
-                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between">
-                        <span>By {authorName}</span>
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between font-medium">
+                        <span className="font-semibold text-foreground">By {authorName}</span>
                         <span>{new Date(ann.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
@@ -571,6 +573,47 @@ export function PdfViewerPanel({
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <Card className="w-full max-w-sm shadow-2xl border border-border bg-card animate-in fade-in zoom-in-95 duration-150">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-danger">
+                <Trash2 className="h-4 w-4 text-danger" />
+                Delete Revision Remark?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-1 text-xs space-y-4">
+              <p className="text-muted-foreground leading-relaxed">
+                Are you sure you want to delete this annotation? This action will remove the remark permanently.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteConfirmId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  onClick={async () => {
+                    const id = deleteConfirmId;
+                    setDeleteConfirmId(null);
+                    if (id) await handleDeleteAnnotation(id);
+                  }}
+                >
+                  Delete Remark
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

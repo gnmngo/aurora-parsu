@@ -30,7 +30,7 @@ export default function DefensesPage() {
       try {
         const { data } = await supabase
           .from("workflow_templates")
-          .select("id, name, program_id, programs(name, departments(name))")
+          .select("id, name, program_id, programs(code, name, departments(name, code))")
           .order("name");
         if (data && data.length > 0) {
           setTemplates(data);
@@ -115,13 +115,13 @@ export default function DefensesPage() {
             <select
               value={selectedTemplateId}
               onChange={(e) => setSelectedTemplateId(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-card px-2 text-[10px] font-bold focus:outline-none cursor-pointer"
+              className="h-8 rounded-lg border border-border bg-card px-2 text-[11px] font-bold focus:outline-none cursor-pointer"
             >
-          {templates.map((t) => {
-                const department = (t.programs as any)?.departments?.name;
-                const program = (t.programs as any)?.name;
-                const label = department && program
-                  ? `${program} — ${department}`
+              {templates.map((t) => {
+                const progCode = (t.programs as any)?.code;
+                const progName = (t.programs as any)?.name;
+                const label = progCode
+                  ? `${progCode} — ${progName || t.name}`
                   : t.name;
                 return (
                   <option key={t.id} value={t.id}>{label}</option>

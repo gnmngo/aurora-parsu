@@ -59,6 +59,8 @@ export function RubricEditorDialog({
   const setOpen = isControlled ? (controlledOnOpenChange ?? (() => {})) : setInternalOpen;
 
   const [projects, setProjects] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedProgramFilter, setSelectedProgramFilter] = useState<string>("all");
   const [selectedProject, setSelectedProject] = useState(projectId || rubric?.project_id || "");
   const [title, setTitle] = useState("Defense Rubric");
   const [criteria, setCriteria] = useState<RubricCriterionItem[]>([
@@ -118,32 +120,39 @@ export function RubricEditorDialog({
     }
   }, [rubric, projectId, open]);
 
-  // Load project list if needed
+  // Load project and program lists if needed
   useEffect(() => {
     if (!open) return;
 
-    async function loadProjects() {
+    async function loadData() {
       try {
-        const { data, error } = await supabase
-          .from("projects")
-          .select("id, title")
-          .order("created_at", { ascending: false });
-        if (error) throw error;
-        if (data) {
-          setProjects(data);
-          if (!selectedProject && data.length > 0) {
-            setSelectedProject(data[0].id);
+        const [projRes, progRes] = await Promise.all([
+          supabase
+            .from("projects")
+            .select("id, title, program_id, programs(id, code, name)")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("programs")
+            .select("id, code, name")
+            .order("code"),
+        ]);
+
+        if (projRes.data) {
+          setProjects(projRes.data);
+          if (!selectedProject && projRes.data.length > 0) {
+            setSelectedProject(projRes.data[0].id);
           }
         }
+        if (progRes.data) {
+          setPrograms(progRes.data);
+        }
       } catch (err: unknown) {
-        console.error("Error loading projects:", err);
+        console.error("Error loading projects/programs for rubric editor:", err);
       }
     }
 
-    if (!selectedProject || projects.length === 0) {
-      loadProjects();
-    }
-  }, [open, supabase, selectedProject, projects.length]);
+    loadData();
+  }, [open, supabase, selectedProject]);
 
   const totalWeight = criteria.reduce((sum, c) => sum + Number(c.weight || 0), 0);
   const isWeightValid = totalWeight >= 99.9 && totalWeight <= 100.1;
@@ -283,23 +292,53 @@ export function RubricEditorDialog({
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {/* Project selector if creating new without fixed projectId */}
           {!rubric?.id && !projectId && (
-            <div className="space-y-1">
-              <Label htmlFor="rubric-project" className="text-xs font-semibold">
-                Associated Research Project
-              </Label>
-              <select
-                id="rubric-project"
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card p-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
-                required
-              >
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Degree Program</Label>
+                <select
+                  value={selectedProgramFilter}
+                  onChange={(e) => {
+                    const progVal = e.target.value;
+                    setSelectedProgramFilter(progVal);
+                    const matching = progVal === "all"
+                      ? projects
+                      : projects.filter((p) => p.program_id === progVal || p.programs?.id === progVal);
+                    if (matching.length > 0) {
+                      setSelectedProject(matching[0].id);
+                    }
+                  }}
+                  className="w-full rounded-xl border border-border bg-card p-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                >
+                  <option value="all">All Programs</option>
+                  {programs.map((prog) => (
+                    <option key={prog.id} value={prog.id}>
+                      {prog.code ? `[${prog.code}] ` : ""}{prog.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="rubric-project" className="text-xs font-semibold">
+                  Target Project *
+                </Label>
+                <select
+                  id="rubric-project"
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-card p-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                  required
+                >
+                  {(selectedProgramFilter === "all"
+                    ? projects
+                    : projects.filter((p) => p.program_id === selectedProgramFilter || p.programs?.id === selectedProgramFilter)
+                  ).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.programs?.code ? `[${p.programs.code}] ` : ""}{p.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 

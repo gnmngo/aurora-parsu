@@ -11,6 +11,17 @@ import {
   GripVertical,
   Columns,
   Sparkles,
+  Menu,
+  LayoutDashboard,
+  Calendar,
+  Award,
+  BarChart3,
+  Settings,
+  X,
+  ChevronRight,
+  Home,
+  Shield,
+  Sliders,
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
@@ -69,6 +80,7 @@ export default function WorkspacePage() {
   const backHref = isStudent ? "/dashboard/my-project" : isAdviser ? "/dashboard" : "/dashboard/defenses";
 
   const [mounted, setMounted] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const [project, setProject] = useState<any>(null);
   const [stageId, setStageId] = useState<string>(rawStageId);
   const [stageName, setStageName] = useState<string>("Defense Stage");
@@ -290,28 +302,37 @@ export default function WorkspacePage() {
     <div className="flex h-screen flex-col bg-background overflow-hidden select-none">
       {/* Top Header Bar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 z-10">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" asChild className="shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsNavOpen(true)}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            title="Open Platform Navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" asChild className="shrink-0 text-muted-foreground hover:text-foreground" title="Back">
             <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-bold leading-tight truncate max-w-sm sm:max-w-md md:max-w-lg">
+              <p className="text-sm font-bold leading-tight truncate max-w-xs sm:max-w-md md:max-w-lg">
                 {project?.title || "Research Manuscript"}
               </p>
               {isStudent ? (
                 <Badge variant="secondary" className="text-[9px] font-bold uppercase tracking-wider shrink-0">
-                  Student Consultation &amp; Feedback
+                  Student Consultation
                 </Badge>
               ) : isAdviser ? (
                 <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 border-emerald-300 bg-emerald-50/60 shrink-0">
-                  Adviser • Paperless Consultation
+                  Adviser Consultation
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-wider text-primary shrink-0">
-                  Defense Panel • Evaluation Workspace
+                  Evaluation Workspace
                 </Badge>
               )}
             </div>
@@ -321,7 +342,27 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-1 border-r border-border pr-2 mr-1">
+            <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/dashboard">
+                <LayoutDashboard className="h-3.5 w-3.5 mr-1.5" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/dashboard/defenses">
+                <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                Defenses
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/dashboard/grades">
+                <Award className="h-3.5 w-3.5 mr-1.5" />
+                Grades
+              </Link>
+            </Button>
+          </div>
           <Badge variant="outline" className="hidden sm:flex text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-[10px] font-bold">
             <Wifi className="mr-1 h-3 w-3" />
             Online
@@ -503,6 +544,147 @@ export default function WorkspacePage() {
           />
         </div>
       </div>
+
+      {/* Slide-out Navigation Drawer */}
+      {isNavOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+            onClick={() => setIsNavOpen(false)}
+          />
+
+          {/* Side Drawer */}
+          <div className="relative z-50 flex h-full w-80 max-w-[85vw] flex-col bg-card shadow-2xl border-r border-border animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3.5 bg-muted/40">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-black text-xs shadow-xs">
+                  AU
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold tracking-tight text-foreground">AURORA Navigation</h2>
+                  <p className="text-[10px] text-muted-foreground">CEC Research Portal</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                onClick={() => setIsNavOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              {/* Core Navigation */}
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Core Portal
+                </p>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <LayoutDashboard className="h-4 w-4 text-primary" />
+                  <span>Dashboard Overview</span>
+                </Link>
+                <Link
+                  href="/dashboard/defenses"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span>Defense Pipeline</span>
+                </Link>
+                <Link
+                  href="/dashboard/grades"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Award className="h-4 w-4 text-primary" />
+                  <span>Grades &amp; Evaluations</span>
+                </Link>
+                <Link
+                  href="/dashboard/submissions"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span>Manuscript Submissions</span>
+                </Link>
+                <Link
+                  href="/dashboard/analytics"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  <span>Research Analytics</span>
+                </Link>
+              </div>
+
+              {/* Administration & Configuration */}
+              {(roles.includes("coordinator") || roles.includes("sys_admin") || roles.includes("college_dean")) && (
+                <div className="space-y-1 pt-2 border-t border-border/60">
+                  <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                    Institutional Admin
+                  </p>
+                  <Link
+                    href="/admin/stages"
+                    onClick={() => setIsNavOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Sliders className="h-4 w-4 text-primary" />
+                    <span>Defense Stages (CEC)</span>
+                  </Link>
+                  <Link
+                    href="/admin/rubrics"
+                    onClick={() => setIsNavOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span>Rubrics Manager</span>
+                  </Link>
+                  {roles.includes("sys_admin") && (
+                    <Link
+                      href="/admin/users"
+                      onClick={() => setIsNavOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Shield className="h-4 w-4 text-primary" />
+                      <span>Faculty &amp; User Accounts</span>
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Preferences */}
+              <div className="space-y-1 pt-2 border-t border-border/60">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Preferences
+                </p>
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setIsNavOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <Settings className="h-4 w-4 text-primary" />
+                  <span>Account Settings</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="border-t border-border p-3 bg-muted/20">
+              <div className="rounded-lg bg-card p-2.5 border border-border/60">
+                <p className="text-[11px] font-semibold text-foreground truncate">{project?.title || "Active Workspace"}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Stage: {stageName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

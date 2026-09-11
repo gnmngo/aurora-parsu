@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell, Menu, Search, LogOut, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
@@ -17,10 +18,19 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
+  const router = useRouter();
   const { profile, roles, signOut } = useAuth();
   const { resolvedTheme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/dashboard/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -82,13 +92,17 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
         </h1>
       )}
 
-      <div className="relative ml-auto flex max-w-md flex-1 items-center">
-        <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+      <form onSubmit={handleSearchSubmit} className="relative ml-auto flex max-w-md flex-1 items-center">
+        <button type="submit" className="absolute left-3 p-0 border-0 bg-transparent cursor-pointer text-muted-foreground hover:text-foreground">
+          <Search className="h-4 w-4" />
+        </button>
         <Input
           placeholder="Search defenses, students, documents..."
           className="pl-9 bg-muted/50 border-transparent focus-visible:bg-card"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div>
+      </form>
 
       <Link href="/dashboard/notifications" className="relative">
         <Button variant="ghost" size="icon" className="relative">

@@ -41,7 +41,19 @@ interface EvaluationRow {
   scores: Record<string, number> | null;
   panelist_id: string;
   project_id: string;
-  projects: { id: string; title: string; student_id: string } | null;
+  stage_id?: string | null;
+  defense_stages?: { id: string; name: string; code: string; sequence_order: number } | null;
+  projects: {
+    id: string;
+    title: string;
+    student_id: string;
+    archived_at?: string | null;
+    programs?: { code: string; name: string } | null;
+    students?: {
+      student_number: string;
+      profiles?: { first_name: string; last_name: string; email: string } | null;
+    } | null;
+  } | null;
   profiles: { first_name: string; last_name: string; email: string } | null;
   rubric_templates: { title: string; criteria: CriterionScore[]; passing_score: number } | null;
 }
@@ -67,7 +79,7 @@ export default function GradesPage() {
         const isStudent = roles.includes("student");
         const isAdviser = roles.includes("adviser");
 
-        // BUG-C2: Use `panelist_id` (actual FK) — not `profile_id` (non-existent column)
+        // Rich join: stage, project proponents, program, evaluator, rubric
         const baseQuery = supabase
           .from("evaluations")
           .select(`
@@ -79,7 +91,16 @@ export default function GradesPage() {
             scores,
             panelist_id,
             project_id,
-            projects ( id, title, student_id, archived_at ),
+            stage_id,
+            defense_stages ( id, name, code, sequence_order ),
+            projects ( 
+              id, 
+              title, 
+              student_id, 
+              archived_at,
+              programs ( code, name ),
+              students ( student_number, profiles ( first_name, last_name, email ) )
+            ),
             profiles!panelist_id ( first_name, last_name, email ),
             rubric_templates ( title, criteria, passing_score )
           `)
@@ -265,9 +286,15 @@ export default function GradesPage() {
           <div className="space-y-6">
             {evaluations.map((evalItem) => {
               const projectTitle = evalItem.projects?.title || "Unknown Project";
+              const stageName = evalItem.defense_stages?.name || "Defense Stage";
+              const progCode = evalItem.projects?.programs?.code;
+              const studentProf = evalItem.projects?.students?.profiles;
+              const studentName = studentProf ? `${studentProf.first_name} ${studentProf.last_name}` : null;
+              const studentNumber = evalItem.projects?.students?.student_number;
               const panelistName = evalItem.profiles
                 ? `${evalItem.profiles.first_name} ${evalItem.profiles.last_name}`
-                : "Unknown Panelist";
+                : "Evaluation Panelist";
+              const panelistEmail = evalItem.profiles?.email;
               const criteria: CriterionScore[] = evalItem.rubric_templates?.criteria || [];
               const scoresMap = evalItem.scores || {};
               const rawTotal = Number(evalItem.total_score || 0);
@@ -277,7 +304,7 @@ export default function GradesPage() {
                   ? Object.values(scoresMap).map(Number).filter((v) => !isNaN(v)).reduce((a, b) => a + b, 0) / Object.values(scoresMap).length
                   : 0;
 
-              // BUG-H2: Use rubric's configurable passing_score instead of hardcoded 75
+              // Rubric passing threshold
               const passingScore = Number(evalItem.rubric_templates?.passing_score ?? 75);
               const verdict = totalScore >= passingScore ? "PASSED" : "NEEDS REVISION";
               const verdictVariant: "success" | "warning" = totalScore >= passingScore ? "success" : "warning";
@@ -286,19 +313,38 @@ export default function GradesPage() {
                 <Card key={evalItem.id} className="overflow-hidden rounded-2xl border border-border shadow-sm">
                   <CardHeader className="bg-muted/30 border-b border-border pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-foreground">{projectTitle}</h2>
-                        <p className="text-xs text-muted-foreground mt-0.5 font-semibold">
-                          Evaluated by {panelistName} • {evalItem.submitted_at ? format(new Date(evalItem.submitted_at), "MMM d, yyyy h:mm a") : "—"}
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-primary/5 border-primary/20 text-primary">
+                            {stageName}
+                          </Badge>
+                          {progCode && (
+                            <Badge variant="secondary" className="text-[9px] font-black">
+                              {progCode}
+                            </Badge>
+                          )}
+                          <h2 className="text-base sm:text-lg font-bold text-foreground">&ldquo;{projectTitle}&rdquo;</h2>
+                        </div>
+                        {studentName && (
+                          <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-primary" />
+                            Proponent: <span className="text-foreground font-bold">{studentName}</span>
+                            {studentNumber ? ` • ${studentNumber}` : ""}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                          <Award className="h-3.5 w-3.5 text-primary" />
+                          Evaluated by <span className="text-foreground font-bold">{panelistName}</span>
+                          {panelistEmail ? ` (${panelistEmail})` : ""} • {evalItem.submitted_at ? format(new Date(evalItem.submitted_at), "MMM d, yyyy h:mm a") : "—"}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2">
+                        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 shadow-xs">
                           <Award className="h-4 w-4 text-primary" />
                           <span className="font-black text-sm text-foreground">{totalScore.toFixed(1)}</span>
                           <span className="text-xs text-muted-foreground">/100</span>
                         </div>
-                        <Badge variant={verdictVariant} className="text-xs py-1 px-3">
+                        <Badge variant={verdictVariant} className="text-xs py-1 px-3 font-bold">
                           {verdict}
                         </Badge>
                       </div>
@@ -307,11 +353,15 @@ export default function GradesPage() {
                   <CardContent className="p-6 space-y-6">
                     {/* Rubric passing threshold info */}
                     {evalItem.rubric_templates && (
-                      <p className="text-[10px] text-muted-foreground font-semibold">
-                        <FileCheck className="inline h-3 w-3 mr-1" />
-                        Rubric: <span className="text-foreground">{evalItem.rubric_templates.title}</span>
-                        {" · "}Passing threshold: <span className="text-foreground">{passingScore}</span>
-                      </p>
+                      <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground font-semibold pb-2 border-b border-border/50">
+                        <span className="flex items-center gap-1.5">
+                          <FileCheck className="h-3.5 w-3.5 text-primary" />
+                          Rubric: <span className="text-foreground font-bold">{evalItem.rubric_templates.title}</span>
+                        </span>
+                        <span>
+                          Passing Threshold: <span className="text-foreground font-bold">{passingScore}%</span>
+                        </span>
+                      </div>
                     )}
 
                     {criteria.length === 0 ? (
@@ -320,14 +370,18 @@ export default function GradesPage() {
                       <div className="grid gap-4 md:grid-cols-2">
                         {criteria.map((c) => {
                           const score = Number(scoresMap[c.id] || 0);
+                          const weightedContribution = ((score * Number(c.weight || 0)) / 100).toFixed(1);
                           return (
-                            <div key={c.id} className="rounded-xl border border-border p-4 space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="font-bold text-sm text-foreground">{c.name}</span>
-                                <span className="font-bold text-sm">{score.toFixed(1)} / 100</span>
+                            <div key={c.id} className="rounded-xl border border-border p-4 space-y-2 bg-card/60">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-foreground">{c.name}</span>
+                                <span className="font-black text-foreground">{score.toFixed(1)} / 100</span>
                               </div>
                               <Progress value={score} />
-                              <p className="text-[10px] text-muted-foreground font-semibold">Weight: {c.weight}%</p>
+                              <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold pt-0.5">
+                                <span>Weight: {c.weight}%</span>
+                                <span className="text-primary font-bold">Weighted: +{weightedContribution} pts</span>
+                              </div>
                             </div>
                           );
                         })}
@@ -335,17 +389,17 @@ export default function GradesPage() {
                     )}
 
                     {(evalItem.recommendations || evalItem.panel_notes) && (
-                      <div className="border-t border-border pt-4 grid gap-4 sm:grid-cols-2 text-xs font-semibold">
+                      <div className="border-t border-border pt-4 grid gap-4 sm:grid-cols-2 text-xs font-medium">
                         {evalItem.recommendations && (
-                          <div>
-                            <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider mb-1">Recommendations</h4>
-                            <p className="text-foreground/80 leading-relaxed">{evalItem.recommendations}</p>
+                          <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                            <h4 className="font-bold text-xs text-primary uppercase tracking-wider">Recommendations &amp; Action Items</h4>
+                            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{evalItem.recommendations}</p>
                           </div>
                         )}
                         {evalItem.panel_notes && (
-                          <div>
-                            <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider mb-1">Panel Notes</h4>
-                            <p className="text-foreground/80 leading-relaxed">{evalItem.panel_notes}</p>
+                          <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                            <h4 className="font-bold text-xs text-foreground uppercase tracking-wider">Panel Deliberation Notes</h4>
+                            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{evalItem.panel_notes}</p>
                           </div>
                         )}
                       </div>

@@ -33,6 +33,8 @@ import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function RubricsPage() {
   const [rubrics, setRubrics] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const supabase = createClient();
@@ -40,30 +42,39 @@ export default function RubricsPage() {
   const loadRubrics = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("rubric_templates")
-        .select(`
-          id,
-          title,
-          criteria,
-          passing_score,
-          excellent_score,
-          target_compliance_rate,
-          min_compliance_rate,
-          max_major_unresolved,
-          is_published,
-          is_active,
-          is_archived,
-          version,
-          parent_template_id,
-          projects ( title )
-        `)
-        .eq("is_archived", false)
-        .order("created_at", { ascending: false });
+      const [rubricRes, progRes] = await Promise.all([
+        supabase
+          .from("rubric_templates")
+          .select(`
+            id,
+            title,
+            criteria,
+            passing_score,
+            excellent_score,
+            target_compliance_rate,
+            min_compliance_rate,
+            max_major_unresolved,
+            is_published,
+            is_active,
+            is_archived,
+            version,
+            parent_template_id,
+            projects ( id, title, program_id, programs(id, code, name) )
+          `)
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("programs")
+          .select("id, code, name")
+          .order("code"),
+      ]);
 
-      if (error) throw error;
-      if (data) {
-        setRubrics(data);
+      if (rubricRes.error) throw rubricRes.error;
+      if (rubricRes.data) {
+        setRubrics(rubricRes.data);
+      }
+      if (progRes.data) {
+        setPrograms(progRes.data);
       }
     } catch (err) {
       console.error("Error loading rubrics:", err);
@@ -96,6 +107,11 @@ export default function RubricsPage() {
     }
   };
 
+  const filteredRubrics = rubrics.filter((r) => {
+    if (selectedProgram === "all") return true;
+    return r.projects?.program_id === selectedProgram || r.projects?.programs?.id === selectedProgram;
+  });
+
   return (
     <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
@@ -103,10 +119,25 @@ export default function RubricsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Rubrics Manager</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage configured grading criteria, publish changes, clone layouts, and version templates.
+            Manage configured grading criteria, publish changes, clone layouts, and version templates per degree program or project.
           </p>
         </div>
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Program:</span>
+            <select
+              value={selectedProgram}
+              onChange={(e) => setSelectedProgram(e.target.value)}
+              className="h-9 rounded-lg border border-input bg-background px-3 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            >
+              <option value="all">All Programs</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code ? `[${p.code}] ` : ""}{p.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <RubricEditorDialog
             onSaved={async () => {
               await loadRubrics();
@@ -122,18 +153,20 @@ export default function RubricsPage() {
 
       {loading && rubrics.length === 0 ? (
         <div className="h-48 animate-pulse rounded-xl bg-muted" />
-      ) : rubrics.length === 0 ? (
+      ) : filteredRubrics.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-16 text-center">
           <Inbox className="h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No Custom Rubrics Defined</h3>
+          <h3 className="mt-4 text-lg font-semibold">No Custom Rubrics Found</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            No grading rubrics have been configured in the database yet. Go to Submissions to define a rubric.
+            {selectedProgram !== "all" ? "No rubrics found matching the selected program." : "No grading rubrics have been configured in the database yet."}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {rubrics.map((rubric) => {
+          {filteredRubrics.map((rubric) => {
             const projectTitle = rubric.projects?.title || "No project bound";
+            const progCode = rubric.projects?.programs?.code;
+            const progName = rubric.projects?.programs?.name;
             const criteria = rubric.criteria || [];
             
             return (
@@ -142,12 +175,19 @@ export default function RubricsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-bold text-slate-900">{rubric.title}</CardTitle>
+                        <CardTitle className="text-sm font-bold text-foreground">{rubric.title}</CardTitle>
+                        {progCode && (
+                          <Badge variant="secondary" className="text-[9px] font-black">
+                            {progCode}
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-[8px] font-extrabold uppercase">
                           v{rubric.version || 1}
                         </Badge>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Project: {projectTitle}</p>
+                      <p className="text-[10px] text-muted-foreground font-semibold">
+                        {progName ? `${progName} • ` : ""}Project: {projectTitle}
+                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

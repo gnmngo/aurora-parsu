@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,23 @@ import { AccessDenied } from "@/components/auth/access-denied";
 
 type SearchTab = "projects" | "people" | "documents" | "schedules";
 
-export default function SearchPage() {
+function SearchContent() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const initialQ = searchParams?.get("q") || "";
   
   const [activeTab, setActiveTab] = useState<SearchTab>("projects");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQ);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+
+  useEffect(() => {
+    const q = searchParams?.get("q");
+    if (q !== null && q !== undefined) {
+      setQuery(q);
+    }
+  }, [searchParams]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -263,5 +273,18 @@ export default function SearchPage() {
       )}
       </div>
     </RoleGuard>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="h-10 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-64 w-full animate-pulse rounded-xl bg-muted" />
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

@@ -7,7 +7,7 @@ import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function AnalyticsPage() {
   return (
-    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Analytics</h1>

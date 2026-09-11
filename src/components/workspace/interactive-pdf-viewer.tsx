@@ -1209,7 +1209,7 @@ export function InteractivePdfViewer({
                 />
               </div>
             ) : activeAnnotation.selected_text ? (
-              <div className="bg-yellow-500/10 border-l-2 border-yellow-500 p-2 rounded text-[11px] text-muted-foreground italic">
+              <div className="bg-amber-500/15 border-l-2 border-amber-500 p-2 rounded text-[11px] text-foreground font-semibold italic">
                 &ldquo;{activeAnnotation.selected_text}&rdquo;
               </div>
             ) : null}
@@ -1224,7 +1224,7 @@ export function InteractivePdfViewer({
                 </span>
                 <span>{new Date(activeAnnotation.created_at).toLocaleDateString()}</span>
               </div>
-              <p className="text-xs text-foreground bg-muted/30 p-2.5 rounded-xl leading-relaxed whitespace-pre-wrap font-medium">
+              <p className="text-xs text-foreground bg-muted/60 border border-border/40 p-2.5 rounded-xl leading-relaxed whitespace-pre-wrap font-semibold">
                 {activeAnnotation.content}
               </p>
             </div>
@@ -1241,7 +1241,7 @@ export function InteractivePdfViewer({
                       </span>
                       <span>{new Date(rep.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
-                    <p className="text-[11px] text-slate-800 dark:text-slate-200">{rep.content}</p>
+                    <p className="text-[11px] text-foreground font-medium">{rep.content}</p>
                   </div>
                 ))}
               </div>
