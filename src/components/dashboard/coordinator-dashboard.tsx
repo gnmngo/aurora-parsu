@@ -149,45 +149,53 @@ export function CoordinatorDashboard() {
 
       {/* KPI stats bar */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900">{stats.in_progress || 0}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Active Projects</p>
-          </div>
-        </Card>
+        <Link href="/dashboard/defenses" className="block no-underline">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900">{stats.in_progress || 0}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Active Projects &rarr;</p>
+            </div>
+          </Card>
+        </Link>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600">
-            <Clock className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900">{pendingApprovals.length}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Topic Submissions</p>
-          </div>
-        </Card>
+        <Link href="/dashboard/defenses/schedule" className="block no-underline">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition-colors">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900">{pendingApprovals.length}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Topic Submissions &rarr;</p>
+            </div>
+          </Card>
+        </Link>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
-            <Calendar className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900">{schedules.length}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Scheduled Defenses</p>
-          </div>
-        </Card>
+        <Link href="/dashboard/defenses" className="block no-underline">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition-colors">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900">{schedules.length}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Scheduled Defenses &rarr;</p>
+            </div>
+          </Card>
+        </Link>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
-            <BarChart className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900">{stats.passed || 0}</p>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase">Completed Papers</p>
-          </div>
-        </Card>
+        <Link href="/dashboard/grades" className="block no-underline">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+              <BarChart className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900">{stats.passed || 0}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Completed Papers &rarr;</p>
+            </div>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -235,10 +243,15 @@ export function CoordinatorDashboard() {
 
           {/* Workload widget */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
                 <BarChart className="h-4 w-4 text-primary" /> Faculty Workload Summary
               </CardTitle>
+              <Link href="/dashboard/defenses/schedule">
+                <span className="text-[10px] text-primary font-bold hover:underline cursor-pointer">
+                  Schedule New Panel &rarr;
+                </span>
+              </Link>
             </CardHeader>
             <CardContent className="p-0">
               {workloads.length === 0 ? (
@@ -264,10 +277,15 @@ export function CoordinatorDashboard() {
 
         {/* Right Side: Defenses Calendar */}
         <Card className="h-fit">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
               <Calendar className="h-4 w-4 text-primary" /> Upcoming Defense Calendar
             </CardTitle>
+            <Link href="/dashboard/defenses">
+              <span className="text-[10px] text-primary font-bold hover:underline cursor-pointer">
+                View All &rarr;
+              </span>
+            </Link>
           </CardHeader>
           <CardContent className="p-0">
             {schedules.length === 0 ? (
@@ -278,15 +296,26 @@ export function CoordinatorDashboard() {
             ) : (
               <div className="divide-y divide-border max-h-[480px] overflow-y-auto">
                 {schedules.map((sched) => (
-                  <div key={sched.id} className="p-4 text-xs space-y-1">
-                    <p className="font-bold text-slate-900 truncate">"{sched.projects?.title}"</p>
+                  <Link
+                    key={sched.id}
+                    href="/dashboard/defenses"
+                    className="block p-4 text-xs space-y-1 hover:bg-muted/50 transition-colors group cursor-pointer no-underline"
+                  >
+                    <p className="font-bold text-slate-900 group-hover:text-primary transition-colors truncate">
+                      "{sched.projects?.title}"
+                    </p>
                     <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" /> {new Date(sched.scheduled_at).toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-primary font-bold">
-                      Room: {sched.room}
-                    </p>
-                  </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <p className="text-[10px] text-primary font-bold">
+                        Room: {sched.room || "TBA"}
+                      </p>
+                      <span className="text-[10px] text-primary group-hover:underline font-bold">
+                        Manage &rarr;
+                      </span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}

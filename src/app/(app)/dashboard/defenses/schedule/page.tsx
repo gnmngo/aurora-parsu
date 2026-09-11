@@ -33,6 +33,9 @@ import {
   ShieldAlert,
   Building2,
   GraduationCap,
+  ArrowRight,
+  Plus,
+  Zap,
 } from "lucide-react";
 
 export default function SchedulePage() {
@@ -45,6 +48,20 @@ export default function SchedulePage() {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  // Success state for post-scheduling confirmation screen
+  const [scheduledSuccess, setScheduledSuccess] = useState<{
+    projectTitle: string;
+    stageName: string;
+    scheduledAt: string;
+    durationMinutes: number;
+    room: string;
+    isOnline: boolean;
+    meetingUrl?: string;
+    panelistCount: number;
+    isBatch?: boolean;
+    batchCount?: number;
+  } | null>(null);
 
   // Lookups
   const [colleges, setColleges] = useState<any[]>([]);
@@ -432,8 +449,24 @@ export default function SchedulePage() {
           prog?.code || "College"
         } (${stg?.name || "Defense Stage"}).`
       );
-      router.push("/dashboard/defenses");
-      router.refresh();
+
+      // Trigger post-scheduling confirmation screen
+      setScheduledSuccess({
+        projectTitle: `Batch Defense Session (${prog?.code || "Academic Program"})`,
+        stageName: stg?.name || "Defense Stage",
+        scheduledAt: `${batchStartDate} to ${batchEndDate} (${dailyStartTime} - ${dailyEndTime})`,
+        durationMinutes: slotDuration,
+        room: batchIsOnline ? "Online Defense Room" : `${batchRoom} (${batchBuilding})`,
+        isOnline: batchIsOnline,
+        meetingUrl: batchMeetingUrl,
+        panelistCount: batchPanelists.length,
+        isBatch: true,
+        batchCount: result.count,
+      });
+
+      // Clear batch selection
+      setSelectedCandidateIds([]);
+      setProjectTimeSlots({});
     } catch (err: any) {
       console.error("Batch scheduling error:", err);
       toast.error(err?.message || "Failed to batch schedule defenses.");
@@ -467,9 +500,28 @@ export default function SchedulePage() {
         panelistIds: singlePanelists,
       });
 
+      const stgName = stages.find((s) => s.id === singleSelectedStage)?.name || "Defense Stage";
+      const projTitle = singleSelectedProjectObj?.title || "Research Manuscript";
+
       toast.success("Defense scheduled successfully!");
-      router.push("/dashboard/defenses");
-      router.refresh();
+
+      // Trigger post-scheduling confirmation screen
+      setScheduledSuccess({
+        projectTitle: projTitle,
+        stageName: stgName,
+        scheduledAt: singleScheduledAt,
+        durationMinutes: Number(singleDuration),
+        room: singleIsOnline ? "Online Defense Room" : `${singleRoom} (${singleBuilding})`,
+        isOnline: singleIsOnline,
+        meetingUrl: singleMeetingUrl,
+        panelistCount: singlePanelists.length,
+        isBatch: false,
+      });
+
+      // Clear single form to prevent duplicate clicks
+      setSingleSelectedProject("");
+      setSingleScheduledAt("");
+      setSinglePanelists([]);
     } catch (err: any) {
       toast.error(err?.message || "Scheduling conflict detected.");
     } finally {
@@ -503,6 +555,101 @@ export default function SchedulePage() {
 
   const selectedProgramObj = programs.find((p) => p.id === selectedProgramId);
   const selectedStageObj = stages.find((s) => s.id === selectedStageId);
+
+  // ── CONFIRMATION SCREEN (Displayed immediately upon successful schedule) ──
+  if (scheduledSuccess) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6 py-8">
+        <Card className="border-emerald-500/30 bg-card shadow-lg rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur shadow-sm mb-3">
+              <CheckCircle2 className="h-9 w-9 text-white" />
+            </div>
+            <h2 className="text-xl font-black tracking-tight">
+              {scheduledSuccess.isBatch
+                ? `🎉 ${scheduledSuccess.batchCount || ""} Defenses Batch Scheduled!`
+                : "🎉 Defense Successfully Scheduled!"}
+            </h2>
+            <p className="text-xs text-white/80 mt-1 max-w-md mx-auto">
+              Official defense timeslots, venue bookings, and panel assignments have been finalized and recorded in AURORA.
+            </p>
+          </div>
+
+          <CardContent className="p-6 space-y-4 text-xs">
+            <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Scheduled Project
+                </span>
+                <Badge variant="info" className="text-[9px] font-black">
+                  {scheduledSuccess.stageName}
+                </Badge>
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
+                &ldquo;{scheduledSuccess.projectTitle}&rdquo;
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="text-[10px] font-bold block text-foreground">Timeslot</span>
+                    <span>{scheduledSuccess.scheduledAt}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="text-[10px] font-bold block text-foreground">Presentation Duration</span>
+                    <span>{scheduledSuccess.durationMinutes} minutes</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="text-[10px] font-bold block text-foreground">Venue / Mode</span>
+                    <span className="truncate max-w-[200px] block">{scheduledSuccess.room}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="text-[10px] font-bold block text-foreground">Assigned Panel Pool</span>
+                    <span>{scheduledSuccess.panelistCount} Faculty Evaluator{scheduledSuccess.panelistCount === 1 ? "" : "s"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setScheduledSuccess(null)}
+                className="w-full sm:w-auto h-9 font-bold gap-1.5 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Schedule Another Project
+              </Button>
+              <Button
+                onClick={() => {
+                  router.push("/dashboard/defenses");
+                  router.refresh();
+                }}
+                className="w-full sm:w-auto h-9 font-bold gap-1.5 bg-primary text-primary-foreground shadow-sm cursor-pointer"
+              >
+                <Calendar className="h-4 w-4" />
+                <span>View in Defenses Pipeline</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
@@ -802,11 +949,19 @@ export default function SchedulePage() {
                         dur
                       );
                     }}
-                    className="w-full h-9 rounded-lg border border-border bg-card px-3 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="w-full h-9 rounded-lg border border-border bg-card px-3 text-xs focus:ring-1 focus:ring-primary focus:outline-none font-medium"
                   >
-                    <option value={60}>60 minutes (1 hr)</option>
+                    <option value={5}>5 minutes (Quick Pitch / Briefing)</option>
+                    <option value={10}>10 minutes (Lightning Demo)</option>
+                    <option value={15}>15 minutes (Concept / Title Defense)</option>
+                    <option value={20}>20 minutes (Progress Check)</option>
+                    <option value={25}>25 minutes</option>
+                    <option value={30}>30 minutes (Short Defense)</option>
+                    <option value={45}>45 minutes</option>
+                    <option value={60}>60 minutes (1 hr - Standard Proposal)</option>
+                    <option value={75}>75 minutes (1 hr 15 mins)</option>
                     <option value={90}>90 minutes (1.5 hrs)</option>
-                    <option value={120}>120 minutes (2 hrs)</option>
+                    <option value={120}>120 minutes (2 hrs - Final Defense)</option>
                   </select>
                 </div>
               </div>
@@ -1176,9 +1331,25 @@ export default function SchedulePage() {
               {/* Date & Time & Duration */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="single-scheduled-at" className="text-xs font-medium">
-                    Date & Start Time
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="single-scheduled-at" className="text-xs font-medium">
+                      Date & Start Time
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date(Date.now() + 2 * 60000);
+                        d.setSeconds(0, 0);
+                        const pad = (n: number) => String(n).padStart(2, "0");
+                        setSingleScheduledAt(
+                          `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                        );
+                      }}
+                      className="text-[10px] text-amber-500 dark:text-amber-400 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      <Zap className="h-3 w-3" /> Set to Right Now (Demo)
+                    </button>
+                  </div>
                   <div className="relative">
                     <Input
                       id="single-scheduled-at"
@@ -1192,22 +1363,42 @@ export default function SchedulePage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="single-duration" className="text-xs font-medium">
-                    Duration (Minutes)
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="single-duration" className="text-xs font-medium">
+                      Duration (Minutes)
+                    </Label>
+                    <span className="text-[10px] text-primary font-semibold">{singleDuration} mins</span>
+                  </div>
                   <div className="relative">
                     <Input
                       id="single-duration"
                       type="number"
-                      min={30}
+                      min={5}
                       max={300}
-                      step={15}
+                      step={5}
                       value={singleDuration}
                       onChange={(e) => setSingleDuration(Number(e.target.value))}
-                      className="h-9 pl-9 text-xs"
+                      className="h-9 pl-9 text-xs font-mono"
                       required
                     />
                     <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  {/* Quick 5-min interval preset buttons */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map((dur) => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={() => setSingleDuration(dur)}
+                        className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                          singleDuration === dur
+                            ? "bg-primary text-primary-foreground border-primary font-semibold shadow-xs"
+                            : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                        }`}
+                      >
+                        {dur}m{dur === 15 ? " (Concept)" : dur === 60 ? " (Proposal)" : dur === 120 ? " (Final)" : ""}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

@@ -51,12 +51,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
   const endTime = new Date(startTime.getTime() + input.durationMinutes * 60 * 1000);
   const startTimeISO = startTime.toISOString();
   const endTimeISO = endTime.toISOString();
-
-  // Prevent scheduling on weekends
-  const dayOfWeek = startTime.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    throw new Error("Scheduling is not permitted on weekends (Saturday/Sunday).");
-  }
+  // Weekend defense schedules are permitted for special sessions, graduate defenses, and live demonstrations
 
   // 2. Fetch student and adviser profile IDs of the project
   const { data: project, error: projErr } = await supabase
@@ -357,12 +352,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
   const endTime = new Date(startTime.getTime() + input.durationMinutes * 60 * 1000);
   const startTimeISO = startTime.toISOString();
   const endTimeISO = endTime.toISOString();
-
-  // Prevent scheduling on weekends
-  const dayOfWeek = startTime.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    throw new Error("Scheduling is not permitted on weekends (Saturday/Sunday).");
-  }
+  // Weekend defense schedules are permitted for special sessions, graduate defenses, and live demonstrations
 
   // 2. Fetch student and adviser profile IDs of the project
   const { data: project, error: projErr } = await supabase

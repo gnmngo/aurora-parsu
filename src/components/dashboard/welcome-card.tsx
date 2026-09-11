@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Building2, Shield, BookOpen, Layers } from "lucide-react";
+import { GraduationCap, Building2, Shield, BookOpen, Layers, ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { createClient } from "@/lib/supabase/client";
@@ -155,19 +156,44 @@ export function WelcomeCard() {
             </div>
 
             {projectInfo ? (
-              <div className="flex flex-col gap-2 sm:items-end">
+              <Link
+                href="/dashboard/my-project"
+                className="flex flex-col gap-2 sm:items-end group cursor-pointer no-underline focus:outline-none focus:ring-2 focus:ring-white/40 rounded-xl p-2 hover:bg-white/10 transition-all"
+              >
                 <div className="sm:text-right">
-                  <p className="text-[11px] text-white/60 uppercase font-bold tracking-wider">Active Stage</p>
-                  <p className="text-base font-black flex items-center gap-1.5 sm:justify-end">
+                  <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider flex items-center sm:justify-end gap-1 group-hover:text-white transition-colors">
+                    Active Stage &rarr;
+                  </p>
+                  <p className="text-base font-black flex items-center gap-1.5 sm:justify-end text-white group-hover:underline">
                     <Layers className="h-4 w-4" />
                     {projectInfo.stageName}
                   </p>
                 </div>
                 <div>
-                  <Badge variant="warning" className="bg-white/20 text-white font-bold capitalize">
+                  <Badge variant="warning" className="bg-white/20 text-white font-bold capitalize border border-white/20">
                     {projectInfo.status}
                   </Badge>
                 </div>
+              </Link>
+            ) : roles.includes("adviser") ? (
+              <div className="flex flex-col gap-2 sm:items-end">
+                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <Link
+                  href="/dashboard/submissions"
+                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                >
+                  <BookOpen className="h-3.5 w-3.5" /> Advisee Review Queue &rarr;
+                </Link>
+              </div>
+            ) : roles.includes("coordinator") || roles.includes("sys_admin") ? (
+              <div className="flex flex-col gap-2 sm:items-end">
+                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <Link
+                  href="/dashboard/defenses/schedule"
+                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Schedule Defense &rarr;
+                </Link>
               </div>
             ) : (
               <div className="flex flex-col gap-1 sm:items-end">

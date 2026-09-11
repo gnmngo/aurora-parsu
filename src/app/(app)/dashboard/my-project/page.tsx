@@ -684,14 +684,17 @@ export default function MyProjectPage() {
               </h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {/* Step 1: Defense Coordination & Scheduling */}
-                <div className={cn(
-                  "rounded-xl p-4 border transition-all space-y-2.5",
-                  upcomingSchedule 
-                    ? "border-emerald-500/40 bg-card shadow-xs" 
-                    : "border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20"
-                )}>
+                <Link
+                  href="/dashboard/defenses"
+                  className={cn(
+                    "rounded-xl p-4 border transition-all duration-200 space-y-2.5 block group hover:shadow-md hover:-translate-y-0.5 no-underline",
+                    upcomingSchedule 
+                      ? "border-emerald-500/40 bg-card hover:border-emerald-500 shadow-xs" 
+                      : "border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20 hover:border-blue-500/60"
+                  )}
+                >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">
                       1
                     </span>
                     <Badge 
@@ -702,7 +705,7 @@ export default function MyProjectPage() {
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground">
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                       {upcomingSchedule ? "Defense Timeslot Confirmed" : "Defense Scheduling Queue"}
                     </h4>
                     {upcomingSchedule ? (
@@ -720,12 +723,21 @@ export default function MyProjectPage() {
                       </p>
                     )}
                   </div>
-                </div>
+                  <p className={cn(
+                    "text-[11px] font-bold group-hover:underline flex items-center gap-1 pt-0.5",
+                    upcomingSchedule ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
+                  )}>
+                    {upcomingSchedule ? "View in Defenses Pipeline" : "Track Defense Pipeline"} &rarr;
+                  </p>
+                </Link>
 
                 {/* Step 2: Slide Deck & Rubrics Preparation */}
-                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5">
+                <div 
+                  onClick={() => setDefenseGuideOpen(true)}
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">
                       2
                     </span>
                     <Badge variant="outline" className="text-[9px] font-bold text-primary border-primary/30">
@@ -733,24 +745,32 @@ export default function MyProjectPage() {
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground">Prepare Presentation Deck</h4>
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                      Prepare Presentation Deck
+                    </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
                       Prepare a 10-12 slide deck structured around your objectives, methodology, and demo. Keep presentation to exactly 15 minutes.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setDefenseGuideOpen(true)}
-                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDefenseGuideOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
                   >
                     View slide breakdown &rarr;
                   </button>
                 </div>
 
                 {/* Step 3: Defense Day & Panel Verdict */}
-                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5">
+                <Link
+                  href={`/workspace/${project.id}/${endorsedDoc.stage_id}`}
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 block cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group no-underline"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 dark:bg-slate-300 text-[11px] font-black text-white dark:text-slate-900">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 dark:bg-slate-300 text-[11px] font-black text-white dark:text-slate-900 shadow-xs">
                       3
                     </span>
                     <Badge variant="outline" className="text-[9px] font-bold text-muted-foreground">
@@ -758,18 +778,17 @@ export default function MyProjectPage() {
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground">Oral Defense &amp; Rubric Scoring</h4>
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                      Oral Defense &amp; Rubric Scoring
+                    </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
                       Panelists evaluate your research live across criteria weights (100 pts) and submit their consensus verdict and revision notes.
                     </p>
                   </div>
-                  <Link
-                    href={`/workspace/${project.id}/${endorsedDoc.stage_id}`}
-                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 pt-0.5"
-                  >
+                  <p className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 pt-0.5">
                     Review annotations workspace &rarr;
-                  </Link>
-                </div>
+                  </p>
+                </Link>
               </div>
             </div>
           </div>
