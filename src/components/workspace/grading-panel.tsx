@@ -684,9 +684,55 @@ export function GradingPanel({
   };
 
   const loadAnnotations = async () => {
-    if (!documentVersionId) return;
-
     try {
+      const targetVersionIds: string[] = [];
+      const verMap: Record<string, number> = {};
+
+      if (documentVersionId) {
+        targetVersionIds.push(documentVersionId);
+      }
+
+      // Resolve all document versions for this project/stage so historical comments are never lost
+      let docId = documentData?.id;
+      if (!docId && projectId) {
+        const isUUID = (val: unknown) =>
+          typeof val === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+        const validProjId = isUUID(projectId) ? projectId : null;
+        if (validProjId) {
+          const { data: docRes } = await supabase
+            .from("documents")
+            .select("id")
+            .eq("project_id", validProjId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          docId = docRes?.id;
+        }
+      }
+
+      if (docId) {
+        const { data: verList } = await supabase
+          .from("document_versions")
+          .select("id, version_number")
+          .eq("document_id", docId)
+          .order("version_number", { ascending: true });
+
+        if (verList && verList.length > 0) {
+          verList.forEach((v: any) => {
+            verMap[v.id] = v.version_number;
+            if (!targetVersionIds.includes(v.id)) {
+              targetVersionIds.push(v.id);
+            }
+          });
+        }
+      }
+
+      if (targetVersionIds.length === 0) {
+        setAnnotations([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("annotations")
         .select(`
@@ -716,10 +762,10 @@ export function GradingPanel({
             to_status,
             notes,
             changed_at,
-            profiles!changed_by ( first_name, last_name )
+            profiles:profiles!annotation_history_changed_by_fkey ( first_name, last_name )
           )
         `)
-        .eq("document_version_id", documentVersionId)
+        .in("document_version_id", targetVersionIds)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -738,6 +784,7 @@ export function GradingPanel({
           }
           return {
             ...ann,
+            version_number: verMap[ann.document_version_id] || 1,
             profiles: profileObj,
           };
         });
@@ -759,11 +806,6 @@ export function GradingPanel({
   }, [projectId, stageId, documentVersionId]);
 
   useEffect(() => {
-    if (!documentVersionId) {
-      setAnnotations([]);
-      return;
-    }
-
     loadAnnotations();
 
     let channel: any = null;
@@ -771,7 +813,7 @@ export function GradingPanel({
       const channelUnique = typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      const channelName = `workspace-annotations-grading-${documentVersionId}-${channelUnique}`;
+      const channelName = `workspace-annotations-grading-${documentVersionId || projectId}-${channelUnique}`;
 
       channel = supabase
         .channel(channelName)
@@ -781,7 +823,6 @@ export function GradingPanel({
             event: "*",
             schema: "public",
             table: "annotations",
-            filter: `document_version_id=eq.${documentVersionId}`,
           },
           () => {
             loadAnnotations();
@@ -808,7 +849,19 @@ export function GradingPanel({
           (payload: any) => {
             if (payload.new && (payload.new.id === documentData?.id || payload.new.project_id === projectId)) {
               setDocumentData(payload.new);
+              loadAnnotations();
             }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "document_versions",
+          },
+          () => {
+            loadAnnotations();
           }
         )
         .on(
@@ -1097,7 +1150,9 @@ export function GradingPanel({
   ];
 
   const renderAnnotationsList = (canVerify: boolean) => {
-    if (annotations.length === 0) {
+    const hasAdviserRemarks = Boolean(documentData?.approval_remarks?.trim());
+
+    if (!hasAdviserRemarks && annotations.length === 0) {
       return (
         <div className="text-center py-6 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
           <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
@@ -1111,26 +1166,91 @@ export function GradingPanel({
 
     return (
       <div className="space-y-4">
+        {/* Pinned Official Adviser Revision Directives */}
+        {hasAdviserRemarks && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/25 p-3.5 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-7 w-7 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold text-xs flex items-center justify-center shrink-0">
+                  {projectInfo?.adviser?.first_name?.[0] || "A"}{projectInfo?.adviser?.last_name?.[0] || "D"}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-foreground truncate">
+                      {projectInfo?.adviser ? `${projectInfo.adviser.first_name} ${projectInfo.adviser.last_name}` : "Faculty Adviser"}
+                    </span>
+                    <Badge variant="warning" className="text-[9px] px-1.5 py-0 font-bold">
+                      Adviser Directives
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {documentData?.adviser_approval_status === "rejected" ? "Mandatory Revision Requirements" : "Adviser Review Feedback"}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                {documentData?.updated_at ? new Date(documentData.updated_at).toLocaleDateString() : "Latest"}
+              </span>
+            </div>
+
+            <div className="bg-card/90 dark:bg-card/70 rounded-lg p-2.5 border border-border/60">
+              <p className="text-xs text-foreground font-medium leading-relaxed whitespace-pre-wrap">
+                {documentData.approval_remarks}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Subheader when remarks and annotations both exist */}
+        {hasAdviserRemarks && annotations.length > 0 && (
+          <div className="flex items-center gap-2 pt-1">
+            <div className="h-px flex-1 bg-border/60" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Inline Manuscript Annotations ({annotations.length})
+            </span>
+            <div className="h-px flex-1 bg-border/60" />
+          </div>
+        )}
+
+        {/* Notice when there are remarks but no inline highlights */}
+        {hasAdviserRemarks && annotations.length === 0 && (
+          <div className="text-center py-3.5 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border/70 p-3">
+            <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-emerald-500/70" />
+            <p className="font-semibold text-foreground text-[11px]">No page-specific inline text highlights</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              The adviser provided overarching revision requirements above. Authors should review and address these directives.
+            </p>
+          </div>
+        )}
+
+        {/* Annotations List */}
         {annotations.map((ann) => (
           <div
             key={ann.id}
             className="rounded-xl border border-border p-3.5 space-y-3 bg-card shadow-sm transition-all hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-2">
-              <Badge
-                variant={
-                  ann.severity === "critical"
-                    ? "danger"
-                    : ann.severity === "major"
-                      ? "warning"
-                      : ann.severity === "minor"
-                        ? "info"
-                        : "outline"
-                }
-                className="capitalize text-[10px] px-2 py-0.5 font-bold"
-              >
-                Page {ann.page_number} • {ann.severity}
-              </Badge>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge
+                  variant={
+                    ann.severity === "critical"
+                      ? "danger"
+                      : ann.severity === "major"
+                        ? "warning"
+                        : ann.severity === "minor"
+                          ? "info"
+                          : "outline"
+                  }
+                  className="capitalize text-[10px] px-2 py-0.5 font-bold"
+                >
+                  Page {ann.page_number} • {ann.severity}
+                </Badge>
+                {ann.version_number && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold bg-muted/40 border-border">
+                    Draft v{ann.version_number}
+                  </Badge>
+                )}
+              </div>
 
               <select
                 value={ann.status}
@@ -1586,7 +1706,7 @@ export function GradingPanel({
           )}
 
           {/* Inline Annotations & Discussions */}
-          <CollapsibleSection title={`Manuscript Comments & Revision Discussions (${annotations.length})`} defaultOpen={true}>
+          <CollapsibleSection title={`Manuscript Comments & Revision Discussions (${annotations.length + (documentData?.approval_remarks?.trim() ? 1 : 0)})`} defaultOpen={true}>
             <div className="pt-1">
               {renderAnnotationsList(true)}
             </div>
@@ -1658,7 +1778,7 @@ export function GradingPanel({
           </Card>
 
           {/* Section 1: Annotations & Discussions */}
-          <CollapsibleSection title={`Inline Annotations & Comments (${annotations.length})`} defaultOpen={true}>
+          <CollapsibleSection title={`Inline Annotations & Comments (${annotations.length + (documentData?.approval_remarks?.trim() ? 1 : 0)})`} defaultOpen={true}>
             <div className="pt-1">
               {renderAnnotationsList(false)}
             </div>
@@ -2031,7 +2151,7 @@ export function GradingPanel({
         </CollapsibleSection>
 
         {/* Section C - Annotations */}
-        <CollapsibleSection title="Section C — Annotations" defaultOpen={true}>
+        <CollapsibleSection title={`Section C — Annotations & Directives (${annotations.length + (documentData?.approval_remarks?.trim() ? 1 : 0)})`} defaultOpen={true}>
           <div className="pt-1">
             {renderAnnotationsList(true)}
           </div>

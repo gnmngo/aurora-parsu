@@ -127,26 +127,35 @@ export default function AnnotationsPage() {
           setAnnotations((data as unknown as AnnotationRow[]) || []);
 
         } else {
-          // Student — only see annotations on their own project's documents
+          // Student — resolve project via student_id or project_members membership
+          let targetProjectId: string | null = null;
           const { data: studentRecord } = await supabase
             .from("students")
             .select("id")
             .eq("profile_id", user!.id)
             .maybeSingle();
 
-          if (!studentRecord) {
-            setAnnotations([]);
-            setLoading(false);
-            return;
+          if (studentRecord?.id) {
+            const { data: leadProject } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("student_id", studentRecord.id)
+              .maybeSingle();
+            if (leadProject?.id) {
+              targetProjectId = leadProject.id;
+            }
           }
 
-          const { data: project } = await supabase
-            .from("projects")
-            .select("id")
-            .eq("student_id", studentRecord.id)
-            .maybeSingle();
+          if (!targetProjectId) {
+            const { data: memberProject } = await supabase
+              .from("project_members")
+              .select("project_id")
+              .eq("profile_id", user!.id)
+              .maybeSingle();
+            targetProjectId = memberProject?.project_id || null;
+          }
 
-          if (!project) {
+          if (!targetProjectId) {
             setAnnotations([]);
             setLoading(false);
             return;
@@ -156,7 +165,7 @@ export default function AnnotationsPage() {
           const { data: docVersions } = await supabase
             .from("document_versions")
             .select("id, documents!inner(project_id)")
-            .eq("documents.project_id", project.id);
+            .eq("documents.project_id", targetProjectId);
 
           const allowedVersionIds = (docVersions || []).map((v: { id: string }) => v.id);
           if (allowedVersionIds.length === 0) {
