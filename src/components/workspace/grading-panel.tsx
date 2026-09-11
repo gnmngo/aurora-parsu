@@ -28,7 +28,8 @@ import {
   Calendar,
   GraduationCap,
   Building2,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -49,7 +57,12 @@ import {
   saveEvaluationDraftAction 
 } from "@/lib/evaluations/actions";
 import { adviserApproveDocumentAction } from "@/lib/workflow/actions";
-import { updateAnnotationStatusAction, createAnnotationReplyAction } from "@/lib/annotations/actions";
+import { 
+  updateAnnotationStatusAction, 
+  createAnnotationReplyAction,
+  deleteAnnotationAction 
+} from "@/lib/annotations/actions";
+import { updateDefenseChairmanRubricAction } from "@/lib/rubrics/actions";
 import { useAuth } from "@/hooks/use-auth";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 
@@ -278,6 +291,16 @@ export function GradingPanel({
   const [isProjectAdviser, setIsProjectAdviser] = useState(false);
   const [isProjectPanelist, setIsProjectPanelist] = useState(false);
   const [isCoordinatorObserver, setIsCoordinatorObserver] = useState(false);
+  const [isChairman, setIsChairman] = useState(false);
+
+  // Chairman Rubric Customization state
+  const [chairmanModalOpen, setChairmanModalOpen] = useState(false);
+  const [customCriteria, setCustomCriteria] = useState<any[]>([]);
+  const [saveAsDefaultRubric, setSaveAsDefaultRubric] = useState(false);
+  const [savingRubric, setSavingRubric] = useState(false);
+
+  // Annotation Scope state (Current Defense Version vs All History)
+  const [annotationScope, setAnnotationScope] = useState<"current" | "all">("current");
 
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [rubricTemplate, setRubricTemplate] = useState<any>(null);
@@ -556,7 +579,7 @@ export function GradingPanel({
             .maybeSingle(),
           supabase
             .from("defense_panels")
-            .select("id")
+            .select("id, panel_role")
             .eq("project_id", validProjectId)
             .eq("profile_id", userId)
             .maybeSingle(),
@@ -568,11 +591,13 @@ export function GradingPanel({
           setIsProjectAdviser(true);
           setIsProjectPanelist(false);
           setIsCoordinatorObserver(false);
+          setIsChairman(false);
         } else if (panelistCheck.data) {
           // Explicitly appointed as Panelist for this project/stage
           setIsProjectAdviser(false);
           setIsProjectPanelist(true);
           setIsCoordinatorObserver(false);
+          setIsChairman(panelistCheck.data.panel_role === "chair");
         } else {
           // User is neither appointed panelist nor project adviser
           const isCoordinator = roles.includes("coordinator") || roles.includes("sys_admin") || roles.includes("college_dean");
@@ -580,6 +605,7 @@ export function GradingPanel({
           setIsProjectAdviser(isGlobalAdv);
           setIsProjectPanelist(false);
           setIsCoordinatorObserver(isCoordinator);
+          setIsChairman(false);
         }
 
         // 3. Fetch active document details for endorsement status
@@ -694,39 +720,41 @@ export function GradingPanel({
         targetVersionIds.push(documentVersionId);
       }
 
-      // Resolve all document versions for this project/stage so historical comments are never lost
-      let docId = documentData?.id;
-      if (!docId && projectId) {
-        const isUUID = (val: unknown) =>
-          typeof val === "string" &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
-        const validProjId = isUUID(projectId) ? projectId : null;
-        if (validProjId) {
-          const { data: docRes } = await supabase
-            .from("documents")
-            .select("id")
-            .eq("project_id", validProjId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          docId = docRes?.id;
+      // If scope is "all", resolve all document versions for this project/stage so historical comments are included
+      if (annotationScope === "all") {
+        let docId = documentData?.id;
+        if (!docId && projectId) {
+          const isUUID = (val: unknown) =>
+            typeof val === "string" &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+          const validProjId = isUUID(projectId) ? projectId : null;
+          if (validProjId) {
+            const { data: docRes } = await supabase
+              .from("documents")
+              .select("id")
+              .eq("project_id", validProjId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            docId = docRes?.id;
+          }
         }
-      }
 
-      if (docId) {
-        const { data: verList } = await supabase
-          .from("document_versions")
-          .select("id, version_number")
-          .eq("document_id", docId)
-          .order("version_number", { ascending: true });
+        if (docId) {
+          const { data: verList } = await supabase
+            .from("document_versions")
+            .select("id, version_number")
+            .eq("document_id", docId)
+            .order("version_number", { ascending: true });
 
-        if (verList && verList.length > 0) {
-          verList.forEach((v: any) => {
-            verMap[v.id] = v.version_number;
-            if (!targetVersionIds.includes(v.id)) {
-              targetVersionIds.push(v.id);
-            }
-          });
+          if (verList && verList.length > 0) {
+            verList.forEach((v: any) => {
+              verMap[v.id] = v.version_number;
+              if (!targetVersionIds.includes(v.id)) {
+                targetVersionIds.push(v.id);
+              }
+            });
+          }
         }
       }
 
@@ -911,7 +939,7 @@ export function GradingPanel({
         }
       }
     };
-  }, [documentVersionId, annotationRefreshKey]);
+  }, [documentVersionId, annotationRefreshKey, annotationScope]);
 
   const weightedScore = useMemo(() => {
     if (!rubricTemplate?.criteria) return 0;
@@ -1152,22 +1180,87 @@ export function GradingPanel({
   ];
 
   const renderAnnotationsList = (canVerify: boolean) => {
-    const hasAdviserRemarks = Boolean(documentData?.approval_remarks?.trim());
+    const rawRemarks = documentData?.approval_remarks?.trim() || "";
+    const isEndorsementBoilerplate = 
+      rawRemarks.toLowerCase().includes("endorsed for defense") || 
+      rawRemarks.toLowerCase().includes("adviser validation review") ||
+      rawRemarks.toLowerCase() === "endorsed for defense by research adviser.";
+    const hasAdviserRemarks = Boolean(rawRemarks) && !isEndorsementBoilerplate;
 
     if (!hasAdviserRemarks && annotations.length === 0) {
       return (
-        <div className="text-center py-6 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
-          <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
-          <p className="font-semibold text-foreground">No open comments on this version</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            No revision notes or annotations have been left on this manuscript version yet.
-          </p>
+        <div className="space-y-3">
+          {/* Annotation Version Scoping Filter */}
+          <div className="flex items-center justify-between pb-2 border-b border-border/50 text-[11px]">
+            <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">
+              Scope: {annotationScope === "current" ? `Version ${projectInfo?.versionNumber || 1} (Active Defense)` : "All Version History"}
+            </span>
+            <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setAnnotationScope("current")}
+                className={cn(
+                  "px-2 py-0.5 rounded font-bold transition-all cursor-pointer",
+                  annotationScope === "current" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Current Version
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnnotationScope("all")}
+                className={cn(
+                  "px-2 py-0.5 rounded font-bold transition-all cursor-pointer",
+                  annotationScope === "all" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                All History
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center py-6 text-xs text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border p-4">
+            <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500/60" />
+            <p className="font-semibold text-foreground">No open comments on this version</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              No revision notes or annotations have been left on this manuscript version yet.
+            </p>
+          </div>
         </div>
       );
     }
 
     return (
       <div className="space-y-4">
+        {/* Annotation Version Scoping Filter */}
+        <div className="flex items-center justify-between pb-2 border-b border-border/50 text-[11px]">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">
+            Scope: {annotationScope === "current" ? `Version ${projectInfo?.versionNumber || 1} (Active Defense)` : "All Version History"}
+          </span>
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 text-[10px]">
+            <button
+              type="button"
+              onClick={() => setAnnotationScope("current")}
+              className={cn(
+                "px-2 py-0.5 rounded font-bold transition-all cursor-pointer",
+                annotationScope === "current" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Current Version
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnnotationScope("all")}
+              className={cn(
+                "px-2 py-0.5 rounded font-bold transition-all cursor-pointer",
+                annotationScope === "all" ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All History
+            </button>
+          </div>
+        </div>
+
         {/* Pinned Official Adviser Revision Directives */}
         {hasAdviserRemarks && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/25 p-3.5 space-y-2.5 shadow-sm">
@@ -1254,30 +1347,54 @@ export function GradingPanel({
                 )}
               </div>
 
-              <select
-                value={ann.status}
-                onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
-                className={cn(
-                  "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
-                  ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
-                  ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
-                  ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
-                  ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
-                  ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
-                  ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={ann.status}
+                  onChange={(e) => handleUpdateAnnotationStatus(ann.id, e.target.value)}
+                  className={cn(
+                    "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
+                    ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
+                    ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
+                    ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
+                    ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
+                    ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
+                    ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
+                  )}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="addressed">Addressed</option>
+                  {canVerify && (
+                    <>
+                      <option value="verified">Verified</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </>
+                  )}
+                </select>
+
+                {(ann.created_by === user?.id || roles.includes("coordinator") || roles.includes("sys_admin") || isProjectPanelist || isProjectAdviser) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to delete this comment?")) return;
+                      try {
+                        await deleteAnnotationAction(ann.id);
+                        toast.success("Comment deleted");
+                        loadAnnotations();
+                      } catch (err: any) {
+                        toast.error(err?.message || "Failed to delete comment");
+                      }
+                    }}
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
+                    title="Delete Comment"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 )}
-              >
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="addressed">Addressed</option>
-                {canVerify && (
-                  <>
-                    <option value="verified">Verified</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                  </>
-                )}
-              </select>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -1927,26 +2044,34 @@ export function GradingPanel({
                 )}
               </div>
 
-              {/* Rubric Customizer Button (available when evaluation is not submitted) */}
+              {/* Chairman Rubric Customizer Button (Item 2: Restricted to Chairman or Coordinator/Admin) */}
               {evalStatus !== "submitted" && (
-                <RubricEditorDialog
-                  rubric={rubricTemplate}
-                  projectId={projectId}
-                  onSaved={(updated) => {
-                    setRubricTemplate(updated);
-                    toast.success("Rubric criteria updated! You can now grade with the updated criteria.");
-                  }}
-                  triggerButton={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-[10px] gap-1 font-semibold text-primary hover:text-primary hover:bg-primary/5"
-                    >
-                      <Sliders className="h-3 w-3" /> Customize Criteria
-                    </Button>
-                  }
-                />
+                isChairman || roles.includes("coordinator") || roles.includes("sys_admin") ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-[10px] gap-1.5 font-bold border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer"
+                    onClick={() => {
+                      setCustomCriteria(
+                        (rubricTemplate?.criteria || []).map((c: any) => ({
+                          id: c.id || c.name,
+                          name: c.name,
+                          description: c.description || "",
+                          weight: Number(c.weight || 0),
+                        }))
+                      );
+                      setChairmanModalOpen(true);
+                    }}
+                  >
+                    <Crown className="h-3.5 w-3.5 text-amber-500" />
+                    Rubric Settings (Chairman)
+                  </Button>
+                ) : (
+                  <Badge variant="outline" className="text-[9px] text-muted-foreground border-border bg-muted/20 gap-1">
+                    <ShieldCheck className="h-3 w-3" /> Rubric Set by Chairman
+                  </Badge>
+                )
               )}
             </div>
 
@@ -2041,6 +2166,82 @@ export function GradingPanel({
 
             {/* Panel Notes & Recommendations */}
             <div className="space-y-3 pt-1">
+              {/* Live Synchronized Manuscript Markups (Item 5) */}
+              {annotations.length > 0 && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Manuscript Markups & Observations ({annotations.length})
+                    </span>
+                    {evalStatus !== "submitted" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[10px] px-2 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer font-bold"
+                        onClick={() => {
+                          const compiled = annotations
+                            .map((a) => {
+                              const textSnippet = a.selected_text ? ` on "${a.selected_text.trim()}":` : "";
+                              return `• [Page ${a.page_number}]${textSnippet} ${a.content}`;
+                            })
+                            .join("\n");
+                          setRecommendations((prev) => (prev ? `${prev}\n${compiled}` : compiled));
+                          toast.success("All markups synchronized to recommendations!");
+                        }}
+                      >
+                        Sync All to Recommendations
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Inline highlights and page comments made on the PDF manuscript are listed below. Click &quot;+ Append&quot; to insert individual points into your official evaluation recommendations.
+                  </p>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                    {annotations.map((ann) => (
+                      <div
+                        key={ann.id}
+                        className="flex items-start justify-between gap-2 p-1.5 rounded-lg bg-card border border-border/50 text-[11px]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-bold">
+                              Page {ann.page_number}
+                            </Badge>
+                            {ann.selected_text && (
+                              <span className="text-[10px] text-muted-foreground italic truncate max-w-[170px]">
+                                &ldquo;{ann.selected_text}&rdquo;
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-foreground font-medium mt-0.5 text-[11px] line-clamp-2">
+                            {ann.content}
+                          </p>
+                        </div>
+                        {evalStatus !== "submitted" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[9px] px-1.5 text-primary hover:bg-primary/10 shrink-0 cursor-pointer font-bold"
+                            title="Append this markup note to recommendations"
+                            onClick={() => {
+                              const textSnippet = ann.selected_text ? ` on "${ann.selected_text.trim()}":` : "";
+                              const entry = `• [Page ${ann.page_number}]${textSnippet} ${ann.content}`;
+                              setRecommendations((prev) => (prev ? `${prev}\n${entry}` : entry));
+                              toast.success(`Appended Page ${ann.page_number} markup to recommendations`);
+                            }}
+                          >
+                            + Append
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label htmlFor="panel-notes" className="text-xs font-semibold text-foreground">Panel Notes / Remarks</label>
                 <textarea
@@ -2113,7 +2314,7 @@ export function GradingPanel({
                   <dl className="grid grid-cols-2 gap-2 text-[10px] leading-relaxed pt-1 font-medium">
                     <div>
                       <dt className="text-emerald-700">Panelist</dt>
-                      <dd className="font-bold">{evaluationData?.printed_name || (panelistProfile ? `${panelistProfile.first_name} ${panelistProfile.last_name}` : "Unknown")}</dd>
+                      <dd className="font-bold uppercase tracking-wider">{evaluationData?.printed_name ? evaluationData.printed_name.toUpperCase() : (panelistProfile ? `${panelistProfile.first_name} ${panelistProfile.last_name}`.toUpperCase() : "UNKNOWN")}</dd>
                     </div>
                     <div>
                       <dt className="text-emerald-700">Role</dt>
@@ -2149,7 +2350,7 @@ export function GradingPanel({
 
                 <Button 
                   variant="outline" 
-                  className="w-full text-xs h-9 rounded-xl border-dashed border-border hover:bg-muted"
+                  className="w-full text-xs h-9 rounded-xl border-dashed border-border hover:bg-muted cursor-pointer"
                   onClick={handleCreateNewVersion}
                   disabled={saving}
                 >
@@ -2161,7 +2362,7 @@ export function GradingPanel({
               <div className="flex gap-2.5 pt-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 text-xs h-9 rounded-xl border-border hover:bg-muted"
+                  className="flex-1 text-xs h-9 rounded-xl border-border hover:bg-muted cursor-pointer"
                   onClick={() => handleSaveEvaluation("draft")}
                   disabled={saving}
                 >
@@ -2169,7 +2370,7 @@ export function GradingPanel({
                   Save Draft
                 </Button>
                 <Button 
-                  className="flex-1 text-xs h-9 rounded-xl"
+                  className="flex-1 text-xs h-9 rounded-xl cursor-pointer"
                   onClick={() => handleSaveEvaluation("submitted")}
                   disabled={saving}
                 >
@@ -2182,11 +2383,21 @@ export function GradingPanel({
         </CollapsibleSection>
 
         {/* Section C - Annotations */}
-        <CollapsibleSection title={`Section C — Annotations & Directives (${annotations.length + (documentData?.approval_remarks?.trim() ? 1 : 0)})`} defaultOpen={true}>
-          <div className="pt-1">
-            {renderAnnotationsList(true)}
-          </div>
-        </CollapsibleSection>
+        {(() => {
+          const rawAdviserRemarks = documentData?.approval_remarks?.trim() || "";
+          const isEndorsementBoilerplate = 
+            rawAdviserRemarks.toLowerCase().includes("endorsed for defense") || 
+            rawAdviserRemarks.toLowerCase().includes("adviser validation review") ||
+            rawAdviserRemarks.toLowerCase() === "endorsed for defense by research adviser.";
+          const hasValidAdviserRemarks = Boolean(rawAdviserRemarks) && !isEndorsementBoilerplate;
+          return (
+            <CollapsibleSection title={`Section C — Annotations & Directives (${annotations.length + (hasValidAdviserRemarks ? 1 : 0)})`} defaultOpen={true}>
+              <div className="pt-1">
+                {renderAnnotationsList(true)}
+              </div>
+            </CollapsibleSection>
+          );
+        })()}
 
         <SignatureDialog
           open={signatureDialogOpen}
@@ -2206,6 +2417,150 @@ export function GradingPanel({
           stageName={projectInfo?.defense_stages?.name || "Defense Stage"}
           panelistName={evaluationData?.printed_name || (panelistProfile ? `${panelistProfile.first_name} ${panelistProfile.last_name}` : "Panelist")}
         />
+
+        {/* Chairman Rubric Customizer Dialog (Item 2) */}
+        <Dialog open={chairmanModalOpen} onOpenChange={setChairmanModalOpen}>
+          <DialogContent className="sm:max-w-[560px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground font-bold text-base">
+                <Crown className="h-5 w-5 text-amber-500" />
+                Defense Panel Chairman — Rubric Settings
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-1">
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+                <p className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                  Committee-Wide Grading Rubric
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  As the appointed Defense Panel Chairman, modifying criteria weights here applies dynamically to all assigned defense panelists. Criteria weights must sum to exactly 100%.
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                {customCriteria.map((crit, idx) => (
+                  <div key={idx} className="p-2.5 rounded-xl border border-border bg-muted/10 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <input
+                        type="text"
+                        value={crit.name}
+                        onChange={(e) => {
+                          const updated = [...customCriteria];
+                          updated[idx].name = e.target.value;
+                          setCustomCriteria(updated);
+                        }}
+                        className="text-xs font-bold bg-transparent border-b border-border/70 focus:outline-none focus:border-primary px-1 py-0.5 flex-1"
+                        placeholder="Criterion Name"
+                      />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-xs font-semibold text-muted-foreground">Weight:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={crit.weight}
+                          onChange={(e) => {
+                            const updated = [...customCriteria];
+                            updated[idx].weight = Number(e.target.value) || 0;
+                            setCustomCriteria(updated);
+                          }}
+                          className="w-14 h-7 text-xs text-center font-bold rounded-md border border-border bg-card focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={crit.description || ""}
+                      onChange={(e) => {
+                        const updated = [...customCriteria];
+                        updated[idx].description = e.target.value;
+                        setCustomCriteria(updated);
+                      }}
+                      className="text-[11px] text-muted-foreground bg-transparent border-0 focus:outline-none w-full px-1"
+                      placeholder="Description / grading focus..."
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Weight Indicator */}
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/40 border border-border">
+                <span className="text-xs font-bold text-foreground">Total Weight Sum</span>
+                {(() => {
+                  const sum = customCriteria.reduce((acc, c) => acc + Number(c.weight || 0), 0);
+                  const isValid = Math.abs(sum - 100) < 0.1;
+                  return (
+                    <span className={cn("text-xs font-black", isValid ? "text-emerald-600" : "text-rose-600")}>
+                      {sum.toFixed(1)}% {isValid ? "(Valid 100%)" : "(Must equal 100%)"}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {/* Save as default checkbox */}
+              <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={saveAsDefaultRubric}
+                  onChange={(e) => setSaveAsDefaultRubric(e.target.checked)}
+                  className="rounded border-border mt-0.5 text-primary focus:ring-primary"
+                />
+                <span>
+                  Save as official default rubric for future defense schedules in this stage ({projectInfo?.stageName || "this stage"}).
+                </span>
+              </label>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChairmanModalOpen(false)}
+                disabled={savingRubric}
+                className="text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={savingRubric}
+                onClick={async () => {
+                  const sum = customCriteria.reduce((acc, c) => acc + Number(c.weight || 0), 0);
+                  if (Math.abs(sum - 100) > 0.5) {
+                    toast.error(`Criteria weights must sum to exactly 100%. Current sum: ${sum.toFixed(1)}%`);
+                    return;
+                  }
+                  try {
+                    setSavingRubric(true);
+                    const res = await updateDefenseChairmanRubricAction({
+                      projectId,
+                      stageId,
+                      templateId: rubricTemplate?.id,
+                      criteria: customCriteria,
+                      saveAsDefault: saveAsDefaultRubric,
+                    });
+                    if (res.rubric) {
+                      setRubricTemplate(res.rubric);
+                    }
+                    toast.success("Rubric criteria updated! All panelists evaluating this project will use these criteria.");
+                    setChairmanModalOpen(false);
+                  } catch (err: any) {
+                    toast.error(err?.message || "Failed to update rubric");
+                  } finally {
+                    setSavingRubric(false);
+                  }
+                }}
+                className="text-xs gap-1.5 cursor-pointer"
+              >
+                {savingRubric ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save & Apply to Committee
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ScrollArea>
   );

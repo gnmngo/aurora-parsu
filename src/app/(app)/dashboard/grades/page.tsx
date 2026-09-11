@@ -1,12 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/lib/supabase/client";
-import { Inbox, FileCheck, Award, Gavel, Loader2, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { 
+  Inbox, 
+  FileCheck, 
+  Award, 
+  Gavel, 
+  Loader2, 
+  ChevronDown, 
+  ChevronUp, 
+  Users,
+  Crown,
+  CheckCircle2,
+  AlertCircle,
+  Calculator,
+  UserCheck
+} from "lucide-react";
 import { format } from "date-fns";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
@@ -14,16 +28,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { releaseProjectVerdictAction } from "@/lib/workflow/actions";
 import { toast } from "sonner";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
+import { cn } from "@/lib/utils";
 
 /**
- * GradesPage — displays submitted evaluation score sheets.
+ * GradesPage — displays submitted evaluation score sheets and dynamic composite average grades.
  *
- * BUG-C2 fix: evaluations.panelist_id is the FK to profiles (not profile_id).
- *             Select `panelist_id` and join `profiles!panelist_id(...)`.
- *             Filter by `.eq("panelist_id", user.id)` for panelists.
- *
- * BUG-H2 fix: Use `rubric_templates.passing_score` for verdict threshold
- *             instead of the hardcoded value of 75.
+ * Dynamic Averaging (Flexible Committee):
+ * - Evaluates across any panel size (2, 3, 4, 5+ panelists).
+ * - Composite Grade = sum(panelist_scores) / total_panelists.
+ * - Displays official verdict based on stage passing threshold.
+ * - Identifies Chairman vs Member roles.
  */
 
 interface CriterionScore {
@@ -60,6 +74,8 @@ interface EvaluationRow {
 
 export default function GradesPage() {
   const [evaluations, setEvaluations] = useState<EvaluationRow[]>([]);
+  const [panelRolesMap, setPanelRolesMap] = useState<Record<string, "chair" | "member">>({});
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [releasingId, setReleasingId] = useState<string | null>(null);
   const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
@@ -78,6 +94,19 @@ export default function GradesPage() {
         const isPanelist = roles.includes("panelist");
         const isStudent = roles.includes("student");
         const isAdviser = roles.includes("adviser");
+
+        // Fetch panel assignments to accurately identify Chairman vs Member
+        const { data: panelsData } = await supabase
+          .from("defense_panels")
+          .select("project_id, profile_id, panel_role");
+
+        const pMap: Record<string, "chair" | "member"> = {};
+        if (panelsData) {
+          panelsData.forEach((p: any) => {
+            pMap[`${p.project_id}_${p.profile_id}`] = p.panel_role;
+          });
+        }
+        setPanelRolesMap(pMap);
 
         // Rich join: stage, project proponents, program, evaluator, rubric
         const baseQuery = supabase
@@ -115,10 +144,22 @@ export default function GradesPage() {
           setEvaluations(activeEvals);
 
         } else if (isPanelist) {
-          // BUG-C2: Filter by `panelist_id` not `profile_id`
-          const { data, error } = await baseQuery.eq("panelist_id", user!.id);
-          if (error) throw error;
-          setEvaluations((data as unknown as EvaluationRow[]) || []);
+          // Find all projects where user is assigned as panel member
+          const { data: panelAssignments } = await supabase
+            .from("defense_panels")
+            .select("project_id")
+            .eq("profile_id", user!.id);
+
+          const projectIds = (panelAssignments || []).map((p: any) => p.project_id);
+          if (projectIds.length > 0) {
+            const { data, error } = await baseQuery.in("project_id", projectIds);
+            if (error) throw error;
+            setEvaluations((data as unknown as EvaluationRow[]) || []);
+          } else {
+            const { data, error } = await baseQuery.eq("panelist_id", user!.id);
+            if (error) throw error;
+            setEvaluations((data as unknown as EvaluationRow[]) || []);
+          }
 
         } else if (isAdviser) {
           // Get projects where user is adviser member
@@ -182,6 +223,50 @@ export default function GradesPage() {
     loadGrades();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roles.join(",")]);
+
+  // Group evaluations by project_id and stage_id for dynamic composite averaging
+  const evaluationGroups = useMemo(() => {
+    const groups: Record<string, EvaluationRow[]> = {};
+    evaluations.forEach((ev) => {
+      const key = `${ev.project_id}_${ev.stage_id || "default"}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ev);
+    });
+
+    return Object.entries(groups).map(([groupId, items]) => {
+      const first = items[0];
+      const sum = items.reduce((acc, it) => acc + Number(it.total_score || 0), 0);
+      // Flexible arithmetic mean across all participating panelists (denominator = items.length)
+      const average = items.length > 0 ? sum / items.length : 0;
+      const passingScore = Number(first.rubric_templates?.passing_score ?? 75);
+      const isPassed = average >= passingScore;
+
+      return {
+        groupId,
+        projectId: first.project_id,
+        stageId: first.stage_id,
+        projectTitle: first.projects?.title || "Research Manuscript",
+        stageName: first.defense_stages?.name || "Defense Stage",
+        progCode: first.projects?.programs?.code,
+        studentName: first.projects?.students?.profiles
+          ? `${first.projects.students.profiles.first_name} ${first.projects.students.profiles.last_name}`
+          : null,
+        studentNumber: first.projects?.students?.student_number,
+        evaluations: items,
+        totalSum: sum,
+        averageScore: average,
+        passingScore,
+        isPassed,
+      };
+    });
+  }, [evaluations]);
+
+  const toggleGroupExpand = (groupId: string) => {
+    setExpandedGroupIds((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
 
   return (
     <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
@@ -274,7 +359,7 @@ export default function GradesPage() {
 
         {loading ? (
           <div className="h-44 animate-pulse rounded-xl bg-muted" />
-        ) : evaluations.length === 0 ? (
+        ) : evaluationGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-16 text-center">
             <Inbox className="h-10 w-10 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">No Evaluations Submitted</h3>
@@ -284,126 +369,258 @@ export default function GradesPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {evaluations.map((evalItem) => {
-              const projectTitle = evalItem.projects?.title || "Unknown Project";
-              const stageName = evalItem.defense_stages?.name || "Defense Stage";
-              const progCode = evalItem.projects?.programs?.code;
-              const studentProf = evalItem.projects?.students?.profiles;
-              const studentName = studentProf ? `${studentProf.first_name} ${studentProf.last_name}` : null;
-              const studentNumber = evalItem.projects?.students?.student_number;
-              const panelistName = evalItem.profiles
-                ? `${evalItem.profiles.first_name} ${evalItem.profiles.last_name}`
-                : "Evaluation Panelist";
-              const panelistEmail = evalItem.profiles?.email;
-              const criteria: CriterionScore[] = evalItem.rubric_templates?.criteria || [];
-              const scoresMap = evalItem.scores || {};
-              const rawTotal = Number(evalItem.total_score || 0);
-              const totalScore = rawTotal > 0
-                ? rawTotal
-                : scoresMap && typeof scoresMap === "object" && Object.values(scoresMap).length > 0
-                  ? Object.values(scoresMap).map(Number).filter((v) => !isNaN(v)).reduce((a, b) => a + b, 0) / Object.values(scoresMap).length
-                  : 0;
-
-              // Rubric passing threshold
-              const passingScore = Number(evalItem.rubric_templates?.passing_score ?? 75);
-              const verdict = totalScore >= passingScore ? "PASSED" : "NEEDS REVISION";
-              const verdictVariant: "success" | "warning" = totalScore >= passingScore ? "success" : "warning";
+            {evaluationGroups.map((group) => {
+              const isDetailsExpanded = expandedGroupIds[group.groupId] || false;
 
               return (
-                <Card key={evalItem.id} className="overflow-hidden rounded-2xl border border-border shadow-sm">
-                  <CardHeader className="bg-muted/30 border-b border-border pb-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="space-y-1">
+                <Card key={group.groupId} className="overflow-hidden rounded-2xl border border-border shadow-sm">
+                  {/* Prominent Header Banner */}
+                  <CardHeader className="bg-muted/40 border-b border-border p-5">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="space-y-1.5 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-primary/5 border-primary/20 text-primary">
-                            {stageName}
+                            {group.stageName}
                           </Badge>
-                          {progCode && (
+                          {group.progCode && (
                             <Badge variant="secondary" className="text-[9px] font-black">
-                              {progCode}
+                              {group.progCode}
                             </Badge>
                           )}
-                          <h2 className="text-base sm:text-lg font-bold text-foreground">&ldquo;{projectTitle}&rdquo;</h2>
+                          <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground border-border">
+                            {group.evaluations.length} Committee {group.evaluations.length === 1 ? "Member" : "Members"}
+                          </Badge>
                         </div>
-                        {studentName && (
+
+                        <h2 className="text-lg md:text-xl font-black text-foreground tracking-tight truncate">
+                          &ldquo;{group.projectTitle}&rdquo;
+                        </h2>
+
+                        {group.studentName && (
                           <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
                             <Users className="h-3.5 w-3.5 text-primary" />
-                            Proponent: <span className="text-foreground font-bold">{studentName}</span>
-                            {studentNumber ? ` • ${studentNumber}` : ""}
+                            Research Proponent: <span className="text-foreground font-bold">{group.studentName}</span>
+                            {group.studentNumber ? ` (${group.studentNumber})` : ""}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
-                          <Award className="h-3.5 w-3.5 text-primary" />
-                          Evaluated by <span className="text-foreground font-bold">{panelistName}</span>
-                          {panelistEmail ? ` (${panelistEmail})` : ""} • {evalItem.submitted_at ? format(new Date(evalItem.submitted_at), "MMM d, yyyy h:mm a") : "—"}
-                        </p>
                       </div>
-                      <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 shadow-xs">
-                          <Award className="h-4 w-4 text-primary" />
-                          <span className="font-black text-sm text-foreground">{totalScore.toFixed(1)}</span>
-                          <span className="text-xs text-muted-foreground">/100</span>
+
+                      {/* Final Composite Average Highlight Banner (Flexible Panel Size) */}
+                      <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
+                        <div className="rounded-2xl border border-primary/30 bg-card p-3 shadow-sm flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <Calculator className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block">
+                              Composite Average
+                            </span>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-black text-foreground">
+                                {group.averageScore.toFixed(2)}
+                              </span>
+                              <span className="text-xs text-muted-foreground font-bold">/100</span>
+                            </div>
+                          </div>
                         </div>
-                        <Badge variant={verdictVariant} className="text-xs py-1 px-3 font-bold">
-                          {verdict}
+
+                        <Badge
+                          variant={group.isPassed ? "success" : "warning"}
+                          className="text-xs font-black py-2 px-3 tracking-wider"
+                        >
+                          {group.isPassed ? "PASSED" : "NEEDS REVISION"}
                         </Badge>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-6">
-                    {/* Rubric passing threshold info */}
-                    {evalItem.rubric_templates && (
-                      <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground font-semibold pb-2 border-b border-border/50">
-                        <span className="flex items-center gap-1.5">
-                          <FileCheck className="h-3.5 w-3.5 text-primary" />
-                          Rubric: <span className="text-foreground font-bold">{evalItem.rubric_templates.title}</span>
-                        </span>
+
+                    {/* Formula Explanation Banner */}
+                    <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Calculator className="h-3.5 w-3.5 text-primary" />
                         <span>
-                          Passing Threshold: <span className="text-foreground font-bold">{passingScore}%</span>
+                          Dynamic Formula: ({group.totalSum.toFixed(1)} sum of scores ÷ {group.evaluations.length} {group.evaluations.length === 1 ? "panelist" : "panelists"}) ={" "}
+                          <strong className="text-foreground">{group.averageScore.toFixed(2)}%</strong>
                         </span>
                       </div>
-                    )}
+                      <span>
+                        Passing Criterion: <strong className="text-foreground">{group.passingScore}%</strong>
+                      </span>
+                    </div>
+                  </CardHeader>
 
-                    {criteria.length === 0 ? (
-                      <p className="text-sm text-muted-foreground font-semibold">No criteria details found for this evaluation.</p>
-                    ) : (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {criteria.map((c) => {
-                          const score = Number(scoresMap[c.id] || 0);
-                          const weightedContribution = ((score * Number(c.weight || 0)) / 100).toFixed(1);
+                  <CardContent className="p-5 space-y-4">
+                    {/* Committee Panelist Breakdown Cards */}
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <UserCheck className="h-3.5 w-3.5 text-primary" />
+                        Defense Committee Evaluators ({group.evaluations.length})
+                      </h4>
+
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {group.evaluations.map((ev) => {
+                          const panelistName = ev.profiles
+                            ? `${ev.profiles.first_name} ${ev.profiles.last_name}`
+                            : "Evaluation Panelist";
+                          const isChair = panelRolesMap[`${group.projectId}_${ev.panelist_id}`] === "chair";
+                          const score = Number(ev.total_score || 0);
+
                           return (
-                            <div key={c.id} className="rounded-xl border border-border p-4 space-y-2 bg-card/60">
-                              <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-foreground">{c.name}</span>
-                                <span className="font-black text-foreground">{score.toFixed(1)} / 100</span>
+                            <div
+                              key={ev.id}
+                              className="rounded-xl border border-border/80 bg-card p-3 space-y-2 shadow-2xs transition-all hover:border-primary/40"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-xs text-foreground truncate block">
+                                      {panelistName}
+                                    </span>
+                                    {isChair ? (
+                                      <Badge variant="warning" className="text-[9px] px-1.5 py-0 font-bold gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                                        <Crown className="h-2.5 w-2.5 text-amber-500" />
+                                        Chairman
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-semibold text-muted-foreground">
+                                        Member
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {ev.profiles?.email && (
+                                    <p className="text-[10px] text-muted-foreground truncate">{ev.profiles.email}</p>
+                                  )}
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="text-sm font-black text-foreground block">
+                                    {score.toFixed(1)}
+                                  </span>
+                                  <span className="text-[9px] text-muted-foreground font-semibold">/100</span>
+                                </div>
                               </div>
-                              <Progress value={score} />
-                              <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold pt-0.5">
-                                <span>Weight: {c.weight}%</span>
-                                <span className="text-primary font-bold">Weighted: +{weightedContribution} pts</span>
-                              </div>
+
+                              {(ev.recommendations || ev.panel_notes) && (
+                                <p className="text-[11px] text-muted-foreground line-clamp-2 bg-muted/20 rounded-md p-1.5 font-medium leading-relaxed">
+                                  {ev.recommendations || ev.panel_notes}
+                                </p>
+                              )}
+
+                              <p className="text-[9px] text-muted-foreground text-right pt-0.5">
+                                Submitted {ev.submitted_at ? format(new Date(ev.submitted_at), "MMM d, yyyy h:mm a") : "—"}
+                              </p>
                             </div>
                           );
                         })}
                       </div>
-                    )}
+                    </div>
 
-                    {(evalItem.recommendations || evalItem.panel_notes) && (
-                      <div className="border-t border-border pt-4 grid gap-4 sm:grid-cols-2 text-xs font-medium">
-                        {evalItem.recommendations && (
-                          <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                            <h4 className="font-bold text-xs text-primary uppercase tracking-wider">Recommendations &amp; Action Items</h4>
-                            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{evalItem.recommendations}</p>
-                          </div>
-                        )}
-                        {evalItem.panel_notes && (
-                          <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                            <h4 className="font-bold text-xs text-foreground uppercase tracking-wider">Panel Deliberation Notes</h4>
-                            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{evalItem.panel_notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {/* Toggle to view detailed score sheets per panelist */}
+                    <div className="pt-2 border-t border-border/60">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleGroupExpand(group.groupId)}
+                        className="w-full text-xs font-bold text-primary hover:text-primary hover:bg-primary/5 flex items-center justify-center gap-1.5 h-8 cursor-pointer"
+                      >
+                        <span>
+                          {isDetailsExpanded
+                            ? "Hide Detailed Rubric Breakdown & Score Sheets"
+                            : `View Detailed Rubric Criteria for All ${group.evaluations.length} Evaluators`}
+                        </span>
+                        {isDetailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+
+                      {isDetailsExpanded && (
+                        <div className="pt-4 space-y-6 animate-in fade-in duration-200">
+                          {group.evaluations.map((evalItem) => {
+                            const panelistName = evalItem.profiles
+                              ? `${evalItem.profiles.first_name} ${evalItem.profiles.last_name}`
+                              : "Evaluation Panelist";
+                            const isChair = panelRolesMap[`${group.projectId}_${evalItem.panelist_id}`] === "chair";
+                            const criteria: CriterionScore[] = evalItem.rubric_templates?.criteria || [];
+                            const scoresMap = evalItem.scores || {};
+                            const score = Number(evalItem.total_score || 0);
+
+                            return (
+                              <div
+                                key={evalItem.id}
+                                className="rounded-xl border border-border p-4 space-y-4 bg-muted/10"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-border/50">
+                                  <div className="flex items-center gap-2">
+                                    {isChair ? (
+                                      <Crown className="h-4 w-4 text-amber-500" />
+                                    ) : (
+                                      <Award className="h-4 w-4 text-primary" />
+                                    )}
+                                    <span className="font-bold text-sm text-foreground">
+                                      Score Sheet: {panelistName} {isChair ? "(Chairman)" : "(Member)"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground font-semibold">Total Score:</span>
+                                    <Badge variant="outline" className="text-xs font-black px-2 py-0.5">
+                                      {score.toFixed(1)} / 100
+                                    </Badge>
+                                  </div>
+                                </div>
+
+                                {/* Criteria breakdown */}
+                                {criteria.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground italic">No criteria breakdown recorded.</p>
+                                ) : (
+                                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                    {criteria.map((c) => {
+                                      const critScore = Number(scoresMap[c.id] || 0);
+                                      const weightedContribution = ((critScore * Number(c.weight || 0)) / 100).toFixed(1);
+                                      return (
+                                        <div key={c.id} className="rounded-lg border border-border/60 p-3 space-y-1.5 bg-card">
+                                          <div className="flex justify-between items-center text-xs">
+                                            <span className="font-bold text-foreground text-[11px] truncate">{c.name}</span>
+                                            <span className="font-bold text-foreground text-[11px]">{critScore.toFixed(1)}</span>
+                                          </div>
+                                          <Progress value={critScore} className="h-1.5" />
+                                          <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold pt-0.5">
+                                            <span>Weight: {c.weight}%</span>
+                                            <span className="text-primary font-bold">+{weightedContribution} pts</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Recommendations and Notes */}
+                                {(evalItem.recommendations || evalItem.panel_notes) && (
+                                  <div className="pt-2 grid gap-3 sm:grid-cols-2 text-xs">
+                                    {evalItem.recommendations && (
+                                      <div className="p-3 rounded-lg border border-border bg-card space-y-1">
+                                        <h5 className="font-bold text-[11px] text-primary uppercase tracking-wider">
+                                          Recommendations & Directives
+                                        </h5>
+                                        <p className="text-foreground leading-relaxed whitespace-pre-wrap text-[11px]">
+                                          {evalItem.recommendations}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {evalItem.panel_notes && (
+                                      <div className="p-3 rounded-lg border border-border bg-card space-y-1">
+                                        <h5 className="font-bold text-[11px] text-foreground uppercase tracking-wider">
+                                          Deliberation Remarks
+                                        </h5>
+                                        <p className="text-foreground leading-relaxed whitespace-pre-wrap text-[11px]">
+                                          {evalItem.panel_notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );

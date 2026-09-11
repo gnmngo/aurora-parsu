@@ -353,3 +353,83 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
   return { success: true, annotation: newAnnotation };
 }
 
+/**
+ * Deletes an annotation and its replies/history.
+ * Allowed for:
+ * 1. The original author of the annotation
+ * 2. Assigned panelist or adviser on the project
+ * 3. Coordinators / system administrators
+ */
+export async function deleteAnnotationAction(annotationId: string) {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  // 1. Authenticate user
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    throw new Error("Unauthorized. Please log in.");
+  }
+
+  // 2. Fetch annotation to check ownership
+  const { data: ann, error: annErr } = await supabase
+    .from("annotations")
+    .select("id, created_by, content, page_number, severity, document_version_id")
+    .eq("id", annotationId)
+    .single();
+
+  if (annErr || !ann) {
+    throw new Error("Annotation not found or already deleted.");
+  }
+
+  // Check roles
+  const { data: userRolesData } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", user.id);
+
+  const codes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return r?.code as string | undefined;
+  }).filter(Boolean) as string[] ?? [];
+
+  const isAuthor = ann.created_by === user.id;
+  const isPrivileged = codes.some(c => ["coordinator", "sys_admin", "panelist", "adviser"].includes(c));
+
+  if (!isAuthor && !isPrivileged) {
+    throw new Error("Permission Denied: You do not have permission to delete this annotation.");
+  }
+
+  // 3. Delete dependent records first if any (replies, history)
+  await supabase.from("annotation_replies").delete().eq("annotation_id", annotationId);
+  await supabase.from("annotation_history").delete().eq("annotation_id", annotationId);
+
+  // 4. Delete the annotation
+  const { error: delErr } = await supabase
+    .from("annotations")
+    .delete()
+    .eq("id", annotationId);
+
+  if (delErr) {
+    throw new Error(`Failed to delete annotation: ${delErr.message}`);
+  }
+
+  // 5. Audit log
+  await supabase.from("audit_logs").insert({
+    profile_id: user.id,
+    user_email: user.email || "unknown",
+    user_role: codes[0] || "authenticated",
+    action_type: "DELETE",
+    module: "revisions",
+    entity_type: "annotations",
+    entity_id: annotationId,
+    description: `Deleted annotation on page ${ann.page_number || 1}`,
+    old_value: { content: ann.content?.slice(0, 100), severity: ann.severity },
+    ip_address: ip,
+    user_agent: userAgent,
+    academic_year: currentAcademicYear(),
+  });
+
+  return { success: true };
+}

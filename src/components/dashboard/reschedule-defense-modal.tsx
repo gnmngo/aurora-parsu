@@ -23,6 +23,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { updateDefenseScheduleAction } from "@/lib/scheduler/actions";
@@ -76,6 +77,7 @@ export function RescheduleDefenseModal({
   const [isOnline, setIsOnline] = useState(false);
   const [meetingUrl, setMeetingUrl] = useState("");
   const [selectedPanelists, setSelectedPanelists] = useState<string[]>([]);
+  const [chairmanId, setChairmanId] = useState<string>("");
   const [facultyList, setFacultyList] = useState<FacultyOptionItem[]>([]);
   const [loadingFaculty, setLoadingFaculty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -88,25 +90,17 @@ export function RescheduleDefenseModal({
     // Pre-populate fields from current schedule
     try {
       const d = new Date(schedule.scheduled_at);
-      if (!isNaN(d.getTime())) {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        const hours = String(d.getHours()).padStart(2, "0");
-        const minutes = String(d.getMinutes()).padStart(2, "0");
-
-        setDate(`${year}-${month}-${day}`);
-        setTime(`${hours}:${minutes}`);
-      }
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+      setTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+      setDuration(schedule.duration_minutes || 60);
+      setRoom(schedule.room || "CECS Conference Room");
+      setBuilding(schedule.building || "Engineering Building");
+      setIsOnline(Boolean(schedule.is_online));
+      setMeetingUrl(schedule.meeting_url || "");
     } catch {
-      // ignore date parse fallback
+      // fallback
     }
-
-    setDuration(schedule.duration_minutes || 60);
-    setRoom(schedule.room || "CECS Conference Room");
-    setBuilding(schedule.building || "Engineering Building");
-    setIsOnline(Boolean(schedule.is_online));
-    setMeetingUrl(schedule.meeting_url || "");
 
     // Fetch existing assigned panelists for this schedule
     async function loadPanelists() {
@@ -116,7 +110,7 @@ export function RescheduleDefenseModal({
           getApprovedFacultyListAction(),
           supabase
             .from("defense_panels")
-            .select("profile_id")
+            .select("profile_id, panel_role")
             .eq("project_id", schedule!.project_id)
             .eq("stage_id", schedule!.stage_id),
         ]);
@@ -124,6 +118,10 @@ export function RescheduleDefenseModal({
         setFacultyList(faculty);
         if (panelsRes.data) {
           setSelectedPanelists(panelsRes.data.map((p: any) => p.profile_id));
+          const existingChair = panelsRes.data.find((p: any) => p.panel_role === "chair");
+          if (existingChair) {
+            setChairmanId(existingChair.profile_id);
+          }
         }
       } catch (err) {
         console.error("Error loading faculty panelists:", err);
@@ -189,6 +187,7 @@ export function RescheduleDefenseModal({
         isOnline,
         meetingUrl: isOnline ? meetingUrl : undefined,
         panelistIds: selectedPanelists,
+        chairmanId: chairmanId || selectedPanelists[0],
       });
 
       toast.success("Defense schedule successfully updated!");
@@ -424,6 +423,32 @@ export function RescheduleDefenseModal({
                     <span className="font-medium text-foreground truncate">{fac.name}</span>
                   </label>
                 ))}
+              </div>
+            )}
+
+            {selectedPanelists.length > 0 && (
+              <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                  <div>
+                    <span className="text-xs font-bold text-foreground block">Appointed Panel Chairman</span>
+                    <span className="text-[10px] text-muted-foreground">Authorized to customize defense rubric grading criteria.</span>
+                  </div>
+                </div>
+                <select
+                  value={chairmanId || selectedPanelists[0]}
+                  onChange={(e) => setChairmanId(e.target.value)}
+                  className="h-8 rounded-lg border border-amber-500/30 bg-card px-2.5 text-xs font-bold text-amber-700 dark:text-amber-300 focus:ring-1 focus:ring-amber-500"
+                >
+                  {selectedPanelists.map((pid) => {
+                    const fac = facultyList.find((f) => f.profile_id === pid);
+                    return (
+                      <option key={pid} value={pid}>
+                        👑 {fac?.name || "Faculty Member"} (Chairman)
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             )}
           </div>

@@ -15,6 +15,7 @@ export interface CreateScheduleInput {
   isOnline: boolean;
   meetingUrl?: string;
   panelistIds: string[]; // Profile IDs
+  chairmanId?: string; // Appointed Panel Chairman Profile ID
 }
 
 /**
@@ -233,7 +234,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
       project_id: input.projectId,
       stage_id: input.stageId,
       profile_id: pid,
-      panel_role: "member" as const,
+      panel_role: (input.chairmanId ? (pid === input.chairmanId ? ("chair" as const) : ("member" as const)) : (pid === input.panelistIds[0] ? ("chair" as const) : ("member" as const))),
       assigned_by: user.id
     }));
 
@@ -319,6 +320,7 @@ export interface UpdateScheduleInput {
   isOnline: boolean;
   meetingUrl?: string;
   panelistIds: string[]; // Profile IDs
+  chairmanId?: string; // Appointed Panel Chairman Profile ID
 }
 
 export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
@@ -527,7 +529,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
       project_id: input.projectId,
       stage_id: input.stageId,
       profile_id: pid,
-      panel_role: "member" as const,
+      panel_role: (input.chairmanId ? (pid === input.chairmanId ? ("chair" as const) : ("member" as const)) : (pid === input.panelistIds[0] ? ("chair" as const) : ("member" as const))),
       assigned_by: user.id
     }));
 
@@ -1026,11 +1028,11 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
         .eq("project_id", alloc.projectId)
         .eq("stage_id", alloc.stageId);
 
-      const panelsToInsert = safePanelistIds.map((pid) => ({
+      const panelsToInsert = safePanelistIds.map((pid, idx) => ({
         project_id: alloc.projectId,
         stage_id: alloc.stageId,
         profile_id: pid,
-        panel_role: "member" as const,
+        panel_role: (idx === 0 ? ("chair" as const) : ("member" as const)),
         assigned_by: user.id,
       }));
 

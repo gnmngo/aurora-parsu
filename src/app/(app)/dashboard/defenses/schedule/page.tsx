@@ -36,6 +36,7 @@ import {
   ArrowRight,
   Plus,
   Zap,
+  Crown,
 } from "lucide-react";
 
 export default function SchedulePage() {
@@ -109,6 +110,7 @@ export default function SchedulePage() {
   const [singleIsOnline, setSingleIsOnline] = useState(false);
   const [singleMeetingUrl, setSingleMeetingUrl] = useState("");
   const [singlePanelists, setSinglePanelists] = useState<string[]>([]);
+  const [singleChairmanId, setSingleChairmanId] = useState<string>("");
 
   // -------------------------------------------------------------
   // INITIAL DATA LOAD
@@ -498,6 +500,7 @@ export default function SchedulePage() {
         isOnline: singleIsOnline,
         meetingUrl: singleIsOnline ? singleMeetingUrl : undefined,
         panelistIds: singlePanelists,
+        chairmanId: singleChairmanId || singlePanelists[0],
       });
 
       const stgName = stages.find((s) => s.id === singleSelectedStage)?.name || "Defense Stage";
@@ -522,6 +525,7 @@ export default function SchedulePage() {
       setSingleSelectedProject("");
       setSingleScheduledAt("");
       setSinglePanelists([]);
+      setSingleChairmanId("");
     } catch (err: any) {
       toast.error(err?.message || "Scheduling conflict detected.");
     } finally {
@@ -1492,6 +1496,32 @@ export default function SchedulePage() {
                     </label>
                   ))}
                 </div>
+
+                {singlePanelists.length > 0 && (
+                  <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-foreground block">Appoint Defense Chairman</span>
+                        <span className="text-[10px] text-muted-foreground">The Chairman is granted settings to customize defense rubric criteria.</span>
+                      </div>
+                    </div>
+                    <select
+                      value={singleChairmanId || singlePanelists[0]}
+                      onChange={(e) => setSingleChairmanId(e.target.value)}
+                      className="h-8 rounded-lg border border-amber-500/30 bg-card px-2.5 text-xs font-bold text-amber-700 dark:text-amber-300 focus:ring-1 focus:ring-amber-500"
+                    >
+                      {singlePanelists.map((pid) => {
+                        const fac = facultyList.find((f) => f.profile_id === pid);
+                        return (
+                          <option key={pid} value={pid}>
+                            👑 {fac?.name || "Faculty Member"} (Chairman)
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-3">

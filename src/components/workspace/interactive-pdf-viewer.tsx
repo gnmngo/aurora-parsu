@@ -35,6 +35,7 @@ import {
   createAnnotationAction,
   createAnnotationReplyAction,
   updateAnnotationStatusAction,
+  deleteAnnotationAction,
 } from "@/lib/annotations/actions";
 
 // Configure local PDF worker
@@ -582,6 +583,24 @@ export function InteractivePdfViewer({
       onAnnotationCreated?.();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Status update failed";
+      toast.error(msg);
+    }
+  };
+
+  // 6. Delete Annotation
+  const handleDeleteAnnotation = async (annotationId: string) => {
+    if (!confirm("Are you sure you want to delete this markup/comment?")) return;
+    try {
+      const res = await deleteAnnotationAction(annotationId);
+      if (!res.success) throw new Error("Failed to delete annotation.");
+
+      toast.success("Markup deleted successfully.");
+      setActiveAnnotation(null);
+      onSelectAnnotation?.(null);
+      await fetchAnnotations();
+      onAnnotationCreated?.();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Delete failed";
       toast.error(msg);
     }
   };
@@ -1185,16 +1204,26 @@ export function InteractivePdfViewer({
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveAnnotation(null);
-                  onSelectAnnotation?.(null);
-                }}
-                className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded-md"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  title="Delete annotation"
+                  onClick={() => handleDeleteAnnotation(activeAnnotation.id)}
+                  className="text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-1 rounded-md transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveAnnotation(null);
+                    onSelectAnnotation?.(null);
+                  }}
+                  className="text-muted-foreground hover:text-foreground cursor-pointer p-1 rounded-md"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Quoted Highlight Snippet or Drawing Badge */}

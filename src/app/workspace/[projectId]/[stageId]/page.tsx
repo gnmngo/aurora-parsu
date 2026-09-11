@@ -26,6 +26,8 @@ import {
   PanelRightOpen,
   Maximize2,
   Minimize2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
@@ -33,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useParams, useSearchParams } from "next/navigation";
+import { useTheme } from "@/providers/theme-provider";
 import { VersionComparison } from "@/components/workspace/version-comparison";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -83,6 +86,7 @@ export default function WorkspacePage() {
     roles.includes("adviser") ? "adviser" : "student";
   const backHref = isStudent ? "/dashboard/my-project" : isAdviser ? "/dashboard" : "/dashboard/defenses";
 
+  const { resolvedTheme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [project, setProject] = useState<any>(null);
@@ -368,6 +372,20 @@ export default function WorkspacePage() {
               </Link>
             </Button>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title={`Switch to ${mounted && resolvedTheme === "dark" ? "light" : "dark"} mode`}
+          >
+            {mounted && resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-slate-600" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
           <Badge variant="outline" className="hidden sm:flex text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-[10px] font-bold">
             <Wifi className="mr-1 h-3 w-3" />
             Online
