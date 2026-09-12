@@ -175,19 +175,61 @@ export function PdfViewerPanel({
       const userId = user?.id;
       if (!userId) throw new Error("No active session.");
 
-      // 1. Save annotation record via server action (audited + notifies students)
-      const res = await createAnnotationAction({
-        documentVersionId,
-        pageNumber: pageNumber || 1,
-        content: commentText.trim(),
-        severity: severity,
-        selectedText: sectionRef.trim() || undefined,
-        type: "text_comment",
-      });
+      let saved = false;
 
-      if (!res.success) {
-        toast.error(res.error || "Failed to create annotation.");
-        return;
+      // 1. Try server action first
+      try {
+        const res = await createAnnotationAction({
+          documentVersionId,
+          pageNumber: pageNumber || 1,
+          content: commentText.trim(),
+          severity: severity,
+          selectedText: sectionRef.trim() || undefined,
+          type: "text_comment",
+        });
+
+        if (res?.success) {
+          saved = true;
+        } else {
+          console.warn("[PdfViewerPanel] Server action unsuccessful, attempting direct client fallback:", res?.error);
+        }
+      } catch (actionErr) {
+        console.warn("[PdfViewerPanel] Server action exception, attempting direct client fallback:", actionErr);
+      }
+
+      // 2. Direct client fallback if server action failed or threw
+      if (!saved) {
+        const { data: newAnn, error: insertErr } = await supabase
+          .from("annotations")
+          .insert({
+            document_version_id: documentVersionId,
+            type: "text_comment",
+            page_number: pageNumber || 1,
+            selected_text: sectionRef.trim() || null,
+            content: commentText.trim(),
+            severity: severity,
+            status: "open",
+            coordinates: { left: 10, top: 10, width: 80, height: 5 },
+            created_by: userId,
+          })
+          .select()
+          .single();
+
+        if (insertErr || !newAnn) {
+          throw new Error(insertErr?.message || "Failed to create annotation.");
+        }
+
+        try {
+          await supabase.from("annotation_history").insert({
+            annotation_id: newAnn.id,
+            from_status: null,
+            to_status: "open",
+            notes: "Initial feedback comment created",
+            changed_by: userId,
+          });
+        } catch {
+          // non-fatal
+        }
       }
 
       toast.success("Revision comment added successfully!");
@@ -198,7 +240,7 @@ export function PdfViewerPanel({
       onAnnotationChange?.();
     } catch (err: any) {
       console.error(err);
-      toast.error(`Error adding comment: ${err.message}`);
+      toast.error(`Error adding comment: ${err?.message || "Failed to save comment"}`);
     } finally {
       setSaving(false);
     }

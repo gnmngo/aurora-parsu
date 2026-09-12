@@ -3,6 +3,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { emitAuditLog } from "@/lib/audit/log";
+import { emitNotification, emitNotificationToMany } from "@/lib/notifications/emit";
+
+async function getSafeClientContext() {
+  try {
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const userAgent = headersList.get("user-agent") || "unknown";
+    return { ip, userAgent };
+  } catch {
+    return { ip: "127.0.0.1", userAgent: "unknown" };
+  }
+}
 
 export interface UpdateAnnotationStatusInput {
   annotationId: string;
@@ -16,9 +28,7 @@ export interface UpdateAnnotationStatusInput {
 export async function updateAnnotationStatusAction(input: UpdateAnnotationStatusInput) {
   try {
     const supabase = await createClient();
-    const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    const userAgent = headersList.get("user-agent") || "unknown";
+    const { ip, userAgent } = await getSafeClientContext();
 
     // 1. Authenticate user
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -135,7 +145,6 @@ export async function createAnnotationReplyAction(annotationId: string, content:
     if (error) return { success: false, error: "Failed to add reply: " + error.message };
 
     try {
-      const { emitNotification } = await import("@/lib/notifications/emit");
       const { data: ann } = await supabase
         .from("annotations")
         .select(`
@@ -206,9 +215,7 @@ export interface CreateAnnotationInput {
 export async function createAnnotationAction(input: CreateAnnotationInput) {
   try {
     const supabase = await createClient();
-    const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    const userAgent = headersList.get("user-agent") || "unknown";
+    const { ip, userAgent } = await getSafeClientContext();
 
     const {
       data: { user },
@@ -335,7 +342,6 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
         const otherStudentIds = studentIds.filter((id) => id !== user.id);
 
         if (otherStudentIds.length > 0) {
-          const { emitNotificationToMany } = await import("@/lib/notifications/emit");
           const preview = input.content.trim().slice(0, 70);
           const targetUrl = projectId
             ? `/workspace/${projectId}/${stageId || ""}?annotation=${newAnnotation.id}`
@@ -373,7 +379,22 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
       user_agent: userAgent,
     });
 
-    return { success: true, annotation: newAnnotation };
+    return {
+      success: true,
+      annotation: {
+        id: newAnnotation.id,
+        document_version_id: newAnnotation.document_version_id,
+        page_number: newAnnotation.page_number,
+        type: newAnnotation.type,
+        severity: newAnnotation.severity,
+        status: newAnnotation.status,
+        content: newAnnotation.content,
+        selected_text: newAnnotation.selected_text,
+        coordinates: newAnnotation.coordinates,
+        created_by: newAnnotation.created_by,
+        created_at: newAnnotation.created_at,
+      },
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[createAnnotationAction] Unexpected error:", msg);
@@ -391,9 +412,7 @@ export async function createAnnotationAction(input: CreateAnnotationInput) {
 export async function deleteAnnotationAction(annotationId: string) {
   try {
     const supabase = await createClient();
-    const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    const userAgent = headersList.get("user-agent") || "unknown";
+    const { ip, userAgent } = await getSafeClientContext();
 
     // 1. Authenticate user
     const { data: { user }, error: authErr } = await supabase.auth.getUser();

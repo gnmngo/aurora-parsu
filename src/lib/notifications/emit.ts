@@ -1,5 +1,3 @@
-"use server";
-
 /**
  * AURORA Centralized Notification Dispatcher
  *

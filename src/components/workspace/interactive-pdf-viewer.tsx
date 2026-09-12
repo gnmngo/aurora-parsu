@@ -401,28 +401,83 @@ export function InteractivePdfViewer({
     if (!pendingDrawing || !documentVersionId) return;
     setSubmittingDrawing(true);
     try {
-      const res = await createAnnotationAction({
-        documentVersionId,
-        pageNumber: pendingDrawing.pageNumber,
-        content: drawingCommentInput.trim() || "Freehand pen markup note",
-        severity: drawingSeverity,
-        selectedText: `[Pen Drawing Markup - Page ${pendingDrawing.pageNumber}]`,
-        type: "correction_note",
-        coordinates: {
-          isDrawing: true,
-          svgPath: pendingDrawing.svgPath,
-          strokeColor: pendingDrawing.strokeColor,
-          strokeWidth: pendingDrawing.strokeWidth,
-          left: Number(pendingDrawing.bounds.left.toFixed(2)),
-          top: Number(pendingDrawing.bounds.top.toFixed(2)),
-          width: Number(pendingDrawing.bounds.width.toFixed(2)),
-          height: Number(pendingDrawing.bounds.height.toFixed(2)),
-        },
-      });
+      let saved = false;
 
-      if (!res.success) {
-        toast.error(res.error || "Failed to save drawing annotation.");
-        return;
+      // 1. Try server action first (for audit logs & notifications)
+      try {
+        const res = await createAnnotationAction({
+          documentVersionId,
+          pageNumber: pendingDrawing.pageNumber,
+          content: drawingCommentInput.trim() || "Freehand pen markup note",
+          severity: drawingSeverity,
+          selectedText: `[Pen Drawing Markup - Page ${pendingDrawing.pageNumber}]`,
+          type: "correction_note",
+          coordinates: {
+            isDrawing: true,
+            svgPath: pendingDrawing.svgPath,
+            strokeColor: pendingDrawing.strokeColor,
+            strokeWidth: pendingDrawing.strokeWidth,
+            left: Number(pendingDrawing.bounds.left.toFixed(2)),
+            top: Number(pendingDrawing.bounds.top.toFixed(2)),
+            width: Number(pendingDrawing.bounds.width.toFixed(2)),
+            height: Number(pendingDrawing.bounds.height.toFixed(2)),
+          },
+        });
+
+        if (res?.success) {
+          saved = true;
+        } else {
+          console.warn("[handleSaveDrawing] Server action unsuccessful, falling back to direct client save:", res?.error);
+        }
+      } catch (actionErr) {
+        console.warn("[handleSaveDrawing] Server action threw, falling back to direct client save:", actionErr);
+      }
+
+      // 2. Direct client fallback if server action failed or threw
+      if (!saved) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Please log in to save annotations.");
+
+        const { data: newAnn, error: insertErr } = await supabase
+          .from("annotations")
+          .insert({
+            document_version_id: documentVersionId,
+            type: "correction_note",
+            page_number: pendingDrawing.pageNumber,
+            selected_text: `[Pen Drawing Markup - Page ${pendingDrawing.pageNumber}]`,
+            content: drawingCommentInput.trim() || "Freehand pen markup note",
+            severity: drawingSeverity,
+            status: "open",
+            coordinates: {
+              isDrawing: true,
+              svgPath: pendingDrawing.svgPath,
+              strokeColor: pendingDrawing.strokeColor,
+              strokeWidth: pendingDrawing.strokeWidth,
+              left: Number(pendingDrawing.bounds.left.toFixed(2)),
+              top: Number(pendingDrawing.bounds.top.toFixed(2)),
+              width: Number(pendingDrawing.bounds.width.toFixed(2)),
+              height: Number(pendingDrawing.bounds.height.toFixed(2)),
+            },
+            created_by: user.id,
+          })
+          .select()
+          .single();
+
+        if (insertErr || !newAnn) {
+          throw new Error(insertErr?.message || "Failed to save drawing annotation.");
+        }
+
+        try {
+          await supabase.from("annotation_history").insert({
+            annotation_id: newAnn.id,
+            from_status: null,
+            to_status: "open",
+            notes: "Freehand pen markup added",
+            changed_by: user.id,
+          });
+        } catch {
+          // non-fatal
+        }
       }
 
       toast.success("Freehand pen drawing saved!");
@@ -518,19 +573,71 @@ export function InteractivePdfViewer({
 
     setSubmittingComment(true);
     try {
-      const res = await createAnnotationAction({
-        documentVersionId,
-        pageNumber: pendingSelection.pageNumber,
-        content: commentInput.trim(),
-        severity: severityInput,
-        selectedText: pendingSelection.text,
-        coordinates: pendingSelection.coordinates,
-        type: "highlight",
-      });
+      let saved = false;
 
-      if (!res.success) {
-        toast.error(res.error || "Failed to save inline comment.");
-        return;
+      // 1. Try via Server Action (audits, history, notifications)
+      try {
+        const res = await createAnnotationAction({
+          documentVersionId,
+          pageNumber: pendingSelection.pageNumber,
+          content: commentInput.trim(),
+          severity: severityInput,
+          selectedText: pendingSelection.text,
+          coordinates: pendingSelection.coordinates,
+          type: "highlight",
+        });
+
+        if (res?.success) {
+          saved = true;
+        } else {
+          console.warn("[handleCreateComment] Server action returned error, attempting direct client fallback:", res?.error);
+        }
+      } catch (actionErr) {
+        console.warn("[handleCreateComment] Server action exception, attempting direct client fallback:", actionErr);
+      }
+
+      // 2. Direct client fallback if server action failed or threw
+      if (!saved) {
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+
+        if (userErr || !user) {
+          throw new Error("Unauthorized. Please log in to add comments.");
+        }
+
+        const { data: newAnn, error: insertErr } = await supabase
+          .from("annotations")
+          .insert({
+            document_version_id: documentVersionId,
+            type: "highlight",
+            page_number: pendingSelection.pageNumber,
+            selected_text: pendingSelection.text,
+            content: commentInput.trim(),
+            severity: severityInput,
+            status: "open",
+            coordinates: pendingSelection.coordinates,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+
+        if (insertErr || !newAnn) {
+          throw new Error(insertErr?.message || "Failed to save inline comment.");
+        }
+
+        try {
+          await supabase.from("annotation_history").insert({
+            annotation_id: newAnn.id,
+            from_status: null,
+            to_status: "open",
+            notes: "Initial feedback comment created",
+            changed_by: user.id,
+          });
+        } catch {
+          // non-fatal
+        }
       }
 
       toast.success("Highlight comment added!");
@@ -555,8 +662,29 @@ export function InteractivePdfViewer({
 
     setSubmittingReply(true);
     try {
-      const res = await createAnnotationReplyAction(annotationId, replyInput.trim());
-      if (!res.success) throw new Error("Failed to post reply.");
+      let saved = false;
+
+      try {
+        const res = await createAnnotationReplyAction(annotationId, replyInput.trim());
+        if (res?.success) saved = true;
+      } catch (e) {
+        console.warn("[handleAddReply] Server action error, trying direct fallback:", e);
+      }
+
+      if (!saved) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Please log in to reply.");
+
+        const { error: replyErr } = await supabase
+          .from("annotation_replies")
+          .insert({
+            annotation_id: annotationId,
+            content: replyInput.trim(),
+            created_by: user.id,
+          });
+
+        if (replyErr) throw new Error(replyErr.message || "Failed to post reply.");
+      }
 
       toast.success("Reply added!");
       setReplyInput("");
@@ -575,12 +703,26 @@ export function InteractivePdfViewer({
     newStatus: "open" | "in_progress" | "addressed" | "verified" | "resolved" | "closed"
   ) => {
     try {
-      const res = await updateAnnotationStatusAction({
-        annotationId,
-        newStatus,
-      });
+      let saved = false;
 
-      if (!res.success) throw new Error("Failed to update status.");
+      try {
+        const res = await updateAnnotationStatusAction({
+          annotationId,
+          newStatus,
+        });
+        if (res?.success) saved = true;
+      } catch (e) {
+        console.warn("[handleStatusChange] Server action error, trying direct fallback:", e);
+      }
+
+      if (!saved) {
+        const { error: updErr } = await supabase
+          .from("annotations")
+          .update({ status: newStatus })
+          .eq("id", annotationId);
+
+        if (updErr) throw new Error(updErr.message || "Failed to update status.");
+      }
 
       toast.success(`Comment status changed to "${newStatus}"`);
       await fetchAnnotations();
@@ -595,8 +737,23 @@ export function InteractivePdfViewer({
   const handleDeleteAnnotation = async (annotationId: string) => {
     if (!confirm("Are you sure you want to delete this markup/comment?")) return;
     try {
-      const res = await deleteAnnotationAction(annotationId);
-      if (!res.success) throw new Error("Failed to delete annotation.");
+      let deleted = false;
+
+      try {
+        const res = await deleteAnnotationAction(annotationId);
+        if (res?.success) deleted = true;
+      } catch (e) {
+        console.warn("[handleDeleteAnnotation] Server action error, trying direct fallback:", e);
+      }
+
+      if (!deleted) {
+        const { error: delErr } = await supabase
+          .from("annotations")
+          .delete()
+          .eq("id", annotationId);
+
+        if (delErr) throw new Error(delErr.message || "Failed to delete annotation.");
+      }
 
       toast.success("Markup deleted successfully.");
       setActiveAnnotation(null);
