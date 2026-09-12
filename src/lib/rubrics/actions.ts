@@ -38,6 +38,17 @@ async function authorizeCoordinatorOrAdmin(supabase: SupabaseClient) {
   return user;
 }
 
+async function getSafeClientContext() {
+  try {
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const userAgent = headersList.get("user-agent") || "unknown";
+    return { ip, userAgent };
+  } catch {
+    return { ip: "127.0.0.1", userAgent: "unknown" };
+  }
+}
+
 /** Helper to log audit logs */
 async function logAudit(
   supabase: SupabaseClient,
@@ -48,9 +59,7 @@ async function logAudit(
   oldVal: unknown,
   newVal: unknown
 ) {
-  const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const userAgent = headersList.get("user-agent") || "unknown";
+  const { ip, userAgent } = await getSafeClientContext();
 
   await emitAuditLog(supabase, {
     profile_id: user.id,
@@ -464,9 +473,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
     const supabase = await createClient();
     const serviceClient = createServiceClient();
     const db = serviceClient || supabase;
-    const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    const userAgent = headersList.get("user-agent") || "unknown";
+    const { ip, userAgent } = await getSafeClientContext();
 
     // 1. Authenticate user
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -601,7 +608,21 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
       user_agent: userAgent,
     });
 
-    return { success: true, rubric: savedRubric };
+    const sanitizedRubric = savedRubric
+      ? {
+          id: savedRubric.id,
+          project_id: savedRubric.project_id,
+          title: savedRubric.title,
+          criteria: savedRubric.criteria,
+          passing_score: savedRubric.passing_score,
+          excellent_score: savedRubric.excellent_score,
+          version: savedRubric.version,
+          is_published: savedRubric.is_published,
+          is_active: savedRubric.is_active,
+        }
+      : null;
+
+    return { success: true, rubric: sanitizedRubric };
   } catch (err: any) {
     console.error("updateDefenseChairmanRubricAction error:", err);
     return { success: false, error: err?.message || "Failed to update rubric" };
