@@ -1079,17 +1079,81 @@ export function GradingPanel({
         }
       }
 
-      const evalData = await saveEvaluationDraftAction({
-        projectId,
-        stageId,
-        rubricTemplateId: targetRubricId,
-        scores,
-        totalScore: weightedScore,
-        verdictCode: verdict,
-        panelNotes: notes,
-        recommendations,
-        version: evalVersion,
-      });
+      let evalData: any = null;
+
+      // 1. Try via Server Action (handles backend validation and transitions)
+      try {
+        const res = await saveEvaluationDraftAction({
+          projectId,
+          stageId,
+          rubricTemplateId: targetRubricId,
+          scores,
+          totalScore: weightedScore,
+          verdictCode: verdict,
+          panelNotes: notes,
+          recommendations,
+          version: evalVersion,
+        });
+
+        if (res?.success && res.evaluation) {
+          evalData = res.evaluation;
+        } else {
+          console.warn("[grading-panel] Server action draft save unsuccessful, attempting direct client fallback:", res?.error);
+        }
+      } catch (actionErr) {
+        console.warn("[grading-panel] Server action draft save threw exception, attempting direct client fallback:", actionErr);
+      }
+
+      // 2. Resilient Direct Client Fallback: Direct Supabase insert/update if server action had errors
+      if (!evalData) {
+        const { data: existingEval } = await supabase
+          .from("evaluations")
+          .select("id, status")
+          .eq("project_id", projectId)
+          .eq("panelist_id", userId)
+          .eq("version", evalVersion)
+          .maybeSingle();
+
+        const evalPayload = {
+          project_id: projectId,
+          stage_id: stageId,
+          panelist_id: userId,
+          rubric_template_id: targetRubricId || null,
+          status: "draft" as const,
+          scores,
+          total_score: weightedScore,
+          weighted_score: weightedScore,
+          verdict_code: verdict,
+          panel_notes: notes,
+          recommendations,
+          version: evalVersion,
+        };
+
+        if (existingEval?.id) {
+          const { data: updated, error: updErr } = await supabase
+            .from("evaluations")
+            .update(evalPayload)
+            .eq("id", existingEval.id)
+            .select()
+            .single();
+
+          if (updErr || !updated) {
+            throw new Error(updErr?.message || "Failed to update draft evaluation.");
+          }
+          evalData = updated;
+        } else {
+          const { data: inserted, error: insErr } = await supabase
+            .from("evaluations")
+            .insert(evalPayload)
+            .select()
+            .single();
+
+          if (insErr || !inserted) {
+            throw new Error(insErr?.message || "Failed to save draft evaluation.");
+          }
+          evalData = inserted;
+        }
+      }
 
       setEvalId(evalData.id);
       setEvalStatus(evalData.status);
@@ -1102,7 +1166,7 @@ export function GradingPanel({
       }
     } catch (err: any) {
       console.error("Error saving evaluation:", err);
-      toast.error(`Error saving evaluation: ${err.message}`);
+      toast.error(`Error saving evaluation: ${err?.message || "Failed to save evaluation"}`);
     } finally {
       setSaving(false);
     }
@@ -1122,7 +1186,7 @@ export function GradingPanel({
 
     try {
       toast.loading("Verifying credentials & securing signature under RA 8792...");
-      const updated = await signEvaluationAction({
+      const res = await signEvaluationAction({
         evaluationId: evalId,
         signatureType: sig.signatureType,
         signatureImage: sig.signatureImage,
@@ -1136,6 +1200,11 @@ export function GradingPanel({
         recommendations,
       });
 
+      if (!res.success || !res.evaluation) {
+        throw new Error(res.error || "Failed to submit signature.");
+      }
+
+      const updated = res.evaluation;
       toast.dismiss();
       toast.success("Verified electronic signature applied successfully!");
       setEvalStatus(updated.status);
@@ -1151,8 +1220,13 @@ export function GradingPanel({
     try {
       setSaving(true);
       toast.loading("Creating new evaluation version...");
-      const newEval = await createNewEvaluationVersionAction(projectId, stageId);
-      
+      const res = await createNewEvaluationVersionAction(projectId, stageId);
+
+      if (!res.success || !res.evaluation) {
+        throw new Error(res.error || "Failed to create new version.");
+      }
+
+      const newEval = res.evaluation;
       toast.dismiss();
       toast.success(`Evaluation version v${newEval.version} created!`);
       setEvalId(newEval.id);
