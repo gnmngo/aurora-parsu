@@ -673,6 +673,50 @@ export function GradingPanel({
         }
 
         if (evalData) {
+          if (evalData.status === "submitted" && !evalData.signature_hash) {
+            try {
+              const { data: sigRec } = await supabase
+                .from("digital_signatures")
+                .select("payload_hash, signature_storage_path")
+                .eq("evaluation_id", evalData.id)
+                .eq("status", "active")
+                .maybeSingle();
+
+              if (sigRec?.payload_hash) {
+                evalData.signature_hash = sigRec.payload_hash;
+                if (!evalData.signature_image && sigRec.signature_storage_path) {
+                  evalData.signature_image = sigRec.signature_storage_path;
+                }
+              } else if (evalData.certificate_serial && evalData.signed_at) {
+                const signingPayload = {
+                  evaluationId: evalData.id,
+                  projectId: evalData.project_id,
+                  stageId: evalData.stage_id,
+                  panelistId: evalData.panelist_id,
+                  scores: evalData.scores,
+                  totalScore: evalData.total_score,
+                  verdictCode: evalData.verdict_code,
+                  certificateSerial: evalData.certificate_serial,
+                  signedAt: evalData.signed_at,
+                };
+                const payloadJson = JSON.stringify(signingPayload, Object.keys(signingPayload).sort());
+                const msgUint8 = new TextEncoder().encode(payloadJson);
+                const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgUint8);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const calcHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+                evalData.signature_hash = calcHash;
+
+                supabase
+                  .from("evaluations")
+                  .update({ signature_hash: calcHash })
+                  .eq("id", evalData.id)
+                  .then(() => {});
+              }
+            } catch (hashErr) {
+              console.warn("[grading-panel] hash resolution notice:", hashErr);
+            }
+          }
+
           setEvalId(evalData.id);
           setEvalVersion(evalData.version || 1);
           setEvalStatus(evalData.status);
@@ -1225,6 +1269,34 @@ export function GradingPanel({
         } catch {}
 
         const now = new Date().toISOString();
+
+        // Deterministic payload and SHA-256 cryptographic hash
+        const signingPayload = {
+          evaluationId: evalId,
+          projectId,
+          stageId,
+          panelistId: user.id,
+          scores,
+          totalScore: weightedScore,
+          verdictCode: verdict,
+          panelNotes: notes,
+          recommendations,
+          printedName: sig.printedName,
+          positionRole: sig.positionRole,
+          certificateSerial: serial,
+          signedAt: now,
+        };
+        const payloadJson = JSON.stringify(signingPayload, Object.keys(signingPayload).sort());
+        let payloadHash = "";
+        try {
+          const msgUint8 = new TextEncoder().encode(payloadJson);
+          const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgUint8);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          payloadHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        } catch {
+          payloadHash = `hash-${Date.now()}`;
+        }
+
         const { data: clientUpdated, error: updErr } = await supabase
           .from("evaluations")
           .update({
@@ -1236,6 +1308,8 @@ export function GradingPanel({
             recommendations,
             status: "submitted",
             signature_type: sig.signatureType,
+            signature_image: sig.signatureImage,
+            signature_hash: payloadHash,
             signed_at: now,
             verified: true,
             verified_by_system: true,
@@ -1249,7 +1323,29 @@ export function GradingPanel({
         if (updErr || !clientUpdated) {
           throw new Error(updErr?.message || "Failed to submit evaluation signature.");
         }
-        updated = clientUpdated;
+
+        try {
+          await supabase.from("digital_signatures").insert({
+            evaluation_id: evalId,
+            panelist_id: user.id,
+            certificate_serial: serial,
+            payload_hash: payloadHash,
+            signature_hash: payloadHash,
+            hash_algorithm: "SHA-256",
+            signing_payload: signingPayload,
+            status: "active",
+          });
+        } catch (dsErr) {
+          console.warn("[grading-panel] client digital_signatures insert notice:", dsErr);
+        }
+
+        updated = {
+          ...clientUpdated,
+          signature_hash: payloadHash,
+          printed_name: sig.printedName,
+          position_role: sig.positionRole,
+          signature_image: sig.signatureImage,
+        };
       }
 
       toast.dismiss();
@@ -2479,7 +2575,7 @@ export function GradingPanel({
                   disabled={saving}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                  Create New Version (Version ${evalVersion + 1})
+                  Create New Version (v{evalVersion + 1})
                 </Button>
               </div>
             ) : (

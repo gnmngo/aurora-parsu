@@ -601,6 +601,13 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
         recommendations: updatedEval.recommendations,
         signed_at: updatedEval.signed_at,
         certificate_serial: updatedEval.certificate_serial,
+        signature_hash: updatedEval.signature_hash || payloadHash,
+        signature_image: signatureStoragePath || input.signatureImage,
+        signature_type: input.signatureType,
+        printed_name: input.printedName,
+        position_role: input.positionRole,
+        verified: true,
+        verified_by_system: true,
       },
     };
   } catch (err: unknown) {
