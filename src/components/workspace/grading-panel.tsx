@@ -296,6 +296,7 @@ export function GradingPanel({
   // Chairman Rubric Customization state
   const [chairmanModalOpen, setChairmanModalOpen] = useState(false);
   const [customCriteria, setCustomCriteria] = useState<any[]>([]);
+  const [customPassingScore, setCustomPassingScore] = useState<number>(75);
   const [saveAsDefaultRubric, setSaveAsDefaultRubric] = useState(false);
   const [savingRubric, setSavingRubric] = useState(false);
 
@@ -2061,6 +2062,7 @@ export function GradingPanel({
                           weight: Number(c.weight || 0),
                         }))
                       );
+                      setCustomPassingScore(rubricTemplate?.passing_score ?? 75);
                       setChairmanModalOpen(true);
                     }}
                   >
@@ -2439,9 +2441,9 @@ export function GradingPanel({
                 </p>
               </div>
 
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
                 {customCriteria.map((crit, idx) => (
-                  <div key={idx} className="p-2.5 rounded-xl border border-border bg-muted/10 space-y-2">
+                  <div key={crit.id || idx} className="p-3 rounded-xl border border-border bg-card/60 space-y-2 relative group hover:border-border/90 transition-all">
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
@@ -2451,10 +2453,10 @@ export function GradingPanel({
                           updated[idx].name = e.target.value;
                           setCustomCriteria(updated);
                         }}
-                        className="text-xs font-bold bg-transparent border-b border-border/70 focus:outline-none focus:border-primary px-1 py-0.5 flex-1"
-                        placeholder="Criterion Name"
+                        className="text-xs font-bold bg-transparent border-b border-border/70 focus:outline-none focus:border-primary px-1 py-0.5 flex-1 text-foreground"
+                        placeholder={`Criterion #${idx + 1} Name`}
                       />
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <span className="text-xs font-semibold text-muted-foreground">Weight:</span>
                         <input
                           type="number"
@@ -2466,9 +2468,28 @@ export function GradingPanel({
                             updated[idx].weight = Number(e.target.value) || 0;
                             setCustomCriteria(updated);
                           }}
-                          className="w-14 h-7 text-xs text-center font-bold rounded-md border border-border bg-card focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-14 h-7 text-xs text-center font-bold rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <span className="text-xs font-bold text-muted-foreground">%</span>
+                        
+                        {/* Remove Criterion Button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={customCriteria.length <= 1}
+                          onClick={() => {
+                            if (customCriteria.length <= 1) {
+                              toast.error("At least one criterion is required for the grading rubric.");
+                              return;
+                            }
+                            setCustomCriteria(customCriteria.filter((_, i) => i !== idx));
+                          }}
+                          className="h-7 w-7 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer shrink-0 disabled:opacity-30"
+                          title={customCriteria.length <= 1 ? "At least one criterion is required" : "Remove this criterion"}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </div>
                     <input
@@ -2480,10 +2501,78 @@ export function GradingPanel({
                         setCustomCriteria(updated);
                       }}
                       className="text-[11px] text-muted-foreground bg-transparent border-0 focus:outline-none w-full px-1"
-                      placeholder="Description / grading focus..."
+                      placeholder="Grading focus / guidance for panelists (optional)..."
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* Action Bar: Add Criterion & Auto-Balance */}
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newId = `crit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                    setCustomCriteria([
+                      ...customCriteria,
+                      {
+                        id: newId,
+                        name: `Criterion ${customCriteria.length + 1}`,
+                        description: "",
+                        weight: 10,
+                      },
+                    ]);
+                  }}
+                  className="h-8 text-xs font-bold gap-1.5 border-dashed border-primary/50 text-primary hover:bg-primary/5 cursor-pointer flex-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add New Criterion
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (customCriteria.length === 0) return;
+                    const count = customCriteria.length;
+                    const base = Math.floor(100 / count);
+                    const remainder = 100 - base * count;
+                    setCustomCriteria(
+                      customCriteria.map((c, i) => ({
+                        ...c,
+                        weight: i === 0 ? base + remainder : base,
+                      }))
+                    );
+                    toast.success(`Weights automatically balanced across ${count} criteria to equal 100%!`);
+                  }}
+                  className="h-8 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title="Evenly distribute 100% across all criteria"
+                >
+                  <Sliders className="h-3.5 w-3.5" />
+                  Auto-Balance 100%
+                </Button>
+              </div>
+
+              {/* Minimum Passing Score */}
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/40 border border-border">
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Minimum Passing Score</span>
+                  <span className="text-[10px] text-muted-foreground">Threshold required for a Passing defense verdict</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={50}
+                    max={100}
+                    value={customPassingScore}
+                    onChange={(e) => setCustomPassingScore(Number(e.target.value) || 75)}
+                    className="w-14 h-7 text-xs text-center font-bold rounded-md border border-border bg-card focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <span className="text-xs font-bold text-muted-foreground">/ 100</span>
+                </div>
               </div>
 
               {/* Total Weight Indicator */}
@@ -2528,6 +2617,14 @@ export function GradingPanel({
                 size="sm"
                 disabled={savingRubric}
                 onClick={async () => {
+                  if (customCriteria.length === 0) {
+                    toast.error("Please add at least one criterion.");
+                    return;
+                  }
+                  if (customCriteria.some((c) => !c.name?.trim())) {
+                    toast.error("All criteria must have a title.");
+                    return;
+                  }
                   const sum = customCriteria.reduce((acc, c) => acc + Number(c.weight || 0), 0);
                   if (Math.abs(sum - 100) > 0.5) {
                     toast.error(`Criteria weights must sum to exactly 100%. Current sum: ${sum.toFixed(1)}%`);
@@ -2540,10 +2637,22 @@ export function GradingPanel({
                       stageId,
                       templateId: rubricTemplate?.id,
                       criteria: customCriteria,
+                      passingScore: customPassingScore,
                       saveAsDefault: saveAsDefaultRubric,
                     });
                     if (res.rubric) {
                       setRubricTemplate(res.rubric);
+                      // Ensure any newly added criteria keys have scores in local state
+                      setScores((prev) => {
+                        const updated = { ...prev };
+                        (res.rubric.criteria || []).forEach((c: any) => {
+                          const k = c.id || c.name;
+                          if (updated[k] === undefined) {
+                            updated[k] = 75;
+                          }
+                        });
+                        return updated;
+                      });
                     }
                     toast.success("Rubric criteria updated! All panelists evaluating this project will use these criteria.");
                     setChairmanModalOpen(false);
@@ -2553,7 +2662,7 @@ export function GradingPanel({
                     setSavingRubric(false);
                   }
                 }}
-                className="text-xs gap-1.5 cursor-pointer"
+                className="text-xs gap-1.5 cursor-pointer font-bold"
               >
                 {savingRubric ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                 Save & Apply to Committee

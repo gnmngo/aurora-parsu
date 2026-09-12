@@ -22,8 +22,24 @@ import {
   Plus,
   UserPlus,
   Users,
-  Crown
+  Crown,
+  MapPin,
+  Video,
+  ExternalLink,
+  Sparkles,
+  CheckCircle2,
+  ListChecks,
+  Info
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
@@ -39,6 +55,9 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [adviser, setAdviser] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<any>(null);
+  const [defensePanelists, setDefensePanelists] = useState<any[]>([]);
+  const [stageRubric, setStageRubric] = useState<any>(null);
+  const [rubricGuideOpen, setRubricGuideOpen] = useState(false);
   const [latestDoc, setLatestDoc] = useState<any>(null);
   const [submissionsList, setSubmissionsList] = useState<any[]>([]);
   const [revisionsList, setRevisionsList] = useState<any[]>([]);
@@ -122,15 +141,67 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           setAdviser(advMem ? advMem : null);
         }
 
-        // 3. Fetch latest schedule
+        // 3. Fetch latest schedule with defense stage join
         const { data: sched } = await supabase
           .from("defense_schedules")
-          .select("*")
+          .select(`
+            *,
+            defense_stages ( id, name, code, sequence_order )
+          `)
           .eq("project_id", proj.id)
           .order("scheduled_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (sched) setSchedule(sched);
+
+        if (sched) {
+          setSchedule(sched);
+
+          // Fetch assigned defense panelists with profile details
+          const { data: panels } = await supabase
+            .from("defense_panels")
+            .select(`
+              profile_id,
+              panel_role,
+              profiles:profiles!defense_panels_profile_id_fkey (
+                id,
+                first_name,
+                last_name,
+                email
+              )
+            `)
+            .eq("project_id", proj.id)
+            .eq("stage_id", sched.stage_id);
+
+          if (panels) {
+            setDefensePanelists(panels);
+          }
+        } else {
+          setSchedule(null);
+          setDefensePanelists([]);
+        }
+
+        // Fetch rubric template for this project/stage to guide the student
+        const { data: projectRubric } = await supabase
+          .from("rubric_templates")
+          .select("*")
+          .eq("project_id", proj.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (projectRubric) {
+          setStageRubric(projectRubric);
+        } else {
+          const { data: defaultRubric } = await supabase
+            .from("rubric_templates")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (defaultRubric) {
+            setStageRubric(defaultRubric);
+          }
+        }
 
         // 4. Fetch latest manuscript document
         const { data: docs } = await supabase
@@ -340,8 +411,182 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         </Card>
       </div>
 
-      {/* Adviser Endorsement Alert Banner */}
-      {latestDoc?.adviser_approval_status === "approved" && (
+      {/* 1. SCHEDULED DEFENSE CONFIRMED & ACTIONABLE HERO CARD */}
+      {schedule && (schedule.status === "scheduled" || schedule.status === "in_progress") ? (
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-card to-primary/10 shadow-md overflow-hidden">
+          <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5">
+                Oral Defense Scheduled &amp; Confirmed
+              </Badge>
+              <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary">
+                {schedule.defense_stages?.name || project.defense_stages?.name || "Defense Stage"}
+              </Badge>
+            </div>
+            <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              Duration: {schedule.duration_minutes || 60} Minutes
+            </span>
+          </div>
+
+          <CardContent className="p-5 space-y-5">
+            {/* Top Grid: Key Defense Parameters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Date & Time */}
+              <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1.5 shadow-xs">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                  <Calendar className="h-4 w-4" />
+                  <span>Defense Date &amp; Time</span>
+                </div>
+                <p className="text-sm font-black text-foreground">
+                  {new Date(schedule.scheduled_at).toLocaleDateString(undefined, {
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                <p className="text-xs font-bold text-primary">
+                  {new Date(schedule.scheduled_at).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {schedule.end_at && ` – ${new Date(schedule.end_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`}
+                </p>
+              </div>
+
+              {/* Venue / Online Link */}
+              <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1.5 shadow-xs">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                  {schedule.is_online ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+                  <span>Venue &amp; Format</span>
+                </div>
+                <p className="text-sm font-black text-foreground">
+                  {schedule.is_online ? "Virtual Defense (Online)" : schedule.room || "Assigned Defense Room"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {schedule.is_online
+                    ? "Conducted via institutional video conference"
+                    : schedule.building || "Academic Hall / Building"}
+                </p>
+                {schedule.is_online && schedule.meeting_url && (
+                  <a
+                    href={schedule.meeting_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline pt-0.5"
+                  >
+                    <span>Open Virtual Meeting Room</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+
+              {/* Committee Panelists */}
+              <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between text-primary font-bold text-xs uppercase tracking-wider">
+                  <span className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Committee Panel
+                  </span>
+                  <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0">
+                    {defensePanelists.length} Panelists
+                  </Badge>
+                </div>
+                {defensePanelists.length > 0 ? (
+                  <div className="space-y-1 max-h-20 overflow-y-auto pr-1">
+                    {defensePanelists.map((p: any) => {
+                      const name = p.profiles ? `${p.profiles.first_name} ${p.profiles.last_name}` : "Faculty Panelist";
+                      const isChair = p.panel_role === "chair";
+                      return (
+                        <div key={p.profile_id} className="flex items-center justify-between gap-1 text-xs">
+                          <span className="truncate font-semibold text-foreground flex items-center gap-1">
+                            {isChair && <Crown className="h-3 w-3 text-amber-500 shrink-0" />}
+                            {name}
+                          </span>
+                          <span className={cn("text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0", isChair ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>
+                            {isChair ? "Chairman" : "Member"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Committee panelists assigned by coordinator.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Step-by-Step Defense Guide Checklist for Student */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/60 space-y-2.5">
+              <p className="text-xs font-black uppercase tracking-wider text-foreground flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-primary" />
+                What To Do Next — Candidate Preparation Checklist
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-foreground">1. Review Defended Manuscript:</strong> Enter the Defense Workspace to verify the exact manuscript version and annotations the committee will inspect.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-foreground">2. Inspect Committee Rubric:</strong> Click "View Rubric Guide" below to check criteria weights calibrated by the Panel Chairman.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-foreground">3. Prepare Presentation Slides:</strong> Practice your presentation to comfortably fit the {schedule.duration_minutes || 60}-minute defense window.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-foreground">4. Live Deliberation:</strong> Arrive 15 minutes before start. Panelist scores and consensus verdicts will be recorded in the system.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Clickable Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-border/50">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <Link href={`/workspace/${project.id}/${schedule.stage_id || project.current_stage_id || ""}`}>
+                  <Button className="h-9 px-4 text-xs font-black gap-2 shadow-sm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Sparkles className="h-4 w-4" />
+                    Open Defense Workspace
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRubricGuideOpen(true)}
+                  className="h-9 px-3 text-xs font-bold gap-1.5 cursor-pointer hover:bg-muted"
+                >
+                  <BookOpen className="h-3.5 w-3.5 text-primary" />
+                  View Rubric &amp; Grading Guide
+                </Button>
+              </div>
+
+              {schedule.is_online && schedule.meeting_url && (
+                <a href={schedule.meeting_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" size="sm" className="h-9 text-xs font-bold gap-1.5">
+                    <Video className="h-3.5 w-3.5 text-emerald-600" />
+                    Join Virtual Defense
+                  </Button>
+                </a>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : latestDoc?.adviser_approval_status === "approved" ? (
+        /* 2. ADVISER ENDORSED - AWAITING COORDINATOR SCHEDULING */
         <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
@@ -353,22 +598,22 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                   Manuscript Endorsed for Defense!
                 </p>
                 <Badge variant="success" className="text-[9px] font-bold">
-                  Cleared
+                  Cleared by Adviser
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Your adviser has endorsed your manuscript. Defense scheduling is in progress. View your roadmap and print your clearance slip in My Project.
+                Your research adviser has cleared your manuscript. Your defense is now queued with the Defense Coordinator for panel assignment and timeslot scheduling.
               </p>
             </div>
           </div>
           <Link href="/dashboard/my-project" className="shrink-0 self-end sm:self-center">
             <Button size="sm" className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs">
-              <span>View Next Steps Roadmap</span>
+              <span>View Defense Roadmap</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
         </div>
-      )}
+      ) : null}
 
       {/* Tabs list menu */}
       <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
@@ -523,17 +768,51 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
             <CardContent>
               {schedule ? (
                 <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
+                    <Badge variant="outline" className="text-[9px] font-extrabold uppercase text-primary border-primary/30">
+                      {schedule.defense_stages?.name || project.defense_stages?.name || "Defense Stage"}
+                    </Badge>
+                    <Badge variant="success" className="text-[8px] font-bold">
+                      {schedule.status === "scheduled" ? "Confirmed" : schedule.status}
+                    </Badge>
+                  </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Room / Venue</p>
-                    <p className="text-sm font-black text-slate-900 mt-0.5">{schedule.room}</p>
-                    <p className="text-[10px] text-muted-foreground">{schedule.building}</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-slate-100 mt-0.5">
+                      {schedule.is_online ? "Virtual Room" : schedule.room || "Room TBD"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {schedule.is_online ? "Online via Meeting Link" : schedule.building || "Academic Hall"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Scheduled At</p>
                     <p className="text-sm font-black text-primary mt-0.5">
-                      {new Date(schedule.scheduled_at).toLocaleString()}
+                      {new Date(schedule.scheduled_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
+                  {defensePanelists.length > 0 && (
+                    <div className="pt-1.5 border-t border-border/50">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-1">Defense Committee</p>
+                      <p className="text-xs text-foreground font-semibold">
+                        {defensePanelists.length} Faculty Panelists
+                        {defensePanelists.some((p: any) => p.panel_role === "chair") ? " (1 Chair)" : ""}
+                      </p>
+                    </div>
+                  )}
+                  <Link href={`/workspace/${project.id}/${schedule.stage_id || project.current_stage_id || ""}`}>
+                    <Button size="sm" className="w-full text-xs font-bold gap-1.5 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Enter Defense Workspace</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
                 </div>
               ) : latestDoc?.adviser_approval_status === "approved" ? (
                 <div className="space-y-2 py-2">
@@ -605,6 +884,71 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           )}
         </div>
       </div>
+
+      {/* Student Rubric Guide Dialog */}
+      <Dialog open={rubricGuideOpen} onOpenChange={setRubricGuideOpen}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground font-bold text-base">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Official Defense Rubric &amp; Grading Guide
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Institutional criteria configured for your {schedule?.defense_stages?.name || project?.defense_stages?.name || "Oral Defense"}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-1">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-foreground">Passing Score Threshold</p>
+                <p className="text-[11px] text-muted-foreground">Minimum score required to receive a Passing verdict</p>
+              </div>
+              <Badge className="text-xs font-black px-2.5 py-1 bg-primary text-primary-foreground">
+                {stageRubric?.passing_score ?? 75} / 100
+              </Badge>
+            </div>
+
+            <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+              {stageRubric?.criteria && stageRubric.criteria.length > 0 ? (
+                stageRubric.criteria.map((c: any, i: number) => (
+                  <div key={c.id || i} className="p-3 rounded-xl border border-border bg-card/60 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-foreground">{c.name}</span>
+                      <Badge variant="outline" className="text-[10px] font-bold text-primary shrink-0">
+                        {c.weight}% Weight
+                      </Badge>
+                    </div>
+                    {c.description ? (
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">{c.description}</p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground italic">Grading focus set by Defense Panel Chairman.</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">Standard institutional rubric applies.</p>
+              )}
+            </div>
+
+            <div className="p-3 rounded-xl bg-muted/40 border border-border text-[11px] text-muted-foreground space-y-1">
+              <p className="font-bold text-foreground flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5 text-primary" />
+                How Grading Works
+              </p>
+              <p>
+                Each appointed panelist evaluates your presentation and manuscript independently using these criteria weights. The Defense Panel Chairman calibrates these criteria, and the composite average of all panelists will form your final stage defense grade.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button size="sm" onClick={() => setRubricGuideOpen(false)} className="text-xs font-bold cursor-pointer">
+              Close Guide
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
