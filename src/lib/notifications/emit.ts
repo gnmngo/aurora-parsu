@@ -130,7 +130,13 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
   const targetLink = link || actionUrl;
 
   try {
-    const client = createServiceClient ? createServiceClient() : supabase;
+    let client: SupabaseClient = supabase;
+    try {
+      const svc = createServiceClient();
+      if (svc) client = svc;
+    } catch {
+      client = supabase;
+    }
     const { error } = await client
       .from("notifications")
       .insert({
@@ -185,7 +191,13 @@ export async function emitNotificationToMany(
     }));
 
   try {
-    const client = createServiceClient ? createServiceClient() : supabase;
+    let client: SupabaseClient = supabase;
+    try {
+      const svc = createServiceClient();
+      if (svc) client = svc;
+    } catch {
+      client = supabase;
+    }
     const { error } = await client
       .from("notifications")
       .insert(rows);

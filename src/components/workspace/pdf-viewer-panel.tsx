@@ -186,7 +186,8 @@ export function PdfViewerPanel({
       });
 
       if (!res.success) {
-        throw new Error("Failed to create annotation.");
+        toast.error(res.error || "Failed to create annotation.");
+        return;
       }
 
       toast.success("Revision comment added successfully!");

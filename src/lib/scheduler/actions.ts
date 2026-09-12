@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { emitNotificationToMany } from "@/lib/notifications/emit";
+import { emitAuditLog } from "@/lib/audit/log";
 
 export interface CreateScheduleInput {
   projectId: string;
@@ -248,7 +249,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
   }
 
   // 9. Write audit log
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
@@ -268,7 +269,6 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear()
   });
 
   // 10. Emit defense_scheduled notifications to all participants
@@ -543,7 +543,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
   }
 
   // 9. Write audit log
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
@@ -564,7 +564,6 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear()
   });
 
   // 10. Emit defense_rescheduled notifications to all participants
@@ -666,7 +665,7 @@ export async function cancelDefenseScheduleAction(
   if (deleteErr) throw new Error("Failed to cancel defense schedule: " + deleteErr.message);
 
   // 4. Audit log
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
@@ -678,7 +677,6 @@ export async function cancelDefenseScheduleAction(
     old_value: { scheduleId, projectId, stageId },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear(),
   });
 
   // 5. Notify all participants — non-blocking
@@ -1049,7 +1047,7 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
       .eq("id", alloc.projectId);
 
     // 6. Write audit log
-    await supabase.from("audit_logs").insert({
+    await emitAuditLog(supabase, {
       profile_id: user.id,
       user_email: user.email || "unknown",
       user_role: "coordinator",
@@ -1070,7 +1068,6 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
       },
       ip_address: ip,
       user_agent: userAgent,
-      academic_year: currentAcademicYear(),
     });
 
     // 7. Emit notifications

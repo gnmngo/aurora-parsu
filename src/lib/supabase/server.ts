@@ -37,14 +37,25 @@ export async function createClient() {
   });
 }
 
+export function isServiceRoleConfigured(): boolean {
+  return !!sanitizeJwtKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 export function createServiceClient() {
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
   const serviceKey = sanitizeJwtKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const anonKey = sanitizeJwtKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const keyToUse = serviceKey || anonKey;
 
-  return createSupabaseClient(url, serviceKey, {
+  if (!url || !keyToUse) {
+    console.warn("[createServiceClient] Neither SUPABASE_SERVICE_ROLE_KEY nor NEXT_PUBLIC_SUPABASE_ANON_KEY is configured.");
+  }
+
+  return createSupabaseClient(url, keyToUse, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
 }
+

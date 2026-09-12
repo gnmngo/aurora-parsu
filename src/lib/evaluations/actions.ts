@@ -8,6 +8,7 @@ import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotification } from "@/lib/notifications/emit";
 import { computeWeightedScore } from "@/lib/rubric/scoring";
+import { emitAuditLog } from "@/lib/audit/log";
 
 export interface SaveEvaluationDraftInput {
   projectId: string;
@@ -428,7 +429,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   }
 
   // 9. Insert audit log
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: userId,
     user_email: user.email || "unknown",
     user_role: "panelist",
@@ -448,7 +449,6 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear(),
   });
 
   // 10. Fire evaluation event trigger
@@ -583,7 +583,7 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
   }
 
   // 4. Log audit event
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: userId,
     user_email: user.email || "unknown",
     user_role: "panelist",
@@ -599,7 +599,6 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
     },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear()
   });
 
   return newEval;

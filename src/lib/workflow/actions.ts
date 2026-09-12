@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotification } from "@/lib/notifications/emit";
+import { emitAuditLog } from "@/lib/audit/log";
 
 
 /**
@@ -72,7 +73,7 @@ export async function adviserApproveDocumentAction(
     .eq("id", doc.projects.id);
 
   // 3. Log Audit trail
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "adviser",
@@ -85,7 +86,6 @@ export async function adviserApproveDocumentAction(
     new_value: { status },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear()
   });
 
   // 4. Create Notifications for student leader and team members
@@ -193,7 +193,7 @@ export async function releaseProjectVerdictAction(
   if (updateErr) throw new Error(`Failed to release verdict: ${updateErr.message}`);
 
   // 4. Audit log
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
@@ -205,7 +205,6 @@ export async function releaseProjectVerdictAction(
     new_value: { projectId, verdictCode, remarks },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: (await import("@/lib/utils/academic-year")).currentAcademicYear(),
   });
 
   // 5. Notify all student team members — non-blocking

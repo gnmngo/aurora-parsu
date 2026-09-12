@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { validateCriteriaWeights } from "@/lib/rubric/scoring";
+import { emitAuditLog } from "@/lib/audit/log";
 
 /** Helper to authorize coordinator/sys_admin roles using secure getUser() */
 /** Helper to authorize coordinator/sys_admin/panelist roles using secure getUser() */
@@ -15,12 +16,12 @@ async function authorizeRubricManager(supabase: SupabaseClient, allowPanelist = 
     throw new Error("Unauthorized. Please log in.");
   }
 
-  const { data: userRoles } = await supabase
+  const { data: userRolesData } = await supabase
     .from("user_roles")
     .select("roles(code)")
     .eq("profile_id", user.id);
 
-  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
+  const codes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])?.map((ur) => {
     const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
     return r?.code as string | undefined;
   }).filter(Boolean) ?? [];
@@ -51,7 +52,7 @@ async function logAudit(
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
@@ -64,7 +65,6 @@ async function logAudit(
     new_value: newVal,
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear()
   });
 }
 
@@ -463,6 +463,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
   try {
     const supabase = await createClient();
     const serviceClient = createServiceClient();
+    const db = serviceClient || supabase;
     const headersList = await headers();
     const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
     const userAgent = headersList.get("user-agent") || "unknown";
@@ -476,7 +477,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
     // 2. Check if user is appointed Chairman in defense_panels or admin/coordinator
     let isChair = false;
     if (input.projectId) {
-      const { data: panelAssignment } = await serviceClient
+      const { data: panelAssignment } = await db
         .from("defense_panels")
         .select("panel_role")
         .eq("project_id", input.projectId)
@@ -488,7 +489,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
       }
     }
 
-    const { data: userRolesData } = await serviceClient
+    const { data: userRolesData } = await db
       .from("user_roles")
       .select("roles(code)")
       .eq("profile_id", user.id);
@@ -516,9 +517,9 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
       };
     }
 
-    // 3. Upsert / update project-specific rubric template using serviceClient
+    // 3. Upsert / update project-specific rubric template
     let targetId = input.templateId;
-    const { data: existingProjRubric } = await serviceClient
+    const { data: existingProjRubric } = await db
       .from("rubric_templates")
       .select("id")
       .eq("project_id", input.projectId)
@@ -527,7 +528,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
     let savedRubric: any;
 
     if (existingProjRubric) {
-      const { data: updated, error: updateErr } = await serviceClient
+      const { data: updated, error: updateErr } = await db
         .from("rubric_templates")
         .update({
           criteria: input.criteria,
@@ -545,7 +546,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
       targetId = existingProjRubric.id;
     } else {
       // Create new project-specific rubric
-      const { data: inserted, error: insertErr } = await serviceClient
+      const { data: inserted, error: insertErr } = await db
         .from("rubric_templates")
         .insert({
           project_id: input.projectId,
@@ -574,7 +575,7 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
 
     // 4. If saveAsDefault is true, also update the default template
     if (input.saveAsDefault) {
-      await serviceClient
+      await db
         .from("rubric_templates")
         .update({
           criteria: input.criteria,
@@ -585,25 +586,20 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
         .eq("is_active", true);
     }
 
-    // 5. Audit log using serviceClient
-    try {
-      await serviceClient.from("audit_logs").insert({
-        profile_id: user.id,
-        user_email: user.email || "unknown",
-        user_role: isChair ? "defense_chair" : codes[0] || "coordinator",
-        action_type: "UPDATE",
-        module: "rubrics",
-        entity_type: "rubric_templates",
-        entity_id: targetId || "00000000-0000-0000-0000-000000000001",
-        description: `Defense Panel Chairman updated rubric grading criteria for project defense (applied to all panelists)`,
-        new_value: { criteria: input.criteria, passingScore: input.passingScore, savedAsDefault: input.saveAsDefault },
-        ip_address: ip,
-        user_agent: userAgent,
-        academic_year: currentAcademicYear(),
-      });
-    } catch (auditErr) {
-      console.warn("Audit log insert warning (non-fatal):", auditErr);
-    }
+    // 5. Audit log using resilient emitAuditLog
+    await emitAuditLog(supabase, {
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: isChair ? "defense_chair" : codes[0] || "coordinator",
+      action_type: "UPDATE",
+      module: "rubrics",
+      entity_type: "rubric_templates",
+      entity_id: targetId || "00000000-0000-0000-0000-000000000001",
+      description: `Defense Panel Chairman updated rubric grading criteria for project defense (applied to all panelists)`,
+      new_value: { criteria: input.criteria, passingScore: input.passingScore, savedAsDefault: input.saveAsDefault },
+      ip_address: ip,
+      user_agent: userAgent,
+    });
 
     return { success: true, rubric: savedRubric };
   } catch (err: any) {

@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotification } from "@/lib/notifications/emit";
+import { emitAuditLog } from "@/lib/audit/log";
 
 /** Hash algorithm used for all cryptographic operations in AURORA */
 export const HASH_ALGORITHM = "SHA-256" as const;
@@ -399,7 +400,7 @@ export async function signEvaluationV2Action(
   }
 
   // 10. Log to audit_logs
-  await supabase.from("audit_logs").insert({
+  await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email ?? "unknown",
     user_role: "panelist",
@@ -411,7 +412,6 @@ export async function signEvaluationV2Action(
     new_value: { certificateSerial, payloadHash, signedAt },
     ip_address: ip,
     user_agent: userAgent,
-    academic_year: currentAcademicYear(),
   });
 
   // 11. Record workflow transition

@@ -420,7 +420,10 @@ export function InteractivePdfViewer({
         },
       });
 
-      if (!res.success) throw new Error("Failed to save drawing annotation.");
+      if (!res.success) {
+        toast.error(res.error || "Failed to save drawing annotation.");
+        return;
+      }
 
       toast.success("Freehand pen drawing saved!");
       setPendingDrawing(null);
@@ -526,7 +529,8 @@ export function InteractivePdfViewer({
       });
 
       if (!res.success) {
-        throw new Error("Failed to save inline comment.");
+        toast.error(res.error || "Failed to save inline comment.");
+        return;
       }
 
       toast.success("Highlight comment added!");
