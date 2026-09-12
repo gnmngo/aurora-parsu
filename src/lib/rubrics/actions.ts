@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
@@ -460,130 +460,155 @@ export interface UpdateDefenseChairmanRubricInput {
  * This applies to all panelists assigned to this defense, and optionally updates the stage default.
  */
 export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChairmanRubricInput) {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const userAgent = headersList.get("user-agent") || "unknown";
+  try {
+    const supabase = await createClient();
+    const serviceClient = createServiceClient();
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Authenticate user
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    throw new Error("Unauthorized. Please log in.");
-  }
+    // 1. Authenticate user
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
 
-  // 2. Check if user is appointed Chairman in defense_panels or admin/coordinator
-  const { data: panelAssignment } = await supabase
-    .from("defense_panels")
-    .select("panel_role")
-    .eq("project_id", input.projectId)
-    .eq("stage_id", input.stageId)
-    .eq("profile_id", user.id)
-    .maybeSingle();
+    // 2. Check if user is appointed Chairman in defense_panels or admin/coordinator
+    let isChair = false;
+    if (input.projectId) {
+      const { data: panelAssignment } = await serviceClient
+        .from("defense_panels")
+        .select("panel_role")
+        .eq("project_id", input.projectId)
+        .eq("profile_id", user.id)
+        .maybeSingle();
 
-  const { data: userRolesData } = await supabase
-    .from("user_roles")
-    .select("roles(code)")
-    .eq("profile_id", user.id);
+      if (panelAssignment?.panel_role === "chair") {
+        isChair = true;
+      }
+    }
 
-  const codes = (userRolesData as any[])?.map((ur) => {
-    const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
-    return r?.code as string | undefined;
-  }).filter(Boolean) as string[] ?? [];
+    const { data: userRolesData } = await serviceClient
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", user.id);
 
-  const isChair = panelAssignment?.panel_role === "chair";
-  const isPrivileged = codes.includes("coordinator") || codes.includes("sys_admin");
+    const codes = (userRolesData as any[])?.map((ur) => {
+      const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+      return r?.code as string | undefined;
+    }).filter(Boolean) as string[] ?? [];
 
-  if (!isChair && !isPrivileged) {
-    throw new Error("Permission Denied: Only the appointed Defense Panel Chairman can customize rubric grading criteria.");
-  }
+    const isPrivileged = codes.includes("coordinator") || codes.includes("sys_admin") || codes.includes("college_dean");
 
-  // Validate weights
-  const totalWeight = input.criteria.reduce((sum, c) => sum + Number(c.weight || 0), 0);
-  if (Math.abs(totalWeight - 100) > 0.5) {
-    throw new Error(`Criteria weights must sum to exactly 100%. Current sum: ${totalWeight.toFixed(1)}%`);
-  }
+    if (!isChair && !isPrivileged) {
+      return {
+        success: false,
+        error: "Permission Denied: Only the appointed Defense Panel Chairman can customize rubric grading criteria.",
+      };
+    }
 
-  // 3. Upsert / update project-specific rubric template
-  let targetId = input.templateId;
-  const { data: existingProjRubric } = await supabase
-    .from("rubric_templates")
-    .select("id")
-    .eq("project_id", input.projectId)
-    .maybeSingle();
+    // Validate weights
+    const totalWeight = input.criteria.reduce((sum, c) => sum + Number(c.weight || 0), 0);
+    if (Math.abs(totalWeight - 100) > 0.5) {
+      return {
+        success: false,
+        error: `Criteria weights must sum to exactly 100%. Current sum: ${totalWeight.toFixed(1)}%`,
+      };
+    }
 
-  let savedRubric: any;
-
-  if (existingProjRubric) {
-    const { data: updated, error: updateErr } = await supabase
+    // 3. Upsert / update project-specific rubric template using serviceClient
+    let targetId = input.templateId;
+    const { data: existingProjRubric } = await serviceClient
       .from("rubric_templates")
-      .update({
-        criteria: input.criteria,
-        passing_score: input.passingScore ?? 75,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existingProjRubric.id)
-      .select()
-      .single();
+      .select("id")
+      .eq("project_id", input.projectId)
+      .maybeSingle();
 
-    if (updateErr) throw new Error(`Failed to update rubric: ${updateErr.message}`);
-    savedRubric = updated;
-    targetId = existingProjRubric.id;
-  } else {
-    // Create new project-specific rubric
-    const { data: inserted, error: insertErr } = await supabase
-      .from("rubric_templates")
-      .insert({
-        project_id: input.projectId,
-        title: `Defense Committee Rubric (Chairman Customization)`,
-        criteria: input.criteria,
-        passing_score: input.passingScore ?? 75,
-        excellent_score: 90,
-        target_compliance_rate: 80,
-        min_compliance_rate: 60,
-        max_major_unresolved: 3,
-        created_by: user.id,
-        is_published: true,
-        is_active: true,
-        is_archived: false,
-        version: 1,
-      })
-      .select()
-      .single();
+    let savedRubric: any;
 
-    if (insertErr) throw new Error(`Failed to create committee rubric: ${insertErr.message}`);
-    savedRubric = inserted;
-    targetId = inserted.id;
+    if (existingProjRubric) {
+      const { data: updated, error: updateErr } = await serviceClient
+        .from("rubric_templates")
+        .update({
+          criteria: input.criteria,
+          passing_score: input.passingScore ?? 75,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingProjRubric.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        return { success: false, error: `Failed to update rubric: ${updateErr.message}` };
+      }
+      savedRubric = updated;
+      targetId = existingProjRubric.id;
+    } else {
+      // Create new project-specific rubric
+      const { data: inserted, error: insertErr } = await serviceClient
+        .from("rubric_templates")
+        .insert({
+          project_id: input.projectId,
+          title: `Defense Committee Rubric (Chairman Customization)`,
+          criteria: input.criteria,
+          passing_score: input.passingScore ?? 75,
+          excellent_score: 90,
+          target_compliance_rate: 80,
+          min_compliance_rate: 60,
+          max_major_unresolved: 3,
+          created_by: user.id,
+          is_published: true,
+          is_active: true,
+          is_archived: false,
+          version: 1,
+        })
+        .select()
+        .single();
+
+      if (insertErr) {
+        return { success: false, error: `Failed to create committee rubric: ${insertErr.message}` };
+      }
+      savedRubric = inserted;
+      targetId = inserted.id;
+    }
+
+    // 4. If saveAsDefault is true, also update the default template
+    if (input.saveAsDefault) {
+      await serviceClient
+        .from("rubric_templates")
+        .update({
+          criteria: input.criteria,
+          passing_score: input.passingScore ?? 75,
+          updated_at: new Date().toISOString(),
+        })
+        .is("project_id", null)
+        .eq("is_active", true);
+    }
+
+    // 5. Audit log using serviceClient
+    try {
+      await serviceClient.from("audit_logs").insert({
+        profile_id: user.id,
+        user_email: user.email || "unknown",
+        user_role: isChair ? "defense_chair" : codes[0] || "coordinator",
+        action_type: "UPDATE",
+        module: "rubrics",
+        entity_type: "rubric_templates",
+        entity_id: targetId || "00000000-0000-0000-0000-000000000001",
+        description: `Defense Panel Chairman updated rubric grading criteria for project defense (applied to all panelists)`,
+        new_value: { criteria: input.criteria, passingScore: input.passingScore, savedAsDefault: input.saveAsDefault },
+        ip_address: ip,
+        user_agent: userAgent,
+        academic_year: currentAcademicYear(),
+      });
+    } catch (auditErr) {
+      console.warn("Audit log insert warning (non-fatal):", auditErr);
+    }
+
+    return { success: true, rubric: savedRubric };
+  } catch (err: any) {
+    console.error("updateDefenseChairmanRubricAction error:", err);
+    return { success: false, error: err?.message || "Failed to update rubric" };
   }
-
-  // 4. If saveAsDefault is true, also update the default template
-  if (input.saveAsDefault) {
-    await supabase
-      .from("rubric_templates")
-      .update({
-        criteria: input.criteria,
-        passing_score: input.passingScore ?? 75,
-        updated_at: new Date().toISOString(),
-      })
-      .is("project_id", null)
-      .eq("is_active", true);
-  }
-
-  // 5. Audit log
-  await supabase.from("audit_logs").insert({
-    profile_id: user.id,
-    user_email: user.email || "unknown",
-    user_role: isChair ? "defense_chair" : codes[0] || "coordinator",
-    action_type: "UPDATE",
-    module: "rubrics",
-    entity_type: "rubric_templates",
-    entity_id: targetId || "unknown",
-    description: `Defense Panel Chairman updated rubric grading criteria for project defense (applied to all panelists)`,
-    new_value: { criteria: input.criteria, passingScore: input.passingScore, savedAsDefault: input.saveAsDefault },
-    ip_address: ip,
-    user_agent: userAgent,
-    academic_year: currentAcademicYear(),
-  });
-
-  return { success: true, rubric: savedRubric };
 }
 

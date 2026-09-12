@@ -2640,6 +2640,10 @@ export function GradingPanel({
                       passingScore: customPassingScore,
                       saveAsDefault: saveAsDefaultRubric,
                     });
+                    if (!res.success) {
+                      toast.error(res.error || "Failed to update rubric");
+                      return;
+                    }
                     if (res.rubric) {
                       setRubricTemplate(res.rubric);
                       // Ensure any newly added criteria keys have scores in local state
