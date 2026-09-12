@@ -1260,7 +1260,6 @@ export function GradingPanel({
     } catch (err: any) {
       toast.dismiss();
       console.error("[grading-panel] handleSignComplete error:", err);
-      toast.error(err?.message || "Failed to submit signature.");
       throw err;
     }
   };
