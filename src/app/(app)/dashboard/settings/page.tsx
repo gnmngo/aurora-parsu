@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Lock, Eye, EyeOff, ShieldCheck, KeyRound } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, ShieldCheck, KeyRound, Building2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { profile, signOut, isLoading: authLoading } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [departmentId, setDepartmentId] = useState("");
+  const [collegeInfo, setCollegeInfo] = useState<{ id: string; name: string; code: string } | null>(null);
   const [departments, setDepartments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -30,25 +31,35 @@ export default function SettingsPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (profile) {
+    async function loadProfileAndDepartments() {
+      if (!profile) return;
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
       setDepartmentId((profile as any).department_id || "");
-    }
-  }, [profile]);
 
-  useEffect(() => {
-    async function loadDepartments() {
-      const { data } = await supabase
+      // Load user's profile with college details
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("college_id, department_id, colleges(id, name, code)")
+        .eq("id", profile.id)
+        .maybeSingle();
+
+      if (userProfile?.colleges) {
+        setCollegeInfo(userProfile.colleges as any);
+      }
+
+      // Load departments with college relations
+      const { data: deptData } = await supabase
         .from("departments")
-        .select("id, name, code, colleges(name, code)")
+        .select("id, name, code, college_id, colleges(name, code)")
         .order("name");
-      if (data) {
-        setDepartments(data);
+
+      if (deptData) {
+        setDepartments(deptData);
       }
     }
-    loadDepartments();
-  }, [supabase]);
+    loadProfileAndDepartments();
+  }, [profile, supabase]);
 
   if (authLoading || !profile) {
     return (
@@ -58,6 +69,17 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  const isCecFaculty =
+    collegeInfo?.code === "CEC" ||
+    (profile as any)?.college_id === "10000000-0000-0000-0000-000000000003" ||
+    !collegeInfo;
+
+  const cecDepartments = departments.filter(
+    (d) =>
+      d.colleges?.code === "CEC" ||
+      d.college_id === "10000000-0000-0000-0000-000000000003"
+  );
 
   const handleSaveChanges = async () => {
     if (!firstName || !lastName) {
@@ -207,20 +229,61 @@ export default function SettingsPage() {
             <label className="text-xs text-muted-foreground">Email</label>
             <Input defaultValue={profile.email} className="mt-1" disabled />
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground font-bold">Department</label>
-            <select
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-            >
-              <option value="">-- Select Department --</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.code}) {d.colleges?.code ? `• ${d.colleges.code}` : ""}
-                </option>
-              ))}
-            </select>
+          {/* College and Department Settings */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs text-muted-foreground font-medium">College</label>
+              <div className="mt-1 flex items-center h-9 px-3 rounded-md border border-border bg-muted/40 text-xs font-semibold text-foreground">
+                <Building2 className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
+                <span className="truncate">
+                  {collegeInfo
+                    ? `${collegeInfo.name} (${collegeInfo.code})`
+                    : "College of Engineering and Computational Sciences (CEC)"}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground font-medium">
+                  Department {isCecFaculty ? "(CEC Only)" : ""}
+                </label>
+                {isCecFaculty && (
+                  <span className="text-[10px] text-primary font-bold">
+                    CEC Faculty
+                  </span>
+                )}
+              </div>
+
+              {isCecFaculty ? (
+                <>
+                  <select
+                    value={departmentId}
+                    onChange={(e) => setDepartmentId(e.target.value)}
+                    className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="">-- Select CEC Department --</option>
+                    {cecDepartments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[10px] text-muted-foreground leading-tight">
+                    Applicable for CEC faculty: Select either <strong>Department of Engineering (DOE)</strong> or <strong>Department of Computational Sciences (DCS)</strong>.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mt-1 flex items-center h-9 px-3 rounded-md border border-dashed border-border bg-muted/20 text-xs text-muted-foreground italic">
+                    Not applicable for non-CEC colleges
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Department assignment is currently only established for the College of Engineering and Computational Sciences (CEC).
+                  </p>
+                </>
+              )}
+            </div>
           </div>
           <Button onClick={handleSaveChanges} disabled={isSaving}>
             {isSaving ? (
