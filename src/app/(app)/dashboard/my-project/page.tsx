@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { RoleGuard } from "@/components/auth/role-guard";
@@ -24,7 +24,7 @@ import {
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
   ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck,
-  Download, Layers
+  Download, Layers, Video
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -159,6 +159,14 @@ export default function MyProjectPage() {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "documents" | "feedback" | "schedule" | "evaluations">("overview");
+
+  // Feedback filter state — defaults to "open" so addressed comments are not openly displayed
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<"open" | "addressed" | "all">("open");
+  const [feedbackSeverityFilter, setFeedbackSeverityFilter] = useState<string>("all");
+
+  // Schedule filter state
+  const [scheduleFilter, setScheduleFilter] = useState<"all" | "upcoming" | "past">("all");
+
   const [joinCodeCopied, setJoinCodeCopied] = useState(false);
   const [adviserModalOpen, setAdviserModalOpen] = useState(false);
   const [facultyOptions, setFacultyOptions] = useState<Array<{ profile_id: string; name: string; email: string; department?: string }>>([]);
@@ -450,7 +458,60 @@ export default function MyProjectPage() {
   const isRevisionRequired = project.status === "revision_required";
   const isPassed = project.status === "passed" || project.status === "approved" || project.status === "completed";
   const latestEval = evaluations[0];
-  const openAnnotationsCount = annotations.filter((a) => a.status === "open").length;
+
+  const openAnnotations = useMemo(() => {
+    return annotations.filter((a) => a.status === "open" || a.status === "in_progress");
+  }, [annotations]);
+
+  const addressedAnnotations = useMemo(() => {
+    return annotations.filter(
+      (a) =>
+        a.status === "addressed" ||
+        a.status === "resolved" ||
+        a.status === "verified" ||
+        a.status === "closed"
+    );
+  }, [annotations]);
+
+  const filteredAnnotations = useMemo(() => {
+    let list = annotations;
+
+    if (feedbackStatusFilter === "open") {
+      list = openAnnotations;
+    } else if (feedbackStatusFilter === "addressed") {
+      list = addressedAnnotations;
+    }
+
+    if (feedbackSeverityFilter !== "all") {
+      list = list.filter((a) => a.severity === feedbackSeverityFilter);
+    }
+
+    return list;
+  }, [annotations, feedbackStatusFilter, feedbackSeverityFilter, openAnnotations, addressedAnnotations]);
+
+  const upcomingSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      const sDate = new Date(s.scheduled_at);
+      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
+      return eDate.getTime() >= Date.now() && s.status !== "cancelled";
+    });
+  }, [schedules]);
+
+  const pastSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      const sDate = new Date(s.scheduled_at);
+      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
+      return eDate.getTime() < Date.now() || s.status === "completed";
+    });
+  }, [schedules]);
+
+  const filteredSchedules = useMemo(() => {
+    if (scheduleFilter === "upcoming") return upcomingSchedules;
+    if (scheduleFilter === "past") return pastSchedules;
+    return schedules;
+  }, [schedules, scheduleFilter, upcomingSchedules, pastSchedules]);
+
+  const openAnnotationsCount = openAnnotations.length;
   const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 2;
 
   return (
@@ -1482,53 +1543,196 @@ export default function MyProjectPage() {
 
         {activeTab === "feedback" && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-base font-bold">Adviser &amp; Panel Feedback</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Annotations and comments from your adviser and panel members</p>
-            </div>
-
-            {annotations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-16 text-center">
-                <MessageSquare className="h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-base font-bold">No Feedback Yet</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Your adviser and panel members haven't added any comments yet.
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-foreground">Adviser &amp; Panel Feedback</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Annotations and comments from your adviser and panel members
                 </p>
               </div>
+
+              {project && (
+                <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
+                  <Button size="sm" variant="outline" className="h-8 text-xs font-bold gap-1.5 shadow-2xs">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <span>Open Manuscript Workspace</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/40 p-2.5 rounded-xl border border-border/60">
+              {/* Status Segmented Buttons */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackStatusFilter("open")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    feedbackStatusFilter === "open"
+                      ? "bg-warning/20 text-warning-foreground border border-warning/40 shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Needs Action ({openAnnotations.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFeedbackStatusFilter("addressed")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                    feedbackStatusFilter === "addressed"
+                      ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Addressed &amp; Resolved ({addressedAnnotations.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFeedbackStatusFilter("all")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                    feedbackStatusFilter === "all"
+                      ? "bg-card text-foreground border border-border shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  All Feedback ({annotations.length})
+                </button>
+              </div>
+
+              {/* Severity Dropdown */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-muted-foreground">Severity:</span>
+                <select
+                  value={feedbackSeverityFilter}
+                  onChange={(e) => setFeedbackSeverityFilter(e.target.value)}
+                  className="h-7 rounded-md border border-border bg-card px-2 text-[11px] font-bold focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Severities</option>
+                  <option value="critical">Critical</option>
+                  <option value="major">Major</option>
+                  <option value="minor">Minor</option>
+                  <option value="info">Info</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Feedback List */}
+            {filteredAnnotations.length === 0 ? (
+              feedbackStatusFilter === "open" && addressedAnnotations.length > 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 p-12 text-center">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-600 mb-2" />
+                  <h3 className="text-base font-bold text-emerald-950 dark:text-emerald-100">
+                    All Comments Addressed!
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground max-w-sm">
+                    You currently have 0 open annotations. Everything has been resolved on this manuscript version.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setFeedbackStatusFilter("addressed")}
+                    className="mt-4 text-xs font-bold gap-1.5 border-emerald-400 text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    View Addressed Comments ({addressedAnnotations.length})
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+                  <MessageSquare className="h-10 w-10 text-muted-foreground" />
+                  <h3 className="mt-4 text-base font-bold text-foreground">No Feedback Found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    No comments match your current filter criteria.
+                  </p>
+                </div>
+              )
             ) : (
               <div className="space-y-3">
-                {annotations.map((ann) => {
+                {filteredAnnotations.map((ann) => {
                   const authorName = ann.profiles
                     ? `${ann.profiles.first_name} ${ann.profiles.last_name}`
                     : "Reviewer";
+                  const isAddressed =
+                    ann.status === "addressed" ||
+                    ann.status === "resolved" ||
+                    ann.status === "verified" ||
+                    ann.status === "closed";
+
                   return (
-                    <Card key={ann.id} className="rounded-2xl border border-border">
+                    <Card
+                      key={ann.id}
+                      className={cn(
+                        "rounded-2xl border transition-all shadow-2xs hover:shadow-xs",
+                        isAddressed
+                          ? "opacity-75 bg-muted/15 border-border"
+                          : "border-border bg-card"
+                      )}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
-                            ann.status === "open" ? "bg-warning/20 text-warning" : "bg-success/20 text-success"
-                          )}>
-                            {ann.status === "open" ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                          <div
+                            className={cn(
+                              "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
+                              !isAddressed
+                                ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                                : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                            )}
+                          >
+                            {!isAddressed ? (
+                              <AlertCircle className="h-3.5 w-3.5" />
+                            ) : (
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="text-xs font-bold text-foreground">{authorName}</span>
-                              <Badge variant="outline" className="text-[9px]">Page {ann.page_number}</Badge>
+                              <Badge variant="outline" className="text-[9px]">
+                                Page {ann.page_number}
+                              </Badge>
                               <Badge
-                                variant={ann.severity === "critical" ? "danger" : ann.severity === "major" ? "warning" : "outline"}
+                                variant={
+                                  ann.severity === "critical"
+                                    ? "danger"
+                                    : ann.severity === "major"
+                                    ? "warning"
+                                    : "outline"
+                                }
                                 className="text-[9px]"
                               >
                                 {ann.severity}
                               </Badge>
-                              <Badge variant={ann.status === "open" ? "warning" : "success"} className="text-[9px]">
+                              <Badge
+                                variant={!isAddressed ? "warning" : "success"}
+                                className="text-[9px] uppercase font-bold"
+                              >
                                 {ann.status}
                               </Badge>
                             </div>
-                            <p className="text-sm text-foreground/80 leading-relaxed">{ann.content}</p>
-                            <p className="mt-1 text-[10px] text-muted-foreground">
-                              {format(new Date(ann.created_at), "MMM d, yyyy h:mm a")}
-                            </p>
+                            <p className="text-sm text-foreground/90 leading-relaxed">{ann.content}</p>
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2">
+                              <span className="text-[10px] text-muted-foreground">
+                                {format(new Date(ann.created_at), "MMM d, yyyy h:mm a")}
+                              </span>
+                              {project && (
+                                <Link
+                                  href={`/workspace/${project.id}/${project.current_stage_id || ""}?page=${ann.page_number}`}
+                                  className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+                                >
+                                  <span>Jump to Page {ann.page_number} in Workspace</span>
+                                  <ArrowRight className="h-3 w-3" />
+                                </Link>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -1542,72 +1746,198 @@ export default function MyProjectPage() {
 
         {activeTab === "schedule" && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-base font-bold">Defense Schedule</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Your scheduled and past defense sessions</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-foreground">Defense Schedule</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Your scheduled and past defense sessions</p>
+              </div>
+
+              {/* Schedule Filter Buttons */}
+              <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setScheduleFilter("all")}
+                  className={cn(
+                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    scheduleFilter === "all"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  All Defenses ({schedules.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScheduleFilter("upcoming")}
+                  className={cn(
+                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    scheduleFilter === "upcoming"
+                      ? "bg-card text-primary shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Upcoming &amp; Live ({upcomingSchedules.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScheduleFilter("past")}
+                  className={cn(
+                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    scheduleFilter === "past"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Past Defenses ({pastSchedules.length})
+                </button>
+              </div>
             </div>
 
-            {schedules.length === 0 ? (
+            {filteredSchedules.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-16 text-center">
                 <Calendar className="h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-base font-bold">No Defense Scheduled</h3>
+                <h3 className="mt-4 text-base font-bold text-foreground">
+                  {scheduleFilter === "upcoming"
+                    ? "No Upcoming Defenses"
+                    : scheduleFilter === "past"
+                    ? "No Past Defenses"
+                    : "No Defense Scheduled"}
+                </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your coordinator will schedule your defense once your manuscript is approved.
+                  {scheduleFilter === "upcoming"
+                    ? "You do not have any upcoming defense sessions scheduled at this time."
+                    : scheduleFilter === "past"
+                    ? "You have not completed any defense sessions yet."
+                    : "Your coordinator will schedule your defense once your manuscript is approved."}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {schedules.map((sched) => {
-                  const isPast = new Date(sched.scheduled_at) < new Date();
+                {filteredSchedules.map((sched) => {
+                  const sDate = new Date(sched.scheduled_at);
+                  const eDate = sched.end_at
+                    ? new Date(sched.end_at)
+                    : new Date(sDate.getTime() + 60 * 60 * 1000);
+                  const isPast = eDate.getTime() < Date.now() || sched.status === "completed";
+                  const isLive = Date.now() >= sDate.getTime() && Date.now() <= eDate.getTime();
+                  const isToday =
+                    !isNaN(sDate.getTime()) && new Date().toDateString() === sDate.toDateString();
+
                   return (
-                    <Card key={sched.id} className={cn(
-                      "rounded-2xl border",
-                      sched.status === "scheduled" && !isPast ? "border-primary/30 bg-primary/3" : "border-border"
-                    )}>
+                    <Card
+                      key={sched.id}
+                      className={cn(
+                        "rounded-2xl border transition-all shadow-2xs hover:shadow-xs",
+                        isLive
+                          ? "border-blue-500/50 bg-blue-50/30 dark:bg-blue-950/20 ring-1 ring-blue-500/20"
+                          : isPast
+                          ? "border-border bg-card opacity-90"
+                          : "border-primary/30 bg-primary/3 shadow-xs"
+                      )}
+                    >
                       <CardContent className="p-5">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-bold text-foreground">
-                                {(sched.defense_stages as any)?.name || "Defense"}
+                                {(sched.defense_stages as any)?.name || "Defense Stage"}
                               </p>
+
+                              {/* Real-time Status Badge */}
                               <Badge
-                                variant={sched.status === "scheduled" ? "info" : sched.status === "completed" ? "success" : "outline"}
-                                className="text-[9px]"
+                                variant={
+                                  sched.status === "cancelled"
+                                    ? "danger"
+                                    : isLive
+                                    ? "warning"
+                                    : isPast
+                                    ? "outline"
+                                    : isToday
+                                    ? "warning"
+                                    : "info"
+                                }
+                                className={cn(
+                                  "text-[9px] uppercase font-bold",
+                                  isPast && !isLive && sched.status !== "cancelled"
+                                    ? "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                                    : ""
+                                )}
                               >
-                                {sched.status}
+                                {sched.status === "cancelled"
+                                  ? "Cancelled"
+                                  : isLive
+                                  ? "In Session (Live)"
+                                  : isPast
+                                  ? "Past Defense"
+                                  : isToday
+                                  ? "Happening Today"
+                                  : "Scheduled"}
                               </Badge>
+
+                              {isPast && evaluations.length > 0 && (
+                                <Badge
+                                  variant="success"
+                                  className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                >
+                                  Evaluated
+                                </Badge>
+                              )}
                             </div>
+
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground font-semibold">
                               <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {format(new Date(sched.scheduled_at), "MMMM d, yyyy")}
+                                <Calendar className="h-3.5 w-3.5" />
+                                {format(sDate, "MMMM d, yyyy")}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(sched.scheduled_at), "h:mm a")} – {format(new Date(sched.end_at), "h:mm a")}
+                                <Clock className="h-3.5 w-3.5" />
+                                {format(sDate, "h:mm a")} – {format(eDate, "h:mm a")}
                               </span>
                               {sched.is_online ? (
                                 <span className="flex items-center gap-1 text-primary">
-                                  <ExternalLink className="h-3 w-3" />
-                                  Online
+                                  <Video className="h-3.5 w-3.5" />
+                                  Online Conference
                                 </span>
                               ) : (
                                 <span className="flex items-center gap-1">
-                                  <Building2 className="h-3 w-3" />
-                                  {sched.room || "TBD"}, {sched.building || ""}
+                                  <Building2 className="h-3.5 w-3.5" />
+                                  {sched.room || "TBD"}, {sched.building || "Campus"}
                                 </span>
                               )}
                             </div>
                           </div>
-                          {sched.is_online && sched.meeting_url && sched.status === "scheduled" && (
-                            <Button size="sm" className="shrink-0 text-xs" asChild>
-                              <a href={sched.meeting_url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                                Join Meeting
-                              </a>
-                            </Button>
-                          )}
+
+                          <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0">
+                            {isPast && evaluations.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setActiveTab("evaluations")}
+                                className="h-8 text-xs font-bold gap-1 text-emerald-700 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                              >
+                                <Award className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>View Results</span>
+                              </Button>
+                            )}
+
+                            {project && (
+                              <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
+                                <Button size="sm" variant="outline" className="h-8 text-xs font-bold gap-1 shadow-2xs">
+                                  <span>Workspace</span>
+                                  <ArrowRight className="h-3 w-3" />
+                                </Button>
+                              </Link>
+                            )}
+
+                            {sched.is_online && sched.meeting_url && !isPast && (
+                              <Button size="sm" className="h-8 text-xs font-bold gap-1" asChild>
+                                <a href={sched.meeting_url} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  <span>Join Meeting</span>
+                                </a>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

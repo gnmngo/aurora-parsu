@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 import type { Annotation } from "@/types/database";
 
 /**
@@ -41,6 +42,7 @@ export default function AnnotationsPage() {
   const [annotations, setAnnotations] = useState<AnnotationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"open" | "addressed" | "all">("open");
   const supabase = createClient();
   const { user, roles } = useAuth();
 
@@ -194,10 +196,22 @@ export default function AnnotationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roles.join(",")]);
 
-  const filteredAnnotations = annotations.filter((ann) =>
-    ann.content?.toLowerCase().includes(searchText.toLowerCase()) ||
-    ann.selected_text?.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const openCount = annotations.filter((ann) => ann.status === "open" || ann.status === "in_progress").length;
+  const addressedCount = annotations.filter((ann) => ["addressed", "resolved", "verified", "closed"].includes(ann.status)).length;
+
+  const filteredAnnotations = annotations.filter((ann) => {
+    const matchesSearch =
+      !searchText ||
+      ann.content?.toLowerCase().includes(searchText.toLowerCase()) ||
+      ann.selected_text?.toLowerCase().includes(searchText.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    const isAddressed = ["addressed", "resolved", "verified", "closed"].includes(ann.status);
+    if (statusFilter === "open") return !isAddressed;
+    if (statusFilter === "addressed") return isAddressed;
+    return true;
+  });
 
   const statusVariant = (status: string): "warning" | "success" | "info" | "outline" => {
     switch (status) {
@@ -220,12 +234,49 @@ export default function AnnotationsPage() {
               All comments and feedback across your documents
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Filter Buttons */}
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/40">
+              <button
+                onClick={() => setStatusFilter("open")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer",
+                  statusFilter === "open"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Needs Action ({openCount})
+              </button>
+              <button
+                onClick={() => setStatusFilter("addressed")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer",
+                  statusFilter === "addressed"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Addressed &amp; Resolved ({addressedCount})
+              </button>
+              <button
+                onClick={() => setStatusFilter("all")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer",
+                  statusFilter === "all"
+                    ? "bg-card text-foreground font-black shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                All ({annotations.length})
+              </button>
+            </div>
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search annotations..."
-                className="w-64 pl-9"
+                className="w-56 pl-9 h-8 text-xs"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />

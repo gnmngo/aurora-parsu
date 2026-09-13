@@ -29,7 +29,8 @@ import {
   Sparkles,
   CheckCircle2,
   ListChecks,
-  Info
+  Info,
+  Filter
 } from "lucide-react";
 import {
   Dialog,
@@ -55,15 +56,18 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [adviser, setAdviser] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<any>(null);
+  const [schedulesList, setSchedulesList] = useState<any[]>([]);
+  const [scheduleFilter, setScheduleFilter] = useState<"upcoming" | "past" | "all">("upcoming");
   const [defensePanelists, setDefensePanelists] = useState<any[]>([]);
   const [stageRubric, setStageRubric] = useState<any>(null);
   const [rubricGuideOpen, setRubricGuideOpen] = useState(false);
   const [latestDoc, setLatestDoc] = useState<any>(null);
   const [submissionsList, setSubmissionsList] = useState<any[]>([]);
   const [revisionsList, setRevisionsList] = useState<any[]>([]);
+  const [revisionFilter, setRevisionFilter] = useState<"open" | "addressed" | "all">("open");
   const [evaluationsList, setEvaluationsList] = useState<any[]>([]);
   const [stagesList, setStagesList] = useState<any[]>([]);
-  const [annotationsCount, setAnnotationsCount] = useState({ total: 0, unresolved: 0 });
+  const [annotationsCount, setAnnotationsCount] = useState({ total: 0, unresolved: 0, addressed: 0 });
   const [activeTab, setActiveTab] = useState<"submissions" | "revisions" | "evaluations">("submissions");
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
@@ -141,21 +145,27 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           setAdviser(advMem ? advMem : null);
         }
 
-        // 3. Fetch latest schedule with defense stage join
-        const { data: sched } = await supabase
+        // 3. Fetch all schedules for this project with defense stage join
+        const { data: allScheds } = await supabase
           .from("defense_schedules")
           .select(`
             *,
             defense_stages ( id, name, code, sequence_order )
           `)
           .eq("project_id", proj.id)
-          .order("scheduled_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .order("scheduled_at", { ascending: false });
 
-        if (sched) {
-          setSchedule(sched);
+        const schedList = allScheds || [];
+        setSchedulesList(schedList);
 
+        const now = new Date();
+        const upcomingSched = schedList.find(
+          (s: any) => s.status !== "completed" && s.status !== "cancelled" && new Date(s.end_at || s.scheduled_at) >= now
+        );
+        const activeSched = upcomingSched || schedList[0] || null;
+        setSchedule(activeSched);
+
+        if (activeSched) {
           // Fetch assigned defense panelists with profile details
           const { data: panels } = await supabase
             .from("defense_panels")
@@ -170,13 +180,12 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
               )
             `)
             .eq("project_id", proj.id)
-            .eq("stage_id", sched.stage_id);
+            .eq("stage_id", activeSched.stage_id);
 
           if (panels) {
             setDefensePanelists(panels);
           }
         } else {
-          setSchedule(null);
           setDefensePanelists([]);
         }
 
@@ -241,8 +250,9 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
             if (anns) {
               const total = anns.length;
-              const unresolved = anns.filter((a: any) => a.status !== "verified" && a.status !== "resolved").length;
-              setAnnotationsCount({ total, unresolved });
+              const unresolved = anns.filter((a: any) => a.status === "open" || a.status === "in_progress").length;
+              const addressed = anns.filter((a: any) => a.status === "addressed" || a.status === "resolved" || a.status === "verified" || a.status === "closed").length;
+              setAnnotationsCount({ total, unresolved, addressed });
               setRevisionsList(anns.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
             }
           }
@@ -341,6 +351,31 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
     };
   });
 
+  // Revision filters: "open" hides addressed/resolved notes by default
+  const filteredRevisions = revisionsList.filter((rev) => {
+    const isAddressed = ["addressed", "resolved", "verified", "closed"].includes(rev.status);
+    if (revisionFilter === "open") return !isAddressed;
+    if (revisionFilter === "addressed") return isAddressed;
+    return true; // "all"
+  });
+
+  // Schedule filtering: upcoming vs past
+  const isScheduleUpcoming = (s: any) => {
+    if (s.status === "completed" || s.status === "cancelled") return false;
+    return new Date(s.end_at || s.scheduled_at) >= new Date();
+  };
+
+  const upcomingSchedules = schedulesList.filter(isScheduleUpcoming);
+  const pastSchedules = schedulesList.filter((s) => !isScheduleUpcoming(s));
+  const displayedSchedules = scheduleFilter === "upcoming"
+    ? upcomingSchedules
+    : scheduleFilter === "past"
+      ? pastSchedules
+      : schedulesList;
+
+  const isPrimaryUpcoming = schedule && isScheduleUpcoming(schedule);
+  const isPrimaryPast = schedule && !isScheduleUpcoming(schedule);
+
   return (
     <div className="space-y-6 text-xs font-semibold text-slate-800">
       {/* Welcome & Progress Card */}
@@ -412,7 +447,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       </div>
 
       {/* 1. SCHEDULED DEFENSE CONFIRMED & ACTIONABLE HERO CARD */}
-      {schedule && (schedule.status === "scheduled" || schedule.status === "in_progress") ? (
+      {isPrimaryUpcoming ? (
         <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-card to-primary/10 shadow-md overflow-hidden">
           <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -585,8 +620,47 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
             </div>
           </CardContent>
         </Card>
+      ) : isPrimaryPast ? (
+        /* 2. RECENT CONCLUDED DEFENSE SESSION NOTICE */
+        <div className="rounded-xl border border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+              <Award className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-100">
+                  {schedule?.defense_stages?.name || "Defense Stage"} Defense Concluded
+                </p>
+                <Badge variant="secondary" className="text-[9px] font-bold">
+                  {schedule?.status === "completed" ? "Completed" : "Concluded Session"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Deliberation took place on {schedule?.scheduled_at ? new Date(schedule.scheduled_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "the scheduled date"}. Panelist scores, feedback annotations, and consensus verdicts are recorded.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveTab("evaluations")}
+              className="h-8 gap-1.5 text-xs font-bold shadow-xs cursor-pointer hover:bg-background"
+            >
+              <Award className="h-3.5 w-3.5 text-primary" />
+              <span>View Consensus Grades</span>
+            </Button>
+            <Link href={`/workspace/${project.id}/${schedule?.stage_id || project.current_stage_id || ""}`}>
+              <Button size="sm" className="h-8 gap-1.5 text-xs font-bold shadow-xs cursor-pointer">
+                <span>Open Workspace</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
       ) : latestDoc?.adviser_approval_status === "approved" ? (
-        /* 2. ADVISER ENDORSED - AWAITING COORDINATOR SCHEDULING */
+        /* 3. ADVISER ENDORSED - AWAITING COORDINATOR SCHEDULING */
         <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
@@ -627,7 +701,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           onClick={() => setActiveTab("revisions")}
           className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "revisions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
         >
-          Revisions Notes ({annotationsCount.unresolved})
+          Revisions Notes {annotationsCount.unresolved > 0 ? `(${annotationsCount.unresolved})` : ""}
         </button>
         <button
           onClick={() => setActiveTab("evaluations")}
@@ -708,44 +782,159 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
           {activeTab === "revisions" && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
-                  <MessageSquare className="h-4 w-4 text-primary" /> Active Revision Annotations
-                </CardTitle>
-                <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
-                  <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 font-semibold">
-                    <FileText className="h-3 w-3 text-primary" />
-                    Open Manuscript Viewer
-                  </Button>
-                </Link>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
+                    <MessageSquare className="h-4 w-4 text-primary" /> Active Revision Annotations
+                  </CardTitle>
+                  <CardDescription className="text-[10px]">
+                    Feedback notes and corrections from faculty reviewers
+                  </CardDescription>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Status Filter Buttons */}
+                  <div className="flex items-center gap-1 bg-muted/70 p-1 rounded-lg border border-border/40 shrink-0">
+                    <button
+                      onClick={() => setRevisionFilter("open")}
+                      className={cn(
+                        "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer",
+                        revisionFilter === "open"
+                          ? "bg-amber-500 text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Needs Action ({annotationsCount.unresolved})
+                    </button>
+                    <button
+                      onClick={() => setRevisionFilter("addressed")}
+                      className={cn(
+                        "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer",
+                        revisionFilter === "addressed"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Addressed &amp; Resolved ({annotationsCount.addressed})
+                    </button>
+                    <button
+                      onClick={() => setRevisionFilter("all")}
+                      className={cn(
+                        "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer",
+                        revisionFilter === "all"
+                          ? "bg-card text-foreground font-extrabold shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      All ({annotationsCount.total})
+                    </button>
+                  </div>
+
+                  <Link href={`/workspace/${project.id}/${project.current_stage_id || ""}`}>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1 font-semibold">
+                      <FileText className="h-3 w-3 text-primary" />
+                      Open Manuscript Viewer
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                {revisionsList.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground">
-                    All revision comments have been verified and closed!
+                {filteredRevisions.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground flex flex-col items-center justify-center space-y-2">
+                    {revisionFilter === "open" ? (
+                      <>
+                        <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-1" />
+                        <p className="font-bold text-foreground">All Revision Notes Addressed!</p>
+                        <p className="text-[11px] text-muted-foreground max-w-sm">
+                          There are no open or pending revision notes on your manuscripts.
+                        </p>
+                        {annotationsCount.addressed > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRevisionFilter("addressed")}
+                            className="mt-2 text-[10px] h-7 font-bold cursor-pointer"
+                          >
+                            View Addressed &amp; Resolved Notes ({annotationsCount.addressed})
+                          </Button>
+                        )}
+                      </>
+                    ) : revisionFilter === "addressed" ? (
+                      <>
+                        <MessageSquare className="h-8 w-8 text-muted-foreground/40 mb-1" />
+                        <p className="font-bold text-foreground">No Addressed Notes Yet</p>
+                        <p className="text-[11px] text-muted-foreground max-w-sm">
+                          Annotations marked as addressed or resolved in the workspace will appear here.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare className="h-8 w-8 text-muted-foreground/40 mb-1" />
+                        <p className="font-bold text-foreground">No Annotations Recorded</p>
+                        <p className="text-[11px] text-muted-foreground max-w-sm">
+                          Reviewers have not placed any annotations or comments on this manuscript yet.
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="divide-y divide-border max-h-96 overflow-y-auto">
-                    {revisionsList.map((rev) => (
-                      <div key={rev.id} className="p-4 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900">
-                            {rev.profiles ? `${rev.profiles.first_name} ${rev.profiles.last_name}` : "Evaluator"}
-                          </span>
-                          <div className="flex gap-1.5">
-                            <Badge variant="outline" className="text-[8px] font-extrabold uppercase">
-                              Page {rev.page_number}
-                            </Badge>
-                            <Badge variant="outline" className="text-[8px] font-extrabold uppercase capitalize">
-                              Status: {rev.status}
-                            </Badge>
+                    {filteredRevisions.map((rev) => {
+                      const isResolved = ["addressed", "resolved", "verified", "closed"].includes(rev.status);
+                      return (
+                        <div key={rev.id} className="p-4 text-xs space-y-2 hover:bg-muted/20 transition-colors">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100">
+                                {rev.profiles ? `${rev.profiles.first_name} ${rev.profiles.last_name}` : "Evaluator"}
+                              </span>
+                              {rev.severity && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-[8px] font-black uppercase",
+                                    rev.severity === "critical" && "border-red-500 text-red-600 bg-red-50 dark:bg-red-950/30",
+                                    rev.severity === "major" && "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30",
+                                    rev.severity === "minor" && "border-yellow-500 text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30",
+                                    rev.severity === "info" && "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                                  )}
+                                >
+                                  {rev.severity}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-[8px] font-extrabold uppercase">
+                                Page {rev.page_number}
+                              </Badge>
+                              <Badge
+                                variant={isResolved ? "success" : "warning"}
+                                className="text-[8px] font-extrabold uppercase capitalize"
+                              >
+                                {rev.status}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            "{rev.comment || rev.content}"
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[10px]">
+                            <span className="text-muted-foreground">
+                              {rev.created_at ? new Date(rev.created_at).toLocaleDateString() : ""}
+                            </span>
+                            <Link
+                              href={`/workspace/${project.id}/${project.current_stage_id || ""}?page=${rev.page_number || 1}`}
+                              className="font-bold text-primary hover:underline flex items-center gap-1"
+                            >
+                              <span>Jump to Page {rev.page_number || 1} in Workspace</span>
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
                           </div>
                         </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          "{rev.comment || rev.content}"
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -760,78 +949,150 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         {/* Side Panel: defense session calendar */}
         <div className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
-                <Calendar className="h-4 w-4 text-primary" /> Scheduled Defense Slot
-              </CardTitle>
+            <CardHeader className="pb-2.5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
+                  <Calendar className="h-4 w-4 text-primary" /> Scheduled Defenses
+                </CardTitle>
+                <Badge variant="outline" className="text-[9px] font-bold">
+                  {schedulesList.length} Total
+                </Badge>
+              </div>
+
+              {/* Filter Buttons: Upcoming vs Past Defenses vs All */}
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/40 mt-2">
+                <button
+                  onClick={() => setScheduleFilter("upcoming")}
+                  className={cn(
+                    "flex-1 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer text-center",
+                    scheduleFilter === "upcoming"
+                      ? "bg-card text-primary shadow-xs font-black"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Upcoming ({upcomingSchedules.length})
+                </button>
+                <button
+                  onClick={() => setScheduleFilter("past")}
+                  className={cn(
+                    "flex-1 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer text-center",
+                    scheduleFilter === "past"
+                      ? "bg-card text-primary shadow-xs font-black"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Past ({pastSchedules.length})
+                </button>
+                <button
+                  onClick={() => setScheduleFilter("all")}
+                  className={cn(
+                    "px-2 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer text-center",
+                    scheduleFilter === "all"
+                      ? "bg-card text-primary shadow-xs font-black"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  All
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
-              {schedule ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
-                    <Badge variant="outline" className="text-[9px] font-extrabold uppercase text-primary border-primary/30">
-                      {schedule.defense_stages?.name || project.defense_stages?.name || "Defense Stage"}
-                    </Badge>
-                    <Badge variant="success" className="text-[8px] font-bold">
-                      {schedule.status === "scheduled" ? "Confirmed" : schedule.status}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Room / Venue</p>
-                    <p className="text-sm font-black text-slate-900 dark:text-slate-100 mt-0.5">
-                      {schedule.is_online ? "Virtual Room" : schedule.room || "Room TBD"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {schedule.is_online ? "Online via Meeting Link" : schedule.building || "Academic Hall"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Scheduled At</p>
-                    <p className="text-sm font-black text-primary mt-0.5">
-                      {new Date(schedule.scheduled_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  {defensePanelists.length > 0 && (
-                    <div className="pt-1.5 border-t border-border/50">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-1">Defense Committee</p>
-                      <p className="text-xs text-foreground font-semibold">
-                        {defensePanelists.length} Faculty Panelists
-                        {defensePanelists.some((p: any) => p.panel_role === "chair") ? " (1 Chair)" : ""}
+              {displayedSchedules.length === 0 ? (
+                scheduleFilter === "upcoming" ? (
+                  latestDoc?.adviser_approval_status === "approved" ? (
+                    <div className="space-y-2 py-2">
+                      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                        <Clock className="h-4 w-4" />
+                        <span>In Coordinator Queue</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Your manuscript is endorsed and queued with the Defense Coordinator for panel assignment and timeslot scheduling.
                       </p>
+                      <Link href="/dashboard/my-project">
+                        <Button variant="outline" size="sm" className="w-full text-[10px] h-7 font-bold mt-1 cursor-pointer">
+                          Check Defense Roadmap &rarr;
+                        </Button>
+                      </Link>
                     </div>
-                  )}
-                  <Link href={`/workspace/${project.id}/${schedule.stage_id || project.current_stage_id || ""}`}>
-                    <Button size="sm" className="w-full text-xs font-bold gap-1.5 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>Enter Defense Workspace</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              ) : latestDoc?.adviser_approval_status === "approved" ? (
-                <div className="space-y-2 py-2">
-                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                    <Clock className="h-4 w-4" />
-                    <span>In Coordinator Queue</span>
+                  ) : (
+                    <div className="text-center text-xs text-muted-foreground py-6">
+                      No upcoming defense timeslot scheduled yet.
+                    </div>
+                  )
+                ) : scheduleFilter === "past" ? (
+                  <div className="text-center text-xs text-muted-foreground py-6">
+                    No past defenses recorded yet.
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Your manuscript is endorsed and queued with the Defense Coordinator for panel assignment and timeslot scheduling.
-                  </p>
-                  <Link href="/dashboard/my-project">
-                    <Button variant="outline" size="sm" className="w-full text-[10px] h-7 font-bold mt-1 cursor-pointer">
-                      Check Defense Roadmap &rarr;
-                    </Button>
-                  </Link>
-                </div>
+                ) : (
+                  <div className="text-center text-xs text-muted-foreground py-6">
+                    No defenses scheduled yet.
+                  </div>
+                )
               ) : (
-                <div className="text-center text-xs text-muted-foreground py-6">
-                  No defense timeslot scheduled for this stage yet.
+                <div className="space-y-3">
+                  {displayedSchedules.map((schedItem) => {
+                    const isItemPast = schedItem.status === "completed" || schedItem.status === "cancelled" || new Date(schedItem.end_at || schedItem.scheduled_at) < new Date();
+                    return (
+                      <div key={schedItem.id} className="p-3 rounded-xl border border-border/70 bg-card/60 space-y-2">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-border/40">
+                          <Badge variant="outline" className="text-[9px] font-extrabold uppercase text-primary border-primary/30">
+                            {schedItem.defense_stages?.name || project.defense_stages?.name || "Defense Stage"}
+                          </Badge>
+                          <Badge
+                            variant={isItemPast ? "secondary" : "success"}
+                            className="text-[8px] font-bold"
+                          >
+                            {isItemPast ? "Past Defense" : schedItem.status === "scheduled" ? "Confirmed" : schedItem.status}
+                          </Badge>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Room / Venue</p>
+                          <p className="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5">
+                            {schedItem.is_online ? "Virtual Room" : schedItem.room || "Room TBD"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {schedItem.is_online ? "Online via Meeting Link" : schedItem.building || "Academic Hall"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Scheduled At</p>
+                          <p className="text-xs font-black text-primary mt-0.5">
+                            {new Date(schedItem.scheduled_at).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+
+                        <div className="pt-1.5 border-t border-border/40 flex items-center justify-between gap-2">
+                          {isItemPast ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setActiveTab("evaluations")}
+                              className="w-full text-[10px] h-7 font-bold gap-1 cursor-pointer"
+                            >
+                              <Award className="h-3 w-3 text-primary" />
+                              <span>View Results &amp; Grades</span>
+                            </Button>
+                          ) : (
+                            <Link href={`/workspace/${project.id}/${schedItem.stage_id || project.current_stage_id || ""}`} className="w-full">
+                              <Button size="sm" className="w-full text-[10px] h-7 font-bold gap-1 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer">
+                                <Sparkles className="h-3 w-3" />
+                                <span>Enter Workspace</span>
+                                <ArrowRight className="h-3 w-3" />
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
