@@ -5,8 +5,9 @@ import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { DefensePipeline } from "@/components/dashboard/defense-pipeline";
 import { ProjectTimelineAndHistory } from "@/components/dashboard/project-timeline-and-history";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Role-specific dashboards
@@ -14,6 +15,7 @@ import { StudentDashboard } from "@/components/dashboard/student-dashboard";
 import { AdviserDashboard } from "@/components/dashboard/adviser-dashboard";
 import { PanelistDashboard } from "@/components/dashboard/panelist-dashboard";
 import { CoordinatorDashboard } from "@/components/dashboard/coordinator-dashboard";
+import { DeanDashboard } from "@/components/dashboard/dean-dashboard";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 
 export default function DashboardPage() {
@@ -22,7 +24,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (roles && roles.length > 0 && !activeRole) {
-      setActiveRole(roles[0]);
+      if (roles.includes("college_dean")) {
+        setActiveRole("college_dean");
+      } else {
+        const preferredOrder = ["coordinator", "sys_admin", "adviser", "panelist", "student"];
+        const selected = preferredOrder.find((r) => roles.includes(r)) || roles[0];
+        setActiveRole(selected);
+      }
     }
   }, [roles, activeRole]);
 
@@ -47,7 +55,15 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {roles && roles.length > 1 && (
+        {/* If user has college_dean role, lock to College Dean view without dropdown selection */}
+        {roles && roles.includes("college_dean") ? (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="h-8 px-3 text-xs font-bold gap-1.5 border-primary/30 text-primary bg-primary/5 shadow-xs">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              College Dean &bull; CEC Oversight
+            </Badge>
+          </div>
+        ) : roles && roles.length > 1 ? (
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-muted-foreground font-semibold">Dashboard view:</span>
             <select
@@ -62,7 +78,7 @@ export default function DashboardPage() {
               ))}
             </select>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Welcome card (personalized) */}
@@ -76,8 +92,8 @@ export default function DashboardPage() {
       {activeRole === "adviser" && <AdviserDashboard userId={user?.id || ""} />}
       {activeRole === "panelist" && <PanelistDashboard userId={user?.id || ""} />}
       {activeRole === "coordinator" && <CoordinatorDashboard />}
-      {/* B11: college_dean sees coordinator-level overview dashboard */}
-      {activeRole === "college_dean" && <CoordinatorDashboard />}
+      {/* Dedicated College Dean institutional oversight dashboard */}
+      {activeRole === "college_dean" && <DeanDashboard userId={user?.id || ""} />}
       {activeRole === "sys_admin" && <AdminDashboard />}
       {/* Fallback for any unrecognized role — prevents blank screen */}
       {!["student", "adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(activeRole) && (

@@ -151,6 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           .filter((code): code is string => Boolean(code)) ?? [];
 
+      // Prioritize canonical role hierarchy (College Dean / Coordinator / Admin first)
+      const roleOrder = ["college_dean", "coordinator", "sys_admin", "adviser", "panelist", "student"];
+      roleCodes.sort((a, b) => {
+        const idxA = roleOrder.indexOf(a);
+        const idxB = roleOrder.indexOf(b);
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      });
+
       setRoles(roleCodes);
 
       // 3. STUDENT PROFILE
@@ -180,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 4. FACULTY PROFILE
       const facultyRoles = [
+        "college_dean",
         "sys_admin",
         "coordinator",
         "panelist",

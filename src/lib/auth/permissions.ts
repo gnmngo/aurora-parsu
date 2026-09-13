@@ -162,6 +162,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
     "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
+    "/dashboard/submissions",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/analytics",

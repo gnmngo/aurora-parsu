@@ -120,7 +120,8 @@ export function WelcomeCard() {
 
   const collegeName = affiliation.collegeName || (profile as any).colleges?.name || "CEC - College of Engineering and Computational Sciences";
   const departmentName = affiliation.departmentName || (profile as any).departments?.name || "Department of Computational Sciences";
-  const roleName = (roles[0] || "User").replace(/_/g, " ");
+  const primaryRole = roles.includes("college_dean") ? "college_dean" : roles[0] || "User";
+  const roleName = primaryRole === "college_dean" ? "College Dean" : primaryRole.replace(/_/g, " ");
 
   return (
     <motion.div
@@ -175,6 +176,16 @@ export function WelcomeCard() {
                   </Badge>
                 </div>
               </Link>
+            ) : roles.includes("college_dean") ? (
+              <div className="flex flex-col gap-2 sm:items-end">
+                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Executive Navigation</p>
+                <Link
+                  href="/dashboard/defenses"
+                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                >
+                  <Shield className="h-3.5 w-3.5" /> College Defense Oversight &rarr;
+                </Link>
+              </div>
             ) : roles.includes("adviser") ? (
               <div className="flex flex-col gap-2 sm:items-end">
                 <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>

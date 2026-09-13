@@ -35,7 +35,7 @@ export function KpiCards() {
   const [stats, setStats] = useState<KpiStat[]>([]);
   const [loading, setLoading] = useState(true);
   const { isReady } = useAuthReady();
-  const { roles, user } = useAuth();
+  const { roles, user, profile } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function KpiCards() {
 
     async function fetchKpis() {
       try {
-        const primaryRole = roles[0] || "student";
+        const primaryRole = roles.includes("college_dean") ? "college_dean" : roles[0] || "student";
 
         if (primaryRole === "student") {
           // 1. Resolve student project via project_members or students.id
@@ -241,6 +241,68 @@ export function KpiCards() {
               href: "/dashboard/grades",
               actionText: "Rubrics",
               description: "Consensus scoring & verdicts",
+            },
+          ]);
+        } else if (primaryRole === "college_dean") {
+          // College Dean KPIs — institutional oversight scoped to their college (CEC)
+          let collegeId = (profile as any)?.college_id;
+          if (!collegeId) {
+            const { data: prof } = await supabase.from("profiles").select("college_id").eq("id", user!.id).maybeSingle();
+            collegeId = prof?.college_id;
+          }
+
+          let projBaseQuery = supabase.from("projects").select("id", { count: "exact", head: true }).is("archived_at", null);
+          let underReviewQuery = supabase.from("projects").select("id", { count: "exact", head: true }).eq("status", "under_review").is("archived_at", null);
+          let completedQuery = supabase.from("projects").select("id", { count: "exact", head: true }).eq("status", "completed").is("archived_at", null);
+
+          if (collegeId) {
+            projBaseQuery = projBaseQuery.eq("college_id", collegeId);
+            underReviewQuery = underReviewQuery.eq("college_id", collegeId);
+            completedQuery = completedQuery.eq("college_id", collegeId);
+          }
+
+          const [papers, pending, completed, evalsRes] = await Promise.all([
+            projBaseQuery,
+            underReviewQuery,
+            completedQuery,
+            supabase.from("evaluations").select("id", { count: "exact", head: true }).eq("status", "submitted"),
+          ]);
+
+          setStats([
+            {
+              label: "College Projects",
+              value: papers.count ?? 0,
+              icon: FileText,
+              href: "/dashboard/defenses",
+              actionText: "Pipeline",
+              description: "CEC active research groups",
+            },
+            {
+              label: "Under Review",
+              value: pending.count ?? 0,
+              icon: Clock,
+              color: "text-warning",
+              href: "/dashboard/submissions",
+              actionText: "Submissions",
+              description: "Manuscripts awaiting review",
+            },
+            {
+              label: "Concluded Defenses",
+              value: completed.count ?? 0,
+              icon: CheckCircle2,
+              color: "text-success",
+              href: "/dashboard/grades",
+              actionText: "Verdicts",
+              description: "Successfully evaluated",
+            },
+            {
+              label: "Submitted Evaluations",
+              value: evalsRes.count ?? 0,
+              icon: TrendingUp,
+              color: "text-primary",
+              href: "/dashboard/grades",
+              actionText: "Grades",
+              description: "Faculty panel rubrics",
             },
           ]);
         } else {
