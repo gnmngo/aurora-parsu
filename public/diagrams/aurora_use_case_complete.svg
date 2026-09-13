@@ -23,26 +23,26 @@
     <text x="180" y="362" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Administrator</text>
   </g>
 
-  <!-- 2. College Dean (Left, y=560) -->
+  <!-- 2. College Dean (Left, y=550) -->
   <g id="actor-dean">
-    <circle cx="180" cy="550" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="572" x2="180" y2="632" stroke="#000000" stroke-width="2.2" />
-    <line x1="145" y1="595" x2="215" y2="595" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="632" x2="150" y2="690" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="632" x2="210" y2="690" stroke="#000000" stroke-width="2.2" />
-    <text x="180" y="715" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#000000">College Dean</text>
-    <text x="180" y="732" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#555555">(CEC Oversight)</text>
+    <circle cx="180" cy="540" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="562" x2="180" y2="622" stroke="#000000" stroke-width="2.2" />
+    <line x1="145" y1="585" x2="215" y2="585" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="622" x2="150" y2="680" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="622" x2="210" y2="680" stroke="#000000" stroke-width="2.2" />
+    <text x="180" y="705" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">College Dean</text>
+    <text x="180" y="722" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#555555">(CEC Oversight)</text>
   </g>
 
-  <!-- 3. Research Coordinator (Left, y=930) -->
-  <g id="actor-coordinator">
-    <circle cx="180" cy="920" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="942" x2="180" y2="1002" stroke="#000000" stroke-width="2.2" />
-    <line x1="145" y1="965" x2="215" y2="965" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="1002" x2="150" y2="1060" stroke="#000000" stroke-width="2.2" />
-    <line x1="180" y1="1002" x2="210" y2="1060" stroke="#000000" stroke-width="2.2" />
-    <text x="180" y="1085" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
-    <text x="180" y="1102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Coordinator</text>
+  <!-- 3. Research Coordinator (Left, y=910) -->
+  <g id="actor-coord">
+    <circle cx="180" cy="900" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="922" x2="180" y2="982" stroke="#000000" stroke-width="2.2" />
+    <line x1="145" y1="945" x2="215" y2="945" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="982" x2="150" y2="1040" stroke="#000000" stroke-width="2.2" />
+    <line x1="180" y1="982" x2="210" y2="1040" stroke="#000000" stroke-width="2.2" />
+    <text x="180" y="1065" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
+    <text x="180" y="1082" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Coordinator</text>
   </g>
 
   <!-- ==================== RIGHT ACTORS (3 ROLES) ==================== -->
@@ -54,142 +54,116 @@
     <line x1="985" y1="225" x2="1055" y2="225" stroke="#000000" stroke-width="2.2" />
     <line x1="1020" y1="262" x2="990" y2="320" stroke="#000000" stroke-width="2.2" />
     <line x1="1020" y1="262" x2="1050" y2="320" stroke="#000000" stroke-width="2.2" />
-    <text x="1020" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#000000">Student</text>
+    <text x="1020" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Student</text>
     <text x="1020" y="362" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#555555">(Candidate)</text>
   </g>
 
-  <!-- 5. Research Adviser (Right, y=560) -->
+  <!-- 5. Research Adviser (Right, y=550) -->
   <g id="actor-adviser">
-    <circle cx="1020" cy="550" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="572" x2="1020" y2="632" stroke="#000000" stroke-width="2.2" />
-    <line x1="985" y1="595" x2="1055" y2="595" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="632" x2="990" y2="690" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="632" x2="1050" y2="690" stroke="#000000" stroke-width="2.2" />
-    <text x="1020" y="715" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
-    <text x="1020" y="732" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Adviser</text>
+    <circle cx="1020" cy="540" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="562" x2="1020" y2="622" stroke="#000000" stroke-width="2.2" />
+    <line x1="985" y1="585" x2="1055" y2="585" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="622" x2="990" y2="680" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="622" x2="1050" y2="680" stroke="#000000" stroke-width="2.2" />
+    <text x="1020" y="705" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
+    <text x="1020" y="722" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Adviser</text>
   </g>
 
-  <!-- 6. Defense Panelist (Right, y=930) -->
+  <!-- 6. Defense Panelist (Right, y=910) -->
   <g id="actor-panelist">
-    <circle cx="1020" cy="920" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="942" x2="1020" y2="1002" stroke="#000000" stroke-width="2.2" />
-    <line x1="985" y1="965" x2="1055" y2="965" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="1002" x2="990" y2="1060" stroke="#000000" stroke-width="2.2" />
-    <line x1="1020" y1="1002" x2="1050" y2="1060" stroke="#000000" stroke-width="2.2" />
-    <text x="1020" y="1085" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Defense</text>
-    <text x="1020" y="1102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Panelist</text>
+    <circle cx="1020" cy="900" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="922" x2="1020" y2="982" stroke="#000000" stroke-width="2.2" />
+    <line x1="985" y1="945" x2="1055" y2="945" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="982" x2="990" y2="1040" stroke="#000000" stroke-width="2.2" />
+    <line x1="1020" y1="982" x2="1050" y2="1040" stroke="#000000" stroke-width="2.2" />
+    <text x="1020" y="1065" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Defense</text>
+    <text x="1020" y="1082" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Panelist</text>
   </g>
 
-  <g id="uc-130">
-    <ellipse cx="600" cy="130" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="134" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">User Registration &amp; Academic Hierarchy</text>
-  </g>
-  <g id="uc-190">
-    <ellipse cx="600" cy="190" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="194" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">User Authentication &amp; RBAC Resolution</text>
-  </g>
-  <g id="uc-250">
-    <ellipse cx="600" cy="250" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="254" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Configure Defense Stages &amp; Workflows</text>
-  </g>
-  <g id="uc-310">
-    <ellipse cx="600" cy="310" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="314" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Author Criteria Rubrics &amp; Templates</text>
-  </g>
-  <g id="uc-370">
-    <ellipse cx="600" cy="370" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="374" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">User Account Approval &amp; Management</text>
-  </g>
-  <g id="uc-430">
-    <ellipse cx="600" cy="430" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="434" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Create Research Project &amp; Join Team</text>
-  </g>
-  <g id="uc-490">
-    <ellipse cx="600" cy="490" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="494" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Upload &amp; Version Manuscript (PDF)</text>
-  </g>
-  <g id="uc-550">
-    <ellipse cx="600" cy="550" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="554" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Interactive Manuscript Annotation</text>
-  </g>
-  <g id="uc-610">
-    <ellipse cx="600" cy="610" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="614" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Review &amp; Endorse Manuscript</text>
-  </g>
-  <g id="uc-670">
-    <ellipse cx="600" cy="670" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="674" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Schedule Defense &amp; Assign Venues</text>
-  </g>
-  <g id="uc-730">
-    <ellipse cx="600" cy="730" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="734" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Appoint Panel Chair &amp; Members</text>
-  </g>
-  <g id="uc-790">
-    <ellipse cx="600" cy="790" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="794" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Evaluate Rubric Criteria &amp; Scoring</text>
-  </g>
-  <g id="uc-850">
-    <ellipse cx="600" cy="850" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="854" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Affix RA 8792 Electronic Signature</text>
-  </g>
-  <g id="uc-910">
-    <ellipse cx="600" cy="910" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="914" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Deliberate &amp; Release Consensus Verdict</text>
-  </g>
-  <g id="uc-970">
-    <ellipse cx="600" cy="970" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="974" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Resolve Revision Matrix &amp; Clearance</text>
-  </g>
-  <g id="uc-1030">
-    <ellipse cx="600" cy="1030" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="1034" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">College Pipeline Oversight (DCS/DOE)</text>
-  </g>
-  <g id="uc-1090">
-    <ellipse cx="600" cy="1090" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="1094" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Issue &amp; Verify Defense Certificate</text>
-  </g>
-  <g id="uc-1150">
-    <ellipse cx="600" cy="1150" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="1154" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Real-Time Notifications</text>
-  </g>
-  <g id="uc-1210">
-    <ellipse cx="600" cy="1210" rx="185" ry="19" fill="#ffffff" stroke="#000000" stroke-width="1.3" />
-    <text x="600" y="1214" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Audit Logs, Analytics &amp; Telemetry</text>
-  </g>
-  <line x1="215" y1="225" x2="415" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="225" x2="415" y2="250" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="225" x2="415" y2="310" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="225" x2="415" y2="370" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="225" x2="415" y2="1210" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="910" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="1030" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="1090" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="1150" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="595" x2="415" y2="1210" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="370" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="670" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="730" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="910" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="1090" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="215" y1="965" x2="415" y2="1150" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="130" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="430" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="490" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="550" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="970" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="1090" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="225" x2="785" y2="1150" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="595" x2="785" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="595" x2="785" y2="550" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="595" x2="785" y2="610" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="595" x2="785" y2="1150" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="190" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="550" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="790" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="850" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="910" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
-  <line x1="985" y1="965" x2="785" y2="1150" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <!-- ==================== USE CASE OVALS ==================== -->
+  <ellipse cx="600" cy="130" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="134" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">User Registration &amp; Academic Hierarchy</text>
+  <ellipse cx="600" cy="190" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="194" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">User Authentication &amp; RBAC Resolution</text>
+  <ellipse cx="600" cy="250" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="254" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Configure Defense Stages &amp; Workflows</text>
+  <ellipse cx="600" cy="310" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="314" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Author Criteria Rubrics &amp; Templates</text>
+  <ellipse cx="600" cy="370" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="374" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">User Account Approval &amp; Management</text>
+  <ellipse cx="600" cy="430" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="434" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Create Research Project &amp; Join Team</text>
+  <ellipse cx="600" cy="490" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="494" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Upload &amp; Version Manuscript (PDF)</text>
+  <ellipse cx="600" cy="550" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="554" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Interactive Manuscript Annotation</text>
+  <ellipse cx="600" cy="610" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="614" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Review &amp; Endorse Manuscript</text>
+  <ellipse cx="600" cy="670" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="674" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Schedule Defense &amp; Assign Venues</text>
+  <ellipse cx="600" cy="730" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="734" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Appoint Panel Chair &amp; Members</text>
+  <ellipse cx="600" cy="790" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="794" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Evaluate Rubric Criteria &amp; Scoring</text>
+  <ellipse cx="600" cy="850" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="854" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Affix RA 8792 Electronic Signature</text>
+  <ellipse cx="600" cy="910" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="914" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Deliberate &amp; Release Consensus Verdict</text>
+  <ellipse cx="600" cy="970" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="974" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Resolve Revision Matrix &amp; Clearance</text>
+  <ellipse cx="600" cy="1030" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="1034" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">College Pipeline Oversight (DCS/DOE)</text>
+  <ellipse cx="600" cy="1090" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="1094" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Issue &amp; Verify Defense Certificate</text>
+  <ellipse cx="600" cy="1150" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="1154" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Receive Real-Time Notifications</text>
+  <ellipse cx="600" cy="1210" rx="180" ry="18" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="600" y="1214" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="bold" fill="#000000">Audit Logs, Analytics &amp; Telemetry</text>
+
+  <!-- Administrator Links -->
+  <line x1="215" y1="225" x2="420" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="225" x2="420" y2="250" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="225" x2="420" y2="310" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="225" x2="420" y2="370" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="225" x2="420" y2="1210" stroke="#000000" stroke-width="1.2" />
+
+  <!-- College Dean Links -->
+  <line x1="215" y1="585" x2="420" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="585" x2="420" y2="910" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="585" x2="420" y2="1030" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="585" x2="420" y2="1090" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="585" x2="420" y2="1150" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="585" x2="420" y2="1210" stroke="#000000" stroke-width="1.2" />
+
+  <!-- Research Coordinator Links -->
+  <line x1="215" y1="945" x2="420" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="945" x2="420" y2="670" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="945" x2="420" y2="730" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="945" x2="420" y2="910" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="945" x2="420" y2="1090" stroke="#000000" stroke-width="1.2" />
+  <line x1="215" y1="945" x2="420" y2="1150" stroke="#000000" stroke-width="1.2" />
+
+  <!-- Student Links -->
+  <line x1="985" y1="225" x2="780" y2="130" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="430" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="490" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="550" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="970" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="1090" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="225" x2="780" y2="1150" stroke="#000000" stroke-width="1.2" />
+
+  <!-- Research Adviser Links -->
+  <line x1="985" y1="585" x2="780" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="585" x2="780" y2="550" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="585" x2="780" y2="610" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="585" x2="780" y2="1150" stroke="#000000" stroke-width="1.2" />
+
+  <!-- Defense Panelist Links -->
+  <line x1="985" y1="945" x2="780" y2="190" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="945" x2="780" y2="550" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="945" x2="780" y2="790" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="945" x2="780" y2="850" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="945" x2="780" y2="910" stroke="#000000" stroke-width="1.2" />
+  <line x1="985" y1="945" x2="780" y2="1150" stroke="#000000" stroke-width="1.2" />
 </svg>

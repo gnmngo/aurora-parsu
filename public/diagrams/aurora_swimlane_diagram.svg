@@ -1,298 +1,331 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1650 1780" width="1650" height="1780" style="background-color: #ffffff;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1650 1820" width="1650" height="1820" style="background-color: #ffffff;">
   <defs>
-    <marker id="sl-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="sl-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" />
     </marker>
   </defs>
 
-  <!-- Outer Border & Headers -->
-  <rect x="20" y="20" width="1610" height="1730" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <line x1="20" y1="65" x2="1630" y2="65" stroke="#000000" stroke-width="2" />
+  <!-- Title Block -->
+  <text x="825" y="32" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#000000" letter-spacing="1">AURORA — ACADEMIC DEFENSE WORKFLOW SWIMLANE DIAGRAM</text>
 
-  <!-- Vertical Divider Lines (7 Columns) -->
-  <line x1="240" y1="20" x2="240" y2="1750" stroke="#000000" stroke-width="1.5" />
-  <line x1="470" y1="20" x2="470" y2="1750" stroke="#000000" stroke-width="1.5" />
-  <line x1="710" y1="20" x2="710" y2="1750" stroke="#000000" stroke-width="1.5" />
-  <line x1="940" y1="20" x2="940" y2="1750" stroke="#000000" stroke-width="1.5" />
-  <line x1="1170" y1="20" x2="1170" y2="1750" stroke="#000000" stroke-width="1.5" />
-  <line x1="1400" y1="20" x2="1400" y2="1750" stroke="#000000" stroke-width="1.5" />
+  <!-- Outer Boundary Frame -->
+  <rect x="20" y="45" width="1610" height="1755" fill="#ffffff" stroke="#000000" stroke-width="2" />
+
+  <!-- Header Separator Line -->
+  <line x1="20" y1="90" x2="1630" y2="90" stroke="#000000" stroke-width="1.8" />
+
+  <!-- Vertical Column Dividers (7 Lanes) -->
+  <!-- Lane 1: System Admin (20 to 240, w=220, mid=130) -->
+  <!-- Lane 2: Student (240 to 470, w=230, mid=355) -->
+  <!-- Lane 3: AURORA System (470 to 710, w=240, mid=590) -->
+  <!-- Lane 4: Research Adviser (710 to 940, w=230, mid=825) -->
+  <!-- Lane 5: Research Coordinator (940 to 1170, w=230, mid=1055) -->
+  <!-- Lane 6: Defense Panelist (1170 to 1400, w=230, mid=1285) -->
+  <!-- Lane 7: College Dean (1400 to 1630, w=230, mid=1515) -->
+  <line x1="240" y1="45" x2="240" y2="1800" stroke="#000000" stroke-width="1.5" />
+  <line x1="470" y1="45" x2="470" y2="1800" stroke="#000000" stroke-width="1.5" />
+  <line x1="710" y1="45" x2="710" y2="1800" stroke="#000000" stroke-width="1.5" />
+  <line x1="940" y1="45" x2="940" y2="1800" stroke="#000000" stroke-width="1.5" />
+  <line x1="1170" y1="45" x2="1170" y2="1800" stroke="#000000" stroke-width="1.5" />
+  <line x1="1400" y1="45" x2="1400" y2="1800" stroke="#000000" stroke-width="1.5" />
 
   <!-- Column Header Titles -->
-  <text x="130" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">System Administrator</text>
-  <text x="355" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Student (Candidate)</text>
-  <text x="590" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">AURORA System</text>
-  <text x="825" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research Adviser</text>
-  <text x="1055" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research Coordinator</text>
-  <text x="1285" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Defense Panelist</text>
-  <text x="1515" y="48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">College Dean (CEC)</text>
+  <text x="130" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">System Administrator</text>
+  <text x="355" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Student (Candidate)</text>
+  <text x="590" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">AURORA System</text>
+  <text x="825" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research Adviser</text>
+  <text x="1055" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research Coordinator</text>
+  <text x="1285" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Defense Panelist</text>
+  <text x="1515" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">College Dean (CEC)</text>
 
   <!-- ==================== FLOW ELEMENTS ==================== -->
 
-  <!-- 1. ADMIN SETUP (Lane 1) -->
-  <rect x="45" y="90" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="130" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Configure Defense Stages,</text>
-  <text x="130" y="123" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Rubrics &amp; Templates</text>
+  <!-- 1. ADMIN PREREQUISITE SETUP (Lane 1) -->
+  <rect x="45" y="115" width="170" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="130" y="133" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Configure Defense Stages,</text>
+  <text x="130" y="148" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Rubrics &amp; Templates</text>
 
-  <line x1="130" y1="132" x2="130" y2="160" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <line x1="130" y1="159" x2="130" y2="190" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
-  <rect x="45" y="160" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="130" y="178" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Verify Faculty Onboarding</text>
-  <text x="130" y="193" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; User Role Approvals</text>
+  <rect x="45" y="190" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="130" y="208" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Verify Faculty Onboarding</text>
+  <text x="130" y="223" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; User Role Approvals</text>
 
-  <!-- Connect Admin to System -->
-  <line x1="215" y1="181" x2="505" y2="181" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+  <!-- Connect Admin to System as Prerequisite Setup (Dashed Line with Label) -->
+  <line x1="215" y1="137" x2="505" y2="137" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+  <rect x="290" y="125" width="130" height="20" fill="#f4f4f4" stroke="#888888" stroke-width="0.8" />
+  <text x="355" y="139" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="9" font-style="italic" fill="#333333">Prerequisite Setup</text>
 
-  <!-- 2. START NODE (System Lane, cx=590, cy=95) -->
-  <circle cx="590" cy="95" r="13" fill="#000000" />
-  <line x1="590" y1="108" x2="590" y2="135" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <!-- Connect Admin Approvals to System RBAC -->
+  <line x1="215" y1="211" x2="500" y2="255" stroke="#000000" stroke-width="1.2" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+
+  <!-- 2. START NODE (System Lane, cx=590, cy=115) -->
+  <circle cx="590" cy="115" r="13" fill="#000000" />
+  <line x1="590" y1="128" x2="590" y2="155" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
   <!-- Login (System Lane) -->
-  <rect x="510" y="135" width="160" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="160" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Institutional Login</text>
-  <line x1="590" y1="175" x2="590" y2="205" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="510" y="155" width="160" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="180" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Institutional Login</text>
+  <line x1="590" y1="195" x2="590" y2="235" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
-  <!-- Authentication & RBAC -->
-  <rect x="500" y="205" width="180" height="45" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="224" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Authentication &amp; Dynamic</text>
-  <text x="590" y="239" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Role-Based Access Control</text>
-  <line x1="590" y1="250" x2="590" y2="275" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <!-- Authentication & RBAC (System Lane) -->
+  <rect x="495" y="235" width="190" height="45" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="254" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Authentication &amp; Dynamic</text>
+  <text x="590" y="269" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Role-Based Access Control</text>
+  <line x1="590" y1="280" x2="590" y2="305" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
-  <!-- Decision: Account Valid? -->
-  <polygon points="590,275 650,305 590,335 530,305" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="309" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Account valid?</text>
+  <!-- Decision: Account Valid? (System Lane) -->
+  <polygon points="590,305 650,335 590,365 530,335" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="339" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Account valid?</text>
 
   <!-- No -> Loop back to Login -->
-  <line x1="530" y1="305" x2="490" y2="305" stroke="#000000" stroke-width="1.3" />
-  <line x1="490" y1="305" x2="490" y2="155" stroke="#000000" stroke-width="1.3" />
-  <line x1="490" y1="155" x2="510" y2="155" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <text x="502" y="297" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
+  <line x1="530" y1="335" x2="490" y2="335" stroke="#000000" stroke-width="1.3" />
+  <line x1="490" y1="335" x2="490" y2="175" stroke="#000000" stroke-width="1.3" />
+  <line x1="490" y1="175" x2="510" y2="175" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <text x="502" y="327" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
 
   <!-- Yes -> Redirect to Role Dashboard -->
-  <line x1="590" y1="335" x2="590" y2="365" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <text x="598" y="352" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
+  <line x1="590" y1="365" x2="590" y2="395" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <text x="598" y="382" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
 
-  <rect x="500" y="365" width="180" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="383" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Route to Authorized</text>
-  <text x="590" y="398" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Role-Based Dashboard</text>
+  <rect x="495" y="395" width="190" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="413" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Route to Authorized</text>
+  <text x="590" y="428" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Role-Based Dashboard</text>
 
-  <!-- Flow to 6 Distinct Dashboards -->
+  <!-- Flow to 5 Role Dashboards -->
   <!-- Student Dashboard (Lane 2) -->
-  <line x1="500" y1="386" x2="435" y2="386" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="275" y="365" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="355" y="390" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Student Dashboard</text>
+  <line x1="495" y1="416" x2="435" y2="416" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="275" y="395" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="355" y="420" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Student Dashboard</text>
 
   <!-- Adviser Dashboard (Lane 4) -->
-  <line x1="680" y1="386" x2="745" y2="386" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="745" y="365" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="825" y="390" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Adviser Dashboard</text>
+  <line x1="685" y1="416" x2="745" y2="416" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="745" y="395" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="825" y="420" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Adviser Dashboard</text>
 
   <!-- Coordinator Dashboard (Lane 5) -->
-  <line x1="905" y1="386" x2="975" y2="386" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="975" y="365" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1055" y="390" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Coordinator Dashboard</text>
+  <line x1="905" y1="416" x2="975" y2="416" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="975" y="395" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1055" y="420" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Coordinator Dashboard</text>
 
   <!-- Panelist Dashboard (Lane 6) -->
-  <line x1="1135" y1="386" x2="1205" y2="386" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1205" y="365" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1285" y="390" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Panelist Dashboard</text>
+  <line x1="1135" y1="416" x2="1205" y2="416" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1205" y="395" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1285" y="420" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Panelist Dashboard</text>
 
   <!-- Dean Dashboard (Lane 7) -->
-  <line x1="1365" y1="386" x2="1435" y2="386" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1435" y="365" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1515" y="383" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Dean Executive</text>
-  <text x="1515" y="398" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Dashboard (CEC)</text>
+  <line x1="1365" y1="416" x2="1435" y2="416" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1435" y="395" width="160" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1515" y="413" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Dean Executive</text>
+  <text x="1515" y="428" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Dashboard (CEC)</text>
 
   <!-- ==================== STUDENT PROJECT & MANUSCRIPT FLOW ==================== -->
-  <line x1="355" y1="407" x2="355" y2="440" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="270" y="440" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="355" y="458" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Create Project / Join Team</text>
-  <text x="355" y="473" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#555555">(6-Char Code, Select Adviser)</text>
+  <line x1="355" y1="437" x2="355" y2="465" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="270" y="465" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="355" y="483" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Create Project / Join Team</text>
+  <text x="355" y="498" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#555555">(6-Char Code, Select Adviser)</text>
 
   <!-- Upload Manuscript (PDF) -->
-  <line x1="355" y1="482" x2="355" y2="515" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="270" y="515" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="355" y="539" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Upload Manuscript (PDF)</text>
+  <line x1="355" y1="507" x2="355" y2="535" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="270" y="535" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="355" y="559" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Upload Manuscript (PDF)</text>
 
   <!-- Set / Edit Metadata -->
-  <line x1="355" y1="555" x2="355" y2="585" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="275" y="585" width="160" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="355" y="609" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Set Manuscript Metadata</text>
+  <line x1="355" y1="575" x2="355" y2="605" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="275" y="605" width="160" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="355" y="629" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Set Manuscript Metadata</text>
 
   <!-- Decision: Confirm upload? -->
-  <line x1="355" y1="625" x2="355" y2="655" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <polygon points="355,655 415,685 355,715 295,685" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="355" y="689" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Confirm upload?</text>
+  <line x1="355" y1="645" x2="355" y2="675" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <polygon points="355,675 415,705 355,735 295,705" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="355" y="709" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Confirm upload?</text>
 
   <!-- No -> back to student dashboard -->
-  <line x1="295" y1="685" x2="255" y2="685" stroke="#000000" stroke-width="1.3" />
-  <line x1="255" y1="685" x2="255" y2="386" stroke="#000000" stroke-width="1.3" />
-  <line x1="255" y1="386" x2="275" y2="386" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <text x="268" y="678" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
+  <line x1="295" y1="705" x2="255" y2="705" stroke="#000000" stroke-width="1.3" />
+  <line x1="255" y1="705" x2="255" y2="416" stroke="#000000" stroke-width="1.3" />
+  <line x1="255" y1="416" x2="275" y2="416" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <text x="268" y="698" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
 
-  <!-- Yes -> Cross to System Lane: Compute SHA-256 & Store Version -->
-  <line x1="415" y1="685" x2="505" y2="685" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <text x="430" y="678" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
+  <!-- Yes -> Cross to SYSTEM Lane: Compute SHA-256 & Store Version (PURE SYSTEM ACTION) -->
+  <line x1="415" y1="705" x2="500" y2="705" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <text x="430" y="698" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
 
-  <rect x="505" y="663" width="170" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="681" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Compute SHA-256 Hash</text>
-  <text x="590" y="696" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Register Document v1</text>
+  <rect x="500" y="683" width="180" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="701" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Compute SHA-256 Hash</text>
+  <text x="590" y="716" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Register Document v1</text>
 
-  <!-- System sends notification -->
-  <line x1="590" y1="707" x2="590" y2="740" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="515" y="740" width="150" height="38" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="763" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Send Notifications</text>
+  <!-- System sends notification to Adviser and Confirmation to Student -->
+  <line x1="590" y1="727" x2="590" y2="755" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="505" y="755" width="170" height="38" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="778" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Send Manuscript Alerts</text>
 
-  <!-- Arrow to Adviser Lane: Receive and Review Manuscript -->
-  <line x1="665" y1="759" x2="740" y2="759" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="740" y="737" width="170" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="825" y="755" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive &amp; Review</text>
-  <text x="825" y="770" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Uploaded Manuscript</text>
+  <!-- Alert to Adviser Lane -->
+  <line x1="675" y1="774" x2="740" y2="774" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="740" y="752" width="170" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="825" y="770" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive &amp; Review</text>
+  <text x="825" y="785" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Uploaded Manuscript</text>
 
-  <!-- Annotate Manuscript in PDF Workspace -->
-  <line x1="825" y1="781" x2="825" y2="815" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="740" y="815" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="825" y="833" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Annotate Manuscript in</text>
-  <text x="825" y="848" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Interactive PDF Workspace</text>
+  <!-- Annotate Manuscript in PDF Workspace (Lane 4) -->
+  <line x1="825" y1="796" x2="825" y2="825" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="740" y="825" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="825" y="843" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Annotate Manuscript in</text>
+  <text x="825" y="858" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Interactive PDF Workspace</text>
 
-  <!-- Decision: Endorse for Defense? -->
-  <line x1="825" y1="857" x2="825" y2="885" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <polygon points="825,885 885,915 825,945 765,915" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="825" y="919" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Endorse for Defense?</text>
+  <!-- Decision: Endorse for Defense? (Lane 4) -->
+  <line x1="825" y1="867" x2="825" y2="895" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <polygon points="825,895 885,925 825,955 765,925" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="825" y="929" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Endorse for Defense?</text>
 
   <!-- If NO -> Give Feedback & Revision Notes in Adviser Lane -->
-  <line x1="765" y1="915" x2="730" y2="915" stroke="#000000" stroke-width="1.3" />
-  <text x="745" y="907" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
-  <line x1="730" y1="915" x2="730" y2="980" stroke="#000000" stroke-width="1.3" />
-  <line x1="730" y1="980" x2="740" y2="980" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="740" y="960" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="825" y="978" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Provide Revision Notes &amp;</text>
-  <text x="825" y="993" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Request Revised Manuscript</text>
+  <line x1="765" y1="925" x2="730" y2="925" stroke="#000000" stroke-width="1.3" />
+  <text x="745" y="917" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">NO</text>
+  <line x1="730" y1="925" x2="730" y2="975" stroke="#000000" stroke-width="1.3" />
+  <line x1="730" y1="975" x2="740" y2="975" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <rect x="740" y="955" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="825" y="973" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Provide Revision Notes &amp;</text>
+  <text x="825" y="988" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Request Revised Manuscript</text>
 
   <!-- Feedback flows back to Student Lane -->
-  <line x1="740" y1="981" x2="445" y2="981" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="270" y="960" width="175" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="357" y="978" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Comments &amp;</text>
-  <text x="357" y="993" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Upload Revised Version (v2)</text>
-  <!-- Loops back to Upload -->
-  <line x1="270" y1="981" x2="250" y2="981" stroke="#000000" stroke-width="1.3" />
-  <line x1="250" y1="981" x2="250" y2="535" stroke="#000000" stroke-width="1.3" />
-  <line x1="250" y1="535" x2="270" y2="535" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <line x1="740" y1="976" x2="445" y2="976" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <rect x="270" y="955" width="175" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="357" y="973" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Comments &amp;</text>
+  <text x="357" y="988" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Upload Revised Version (v2)</text>
+
+  <!-- VISUALLY EMPHASIZED REVISION LOOP (Dashed line with arrow looping back to Upload Manuscript) -->
+  <line x1="270" y1="976" x2="250" y2="976" stroke="#000000" stroke-width="1.5" stroke-dasharray="5" />
+  <line x1="250" y1="976" x2="250" y2="555" stroke="#000000" stroke-width="1.5" stroke-dasharray="5" />
+  <line x1="250" y1="555" x2="270" y2="555" stroke="#000000" stroke-width="1.5" stroke-dasharray="5" marker-end="url(#sl-arrow)" />
+  <rect x="242" y="755" width="16" height="120" fill="#ffffff" stroke="#000000" stroke-width="0.8" />
+  <text x="254" y="815" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="8.5" font-weight="bold" fill="#000000" transform="rotate(-90 254 815)">REVISION LOOP</text>
 
   <!-- If YES -> Endorse Manuscript & notify Research Coordinator (Lane 5) -->
-  <line x1="885" y1="915" x2="970" y2="915" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <text x="900" y="907" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
+  <line x1="885" y1="925" x2="970" y2="925" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <text x="900" y="917" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">YES</text>
 
-  <rect x="970" y="895" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1055" y="913" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Endorsed Manuscript</text>
-  <text x="1055" y="928" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">for Defense Scheduling</text>
+  <rect x="970" y="905" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1055" y="923" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Endorsed Manuscript</text>
+  <text x="1055" y="938" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">for Defense Scheduling</text>
 
   <!-- ==================== COORDINATOR SCHEDULING (Lane 5) ==================== -->
-  <line x1="1055" y1="937" x2="1055" y2="970" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="970" y="970" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1055" y="988" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Schedule Defense Date,</text>
-  <text x="1055" y="1003" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Room &amp; Appoint Panelists</text>
+  <line x1="1055" y1="947" x2="1055" y2="975" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="970" y="975" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1055" y="993" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Schedule Defense Date,</text>
+  <text x="1055" y="1008" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Room &amp; Appoint Panelists</text>
 
-  <!-- System Dispatches Defense Invites -->
-  <line x1="970" y1="991" x2="955" y2="991" stroke="#000000" stroke-width="1.3" />
-  <line x1="955" y1="991" x2="955" y2="1056" stroke="#000000" stroke-width="1.3" />
-  <line x1="955" y1="1056" x2="675" y2="1056" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="505" y="1035" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="590" y="1053" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Dispatch Defense Invites</text>
-  <text x="590" y="1068" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Calendar Notices</text>
+  <!-- Triggers System to Dispatch Defense Invites in Parallel -->
+  <line x1="970" y1="996" x2="685" y2="996" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="495" y="975" width="190" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="993" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Dispatch Defense Invites</text>
+  <text x="590" y="1008" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Calendar Notices (Parallel)</text>
 
-  <!-- Coordinator transmits docket to Panelists (Lane 6) -->
-  <line x1="1140" y1="991" x2="1200" y2="991" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1200" y="970" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1285" y="988" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Defense Docket</text>
-  <text x="1285" y="1003" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Manuscript Schedule</text>
+  <!-- PARALLEL NOTIFICATION FLOW -->
+  <!-- 1. Parallel Notice to Student (Lane 2) -->
+  <line x1="495" y1="1045" x2="445" y2="1045" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+  <line x1="590" y1="1019" x2="590" y2="1045" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" />
+  <line x1="590" y1="1045" x2="495" y2="1045" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" />
+  <rect x="270" y="1025" width="175" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="357" y="1043" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Defense Schedule</text>
+  <text x="357" y="1058" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Presentation Docket</text>
+
+  <!-- 2. Parallel Notice to Panelists (Lane 6) -->
+  <line x1="590" y1="1045" x2="1200" y2="1045" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+  <rect x="1200" y="1025" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1285" y="1043" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Receive Defense Docket</text>
+  <text x="1285" y="1058" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Manuscript Schedule</text>
 
   <!-- ==================== PANELIST DEFENSE & EVALUATION (Lane 6) ==================== -->
-  <line x1="1285" y1="1012" x2="1285" y2="1050" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1200" y="1050" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1285" y="1068" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Conduct Oral Defense &amp;</text>
-  <text x="1285" y="1083" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Evaluate Criteria Rubrics</text>
+  <line x1="1285" y1="1067" x2="1285" y2="1095" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1200" y="1095" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1285" y="1113" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Conduct Oral Defense &amp;</text>
+  <text x="1285" y="1128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Evaluate Criteria Rubrics</text>
 
   <!-- Affix E-Signature (RA 8792) -->
-  <line x1="1285" y1="1092" x2="1285" y2="1125" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1200" y="1125" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1285" y="1143" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Affix Electronic Signature</text>
-  <text x="1285" y="1158" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">(RA 8792 Hash &amp; Audit)</text>
+  <line x1="1285" y1="1137" x2="1285" y2="1165" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1200" y="1165" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1285" y="1183" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Affix Electronic Signature</text>
+  <text x="1285" y="1198" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">(RA 8792 Hash &amp; Audit)</text>
 
   <!-- Decision: Verdict Consensus? -->
-  <line x1="1285" y1="1167" x2="1285" y2="1195" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <polygon points="1285,1195 1345,1225 1285,1255 1225,1225" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1285" y="1229" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Consensus Verdict?</text>
+  <line x1="1285" y1="1207" x2="1285" y2="1235" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <polygon points="1285,1235 1345,1265 1285,1295 1225,1265" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1285" y="1269" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">Consensus Verdict?</text>
 
   <!-- Revisions Required Branch -->
-  <line x1="1225" y1="1225" x2="1140" y2="1225" stroke="#000000" stroke-width="1.3" />
-  <text x="1155" y="1217" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">REVISIONS</text>
-  <line x1="1140" y1="1225" x2="1140" y2="1255" stroke="#000000" stroke-width="1.3" />
-  <rect x="1055" y="1255" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1140" y="1273" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Issue Revision Matrix &amp;</text>
-  <text x="1140" y="1288" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Conditional Verdict</text>
+  <line x1="1225" y1="1265" x2="1140" y2="1265" stroke="#000000" stroke-width="1.3" />
+  <text x="1155" y="1257" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">REVISIONS</text>
+  <line x1="1140" y1="1265" x2="1140" y2="1295" stroke="#000000" stroke-width="1.3" />
+  <rect x="1055" y="1295" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1140" y="1313" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Issue Revision Matrix &amp;</text>
+  <text x="1140" y="1328" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Conditional Verdict</text>
 
   <!-- Route revisions notice back to student -->
-  <line x1="1055" y1="1275" x2="445" y2="1275" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="270" y="1255" width="175" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="357" y="1273" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Address Annotations &amp;</text>
-  <text x="357" y="1288" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Submit Revision Matrix</text>
+  <line x1="1055" y1="1315" x2="445" y2="1315" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <rect x="270" y="1295" width="175" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="357" y="1313" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Address Annotations &amp;</text>
+  <text x="357" y="1328" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Submit Revision Matrix</text>
 
   <!-- Passed / Cleared Branch: Panel transmits to Coordinator (Lane 5) -->
-  <line x1="1285" y1="1255" x2="1285" y2="1325" stroke="#000000" stroke-width="1.4" />
-  <text x="1295" y="1285" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">PASSED</text>
-  <line x1="1285" y1="1325" x2="1140" y2="1325" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <line x1="1285" y1="1295" x2="1285" y2="1365" stroke="#000000" stroke-width="1.4" />
+  <text x="1295" y="1325" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#000000">PASSED</text>
+  <line x1="1285" y1="1365" x2="1140" y2="1365" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
   <!-- Coordinator Releases Final Consensus Verdict (Lane 5) -->
-  <rect x="970" y="1305" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1055" y="1323" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Release Official Consensus</text>
-  <text x="1055" y="1338" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Verdict &amp; Stage Clearance</text>
+  <rect x="970" y="1345" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1055" y="1363" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Release Official Consensus</text>
+  <text x="1055" y="1378" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Verdict &amp; Stage Clearance</text>
 
   <!-- ==================== 7. COLLEGE DEAN OVERSIGHT (Lane 7) ==================== -->
   <!-- Line from Coordinator Release to College Dean -->
-  <line x1="1055" y1="1347" x2="1055" y2="1370" stroke="#000000" stroke-width="1.3" />
-  <line x1="1055" y1="1370" x2="1430" y2="1370" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="1430" y="1350" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1515" y="1368" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Review College Pipeline &amp;</text>
-  <text x="1515" y="1383" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Deliberation Verdicts</text>
+  <line x1="1055" y1="1387" x2="1055" y2="1410" stroke="#000000" stroke-width="1.3" />
+  <line x1="1055" y1="1410" x2="1430" y2="1410" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <rect x="1430" y="1390" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1515" y="1408" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Review College Pipeline &amp;</text>
+  <text x="1515" y="1423" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Deliberation Verdicts</text>
 
-  <line x1="1515" y1="1392" x2="1515" y2="1420" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="1430" y="1420" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="1515" y="1438" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Department Throughput</text>
-  <text x="1515" y="1453" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Oversight (DCS vs DOE)</text>
+  <line x1="1515" y1="1432" x2="1515" y2="1460" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1430" y="1460" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1515" y="1478" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Department Throughput</text>
+  <text x="1515" y="1493" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Oversight (DCS vs DOE)</text>
 
-  <!-- Line from Dean to System: Endorsement confirmed -->
-  <line x1="1430" y1="1441" x2="685" y2="1441" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <!-- Added Dean Step 3: Receive Institutional Compliance & Analytics Reports -->
+  <line x1="1515" y1="1502" x2="1515" y2="1530" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="1430" y="1530" width="170" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="1515" y="1548" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Receive Institutional</text>
+  <text x="1515" y="1563" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Reports &amp; Clearance Audit</text>
+
+  <!-- Line from Dean to System: Clearance Verified -->
+  <line x1="1430" y1="1551" x2="685" y2="1551" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
 
   <!-- ==================== CLEARANCE & CERTIFICATE (SYSTEM, Lane 3) ==================== -->
-  <rect x="500" y="1420" width="185" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="592" y="1438" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Generate &amp; Anchor Defense</text>
-  <text x="592" y="1453" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Certificate (Serial No.)</text>
+  <rect x="495" y="1530" width="190" height="44" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="1548" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Generate &amp; Anchor Defense</text>
+  <text x="590" y="1563" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Certificate (Serial No.)</text>
 
   <!-- Record Workflow Transition History -->
-  <line x1="592" y1="1464" x2="592" y2="1495" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="505" y="1495" width="175" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="592" y="1513" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Record Transition History</text>
-  <text x="592" y="1528" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Store Digital Signatures</text>
+  <line x1="590" y1="1574" x2="590" y2="1605" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="495" y="1605" width="190" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="1623" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Record Transition History</text>
+  <text x="590" y="1638" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">&amp; Store Digital Signatures</text>
 
   <!-- View / Download Clearance & Certificate -->
-  <line x1="592" y1="1535" x2="592" y2="1565" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
-  <rect x="505" y="1565" width="175" height="36" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="592" y="1588" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Download Verified Certificate</text>
+  <line x1="590" y1="1645" x2="590" y2="1675" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <rect x="505" y="1675" width="170" height="36" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="590" y="1698" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Download Verified Certificate</text>
 
   <!-- Connect to Student for download -->
-  <line x1="505" y1="1583" x2="445" y2="1583" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
-  <rect x="275" y="1565" width="170" height="36" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="360" y="1588" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Receive Defense Clearance</text>
+  <line x1="505" y1="1693" x2="445" y2="1693" stroke="#000000" stroke-width="1.3" marker-end="url(#sl-arrow)" />
+  <rect x="275" y="1675" width="170" height="36" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="360" y="1698" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#000000">Receive Defense Clearance</text>
 
   <!-- Connect to Admin for Audit Analytics -->
-  <line x1="505" y1="1515" x2="215" y2="1515" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
-  <rect x="45" y="1495" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
-  <text x="130" y="1513" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Monitor Audit Logs &amp;</text>
-  <text x="130" y="1528" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Institutional Reports</text>
+  <line x1="495" y1="1625" x2="215" y2="1625" stroke="#000000" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#sl-arrow)" />
+  <rect x="45" y="1605" width="170" height="40" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+  <text x="130" y="1623" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Monitor Audit Logs &amp;</text>
+  <text x="130" y="1638" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Institutional Reports</text>
 
   <!-- END NODE (System Lane) -->
-  <line x1="592" y1="1601" x2="592" y2="1645" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
+  <line x1="590" y1="1711" x2="590" y2="1745" stroke="#000000" stroke-width="1.4" marker-end="url(#sl-arrow)" />
   <!-- Final State Bullseye -->
-  <circle cx="592" cy="1660" r="13" fill="none" stroke="#000000" stroke-width="1.8" />
-  <circle cx="592" cy="1660" r="7.5" fill="#000000" />
+  <circle cx="590" cy="1760" r="13" fill="none" stroke="#000000" stroke-width="1.8" />
+  <circle cx="590" cy="1760" r="7.5" fill="#000000" />
 </svg>
