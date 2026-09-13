@@ -22,9 +22,10 @@ import { updateDefenseScheduleAction, cancelDefenseScheduleAction } from "@/lib/
 
 interface CalendarViewProps {
   userRole: string;
+  externalSchedules?: any[];
 }
 
-export function CalendarView({ userRole }: CalendarViewProps) {
+export function CalendarView({ userRole, externalSchedules }: CalendarViewProps) {
   const supabase = createClient();
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -80,8 +81,13 @@ export function CalendarView({ userRole }: CalendarViewProps) {
   };
 
   useEffect(() => {
-    loadSchedules();
-  }, []);
+    if (externalSchedules !== undefined) {
+      setSchedules(externalSchedules);
+      setLoading(false);
+    } else {
+      loadSchedules();
+    }
+  }, [externalSchedules]);
 
   const handlePrevDate = () => {
     const d = new Date(currentDate);

@@ -1114,3 +1114,59 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
   };
 }
 
+/**
+ * Marks a defense schedule as completed / concluded
+ */
+export async function completeDefenseScheduleAction(
+  scheduleId: string,
+  projectId: string,
+  stageId: string,
+  notes?: string
+) {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error("Unauthorized. Please log in.");
+
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("roles(code)")
+    .eq("profile_id", user.id);
+
+  const codes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])
+    ?.map((ur) => {
+      const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+      return r?.code as string | undefined;
+    }).filter(Boolean) ?? [];
+
+  if (!codes.includes("coordinator") && !codes.includes("sys_admin")) {
+    throw new Error("Permission denied. Only coordinators or administrators can conclude defenses.");
+  }
+
+  const { error: updateErr } = await serviceClient
+    .from("defense_schedules")
+    .update({ status: "completed" })
+    .eq("id", scheduleId);
+
+  if (updateErr) throw new Error("Failed to mark defense as completed: " + updateErr.message);
+
+  await emitAuditLog(supabase, {
+    profile_id: user.id,
+    user_email: user.email || "unknown",
+    user_role: "coordinator",
+    action_type: "UPDATE",
+    module: "scheduling",
+    entity_type: "defense_schedules",
+    entity_id: scheduleId,
+    description: "Defense schedule marked as completed / concluded. Notes: " + (notes || "None") + ".",
+    ip_address: ip,
+    user_agent: userAgent,
+  });
+
+  return { success: true };
+}
+

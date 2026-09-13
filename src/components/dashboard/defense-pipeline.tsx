@@ -33,7 +33,7 @@ export function DefensePipeline({ templateId }: DefensePipelineProps) {
           .select("*")
           .order("sequence_order");
 
-        if (templateId) {
+        if (templateId && templateId !== "all") {
           query = query.eq("workflow_template_id", templateId);
         }
 
