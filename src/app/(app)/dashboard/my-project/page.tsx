@@ -387,10 +387,62 @@ export default function MyProjectPage() {
     loadProjectData();
   }, [loadProjectData]);
 
+  const openAnnotations = useMemo(() => {
+    return annotations.filter((a) => a.status === "open" || a.status === "in_progress");
+  }, [annotations]);
+
+  const addressedAnnotations = useMemo(() => {
+    return annotations.filter(
+      (a) =>
+        a.status === "addressed" ||
+        a.status === "resolved" ||
+        a.status === "verified" ||
+        a.status === "closed"
+    );
+  }, [annotations]);
+
+  const filteredAnnotations = useMemo(() => {
+    let list = annotations;
+
+    if (feedbackStatusFilter === "open") {
+      list = openAnnotations;
+    } else if (feedbackStatusFilter === "addressed") {
+      list = addressedAnnotations;
+    }
+
+    if (feedbackSeverityFilter !== "all") {
+      list = list.filter((a) => a.severity === feedbackSeverityFilter);
+    }
+
+    return list;
+  }, [annotations, feedbackStatusFilter, feedbackSeverityFilter, openAnnotations, addressedAnnotations]);
+
+  const upcomingSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      const sDate = new Date(s.scheduled_at);
+      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
+      return eDate.getTime() >= Date.now() && s.status !== "cancelled";
+    });
+  }, [schedules]);
+
+  const pastSchedules = useMemo(() => {
+    return schedules.filter((s) => {
+      const sDate = new Date(s.scheduled_at);
+      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
+      return eDate.getTime() < Date.now() || s.status === "completed";
+    });
+  }, [schedules]);
+
+  const filteredSchedules = useMemo(() => {
+    if (scheduleFilter === "upcoming") return upcomingSchedules;
+    if (scheduleFilter === "past") return pastSchedules;
+    return schedules;
+  }, [schedules, scheduleFilter, upcomingSchedules, pastSchedules]);
+
   const tabs = [
     { id: "overview", label: "Overview", icon: BookOpen },
     { id: "documents", label: "Documents", icon: FileText, count: documents.length },
-    { id: "feedback", label: "Feedback", icon: MessageSquare, count: annotations.filter(a => a.status === "open").length },
+    { id: "feedback", label: "Feedback", icon: MessageSquare, count: openAnnotations.length },
     { id: "schedule", label: "Schedule", icon: Calendar, count: schedules.length },
     { id: "evaluations", label: "Evaluations", icon: Award, count: evaluations.length },
   ] as const;
@@ -458,58 +510,6 @@ export default function MyProjectPage() {
   const isRevisionRequired = project.status === "revision_required";
   const isPassed = project.status === "passed" || project.status === "approved" || project.status === "completed";
   const latestEval = evaluations[0];
-
-  const openAnnotations = useMemo(() => {
-    return annotations.filter((a) => a.status === "open" || a.status === "in_progress");
-  }, [annotations]);
-
-  const addressedAnnotations = useMemo(() => {
-    return annotations.filter(
-      (a) =>
-        a.status === "addressed" ||
-        a.status === "resolved" ||
-        a.status === "verified" ||
-        a.status === "closed"
-    );
-  }, [annotations]);
-
-  const filteredAnnotations = useMemo(() => {
-    let list = annotations;
-
-    if (feedbackStatusFilter === "open") {
-      list = openAnnotations;
-    } else if (feedbackStatusFilter === "addressed") {
-      list = addressedAnnotations;
-    }
-
-    if (feedbackSeverityFilter !== "all") {
-      list = list.filter((a) => a.severity === feedbackSeverityFilter);
-    }
-
-    return list;
-  }, [annotations, feedbackStatusFilter, feedbackSeverityFilter, openAnnotations, addressedAnnotations]);
-
-  const upcomingSchedules = useMemo(() => {
-    return schedules.filter((s) => {
-      const sDate = new Date(s.scheduled_at);
-      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
-      return eDate.getTime() >= Date.now() && s.status !== "cancelled";
-    });
-  }, [schedules]);
-
-  const pastSchedules = useMemo(() => {
-    return schedules.filter((s) => {
-      const sDate = new Date(s.scheduled_at);
-      const eDate = s.end_at ? new Date(s.end_at) : new Date(sDate.getTime() + 60 * 60 * 1000);
-      return eDate.getTime() < Date.now() || s.status === "completed";
-    });
-  }, [schedules]);
-
-  const filteredSchedules = useMemo(() => {
-    if (scheduleFilter === "upcoming") return upcomingSchedules;
-    if (scheduleFilter === "past") return pastSchedules;
-    return schedules;
-  }, [schedules, scheduleFilter, upcomingSchedules, pastSchedules]);
 
   const openAnnotationsCount = openAnnotations.length;
   const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 2;
