@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 1280" width="1020" height="1280" style="background-color: #ffffff;">
+  <defs>
+    <marker id="uc-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#000000" />
+    </marker>
+  </defs>
+
+  <!-- System Boundary Box -->
+  <rect x="310" y="30" width="400" height="1220" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="510" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="#000000" letter-spacing="1">AURORA</text>
+  <text x="510" y="93" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#555555">Academic Defense Workflow System</text>
+
+  <!-- ACTORS (STICK FIGURES) -->
+
+  <!-- Research Coordinator (Left, y=340) -->
+  <g id="actor-coordinator">
+    <circle cx="150" cy="330" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="352" x2="150" y2="412" stroke="#000000" stroke-width="2.2" />
+    <line x1="115" y1="375" x2="185" y2="375" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="412" x2="120" y2="470" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="412" x2="180" y2="470" stroke="#000000" stroke-width="2.2" />
+    <text x="150" y="495" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
+    <text x="150" y="512" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Coordinator</text>
+  </g>
+
+  <!-- College Dean / Admin (Left, y=880) -->
+  <g id="actor-dean">
+    <circle cx="150" cy="870" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="892" x2="150" y2="952" stroke="#000000" stroke-width="2.2" />
+    <line x1="115" y1="915" x2="185" y2="915" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="952" x2="120" y2="1010" stroke="#000000" stroke-width="2.2" />
+    <line x1="150" y1="952" x2="180" y2="1010" stroke="#000000" stroke-width="2.2" />
+    <text x="150" y="1035" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">College Dean /</text>
+    <text x="150" y="1052" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Sys Admin</text>
+  </g>
+
+  <!-- Student (Right, y=190) -->
+  <g id="actor-student">
+    <circle cx="870" cy="180" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="202" x2="870" y2="262" stroke="#000000" stroke-width="2.2" />
+    <line x1="835" y1="225" x2="905" y2="225" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="262" x2="840" y2="320" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="262" x2="900" y2="320" stroke="#000000" stroke-width="2.2" />
+    <text x="870" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#000000">Student</text>
+  </g>
+
+  <!-- Research Adviser (Right, y=510) -->
+  <g id="actor-adviser">
+    <circle cx="870" cy="500" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="522" x2="870" y2="582" stroke="#000000" stroke-width="2.2" />
+    <line x1="835" y1="545" x2="905" y2="545" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="582" x2="840" y2="640" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="582" x2="900" y2="640" stroke="#000000" stroke-width="2.2" />
+    <text x="870" y="665" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Research</text>
+    <text x="870" y="682" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Adviser</text>
+  </g>
+
+  <!-- Defense Panelist (Right, y=850) -->
+  <g id="actor-panelist">
+    <circle cx="870" cy="840" r="22" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="862" x2="870" y2="922" stroke="#000000" stroke-width="2.2" />
+    <line x1="835" y1="885" x2="905" y2="885" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="922" x2="840" y2="980" stroke="#000000" stroke-width="2.2" />
+    <line x1="870" y1="922" x2="900" y2="980" stroke="#000000" stroke-width="2.2" />
+    <text x="870" y="1005" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Defense</text>
+    <text x="870" y="1022" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#000000">Panelist</text>
+  </g>
+
+  <g id="uc-145">
+    <ellipse cx="510" cy="145" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="150" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">User Registration &amp; Verification</text>
+  </g>
+  <g id="uc-215">
+    <ellipse cx="510" cy="215" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="220" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">User Authentication &amp; Login</text>
+  </g>
+  <g id="uc-285">
+    <ellipse cx="510" cy="285" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="290" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Account Recovery &amp; Password Reset</text>
+  </g>
+  <g id="uc-355">
+    <ellipse cx="510" cy="355" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="360" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Create Research Project &amp; Join Team</text>
+  </g>
+  <g id="uc-425">
+    <ellipse cx="510" cy="425" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="430" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Upload &amp; Version Manuscript (PDF)</text>
+  </g>
+  <g id="uc-495">
+    <ellipse cx="510" cy="495" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="500" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Interactive Manuscript Annotation</text>
+  </g>
+  <g id="uc-565">
+    <ellipse cx="510" cy="565" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="570" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Review &amp; Endorse Manuscript</text>
+  </g>
+  <g id="uc-635">
+    <ellipse cx="510" cy="635" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="640" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Schedule Defense &amp; Venues</text>
+  </g>
+  <g id="uc-705">
+    <ellipse cx="510" cy="705" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="710" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Appoint Panel Chair &amp; Members</text>
+  </g>
+  <g id="uc-775">
+    <ellipse cx="510" cy="775" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="780" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Evaluate Rubric Criteria &amp; Scoring</text>
+  </g>
+  <g id="uc-845">
+    <ellipse cx="510" cy="845" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="850" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Affix RA 8792 Electronic Signature</text>
+  </g>
+  <g id="uc-915">
+    <ellipse cx="510" cy="915" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="920" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Deliberate &amp; Release Verdict</text>
+  </g>
+  <g id="uc-985">
+    <ellipse cx="510" cy="985" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="990" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Resolve Revision Matrix &amp; Clearance</text>
+  </g>
+  <g id="uc-1055">
+    <ellipse cx="510" cy="1055" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="1060" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Issue &amp; Verify Defense Certificate</text>
+  </g>
+  <g id="uc-1125">
+    <ellipse cx="510" cy="1125" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="1130" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Receive Real-Time Notifications</text>
+  </g>
+  <g id="uc-1195">
+    <ellipse cx="510" cy="1195" rx="160" ry="23" fill="#ffffff" stroke="#000000" stroke-width="1.4" />
+    <text x="510" y="1200" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11.5" fill="#000000">Generate College Analytics &amp; Reports</text>
+  </g>
+  <line x1="185" y1="375" x2="350" y2="215" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="635" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="705" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="915" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="1055" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="1125" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="375" x2="350" y2="1195" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="915" x2="350" y2="215" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="915" x2="350" y2="1055" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="915" x2="350" y2="1125" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="185" y1="915" x2="350" y2="1195" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="145" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="215" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="285" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="355" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="425" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="495" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="985" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="1055" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="225" x2="670" y2="1125" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="545" x2="670" y2="215" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="545" x2="670" y2="495" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="545" x2="670" y2="565" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="545" x2="670" y2="1125" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="215" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="495" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="775" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="845" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="915" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+  <line x1="835" y1="885" x2="670" y2="1125" stroke="#000000" stroke-width="1.1" marker-end="url(#uc-arrow)" />
+</svg>
