@@ -137,6 +137,12 @@ export function SignatureDialog({
           if (data?.signedUrl) {
             setSavedSignatureUrl(data.signedUrl);
             setUseSavedSignature(true);
+          } else {
+            const { data: pubData } = supabase.storage.from("signatures").getPublicUrl(cleanPath);
+            if (pubData?.publicUrl) {
+              setSavedSignatureUrl(pubData.publicUrl);
+              setUseSavedSignature(true);
+            }
           }
         }
       } catch (err) {

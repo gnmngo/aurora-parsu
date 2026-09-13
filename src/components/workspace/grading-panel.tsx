@@ -345,17 +345,24 @@ export function GradingPanel({
         setSignatureDisplayUrl(sig);
         return;
       }
+      const cleanPath = sig.replace(/^signatures\//, "").replace(/^\/+/, "");
       try {
-        const cleanPath = sig.replace(/^signatures\//, "").replace(/^\/+/, "");
-        const { data } = await supabase.storage.from("signatures").createSignedUrl(cleanPath, 7200);
-        if (data?.signedUrl) {
+        const { data, error } = await supabase.storage.from("signatures").createSignedUrl(cleanPath, 7200);
+        if (!error && data?.signedUrl) {
           setSignatureDisplayUrl(data.signedUrl);
-        } else {
-          setSignatureDisplayUrl(null);
+          return;
         }
-      } catch {
-        setSignatureDisplayUrl(null);
-      }
+      } catch {}
+
+      try {
+        const { data: pubData } = supabase.storage.from("signatures").getPublicUrl(cleanPath);
+        if (pubData?.publicUrl) {
+          setSignatureDisplayUrl(pubData.publicUrl);
+          return;
+        }
+      } catch {}
+
+      setSignatureDisplayUrl(null);
     }
     resolveSignatureUrl();
   }, [evaluationData?.signature_image, supabase]);
@@ -2526,9 +2533,23 @@ export function GradingPanel({
                     </div>
                   </div>
                   
-                  {(signatureDisplayUrl || evaluationData?.signature_image) && (
+                  {(signatureDisplayUrl || (evaluationData?.signature_image && (evaluationData.signature_image.startsWith("data:image") || evaluationData.signature_image.startsWith("http")))) ? (
                     <div className="bg-white border border-emerald-100 rounded-lg p-2 flex justify-center items-center h-16 max-w-[200px] mx-auto select-none">
-                      <img src={signatureDisplayUrl || evaluationData.signature_image} alt="Electronic Signature" className="h-full object-contain pointer-events-none" />
+                      <img
+                        src={signatureDisplayUrl || evaluationData.signature_image}
+                        alt="Electronic Signature"
+                        className="h-full object-contain pointer-events-none"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-white/80 border border-emerald-100 rounded-lg p-2 flex flex-col justify-center items-center h-16 max-w-[200px] mx-auto select-none">
+                      <ShieldCheck className="h-6 w-6 text-emerald-600 mb-0.5" />
+                      <span className="text-[9px] font-bold text-emerald-800 tracking-wider uppercase">
+                        {evaluationData?.signature_type ? `${evaluationData.signature_type.toUpperCase()} SIGNATURE` : "DIGITALLY CERTIFIED"}
+                      </span>
                     </div>
                   )}
 

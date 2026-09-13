@@ -48,21 +48,27 @@ export function CertificateDialog({
         return;
       }
 
+      const cleanPath = sigImg.replace(/^signatures\//, "").replace(/^\/+/, "");
       try {
-        const cleanPath = sigImg.replace(/^signatures\//, "").replace(/^\/+/, "");
         const { data, error } = await supabase.storage
           .from("signatures")
           .createSignedUrl(cleanPath, 7200);
 
         if (!error && data?.signedUrl) {
           setSignatureUrl(data.signedUrl);
-        } else {
-          setSignatureUrl(null);
+          return;
         }
-      } catch (err) {
-        console.error("Error resolving signature URL:", err);
-        setSignatureUrl(null);
-      }
+      } catch {}
+
+      try {
+        const { data: pubData } = supabase.storage.from("signatures").getPublicUrl(cleanPath);
+        if (pubData?.publicUrl) {
+          setSignatureUrl(pubData.publicUrl);
+          return;
+        }
+      } catch {}
+
+      setSignatureUrl(null);
     }
 
     if (open && evaluation) {
