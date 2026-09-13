@@ -15,7 +15,8 @@ import {
   Loader2, 
   ChevronRight, 
   Plus,
-  Shield
+  Shield,
+  Layers
 } from "lucide-react";
 import Link from "next/link";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -142,6 +143,12 @@ export function CoordinatorDashboard() {
             <Button size="sm" variant="outline" className="gap-1.5 font-bold">
               <Calendar className="h-4 w-4" />
               Schedule Defense
+            </Button>
+          </Link>
+          <Link href="/admin/stages">
+            <Button size="sm" variant="outline" className="gap-1.5 font-bold border-border">
+              <Layers className="h-4 w-4 text-primary" />
+              Defense Stages
             </Button>
           </Link>
         </div>

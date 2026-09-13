@@ -9,9 +9,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Printer, CheckCircle, Award, ExternalLink } from "lucide-react";
+import { ShieldCheck, Printer, CheckCircle, Award, ExternalLink, Download, FileJson, Loader2 } from "lucide-react";
 import { VerificationQRCode } from "@/components/workspace/verification-qr-code";
 import { createClient } from "@/lib/supabase/client";
+import { downloadCertificatePdf, downloadCertificateJson } from "@/lib/certificates/pdf-generator";
+import { toast } from "sonner";
 import Link from "next/link";
 
 interface CertificateDialogProps {
@@ -33,7 +35,51 @@ export function CertificateDialog({
 }: CertificateDialogProps) {
   const printAreaRef = useRef<HTMLDivElement | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const supabase = createClient();
+
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloading(true);
+      await downloadCertificatePdf({
+        evaluationId: evaluation.id,
+        certificateSerial: evaluation.certificate_serial || "AURORA-CERT",
+        projectTitle,
+        stageName,
+        panelistName,
+        panelistRole: evaluation.position_role || "Panelist",
+        totalScore: evaluation.total_score || evaluation.weighted_score || 0,
+        verdictCode: evaluation.verdict_code,
+        signedAt: evaluation.signed_at,
+        signatureHash: evaluation.signature_hash,
+        signatureImage: signatureUrl || evaluation.signature_image,
+        scores: evaluation.scores,
+        recommendations: evaluation.recommendations,
+      });
+      toast.success("Official Certificate PDF downloaded!");
+    } catch (err) {
+      console.error("Failed to download certificate PDF:", err);
+      toast.error("Failed to generate certificate PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadJson = () => {
+    downloadCertificateJson({
+      evaluationId: evaluation.id,
+      certificateSerial: evaluation.certificate_serial || "AURORA-CERT",
+      projectTitle,
+      stageName,
+      panelistName,
+      panelistRole: evaluation.position_role || "Panelist",
+      totalScore: evaluation.total_score || evaluation.weighted_score || 0,
+      verdictCode: evaluation.verdict_code,
+      signedAt: evaluation.signed_at,
+      signatureHash: evaluation.signature_hash,
+    });
+    toast.success("Verification receipt JSON downloaded!");
+  };
 
   useEffect(() => {
     async function resolveSignature() {
@@ -396,12 +442,39 @@ export function CertificateDialog({
             <div />
           )}
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs rounded-xl">
-              Close
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadJson}
+              className="h-9 text-xs rounded-xl gap-1.5 border-slate-200 hover:bg-slate-50 cursor-pointer"
+              title="Download verification receipt JSON file"
+            >
+              <FileJson className="h-3.5 w-3.5 text-slate-500" />
+              <span>Receipt (.json)</span>
             </Button>
-            <Button onClick={handlePrint} className="h-9 text-xs rounded-xl shadow-lg shadow-primary/10 gap-1.5">
-              <Printer className="h-3.5 w-3.5" /> Print Certificate
+
+            <Button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="h-9 text-xs rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-sm cursor-pointer"
+              title="Download official Certificate as PDF document"
+            >
+              {downloading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              <span>Download PDF</span>
+            </Button>
+
+            <Button onClick={handlePrint} variant="outline" className="h-9 text-xs rounded-xl shadow-xs gap-1.5 cursor-pointer">
+              <Printer className="h-3.5 w-3.5" /> Print
+            </Button>
+
+            <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-9 text-xs rounded-xl cursor-pointer">
+              Close
             </Button>
           </div>
         </DialogFooter>

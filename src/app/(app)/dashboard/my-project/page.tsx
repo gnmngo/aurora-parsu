@@ -23,7 +23,8 @@ import {
   BookOpen, Calendar, FileText, MessageSquare, Award, CheckCircle2,
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
-  ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck
+  ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck,
+  Download, Layers
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ import { Label } from "@/components/ui/label";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
 import { assignProjectAdviserAction, getApprovedFacultyListAction, updateProjectTeamNameAction } from "@/lib/projects/actions";
+import { CertificateDialog } from "@/components/workspace/certificate-dialog";
+import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
 
 interface ProjectData {
   id: string;
@@ -111,9 +114,15 @@ interface Annotation {
 interface EvaluationResult {
   id: string;
   total_score: number;
+  weighted_score?: number;
+  verdict_code?: string;
   status: string;
   submitted_at: string;
   recommendations: string | null;
+  certificate_serial?: string;
+  signature_hash?: string;
+  signature_image?: string | null;
+  scores?: Record<string, number>;
   profiles: { first_name: string; last_name: string } | null;
   defense_stages: { name: string } | null;
 }
@@ -160,6 +169,9 @@ export default function MyProjectPage() {
   const [savingTeamName, setSavingTeamName] = useState(false);
   const [endorsementSlipOpen, setEndorsementSlipOpen] = useState(false);
   const [defenseGuideOpen, setDefenseGuideOpen] = useState(false);
+  const [selectedEvalForCert, setSelectedEvalForCert] = useState<EvaluationResult | null>(null);
+  const [certDialogOpen, setCertDialogOpen] = useState(false);
+  const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
 
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
@@ -346,7 +358,8 @@ export default function MyProjectPage() {
       const { data: evals } = await supabase
         .from("evaluations")
         .select(`
-          id, total_score, status, submitted_at, recommendations,
+          id, total_score, weighted_score, verdict_code, status, submitted_at, recommendations,
+          certificate_serial, signature_hash, signature_image, scores,
           profiles ( first_name, last_name ),
           defense_stages ( name )
         `)
@@ -432,6 +445,13 @@ export default function MyProjectPage() {
   const endorsedVersion = endorsedDoc?.document_versions?.length
     ? [...endorsedDoc.document_versions].sort((a, b) => b.version_number - a.version_number)[0]
     : null;
+
+  const hasEvaluations = evaluations.length > 0;
+  const isRevisionRequired = project.status === "revision_required";
+  const isPassed = project.status === "passed" || project.status === "approved" || project.status === "completed";
+  const latestEval = evaluations[0];
+  const openAnnotationsCount = annotations.filter((a) => a.status === "open").length;
+  const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 2;
 
   return (
     <RoleGuard allowedRoles={["student"]} fallback={<AccessDenied />}>
@@ -621,7 +641,225 @@ export default function MyProjectPage() {
         )}
 
         {/* ── Endorsement Success & Next Steps Roadmap Banner ─────────────────────── */}
-        {endorsedDoc && (
+        {/* ── State 1: Post-Defense Revision Required Roadmap Banner ───────── */}
+        {isRevisionRequired && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-50/90 via-background to-amber-50/30 dark:from-amber-950/40 dark:via-background dark:to-amber-950/20 p-6 shadow-sm space-y-5">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-500/20">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base md:text-lg font-black text-amber-950 dark:text-amber-100 tracking-tight">
+                      Oral Defense Evaluated — Revisions Required for Stage Clearance
+                    </h2>
+                    <Badge variant="warning" className="text-[10px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-xs">
+                      Revisions Required
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {latestEval ? (
+                      <>
+                        The defense committee evaluated your manuscript with a score of{" "}
+                        <strong className="text-foreground">{Number(latestEval.total_score).toFixed(1)} / 100 ({Number(latestEval.total_score) >= 75 ? "Passed Criteria" : "Needs Revision"})</strong>.{" "}
+                        However, there {openAnnotationsCount === 1 ? "is" : "are"}{" "}
+                        <span className="font-bold text-amber-700 dark:text-amber-400">{openAnnotationsCount} open panel comment{openAnnotationsCount === 1 ? "" : "s"}</span> that must be addressed before this stage receives final institutional clearance.
+                      </>
+                    ) : (
+                      "Panel comments and revisions have been requested. Please address all feedback and upload a revised manuscript draft."
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/50 text-xs font-bold cursor-pointer"
+                  onClick={() => setActiveTab("evaluations")}
+                >
+                  <Award className="h-3.5 w-3.5" />
+                  View Evaluation ({evaluations.length})
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  onClick={() => setActiveTab("feedback")}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Open Comments ({openAnnotationsCount})
+                </Button>
+              </div>
+            </div>
+
+            {/* Post-Defense Action Roadmap */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                AURORA Defense Process Roadmap — 3 Steps to Final Stage Clearance
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {/* Step 1: Review Panelist Rubrics & Recommendations */}
+                <div 
+                  onClick={() => setActiveTab("evaluations")}
+                  className="rounded-xl p-4 border border-amber-500/30 bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-amber-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-[11px] font-black text-white shadow-xs">
+                      1
+                    </span>
+                    <Badge variant="outline" className="text-[9px] font-bold text-amber-700 dark:text-amber-300 border-amber-300">
+                      Panel Scores
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                      Review Panelist Rubric &amp; Marks
+                    </h4>
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      Examine the detailed criterion scoring, recommendations, and electronic certificate issued by your panel members.
+                    </p>
+                  </div>
+                  <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline flex items-center gap-1 pt-0.5">
+                    View evaluation details &rarr;
+                  </p>
+                </div>
+
+                {/* Step 2: Address Panel Annotations & Matrix of Revisions */}
+                <div 
+                  onClick={() => setActiveTab("feedback")}
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">
+                      2
+                    </span>
+                    <Badge variant="outline" className="text-[9px] font-bold text-primary border-primary/30">
+                      {openAnnotationsCount} Open Comments
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                      Prepare Matrix of Revisions
+                    </h4>
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      Review all highlighted manuscript text, methodology questions, and panel suggestions. Update your draft to satisfy each point.
+                    </p>
+                  </div>
+                  <p className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 pt-0.5">
+                    Open feedback &amp; annotations &rarr;
+                  </p>
+                </div>
+
+                {/* Step 3: Upload Revised PDF Manuscript */}
+                <div className="rounded-xl p-4 border border-emerald-500/40 bg-card shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">
+                      3
+                    </span>
+                    <Badge variant="success" className="text-[9px] font-black">
+                      Ready for v{nextVersionNumber}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">
+                      Upload Revised PDF (v{nextVersionNumber})
+                    </h4>
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      Once revisions are completed, upload the revised draft for your adviser and panel to verify clearance.
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <PdfUploader
+                      projectId={project.id}
+                      stageId={project.current_stage_id || undefined}
+                      buttonText={`Upload Manuscript v${nextVersionNumber}`}
+                      className="w-full text-xs font-bold h-8 shadow-xs"
+                      onUploadCompleted={loadProjectData}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── State 2: Post-Defense Cleared / Passed Banner ──────────────────── */}
+        {isPassed && (
+          <div className="rounded-2xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-50/90 via-background to-emerald-50/30 dark:from-emerald-950/40 dark:via-background dark:to-emerald-950/20 p-6 shadow-sm space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base md:text-lg font-black text-emerald-950 dark:text-emerald-100 tracking-tight">
+                      🎉 Defense Stage Passed &amp; Officially Cleared!
+                    </h2>
+                    <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
+                      Stage Cleared
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Congratulations! The defense committee has approved your defense for{" "}
+                    <strong className="text-foreground">{(project.defense_stages as any)?.name || "this stage"}</strong>. Your official evaluation records and verifiable digital certificates are available below.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  onClick={() => setActiveTab("evaluations")}
+                >
+                  <Award className="h-3.5 w-3.5" />
+                  View &amp; Download Certificates
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                Stage Clearance Roadmap — Next Steps
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div 
+                  onClick={() => setActiveTab("evaluations")}
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2 cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group"
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">1</span>
+                  <h4 className="text-xs font-bold text-foreground group-hover:text-primary">Download Official Certificates</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Download institutional PDF certificates signed electronically by each panel member for your research portfolio.
+                  </p>
+                </div>
+                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">2</span>
+                  <h4 className="text-xs font-bold text-foreground">Verify Cryptographic Signatures</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Every certificate features an immutable SHA-256 hash and verification QR code on the public verification portal.
+                  </p>
+                </div>
+                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[11px] font-black text-white shadow-xs">3</span>
+                  <h4 className="text-xs font-bold text-foreground">Advance to Next Academic Milestone</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Your coordinator can advance your team to the next defense stage or final graduation clearance.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── State 3: Pre-Defense Scheduled & Endorsed Roadmap Banner ───────── */}
+        {!isRevisionRequired && !isPassed && !hasEvaluations && endorsedDoc && (
           <div className="rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/90 via-background to-emerald-50/30 dark:from-emerald-950/40 dark:via-background dark:to-emerald-950/20 p-6 shadow-sm space-y-5">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
@@ -1434,6 +1672,87 @@ export default function MyProjectPage() {
                             <p className="text-xs text-foreground/80 leading-relaxed">{evalItem.recommendations}</p>
                           </div>
                         )}
+
+                        {/* Certificate Actions & Verification Bar */}
+                        <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {evalItem.certificate_serial && (
+                              <Badge variant="outline" className="font-mono text-[9px] font-bold border-primary/30 text-primary bg-primary/5">
+                                Cert #{evalItem.certificate_serial}
+                              </Badge>
+                            )}
+                            {evalItem.signature_hash && (
+                              <span className="text-[9px] font-mono text-muted-foreground hidden sm:inline" title={evalItem.signature_hash}>
+                                SHA-256: {evalItem.signature_hash.substring(0, 12)}...
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedEvalForCert(evalItem);
+                                setCertDialogOpen(true);
+                              }}
+                              className="h-7 text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/5 cursor-pointer"
+                            >
+                              <Award className="h-3 w-3" />
+                              View Certificate
+                            </Button>
+
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={downloadingCertId === evalItem.id}
+                              onClick={async () => {
+                                setDownloadingCertId(evalItem.id);
+                                try {
+                                  await downloadCertificatePdf({
+                                    evaluationId: evalItem.id,
+                                    certificateSerial: evalItem.certificate_serial || "AURORA-CERT",
+                                    projectTitle: project.title,
+                                    stageName: (evalItem.defense_stages as any)?.name || "Defense Stage",
+                                    panelistName,
+                                    totalScore: score,
+                                    verdictCode: evalItem.verdict_code,
+                                    signedAt: evalItem.submitted_at,
+                                    signatureHash: evalItem.signature_hash,
+                                    signatureImage: evalItem.signature_image,
+                                    scores: evalItem.scores,
+                                    recommendations: evalItem.recommendations,
+                                    academicYear: project.academic_year,
+                                  });
+                                  toast.success("Defense Certificate PDF downloaded!");
+                                } catch (err) {
+                                  toast.error("Failed to generate certificate PDF.");
+                                } finally {
+                                  setDownloadingCertId(null);
+                                }
+                              }}
+                              className="h-7 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-2xs"
+                            >
+                              {downloadingCertId === evalItem.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Download className="h-3 w-3" />
+                              )}
+                              Download PDF
+                            </Button>
+
+                            {evalItem.certificate_serial && (
+                              <Link
+                                href={`/verify/${encodeURIComponent(evalItem.certificate_serial)}`}
+                                target="_blank"
+                                className="text-[11px] font-bold text-muted-foreground hover:text-primary flex items-center gap-0.5 ml-1"
+                              >
+                                Verify <ExternalLink className="h-2.5 w-2.5" />
+                              </Link>
+                            )}
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -1442,6 +1761,16 @@ export default function MyProjectPage() {
             )}
           </div>
         )}
+
+        {/* Certificate Dialog */}
+        <CertificateDialog
+          open={certDialogOpen}
+          onOpenChange={setCertDialogOpen}
+          evaluation={selectedEvalForCert}
+          projectTitle={project.title}
+          stageName={(selectedEvalForCert?.defense_stages as any)?.name || "Defense Stage"}
+          panelistName={selectedEvalForCert?.profiles ? `${selectedEvalForCert.profiles.first_name} ${selectedEvalForCert.profiles.last_name}` : "Panelist"}
+        />
 
         {/* Adviser Selection Modal */}
         <Dialog open={adviserModalOpen} onOpenChange={setAdviserModalOpen}>
@@ -1881,13 +2210,3 @@ export default function MyProjectPage() {
   );
 }
 
-// Local stub for Layers icon (used inline)
-function Layers({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-      <polyline points="2 17 12 22 22 17" />
-      <polyline points="2 12 12 17 22 12" />
-    </svg>
-  );
-}

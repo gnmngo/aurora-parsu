@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { RescheduleDefenseModal } from "@/components/dashboard/reschedule-defense-modal";
+import { ReviseStageModal } from "@/components/dashboard/revise-stage-modal";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
@@ -44,6 +45,8 @@ export default function DefensesPage() {
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [selectedForReschedule, setSelectedForReschedule] = useState<any>(null);
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [selectedForReviseStage, setSelectedForReviseStage] = useState<any>(null);
+  const [reviseStageModalOpen, setReviseStageModalOpen] = useState(false);
   const [settingToNowId, setSettingToNowId] = useState<string | null>(null);
 
   const { roles } = useAuth();
@@ -258,12 +261,20 @@ export default function DefensesPage() {
             </div>
 
             {isCoordinator && (
-              <Link href="/dashboard/defenses/schedule">
-                <Button className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs">
-                  <Plus className="h-4 w-4" />
-                  Schedule Defense
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href="/admin/stages">
+                  <Button variant="outline" className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs border-border">
+                    <Layers className="h-4 w-4 text-primary" />
+                    Manage Defense Stages
+                  </Button>
+                </Link>
+                <Link href="/dashboard/defenses/schedule">
+                  <Button className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs">
+                    <Plus className="h-4 w-4" />
+                    Schedule Defense
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -455,6 +466,29 @@ export default function DefensesPage() {
                             </Button>
                           )}
 
+                          {/* Revise Stage button for Coordinators */}
+                          {isCoordinator && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedForReviseStage(sched.projects ? {
+                                  id: sched.projects.id,
+                                  title: sched.projects.title,
+                                  current_stage_id: sched.stage_id,
+                                  status: sched.status,
+                                } : null);
+                                setReviseStageModalOpen(true);
+                              }}
+                              className="h-8 text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/5 cursor-pointer"
+                              title="Flexibly change or revise the defense stage for this project"
+                            >
+                              <Layers className="h-3.5 w-3.5" />
+                              <span>Revise Stage</span>
+                            </Button>
+                          )}
+
                           {/* Deliberation Workspace link */}
                           <Link href={`/workspace/${sched.project_id}/${sched.stage_id}`}>
                             <Button size="sm" className="h-8 text-xs font-bold gap-1 shadow-2xs">
@@ -545,6 +579,17 @@ export default function DefensesPage() {
           onOpenChange={setRescheduleModalOpen}
           schedule={selectedForReschedule}
           onRescheduled={fetchSchedules}
+        />
+
+        {/* Revise Stage Modal */}
+        <ReviseStageModal
+          open={reviseStageModalOpen}
+          onOpenChange={setReviseStageModalOpen}
+          project={selectedForReviseStage}
+          onSuccess={() => {
+            fetchSchedules();
+            fetchStages();
+          }}
         />
       </div>
     </RoleGuard>
