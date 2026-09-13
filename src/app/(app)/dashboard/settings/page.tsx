@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, ShieldCheck, KeyRound } from "lucide-react";
 
 export default function SettingsPage() {
   const { profile, signOut, isLoading: authLoading } = useAuth();
@@ -17,6 +17,16 @@ export default function SettingsPage() {
   const [departmentId, setDepartmentId] = useState("");
   const [departments, setDepartments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Security / Password Change State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -90,6 +100,77 @@ export default function SettingsPage() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword.trim()) {
+      toast.error("Please enter your current password.");
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      toast.error("Please enter a new password.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters long.");
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      toast.error("New password must be different from your current password.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      // 1. Verify current credentials against Supabase Auth
+      const { error: verifyErr } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: currentPassword.trim(),
+      });
+
+      if (verifyErr) {
+        throw new Error("Current password is incorrect.");
+      }
+
+      // 2. Update to new password
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+
+      if (updateErr) throw updateErr;
+
+      // 3. Log event
+      try {
+        await supabase.rpc("log_auth_event", {
+          p_user_email: profile.email,
+          p_profile_id: profile.id,
+          p_action: "UPDATE",
+          p_description: "Password updated from Account Settings",
+          p_ip_address: "127.0.0.1",
+          p_user_agent: window.navigator.userAgent,
+        });
+      } catch {}
+
+      toast.success("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Failed to update password.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -151,6 +232,100 @@ export default function SettingsPage() {
               "Save Changes"
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            Security & Password
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Ensure your account uses a secure password to protect academic evaluation integrity.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground font-semibold">Current Password</label>
+              <div className="relative mt-1">
+                <Input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter your current password"
+                  className="pr-10"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs text-muted-foreground font-semibold">New Password</label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Min. 8 characters"
+                    className="pr-10"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground font-semibold">Confirm New Password</label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-type new password"
+                    className="pr-10"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={isUpdatingPassword}>
+              {isUpdatingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating Password...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Update Password
+                </>
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

@@ -20,6 +20,7 @@ import {
   Sliders,
   CheckCircle2,
   Plus,
+  History,
   Award,
   Sparkles,
   ShieldCheck,
@@ -2568,15 +2569,21 @@ export function GradingPanel({
                   </div>
                 </Card>
 
-                <Button 
-                  variant="outline" 
-                  className="w-full text-xs h-9 rounded-xl border-dashed border-border hover:bg-muted cursor-pointer"
-                  onClick={handleCreateNewVersion}
-                  disabled={saving}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                  Create New Version (v{evalVersion + 1})
-                </Button>
+                <div className="pt-1 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-0.5">
+                    <History className="h-3 w-3 text-muted-foreground/80 shrink-0" />
+                    <span>Evaluation locked. Need to re-evaluate a revised manuscript?</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-xs h-9 rounded-xl border-dashed border-border hover:bg-muted cursor-pointer"
+                    onClick={handleCreateNewVersion}
+                    disabled={saving}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                    Create New Version (v{evalVersion + 1})
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="flex gap-2.5 pt-2">
