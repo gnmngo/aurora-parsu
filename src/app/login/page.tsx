@@ -3,16 +3,40 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Sparkles, Eye, EyeOff, CheckCircle, ShieldAlert, Shield, Info } from "lucide-react";
+import { 
+  Loader2, 
+  Sparkles, 
+  Eye, 
+  EyeOff, 
+  CheckCircle, 
+  ShieldAlert, 
+  Shield, 
+  Info,
+  GraduationCap,
+  BookOpen,
+  Users,
+  ShieldCheck,
+  Crown
+} from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { registerUserAction } from "@/lib/auth/register-action";
+
+const DEMO_ROLES = [
+  { id: "student", label: "Student", icon: GraduationCap, color: "text-blue-600 dark:text-blue-400" },
+  { id: "adviser", label: "Adviser", icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400" },
+  { id: "panelist", label: "Panelist", icon: Users, color: "text-violet-600 dark:text-violet-400" },
+  { id: "coordinator", label: "Coordinator", icon: ShieldCheck, color: "text-amber-600 dark:text-amber-400" },
+  { id: "dean", label: "College Dean", icon: Crown, color: "text-rose-600 dark:text-rose-400" },
+  { id: "admin", label: "System Admin", icon: Shield, color: "text-slate-600 dark:text-slate-400" },
+] as const;
 
 function LoginForm() {
   const router = useRouter();
@@ -295,27 +319,31 @@ function LoginForm() {
   const isFormDisabled = loading || authLoading;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-between py-6 px-4 relative overflow-y-auto">
       {/* Dynamic abstract shapes for premium look */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
 
-      <Card className="w-full max-w-[420px] bg-card/80 backdrop-blur-xl border-border shadow-2xl relative z-10 overflow-hidden rounded-2xl">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
-        
-        <CardContent className="p-8">
-          <div className="text-center mb-8 flex flex-col items-center">
-            <AuroraLogo size="xl" className="mb-4" />
-            <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">AURORA</h1>
-            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
-              Partido State University
-            </p>
-            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers
-            </p>
-          </div>
+      {/* Top spacer */}
+      <div className="w-full h-1 shrink-0" />
 
-          <div className="flex bg-muted/50 p-1 rounded-xl mb-6 relative">
+      <div className="w-full max-w-[420px] my-auto relative z-10">
+        <Card className="w-full bg-card/80 backdrop-blur-xl border-border shadow-2xl relative overflow-hidden rounded-2xl">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
+          
+          <CardContent className="p-6 sm:p-7">
+            <div className="text-center mb-6 flex flex-col items-center">
+              <AuroraLogo size="xl" className="mb-3" />
+              <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">AURORA</h1>
+              <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+                Partido State University
+              </p>
+              <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers
+              </p>
+            </div>
+
+            <div className="flex bg-muted/50 p-1 rounded-xl mb-5 relative">
             <button
               onClick={() => setActiveTab("signin")}
               className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all duration-300 relative z-10 ${
@@ -406,23 +434,34 @@ function LoginForm() {
                 )}
               </Button>
 
-              <div className="mt-6">
-                <div className="relative mb-4">
+              <div className="mt-5">
+                <div className="relative mb-3">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border"></span>
+                    <span className="w-full border-t border-border/70"></span>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground font-medium">Demo Accounts</span>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
+                    <span className="bg-card px-2.5 text-muted-foreground">Demo Accounts</span>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("student")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Student</Button>
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("adviser")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Adviser</Button>
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("panelist")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Panelist</Button>
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("coordinator")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">Coordinator</Button>
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("dean")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50">College Dean</Button>
-                  <Button variant="outline" size="sm" type="button" onClick={() => handleDemoLogin("admin")} disabled={isFormDisabled} className="text-xs h-8 rounded-lg bg-background/50 col-span-2">System Admin</Button>
+                  {DEMO_ROLES.map((role) => {
+                    const Icon = role.icon;
+                    return (
+                      <Button
+                        key={role.id}
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        onClick={() => handleDemoLogin(role.id)}
+                        disabled={isFormDisabled}
+                        className="h-8.5 rounded-xl bg-background/60 hover:bg-muted/70 border-border/70 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                      >
+                        <Icon className={cn("h-3.5 w-3.5 shrink-0", role.color)} />
+                        <span className="truncate">{role.label}</span>
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             </form>
@@ -645,12 +684,13 @@ function LoginForm() {
 
         </CardContent>
       </Card>
-      
-      {/* Brand Footer */}
-      <div className="absolute bottom-6 text-center w-full text-xs text-muted-foreground/60 font-medium">
-        <p>© 2026 Partido State University</p>
-      </div>
     </div>
+      
+    {/* Brand Footer — positioned cleanly in flow, never overlapped */}
+    <div className="relative z-10 mt-6 pb-2 text-center w-full text-xs text-muted-foreground/60 font-medium shrink-0">
+      <p>© 2026 Partido State University</p>
+    </div>
+  </div>
   );
 }
 
