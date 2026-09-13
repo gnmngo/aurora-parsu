@@ -507,11 +507,31 @@ export default function MyProjectPage() {
     : null;
 
   const hasEvaluations = evaluations.length > 0;
-  const isRevisionRequired = project.status === "revision_required";
-  const isPassed = project.status === "passed" || project.status === "approved" || project.status === "completed";
-  const latestEval = evaluations[0];
+  const latestEval = evaluations.find((e) => e.status === "submitted") || evaluations[0];
+  const evalVerdict = latestEval?.verdict_code;
+  const isEvalPassed =
+    evalVerdict === "passed" ||
+    (latestEval?.total_score != null &&
+      Number(latestEval.total_score) >= 75 &&
+      evalVerdict !== "failed" &&
+      evalVerdict !== "redefense" &&
+      evalVerdict !== "revision_required");
 
   const openAnnotationsCount = openAnnotations.length;
+  const isPassed =
+    project.status === "passed" ||
+    project.status === "approved" ||
+    project.status === "completed" ||
+    (isEvalPassed && openAnnotationsCount === 0);
+
+  const isRevisionRequired =
+    !isPassed &&
+    (project.status === "revision_required" ||
+      evalVerdict === "passed_minor" ||
+      evalVerdict === "passed_major" ||
+      evalVerdict === "revision_required" ||
+      openAnnotationsCount > 0);
+
   const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 2;
 
   return (
@@ -649,7 +669,7 @@ export default function MyProjectPage() {
         </div>
 
         {/* ── Revision Required Alert Banner ─────────────────────── */}
-        {documents.some((d) => d.adviser_approval_status === "rejected") && (
+        {documents.some((d) => d.adviser_approval_status === "rejected") && !endorsedDoc && (
           <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-50/90 dark:bg-amber-950/40 p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
@@ -714,10 +734,12 @@ export default function MyProjectPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base md:text-lg font-black text-amber-950 dark:text-amber-100 tracking-tight">
-                      Oral Defense Evaluated — Revisions Required for Stage Clearance
+                      {isEvalPassed
+                        ? `Oral Defense Passed (${Number(latestEval?.total_score).toFixed(1)}%) — Address Remaining Comments for Final Clearance`
+                        : "Oral Defense Evaluated — Revisions Required for Stage Clearance"}
                     </h2>
-                    <Badge variant="warning" className="text-[10px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-xs">
-                      Revisions Required
+                    <Badge variant={isEvalPassed ? "default" : "warning"} className="text-[10px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-xs">
+                      {isEvalPassed ? "Passed • Notes Pending" : "Revisions Required"}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">

@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { emitNotification } from "@/lib/notifications/emit";
+import { recordWorkflowTransition } from "@/lib/workflow/history";
 
 interface CoordinatorOverrideStageInput {
   projectId: string;
@@ -91,23 +92,21 @@ export async function coordinatorOverrideProjectStageAction(input: CoordinatorOv
   }
 
   // 4. Record workflow history
-  try {
-    await serviceClient.from("project_workflow_history").insert({
-      project_id: input.projectId,
-      from_stage_id: project.current_stage_id,
-      to_stage_id: input.stageId,
-      from_status: project.status,
-      to_status: input.status || project.status,
-      reason: `[Coordinator Override] ${input.reason.trim()}`,
-      created_by: user.id,
-      metadata: {
-        coordinator_email: user.email,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (histErr) {
-    console.warn("Could not insert project_workflow_history:", histErr);
-  }
+  await recordWorkflowTransition(serviceClient, {
+    projectId: input.projectId,
+    fromStageId: project.current_stage_id,
+    toStageId: input.stageId,
+    transitionedBy: user.id,
+    performedByRole: "coordinator",
+    transitionType: "override",
+    transitionReason: `[Coordinator Override] ${input.reason.trim()}`,
+    oldStatus: project.status,
+    newStatus: input.status || project.status,
+    metadata: {
+      coordinator_email: user.email,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   // 5. Audit log
   await serviceClient.from("audit_logs").insert({

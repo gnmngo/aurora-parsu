@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,146 +83,144 @@ export default function GradesPage() {
   const { user, roles } = useAuth();
   const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin"].includes(r));
 
-  useEffect(() => {
+  const loadGrades = useCallback(async () => {
     if (!user) return;
+    try {
+      const isCoordinatorOrAdmin = roles.some((r) =>
+        ["coordinator", "sys_admin", "college_dean"].includes(r)
+      );
+      const isPanelist = roles.includes("panelist");
+      const isStudent = roles.includes("student");
+      const isAdviser = roles.includes("adviser");
 
-    async function loadGrades() {
-      try {
-        const isCoordinatorOrAdmin = roles.some((r) =>
-          ["coordinator", "sys_admin", "college_dean"].includes(r)
-        );
-        const isPanelist = roles.includes("panelist");
-        const isStudent = roles.includes("student");
-        const isAdviser = roles.includes("adviser");
+      // Fetch panel assignments to accurately identify Chairman vs Member
+      const { data: panelsData } = await supabase
+        .from("defense_panels")
+        .select("project_id, profile_id, panel_role");
 
-        // Fetch panel assignments to accurately identify Chairman vs Member
-        const { data: panelsData } = await supabase
+      const pMap: Record<string, "chair" | "member"> = {};
+      if (panelsData) {
+        panelsData.forEach((p: any) => {
+          pMap[`${p.project_id}_${p.profile_id}`] = p.panel_role;
+        });
+      }
+      setPanelRolesMap(pMap);
+
+      // Rich join: stage, project proponents, program, evaluator, rubric
+      const baseQuery = supabase
+        .from("evaluations")
+        .select(`
+          id,
+          total_score,
+          recommendations,
+          panel_notes,
+          submitted_at,
+          scores,
+          panelist_id,
+          project_id,
+          stage_id,
+          defense_stages ( id, name, code, sequence_order ),
+          projects ( 
+            id, 
+            title, 
+            student_id, 
+            archived_at,
+            programs ( code, name ),
+            students ( student_number, profiles ( first_name, last_name, email ) )
+          ),
+          profiles!panelist_id ( first_name, last_name, email ),
+          rubric_templates ( title, criteria, passing_score )
+        `)
+        .eq("status", "submitted")
+        .order("submitted_at", { ascending: false });
+
+      if (isCoordinatorOrAdmin) {
+        // Full access
+        const { data, error } = await baseQuery;
+        if (error) throw error;
+        const activeEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
+        setEvaluations(activeEvals);
+
+      } else if (isPanelist) {
+        // Find all projects where user is assigned as panel member
+        const { data: panelAssignments } = await supabase
           .from("defense_panels")
-          .select("project_id, profile_id, panel_role");
+          .select("project_id")
+          .eq("profile_id", user.id);
 
-        const pMap: Record<string, "chair" | "member"> = {};
-        if (panelsData) {
-          panelsData.forEach((p: any) => {
-            pMap[`${p.project_id}_${p.profile_id}`] = p.panel_role;
-          });
-        }
-        setPanelRolesMap(pMap);
-
-        // Rich join: stage, project proponents, program, evaluator, rubric
-        const baseQuery = supabase
-          .from("evaluations")
-          .select(`
-            id,
-            total_score,
-            recommendations,
-            panel_notes,
-            submitted_at,
-            scores,
-            panelist_id,
-            project_id,
-            stage_id,
-            defense_stages ( id, name, code, sequence_order ),
-            projects ( 
-              id, 
-              title, 
-              student_id, 
-              archived_at,
-              programs ( code, name ),
-              students ( student_number, profiles ( first_name, last_name, email ) )
-            ),
-            profiles!panelist_id ( first_name, last_name, email ),
-            rubric_templates ( title, criteria, passing_score )
-          `)
-          .eq("status", "submitted")
-          .order("submitted_at", { ascending: false });
-
-        if (isCoordinatorOrAdmin) {
-          // Full access
-          const { data, error } = await baseQuery;
-          if (error) throw error;
-          const activeEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
-          setEvaluations(activeEvals);
-
-        } else if (isPanelist) {
-          // Find all projects where user is assigned as panel member
-          const { data: panelAssignments } = await supabase
-            .from("defense_panels")
-            .select("project_id")
-            .eq("profile_id", user!.id);
-
-          const projectIds = (panelAssignments || []).map((p: any) => p.project_id);
-          if (projectIds.length > 0) {
-            const { data, error } = await baseQuery.in("project_id", projectIds);
-            if (error) throw error;
-            setEvaluations((data as unknown as EvaluationRow[]) || []);
-          } else {
-            const { data, error } = await baseQuery.eq("panelist_id", user!.id);
-            if (error) throw error;
-            setEvaluations((data as unknown as EvaluationRow[]) || []);
-          }
-
-        } else if (isAdviser) {
-          // Get projects where user is adviser member
-          const { data: memberProjects } = await supabase
-            .from("project_members")
-            .select("project_id")
-            .eq("profile_id", user!.id)
-            .eq("member_role", "adviser");
-
-          const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
-          if (projectIds.length === 0) {
-            setEvaluations([]);
-            setLoading(false);
-            return;
-          }
-
+        const projectIds = (panelAssignments || []).map((p: any) => p.project_id);
+        if (projectIds.length > 0) {
           const { data, error } = await baseQuery.in("project_id", projectIds);
           if (error) throw error;
           setEvaluations((data as unknown as EvaluationRow[]) || []);
-
-        } else if (isStudent) {
-          // Get student record → project → evaluations for that project
-          const { data: studentRecord } = await supabase
-            .from("students")
-            .select("id")
-            .eq("profile_id", user!.id)
-            .maybeSingle();
-
-          if (!studentRecord) {
-            setEvaluations([]);
-            setLoading(false);
-            return;
-          }
-
-          const { data: project } = await supabase
-            .from("projects")
-            .select("id")
-            .eq("student_id", studentRecord.id)
-            .maybeSingle();
-
-          if (!project) {
-            setEvaluations([]);
-            setLoading(false);
-            return;
-          }
-
-          const { data, error } = await baseQuery.eq("project_id", project.id);
+        } else {
+          const { data, error } = await baseQuery.eq("panelist_id", user.id);
           if (error) throw error;
           setEvaluations((data as unknown as EvaluationRow[]) || []);
-
-        } else {
-          setEvaluations([]);
         }
-      } catch (err) {
-        console.error("Error loading grades:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
 
+      } else if (isAdviser) {
+        // Get projects where user is adviser member
+        const { data: memberProjects } = await supabase
+          .from("project_members")
+          .select("project_id")
+          .eq("profile_id", user.id)
+          .eq("member_role", "adviser");
+
+        const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
+        if (projectIds.length === 0) {
+          setEvaluations([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await baseQuery.in("project_id", projectIds);
+        if (error) throw error;
+        setEvaluations((data as unknown as EvaluationRow[]) || []);
+
+      } else if (isStudent) {
+        // Get student record → project → evaluations for that project
+        const { data: studentRecord } = await supabase
+          .from("students")
+          .select("id")
+          .eq("profile_id", user.id)
+          .maybeSingle();
+
+        if (!studentRecord) {
+          setEvaluations([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data: project } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("student_id", studentRecord.id)
+          .maybeSingle();
+
+        if (!project) {
+          setEvaluations([]);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await baseQuery.eq("project_id", project.id);
+        if (error) throw error;
+        setEvaluations((data as unknown as EvaluationRow[]) || []);
+
+      } else {
+        setEvaluations([]);
+      }
+    } catch (err) {
+      console.error("Error loading grades:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, roles, supabase]);
+
+  useEffect(() => {
     loadGrades();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, roles.join(",")]);
+  }, [loadGrades]);
 
   // Group evaluations by project_id and stage_id for dynamic composite averaging
   const evaluationGroups = useMemo(() => {
@@ -329,6 +327,7 @@ export default function GradesPage() {
                                 try {
                                   await releaseProjectVerdictAction(proj.id, v);
                                   toast.success(`Verdict released: ${v.replace(/_/g, " ")}`);
+                                  await loadGrades();
                                 } catch (err: unknown) {
                                   const msg = err instanceof Error ? err.message : "Failed";
                                   toast.error(msg);

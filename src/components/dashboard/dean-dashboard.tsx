@@ -46,7 +46,7 @@ interface ProjectItem {
     student_number?: string;
     profiles?: { first_name: string; last_name: string; email: string } | null;
   } | null;
-  defense_schedules?: { scheduled_at: string; venue: string; status: string }[] | null;
+  defense_schedules?: { scheduled_at: string; room?: string; building?: string; is_online?: boolean; status: string }[] | null;
 }
 
 interface EvaluationItem {
@@ -107,7 +107,7 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
               student_number,
               profiles ( first_name, last_name, email )
             ),
-            defense_schedules ( scheduled_at, venue, status )
+            defense_schedules ( scheduled_at, room, building, is_online, status )
           `)
           .eq("college_id", collegeId)
           .is("archived_at", null)
