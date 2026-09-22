@@ -187,6 +187,9 @@ export async function createProjectAction(
     );
 
     // 8. Automatic Section Adviser Assignment for Concept & Title Defense stages
+    // In production, the section adviser designated for the student's program/section takes ownership.
+    // For demonstration purposes, if no class section adviser is registered, fallback to the demo adviser account.
+    const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
     let resolvedAdviserId = input.adviserProfileId?.trim() || null;
 
     if (!resolvedAdviserId && student.program_id) {
@@ -213,8 +216,12 @@ export async function createProjectAction(
           .limit(1)
           .maybeSingle();
 
-        resolvedAdviserId = fallbackSec?.adviser_id || "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+        resolvedAdviserId = fallbackSec?.adviser_id || DEMO_ADVISER_PROFILE_ID;
       }
+    }
+
+    if (!resolvedAdviserId) {
+      resolvedAdviserId = DEMO_ADVISER_PROFILE_ID;
     }
 
     if (resolvedAdviserId) {
@@ -434,12 +441,28 @@ export async function notifyAdviserManuscriptUploadedAction(
     if (!user) return;
 
     // Fetch adviser for project
-    const { data: adviserMember } = await serviceClient
+    let { data: adviserMember } = await serviceClient
       .from("project_members")
       .select("profile_id")
       .eq("project_id", projectId)
       .eq("member_role", "adviser")
       .maybeSingle();
+
+    if (!adviserMember?.profile_id) {
+      // For demo purposes and concept/title defense stages:
+      // Default to demo adviser account so reviewer can immediately access manuscript
+      const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+      await serviceClient.from("project_members").upsert(
+        {
+          project_id: projectId,
+          profile_id: DEMO_ADVISER_PROFILE_ID,
+          member_role: "adviser",
+          is_primary: true,
+        },
+        { onConflict: "project_id,profile_id,member_role" }
+      );
+      adviserMember = { profile_id: DEMO_ADVISER_PROFILE_ID };
+    }
 
     if (!adviserMember?.profile_id) return;
 

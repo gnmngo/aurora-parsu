@@ -16,6 +16,8 @@ export interface SubmissionRow {
   commentCount: number;
   department: string;
   hasDocument: boolean;
+  storagePath?: string | null;
+  fileName?: string | null;
 }
 
 function resolveStudentName(students: unknown): string {
@@ -36,7 +38,7 @@ function resolveScoreCache(cache: unknown): number | null {
 }
 
 /** Map raw Supabase project rows to submission cards */
-export function mapProjectsToSubmissions(projects: { id: string; title: string; current_stage_id: string; created_at: string; status: string; students: unknown; departments: { name: string } | { name: string }[]; documents: { stage_id: string; defense_stages?: { name: string } | { name: string }[]; document_versions?: { id: string; version_number: number; is_current: boolean; created_at: string; annotation_count?: number }[] }[]; project_score_cache: unknown }[]): SubmissionRow[] {
+export function mapProjectsToSubmissions(projects: { id: string; title: string; current_stage_id: string; created_at: string; status: string; students: unknown; departments: { name: string } | { name: string }[]; documents: { stage_id: string; defense_stages?: { name: string } | { name: string }[]; document_versions?: { id: string; version_number: number; is_current: boolean; created_at: string; file_name?: string; storage_path?: string; annotation_count?: number }[] }[]; project_score_cache: unknown }[]): SubmissionRow[] {
   return projects.map((proj) => {
     const docs = proj.documents ?? [];
     const stageDoc =
@@ -44,7 +46,7 @@ export function mapProjectsToSubmissions(projects: { id: string; title: string; 
 
     const versions = stageDoc?.document_versions ?? [];
     const currentVer =
-      versions.find((v: { id: string; version_number: number; is_current: boolean; created_at: string; annotation_count?: number }) => v.is_current) ?? versions[versions.length - 1] ?? null;
+      versions.find((v: { id: string; version_number: number; is_current: boolean; created_at: string; file_name?: string; storage_path?: string; annotation_count?: number }) => v.is_current) ?? versions[versions.length - 1] ?? null;
 
     const stageId = stageDoc?.stage_id ?? proj.current_stage_id;
     const stageDocDefense = Array.isArray(stageDoc?.defense_stages) ? stageDoc?.defense_stages[0] : stageDoc?.defense_stages;
@@ -67,6 +69,8 @@ export function mapProjectsToSubmissions(projects: { id: string; title: string; 
       commentCount: currentVer?.annotation_count ?? 0,
       department: (Array.isArray(proj.departments) ? proj.departments[0]?.name : proj.departments?.name) ?? "General",
       hasDocument: Boolean(currentVer),
+      storagePath: currentVer?.storage_path ?? null,
+      fileName: currentVer?.file_name ?? null,
     };
   });
 }
@@ -96,6 +100,7 @@ export async function fetchSubmissions(
           id,
           version_number,
           file_name,
+          storage_path,
           created_at,
           is_current
         )

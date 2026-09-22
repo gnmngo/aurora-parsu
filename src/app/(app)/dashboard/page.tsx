@@ -63,21 +63,6 @@ export default function DashboardPage() {
               College Dean &bull; CEC Oversight
             </Badge>
           </div>
-        ) : roles && roles.length > 1 ? (
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground font-semibold">Dashboard view:</span>
-            <select
-              value={activeRole}
-              onChange={(e) => setActiveRole(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary capitalize cursor-pointer"
-            >
-              {roles.map((r) => (
-                <option key={r} value={r}>
-                  {r.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
         ) : null}
       </div>
 

@@ -28,6 +28,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
   student: [
     "/dashboard",
     "/dashboard/my-project",
+    "/dashboard/submissions",
     "/dashboard/search",
     "/dashboard/annotations",
     "/dashboard/defenses",
@@ -51,6 +52,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard",
     "/dashboard/search",
     "/dashboard/defenses",
+    "/dashboard/submissions",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/settings",
@@ -151,6 +153,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
     "/workspace",
     "/dashboard/search",
     "/dashboard/defenses",
+    "/dashboard/submissions",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/settings",

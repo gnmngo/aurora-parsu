@@ -79,10 +79,25 @@ export async function submitDefenseApplicationAction(input: {
       throw new Error(`Failed to submit application: ${upsertErr?.message || "Unknown error"}`);
     }
 
-    // Notify project adviser if assigned
-    const adviserMember = (project.project_members as any[])?.find(
+    // Notify project adviser (or link demo adviser default for concept/title defense demonstration)
+    let adviserMember = (project.project_members as any[])?.find(
       (m) => m.member_role === "adviser"
     );
+
+    if (!adviserMember?.profile_id) {
+      const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+      await serviceClient.from("project_members").upsert(
+        {
+          project_id: input.projectId,
+          profile_id: DEMO_ADVISER_PROFILE_ID,
+          member_role: "adviser",
+          is_primary: true,
+        },
+        { onConflict: "project_id,profile_id,member_role" }
+      );
+      adviserMember = { profile_id: DEMO_ADVISER_PROFILE_ID };
+    }
+
     if (adviserMember?.profile_id) {
       await emitNotification({
         supabase: serviceClient,
