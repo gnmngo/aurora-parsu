@@ -23,6 +23,7 @@ import {
   MapPin,
   Video,
   User,
+  Users,
   Zap,
   CheckCircle2,
   AlertCircle,
@@ -49,6 +50,11 @@ import {
   cancelDefenseScheduleAction,
   completeDefenseScheduleAction,
 } from "@/lib/scheduler/actions";
+import {
+  getProgramSectionsAction,
+  upsertProgramSectionAction,
+  getApprovedFacultyListAction,
+} from "@/lib/projects/actions";
 
 // Helper to determine the actual defense operational status and time state
 export function getDefenseStatus(sched: any) {
@@ -160,6 +166,69 @@ export default function DefensesPage() {
   const { user, profile, roles } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const isCoordinator = roles.includes("coordinator") || roles.includes("sys_admin");
+
+  // Section Advisers Management State
+  const [sectionModalOpen, setSectionModalOpen] = useState(false);
+  const [programSections, setProgramSections] = useState<any[]>([]);
+  const [loadingSections, setLoadingSections] = useState(false);
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [assignProgId, setAssignProgId] = useState("");
+  const [assignYear, setAssignYear] = useState(4);
+  const [assignSection, setAssignSection] = useState("A");
+  const [assignFacultyId, setAssignFacultyId] = useState("");
+  const [savingSection, setSavingSection] = useState(false);
+
+  const openSectionAdvisersModal = async () => {
+    setSectionModalOpen(true);
+    setLoadingSections(true);
+    try {
+      const [secList, facList] = await Promise.all([
+        getProgramSectionsAction(),
+        getApprovedFacultyListAction(),
+      ]);
+      setProgramSections(secList);
+      setFacultyList(facList);
+      if (templates.length > 0 && templates[0].program_id) {
+        setAssignProgId(templates[0].program_id);
+      }
+      if (facList.length > 0) {
+        setAssignFacultyId(facList[0].profile_id);
+      }
+    } catch (err) {
+      console.error("Error loading section advisers:", err);
+      toast.error("Failed to load section advisers.");
+    } finally {
+      setLoadingSections(false);
+    }
+  };
+
+  const handleSaveSectionAdviser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignProgId || !assignFacultyId) {
+      toast.error("Please select a program and faculty member.");
+      return;
+    }
+    setSavingSection(true);
+    try {
+      const res = await upsertProgramSectionAction({
+        programId: assignProgId,
+        yearLevel: assignYear,
+        section: assignSection,
+        adviserId: assignFacultyId,
+      });
+      if (!res.success) {
+        toast.error(res.error || "Failed to assign section adviser.");
+        return;
+      }
+      toast.success(`Section Adviser assigned for Year ${assignYear} Section ${assignSection}!`);
+      const updated = await getProgramSectionsAction();
+      setProgramSections(updated);
+    } catch (err: any) {
+      toast.error(err?.message || "Error saving section adviser.");
+    } finally {
+      setSavingSection(false);
+    }
+  };
 
   // Fetch workflow templates list
   useEffect(() => {
@@ -536,6 +605,15 @@ export default function DefensesPage() {
 
             {isCoordinator && (
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={openSectionAdvisersModal}
+                  className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs border-border text-foreground hover:bg-muted"
+                  title="Assign batch/section advisers who endorse Concept & Title Defenses"
+                >
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  Section Advisers
+                </Button>
                 <Link href="/admin/stages">
                   <Button variant="outline" className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs border-border">
                     <Layers className="h-4 w-4 text-primary" />
@@ -1178,6 +1256,164 @@ export default function DefensesPage() {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Class Section Advisers Management Modal */}
+        <Dialog open={sectionModalOpen} onOpenChange={setSectionModalOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-6 overflow-hidden">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                <Users className="h-5 w-5 text-emerald-600" />
+                Class Section Advisers Management
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Assign official section advisers who supervise Concept &amp; Title Defense stages. Students automatically inherit these advisers upon project registration.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto space-y-4 py-3 pr-1">
+              {/* Form to Assign or Update */}
+              <form onSubmit={handleSaveSectionAdviser} className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5 text-primary" />
+                  Assign / Update Section Adviser
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Academic Program</label>
+                    <select
+                      value={assignProgId}
+                      onChange={(e) => setAssignProgId(e.target.value)}
+                      className="w-full h-8.5 rounded-lg border border-border bg-background px-2 text-xs font-medium focus:outline-none"
+                      required
+                    >
+                      <option value="">-- Select Program --</option>
+                      {templates.map((t) => {
+                        const code = (t.programs as any)?.code;
+                        const name = (t.programs as any)?.name;
+                        return (
+                          <option key={t.id} value={t.program_id || t.id}>
+                            {code ? `${code} — ${name || t.name}` : t.name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Year Level</label>
+                      <select
+                        value={assignYear}
+                        onChange={(e) => setAssignYear(Number(e.target.value))}
+                        className="w-full h-8.5 rounded-lg border border-border bg-background px-2 text-xs font-medium focus:outline-none"
+                      >
+                        <option value={4}>4th Year</option>
+                        <option value={3}>3rd Year</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Section</label>
+                      <select
+                        value={assignSection}
+                        onChange={(e) => setAssignSection(e.target.value)}
+                        className="w-full h-8.5 rounded-lg border border-border bg-background px-2 text-xs font-medium focus:outline-none"
+                      >
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Section Adviser (Faculty Member)</label>
+                    <select
+                      value={assignFacultyId}
+                      onChange={(e) => setAssignFacultyId(e.target.value)}
+                      className="w-full h-8.5 rounded-lg border border-border bg-background px-2 text-xs font-medium focus:outline-none"
+                      required
+                    >
+                      <option value="">-- Select Faculty Member --</option>
+                      {facultyList.map((f) => (
+                        <option key={f.profile_id} value={f.profile_id}>
+                          {f.name} ({f.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button type="submit" size="sm" disabled={savingSection} className="h-8 rounded-lg text-xs font-bold gap-1.5 cursor-pointer">
+                    {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                    Save Section Adviser
+                  </Button>
+                </div>
+              </form>
+
+              {/* Current Assignments List */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-foreground">Current Section Adviser Assignments</p>
+                {loadingSections ? (
+                  <div className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    Loading section assignments...
+                  </div>
+                ) : programSections.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+                    No section advisers assigned yet.
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <table className="w-full text-[11px] text-left">
+                      <thead className="bg-muted/50 border-b border-border text-[10px] uppercase font-bold text-muted-foreground">
+                        <tr>
+                          <th className="py-2 px-3">Program</th>
+                          <th className="py-2 px-3">Cohort</th>
+                          <th className="py-2 px-3">Assigned Adviser</th>
+                          <th className="py-2 px-3 text-right">Academic Year</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {programSections.map((ps) => {
+                          const advName = ps.profiles
+                            ? `${ps.profiles.first_name || ""} ${ps.profiles.last_name || ""}`.trim()
+                            : "Unassigned";
+                          return (
+                            <tr key={ps.id} className="hover:bg-muted/30">
+                              <td className="py-2.5 px-3 font-bold text-foreground">
+                                {ps.programs?.code || "Program"}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <Badge variant="outline" className="text-[10px] font-semibold">
+                                  Year {ps.year_level} — Section {ps.section}
+                                </Badge>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <p className="font-semibold text-foreground">{advName}</p>
+                                <p className="text-[10px] text-muted-foreground">{ps.profiles?.email}</p>
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-muted-foreground font-medium">
+                                {ps.academic_year}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="shrink-0 pt-3 border-t border-border">
+              <Button variant="outline" size="sm" onClick={() => setSectionModalOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </RoleGuard>
   );

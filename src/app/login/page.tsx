@@ -73,6 +73,8 @@ function LoginForm() {
   const [regDepartmentId, setRegDepartmentId] = useState("");
   const [regProgramId, setRegProgramId] = useState("");
   const [regMajorId, setRegMajorId] = useState("");
+  const [regYearLevel, setRegYearLevel] = useState<number>(4);
+  const [regSection, setRegSection] = useState<string>("A");
 
   // Forgot Password States
   const [forgotEmail, setForgotEmail] = useState("");
@@ -269,6 +271,8 @@ function LoginForm() {
         departmentId,
         programId: regProgramId || null,
         majorId: regMajorId || null,
+        yearLevel: regYearLevel,
+        section: regSection,
       });
 
       if (!result.success) {
@@ -646,6 +650,37 @@ function LoginForm() {
                     </select>
                   </div>
                 )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="yearLevel">Year Level</label>
+                    <select
+                      id="yearLevel"
+                      value={regYearLevel}
+                      onChange={(e) => setRegYearLevel(Number(e.target.value))}
+                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    >
+                      <option value={4}>4th Year (Capstone / Thesis)</option>
+                      <option value={3}>3rd Year (Methods of Research)</option>
+                      <option value={2}>2nd Year</option>
+                      <option value={1}>1st Year</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="section">Class Section</label>
+                    <select
+                      id="section"
+                      value={regSection}
+                      onChange={(e) => setRegSection(e.target.value)}
+                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
+                    >
+                      <option value="A">Section A</option>
+                      <option value="B">Section B</option>
+                      <option value="C">Section C</option>
+                      <option value="D">Section D</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground flex items-start gap-2.5">

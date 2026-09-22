@@ -14,6 +14,8 @@ export interface RegisterUserInput {
   departmentId?: string | null;
   programId?: string | null;
   majorId?: string | null;
+  yearLevel?: number | null;
+  section?: string | null;
 }
 
 function sanitizeUUID(val?: string | null): string | null {
@@ -111,6 +113,8 @@ export async function registerUserAction(input: RegisterUserInput) {
       department_id: departmentId,
       program_id: programId,
       major_id: majorId,
+      year_level: input.yearLevel ? Number(input.yearLevel) : 4,
+      section: input.section?.trim().toUpperCase() || "A",
     };
 
     // 5. Use admin.createUser with email_confirm: true to avoid client-side SMTP email rate limits

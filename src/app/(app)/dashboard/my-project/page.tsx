@@ -204,6 +204,12 @@ export default function MyProjectPage() {
     project?.departments?.name,
   ]);
 
+  const isTitleOrConcept = useMemo(() => {
+    const stageName = (project?.defense_stages as any)?.name?.toLowerCase() || "";
+    const seq = (project?.defense_stages as any)?.sequence_order;
+    return stageName.includes("title") || stageName.includes("concept") || seq === 1 || !seq;
+  }, [project?.defense_stages]);
+
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
     try {
@@ -262,15 +268,15 @@ export default function MyProjectPage() {
       // 1. Get or resolve student record.
       let { data: studentRecord } = await supabase
         .from("students")
-        .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
+        .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
         .eq("profile_id", user.id)
         .maybeSingle();
 
       if (!studentRecord) {
         const { data: newStudent } = await supabase
           .from("students")
-          .insert({ profile_id: user.id, year_level: 4 })
-          .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
+          .insert({ profile_id: user.id, year_level: 4, section: "A" })
+          .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
           .maybeSingle();
         studentRecord = newStudent;
       }
@@ -1330,20 +1336,40 @@ export default function MyProjectPage() {
                     <div className="flex items-start gap-2">
                       <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-muted-foreground font-semibold">Adviser</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-muted-foreground font-semibold">Adviser</p>
+                          {isTitleOrConcept ? (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-400 text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300">
+                              Section Adviser
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                              Exclusive Adviser
+                            </Badge>
+                          )}
+                        </div>
                         <p className="font-bold text-foreground">{adviserName}</p>
                         {adviser?.profiles?.email && (
                           <p className="text-muted-foreground text-[10px]">{adviser.profiles.email}</p>
+                        )}
+                        {isTitleOrConcept ? (
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                            Class Section instructor for Concept &amp; Title Defense. Exclusive topic adviser can be chosen after Title Defense.
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5 leading-snug">
+                            Exclusive topic adviser for Proposal &amp; Final Defense.
+                          </p>
                         )}
                       </div>
                     </div>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-[10px] font-bold shrink-0"
+                      className="h-7 text-[10px] font-bold shrink-0 cursor-pointer"
                       onClick={openAdviserModal}
                     >
-                      {adviser ? "Change" : "Select Adviser"}
+                      {isTitleOrConcept ? (adviser ? "Change" : "Select Adviser") : "Change Exclusive Adviser"}
                     </Button>
                   </div>
                   <Separator />

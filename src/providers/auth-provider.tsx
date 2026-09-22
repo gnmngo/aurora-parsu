@@ -21,6 +21,7 @@ export interface StudentProfileData {
   department_id: string | null;
   program_id: string | null;
   year_level: number | null;
+  section: string | null;
 }
 
 export interface FacultyProfileData {
@@ -180,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               department_id: data.department_id ?? profileData.department_id,
               program_id: data.program_id,  // Fixed: was 'data.program' (undefined)
               year_level: data.year_level,
+              section: data.section || "A",
             });
           }
         } catch (studentErr) {

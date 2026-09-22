@@ -61,7 +61,7 @@ export async function createProjectAction(
     // 2. Resolve student record (or create if missing)
     let { data: student } = await serviceClient
       .from("students")
-      .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
+      .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
       .eq("profile_id", user.id)
       .maybeSingle();
 
@@ -71,8 +71,9 @@ export async function createProjectAction(
         .insert({
           profile_id: user.id,
           year_level: 4,
+          section: "A",
         })
-        .select()
+        .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
         .single();
 
       if (createStudentErr || !newStudent) {
@@ -185,12 +186,42 @@ export async function createProjectAction(
       { onConflict: "project_id,profile_id,member_role" }
     );
 
-    // 8. If adviser was selected, link adviser into project_members
-    if (input.adviserProfileId && input.adviserProfileId.trim()) {
+    // 8. Automatic Section Adviser Assignment for Concept & Title Defense stages
+    let resolvedAdviserId = input.adviserProfileId?.trim() || null;
+
+    if (!resolvedAdviserId && student.program_id) {
+      const studentYear = student.year_level || 4;
+      const studentSec = student.section || "A";
+
+      // Look up designated Section Adviser for this class
+      const { data: sectionMapping } = await serviceClient
+        .from("program_sections")
+        .select("adviser_id")
+        .eq("program_id", student.program_id)
+        .eq("year_level", studentYear)
+        .eq("section", studentSec)
+        .maybeSingle();
+
+      if (sectionMapping?.adviser_id) {
+        resolvedAdviserId = sectionMapping.adviser_id;
+      } else {
+        // Fallback: check any section in this program or default demo adviser
+        const { data: fallbackSec } = await serviceClient
+          .from("program_sections")
+          .select("adviser_id")
+          .eq("program_id", student.program_id)
+          .limit(1)
+          .maybeSingle();
+
+        resolvedAdviserId = fallbackSec?.adviser_id || "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+      }
+    }
+
+    if (resolvedAdviserId) {
       await serviceClient.from("project_members").upsert(
         {
           project_id: project.id,
-          profile_id: input.adviserProfileId.trim(),
+          profile_id: resolvedAdviserId,
           member_role: "adviser",
           is_primary: false,
         },
@@ -210,9 +241,9 @@ export async function createProjectAction(
 
       await emitNotification({
         supabase: serviceClient,
-        recipientProfileId: input.adviserProfileId.trim(),
-        title: "Selected as Research Adviser",
-        message: `${creatorName} has registered you as Research Adviser for their project "${project.title}".`,
+        recipientProfileId: resolvedAdviserId,
+        title: "Assigned as Section / Research Adviser",
+        message: `${creatorName} registered project "${project.title}". You are assigned as the Section / Research Adviser for this defense stage.`,
         eventType: "project_joined",
         actionUrl: `/dashboard`,
         metadata: { projectId: project.id },
@@ -742,6 +773,117 @@ export async function updateProjectTeamNameAction(
     return { success: true, team_name: cleanTeamName };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Retrieves all Program Section mappings (Year Level, Section, and assigned Section Adviser).
+ */
+export async function getProgramSectionsAction(programId?: string) {
+  const serviceClient = createServiceClient();
+  let query = serviceClient
+    .from("program_sections")
+    .select(`
+      id,
+      program_id,
+      year_level,
+      section,
+      academic_year,
+      adviser_id,
+      created_at,
+      updated_at,
+      programs ( id, code, name ),
+      profiles:profiles!program_sections_adviser_id_fkey ( id, first_name, last_name, email )
+    `)
+    .order("year_level", { ascending: true })
+    .order("section", { ascending: true });
+
+  if (programId) {
+    query = query.eq("program_id", programId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching program sections:", error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/**
+ * Allows Coordinators or Admins to assign or reassign a Section Adviser for a specific program, year, and section.
+ */
+export async function upsertProgramSectionAction(input: {
+  programId: string;
+  yearLevel: number;
+  section: string;
+  adviserId: string;
+  academicYear?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  try {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
+
+    const { data: userRoles } = await serviceClient
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", user.id);
+
+    const roles = userRoles?.map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.code : r.roles?.code)) || [];
+    if (!roles.includes("coordinator") && !roles.includes("sys_admin")) {
+      return { success: false, error: "Permission denied. Only Research Coordinators or Admins can assign Section Advisers." };
+    }
+
+    const cleanSection = input.section.trim().toUpperCase();
+    const ay = input.academicYear || currentAcademicYear();
+
+    const { error: upsertErr } = await serviceClient.from("program_sections").upsert(
+      {
+        program_id: input.programId,
+        year_level: input.yearLevel,
+        section: cleanSection,
+        academic_year: ay,
+        adviser_id: input.adviserId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "program_id,year_level,section,academic_year" }
+    );
+
+    if (upsertErr) {
+      return { success: false, error: upsertErr.message };
+    }
+
+    // Audit log
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: "coordinator",
+      action_type: "UPDATE",
+      module: "curriculum",
+      entity_type: "program_sections",
+      entity_id: input.programId,
+      description: `Assigned Section Adviser (${input.adviserId}) to Program ${input.programId} Year ${input.yearLevel} Section ${cleanSection} (${ay})`,
+      ip_address: ip,
+      user_agent: userAgent,
+      academic_year: ay,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to assign section adviser.";
     return { success: false, error: msg };
   }
 }

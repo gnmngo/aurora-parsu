@@ -93,6 +93,7 @@ export interface Student {
   profile_id: string;
   student_number: string | null;
   year_level: number | null;
+  section?: string | null;
   campus_id: string | null;
   college_id: string | null;
   department_id: string | null;
@@ -100,6 +101,19 @@ export interface Student {
   major_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProgramSection {
+  id: string;
+  program_id: string;
+  year_level: number;
+  section: string;
+  academic_year: string;
+  adviser_id: string;
+  created_at: string;
+  updated_at: string;
+  programs?: { code: string; name: string };
+  profiles?: { first_name: string | null; last_name: string | null; email: string };
 }
 
 export interface Faculty {
