@@ -85,7 +85,7 @@ export async function submitDefenseApplicationAction(input: {
     );
 
     if (!adviserMember?.profile_id) {
-      const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+      const DEMO_ADVISER_PROFILE_ID = "ac8ab701-b052-450b-8464-3145196797c5"; // Pablo Job (panelist1@aurora.test)
       await serviceClient.from("project_members").upsert(
         {
           project_id: input.projectId,

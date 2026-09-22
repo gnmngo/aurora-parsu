@@ -188,8 +188,8 @@ export async function createProjectAction(
 
     // 8. Automatic Section Adviser Assignment for Concept & Title Defense stages
     // In production, the section adviser designated for the student's program/section takes ownership.
-    // For demonstration purposes, if no class section adviser is registered, fallback to the demo adviser account.
-    const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+    // For demonstration purposes, if no class section adviser is registered, fallback to the demo adviser account (Pablo Job).
+    const DEMO_ADVISER_PROFILE_ID = "ac8ab701-b052-450b-8464-3145196797c5"; // Pablo Job (panelist1@aurora.test)
     let resolvedAdviserId = input.adviserProfileId?.trim() || null;
 
     if (!resolvedAdviserId && student.program_id) {
@@ -450,8 +450,8 @@ export async function notifyAdviserManuscriptUploadedAction(
 
     if (!adviserMember?.profile_id) {
       // For demo purposes and concept/title defense stages:
-      // Default to demo adviser account so reviewer can immediately access manuscript
-      const DEMO_ADVISER_PROFILE_ID = "6f9c27b6-5f28-4469-abc5-a2141e92b706";
+      // Default to demo adviser account (Pablo Job) so reviewer can immediately access manuscript
+      const DEMO_ADVISER_PROFILE_ID = "ac8ab701-b052-450b-8464-3145196797c5"; // Pablo Job (panelist1@aurora.test)
       await serviceClient.from("project_members").upsert(
         {
           project_id: projectId,
