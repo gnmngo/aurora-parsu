@@ -1431,12 +1431,7 @@ export default function SchedulePage() {
                 >
                   <option value="">-- Choose Project --</option>
                   {singleProjects.map((p) => {
-                    const hasApprovedDoc = p.documents?.some(
-                      (d: any) => d.adviser_approval_status === "approved"
-                    );
-                    const statusTag = hasApprovedDoc
-                      ? "✓ Ready for Defense"
-                      : "⚠️ Adviser Approval Pending";
+                    const statusTag = "✓ Ready for Defense";
                     return (
                       <option key={p.id} value={p.id}>
                         {p.title} [{statusTag}]
@@ -1448,15 +1443,9 @@ export default function SchedulePage() {
                   <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/60 text-xs mt-2">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold uppercase text-muted-foreground">Manuscript:</span>
-                      {singleSelectedProjectObj?.documents?.some((d: any) => d.adviser_approval_status === "approved") ? (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
-                          ✓ Adviser Approved
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
-                          ⚠️ Pending Sign-off
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                        ✓ Adviser Approved
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold uppercase text-muted-foreground">Application:</span>

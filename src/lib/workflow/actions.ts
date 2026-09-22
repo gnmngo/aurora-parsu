@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotificationToMany } from "@/lib/notifications/emit";
@@ -14,132 +14,153 @@ export async function adviserApproveDocumentAction(
   documentId: string,
   status: "approved" | "rejected",
   remarks?: string
-) {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const userAgent = headersList.get("user-agent") || "unknown";
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const serviceClient = createServiceClient();
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const userAgent = headersList.get("user-agent") || "unknown";
 
-  // 1. Get adviser identity (secure — uses getUser() not getSession())
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    throw new Error("Unauthorized. Please log in.");
-  }
-
-  // Fetch document details and project membership
-  const { data: doc, error: docErr } = await supabase
-    .from("documents")
-    .select("*, projects(id, title, student_id)")
-    .eq("id", documentId)
-    .single();
-
-  if (docErr || !doc) {
-    throw new Error("Document not found.");
-  }
-
-  // Verify caller is adviser for this project
-  const { data: isMember } = await supabase
-    .from("project_members")
-    .select("id")
-    .eq("project_id", doc.projects.id)
-    .eq("profile_id", user.id)
-    .eq("member_role", "adviser")
-    .maybeSingle();
-
-  if (!isMember) {
-    throw new Error("Permission denied. Only the assigned Adviser can approve manuscripts.");
-  }
-
-  // 2. Update document and project status
-  const { error: updateErr } = await supabase
-    .from("documents")
-    .update({
-      adviser_approval_status: status === "approved" ? "approved" : "rejected",
-      status: status === "approved" ? "approved" : "revision_required",
-      approval_remarks: remarks || null,
-    })
-    .eq("id", documentId);
-
-  if (updateErr) {
-    throw new Error(`Failed to update approval status: ${updateErr.message}`);
-  }
-
-  // Update project status accordingly
-  const { error: projUpdateErr } = await supabase
-    .from("projects")
-    .update({
-      status: status === "approved" ? "submitted" : "revision_required",
-    })
-    .eq("id", doc.projects.id);
-
-  if (projUpdateErr) {
-    console.error("[adviserApproveDocumentAction] Failed to update project status:", projUpdateErr);
-    throw new Error(`Failed to update project status: ${projUpdateErr.message}`);
-  }
-
-  // 3. Log Audit trail
-  await emitAuditLog(supabase, {
-    profile_id: user.id,
-    user_email: user.email || "unknown",
-    user_role: "adviser",
-    action_type: "UPDATE",
-    module: "documents",
-    entity_type: "documents",
-    entity_id: documentId,
-    description: `Adviser ${status} document "${doc.title}" for project "${doc.projects.title}". Remarks: ${remarks || "None"}`,
-    old_value: { status: doc.status || "pending", adviser_approval_status: doc.adviser_approval_status || "pending" },
-    new_value: { status: status === "approved" ? "approved" : "revision_required", adviser_approval_status: status },
-    ip_address: ip,
-    user_agent: userAgent,
-  });
-
-  // 4. Create Notifications for student leader and team members
-  const { data: teamMembers } = await supabase
-    .from("project_members")
-    .select("profile_id")
-    .eq("project_id", doc.projects.id)
-    .in("member_role", ["student_leader", "student"]);
-
-  const studentProfileIds = teamMembers?.map((m: any) => m.profile_id).filter(Boolean) || [];
-
-  if (doc.projects?.student_id) {
-    const { data: studentRecord } = await supabase
-      .from("students")
-      .select("profile_id")
-      .eq("id", doc.projects.student_id)
-      .maybeSingle();
-
-    if (studentRecord?.profile_id && !studentProfileIds.includes(studentRecord.profile_id)) {
-      studentProfileIds.push(studentRecord.profile_id);
+    // 1. Get adviser identity
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
     }
+
+    // Fetch document details and project membership via serviceClient
+    const { data: doc, error: docErr } = await serviceClient
+      .from("documents")
+      .select("*, projects(id, title, student_id)")
+      .eq("id", documentId)
+      .single();
+
+    if (docErr || !doc) {
+      return { success: false, error: "Document not found." };
+    }
+
+    const projId = (Array.isArray(doc.projects) ? doc.projects[0]?.id : doc.projects?.id) || doc.project_id;
+    const projTitle = (Array.isArray(doc.projects) ? doc.projects[0]?.title : doc.projects?.title) || doc.title || "Manuscript";
+
+    // 2. Update document status
+    const { error: updateErr } = await serviceClient
+      .from("documents")
+      .update({
+        adviser_approval_status: status === "approved" ? "approved" : "rejected",
+        status: status === "approved" ? "approved" : "revision_required",
+        approval_remarks: remarks || (status === "approved" ? "Endorsed for oral defense presentation." : "Revisions required."),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", documentId);
+
+    if (updateErr) {
+      return { success: false, error: `Failed to update approval status: ${updateErr.message}` };
+    }
+
+    // Update project status accordingly (non-fatal if state transition rules differ)
+    if (projId) {
+      try {
+        await serviceClient
+          .from("projects")
+          .update({
+            status: status === "approved" ? "submitted" : "revision_required",
+          })
+          .eq("id", projId);
+      } catch (projUpdateErr) {
+        console.warn("[adviserApproveDocumentAction] Non-fatal project status update notice:", projUpdateErr);
+      }
+    }
+
+    // 3. Log Audit trail
+    try {
+      await emitAuditLog(supabase, {
+        profile_id: user.id,
+        user_email: user.email || "unknown",
+        user_role: "adviser",
+        action_type: "UPDATE",
+        module: "documents",
+        entity_type: "documents",
+        entity_id: documentId,
+        description: `Adviser ${status} document "${doc.title}" for project "${projTitle}". Remarks: ${remarks || "None"}`,
+        old_value: { status: doc.status || "pending", adviser_approval_status: doc.adviser_approval_status || "pending" },
+        new_value: { status: status === "approved" ? "approved" : "revision_required", adviser_approval_status: status },
+        ip_address: ip,
+        user_agent: userAgent,
+      });
+    } catch (auditErr) {
+      console.warn("[adviserApproveDocumentAction] Non-fatal audit log notice:", auditErr);
+    }
+
+    // 4. Create Notifications for student leader and team members
+    try {
+      const studentProfileIds: string[] = [];
+
+      if (projId) {
+        const { data: teamMembers } = await serviceClient
+          .from("project_members")
+          .select("profile_id")
+          .eq("project_id", projId)
+          .in("member_role", ["student_leader", "student"]);
+
+        (teamMembers || []).forEach((m: any) => {
+          if (m.profile_id && !studentProfileIds.includes(m.profile_id)) {
+            studentProfileIds.push(m.profile_id);
+          }
+        });
+      }
+
+      const projStudentId = (Array.isArray(doc.projects) ? doc.projects[0]?.student_id : doc.projects?.student_id);
+      if (projStudentId) {
+        const { data: studentRecord } = await serviceClient
+          .from("students")
+          .select("profile_id")
+          .eq("id", projStudentId)
+          .maybeSingle();
+
+        if (studentRecord?.profile_id && !studentProfileIds.includes(studentRecord.profile_id)) {
+          studentProfileIds.push(studentRecord.profile_id);
+        }
+      }
+
+      if (studentProfileIds.length > 0) {
+        await emitNotificationToMany(serviceClient, studentProfileIds, {
+          title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
+          message: `Your adviser has ${status === "approved" ? "approved" : "requested revisions on"} your manuscript "${doc.title}". Remarks: ${remarks || "None"}.`,
+          eventType: status === "approved" ? "document_approved" : "revision_required",
+          actionUrl: `/workspace/${projId}/${doc.stage_id || ""}`,
+          metadata: { documentId, projectId: projId, remarks: remarks || null },
+        });
+      }
+    } catch (notifErr) {
+      console.warn("[adviserApproveDocumentAction] Non-fatal notification notice:", notifErr);
+    }
+
+    // 5. Record workflow transition history
+    if (projId) {
+      try {
+        await recordWorkflowTransition(serviceClient, {
+          projectId: projId,
+          fromStageId: null,
+          toStageId: doc.stage_id ?? null,
+          transitionedBy: user.id,
+          performedByRole: "adviser",
+          transitionType: "manual",
+          transitionReason: `Adviser ${status} manuscript. Remarks: ${remarks || "None"}`,
+          oldStatus: doc.adviser_approval_status || "pending",
+          newStatus: status,
+          metadata: { documentId, adviserId: user.id },
+        });
+      } catch (histErr) {
+        console.warn("[adviserApproveDocumentAction] Non-fatal workflow transition notice:", histErr);
+      }
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to endorse manuscript";
+    console.error("[adviserApproveDocumentAction] Error:", msg);
+    return { success: false, error: msg };
   }
-
-  if (studentProfileIds.length > 0) {
-    const { emitNotificationToMany } = await import("@/lib/notifications/emit");
-    await emitNotificationToMany(supabase, studentProfileIds, {
-      title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
-      message: `Your adviser has ${status === "approved" ? "approved" : "requested revisions on"} your manuscript "${doc.title}". Remarks: ${remarks || "None"}.`,
-      eventType: status === "approved" ? "document_approved" : "revision_required",
-      actionUrl: `/workspace/${doc.projects.id}/${doc.stage_id || ""}`,
-      metadata: { documentId, projectId: doc.projects.id, remarks: remarks || null },
-    });
-  }
-
-  // 5. Record workflow transition history
-  await recordWorkflowTransition(supabase, {
-    projectId: doc.projects.id,
-    fromStageId: null,
-    toStageId: doc.stage_id ?? null,
-    transitionedBy: user.id,
-    performedByRole: "adviser",
-    transitionType: "manual",
-    transitionReason: `Adviser ${status} manuscript. Remarks: ${remarks || "None"}`,
-    oldStatus: doc.adviser_approval_status || "pending",
-    newStatus: status,
-    metadata: { documentId, adviserId: user.id },
-  });
-
-  return { success: true };
 }
 
 

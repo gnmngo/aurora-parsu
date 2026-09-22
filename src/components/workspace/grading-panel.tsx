@@ -1072,11 +1072,15 @@ export function GradingPanel({
 
     try {
       setEndorsing(true);
-      await adviserApproveDocumentAction(
+      const res = await adviserApproveDocumentAction(
         documentData.id,
         status,
         adviserRemarks || (status === "approved" ? "Endorsed for defense by research adviser." : "Revisions required.")
       );
+
+      if (res && !res.success) {
+        throw new Error(res.error || "Failed to submit adviser endorsement.");
+      }
 
       toast.success(
         status === "approved"
