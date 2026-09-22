@@ -44,7 +44,14 @@ export async function submitDefenseApplicationAction(input: {
     }
 
     // Verify caller is a project member or owner
+    const { data: studentRecord } = await serviceClient
+      .from("students")
+      .select("id")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
     const isMember =
+      (studentRecord && project.student_id === studentRecord.id) ||
       project.student_id === user.id ||
       (project.project_members as any[])?.some((m) => m.profile_id === user.id);
 
@@ -183,9 +190,17 @@ export async function certifyDefenseApplicationAction(input: {
     // Notify student owner
     const proj = (updatedApp as any).projects;
     if (proj?.student_id) {
+      const { data: studentRecord } = await serviceClient
+        .from("students")
+        .select("profile_id")
+        .eq("id", proj.student_id)
+        .maybeSingle();
+
+      const recipientProfileId = studentRecord?.profile_id || proj.student_id;
+
       await emitNotification({
         supabase: serviceClient,
-        recipientProfileId: proj.student_id,
+        recipientProfileId: recipientProfileId,
         title: "Oral Defense Endorsed by Adviser",
         message: `Your adviser certified your Application for Oral Defense for "${proj.title}". It is now ready for defense scheduling.`,
         eventType: "document_approved",
@@ -327,6 +342,27 @@ export async function approveDefenseApplicationAction(input: {
 
     if (updateErr || !updatedApp) {
       throw new Error(`Failed to approve application: ${updateErr?.message || "Unknown error"}`);
+    }
+
+    // Notify student owner
+    const proj = (updatedApp as any).projects;
+    if (proj?.student_id) {
+      const { data: studentRecord } = await serviceClient
+        .from("students")
+        .select("profile_id")
+        .eq("id", proj.student_id)
+        .maybeSingle();
+
+      const recipientProfileId = studentRecord?.profile_id || proj.student_id;
+
+      await emitNotification({
+        supabase: serviceClient,
+        recipientProfileId: recipientProfileId,
+        title: "Oral Defense Application Approved",
+        message: `Your Application for Oral Defense for "${proj.title}" has been approved by the Department Chair / Coordinator.`,
+        eventType: "document_approved",
+        link: `/dashboard/my-project`,
+      });
     }
 
     return { success: true, application: updatedApp };
