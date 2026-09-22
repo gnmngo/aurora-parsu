@@ -35,11 +35,10 @@ const DEMO_ACCOUNTS: Record<string, DemoCredentials> = {
 export async function getDemoCredentialsAction(
   role: string
 ): Promise<{ success: boolean; email?: string; password?: string; error?: string }> {
-  // Allow demo credentials if demo mode is enabled or in development
-  const isDemoMode =
-    process.env.NEXT_PUBLIC_DEMO_MODE === "true" || process.env.NODE_ENV !== "production";
+  // Allow demo credentials unless explicitly disabled
+  const isDemoDisabled = process.env.NEXT_PUBLIC_DISABLE_DEMO_LOGIN === "true";
 
-  if (!isDemoMode) {
+  if (isDemoDisabled) {
     return { success: false, error: "Demo mode is disabled in this environment." };
   }
 
