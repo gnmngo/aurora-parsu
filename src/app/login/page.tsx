@@ -97,9 +97,10 @@ function LoginForm() {
   useEffect(() => {
     if (regCampusId) {
       supabase.from("colleges").select("id, name").eq("campus_id", regCampusId).order("name").then(({ data }) => {
-        setColleges(data || []);
-        if (data && data.length > 0) {
-          setRegCollegeId((prev) => (data.some((c) => c.id === prev) ? prev : data[0].id));
+        const list = data || [];
+        setColleges(list);
+        if (list.length > 0) {
+          setRegCollegeId((prev) => (list.some((c) => c.id === prev) ? prev : list[0].id));
         } else {
           setRegCollegeId("");
         }
@@ -107,6 +108,11 @@ function LoginForm() {
     } else {
       setColleges([]);
       setRegCollegeId("");
+      setRegDepartmentId("");
+      setPrograms([]);
+      setRegProgramId("");
+      setMajors([]);
+      setRegMajorId("");
     }
   }, [regCampusId, supabase]);
 
@@ -122,33 +128,36 @@ function LoginForm() {
     }
   }, [regCollegeId, supabase]);
 
-  // Load programs based on college and optional department
+  // Load programs based on college directly (resilient to optional departments)
   useEffect(() => {
     if (regCollegeId) {
-      let query = supabase.from("programs").select("id, name, code, department_id").eq("college_id", regCollegeId).order("name");
-      if (regDepartmentId) {
-        query = query.eq("department_id", regDepartmentId);
-      }
-      query.then(({ data }) => {
-        setPrograms(data || []);
-        if (data && data.length > 0) {
-          setRegProgramId((prev) => (data.some((p) => p.id === prev) ? prev : data[0].id));
-        } else {
-          setRegProgramId("");
-        }
-      });
+      supabase
+        .from("programs")
+        .select("id, name, code, department_id")
+        .eq("college_id", regCollegeId)
+        .order("name")
+        .then(({ data }) => {
+          const list = data || [];
+          setPrograms(list);
+          if (list.length > 0) {
+            setRegProgramId((prev) => (list.some((p) => p.id === prev) ? prev : list[0].id));
+          } else {
+            setRegProgramId("");
+          }
+        });
     } else {
       setPrograms([]);
       setRegProgramId("");
     }
-  }, [regCollegeId, regDepartmentId, supabase]);
+  }, [regCollegeId, supabase]);
 
   // Load majors based on program
   useEffect(() => {
     if (regProgramId) {
       supabase.from("majors").select("id, name").eq("program_id", regProgramId).order("name").then(({ data }) => {
-        setMajors(data || []);
-        if (data && data.length > 0) setRegMajorId(data[0].id);
+        const list = data || [];
+        setMajors(list);
+        if (list.length > 0) setRegMajorId(list[0].id);
         else setRegMajorId("");
       });
     } else {
@@ -218,6 +227,8 @@ function LoginForm() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     if (!regEmail || !regPassword || !regFirstName || !regLastName) {
       toast.error("Please fill in your name, email, and password");
       return;
@@ -265,12 +276,21 @@ function LoginForm() {
         return;
       }
 
-      toast.success("Student account created successfully! You can now sign in.");
+      toast.success("Student account created successfully! Signing in...");
       
-      // Auto-populate credentials and switch to sign in tab
-      setEmail(regEmail);
-      setPassword(regPassword);
-      setActiveTab("signin");
+      // Immediate auto-login to transition directly to dashboard
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: regEmail.trim(),
+        password: regPassword,
+      });
+
+      if (signInError) {
+        // Fallback: populate credentials and switch to sign in tab
+        setEmail(regEmail.trim());
+        setPassword(regPassword);
+        setActiveTab("signin");
+        toast.info("Account created. Please sign in with your credentials.");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected registration error";
       toast.error(message);

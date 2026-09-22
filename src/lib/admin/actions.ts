@@ -177,6 +177,29 @@ export async function createFacultyAccountAction(input: CreateFacultyInput) {
 
   const generatedPass = input.password || "ParSU-" + Math.random().toString(36).slice(-8) + "!";
   const resolvedEmpNumber = input.employeeNumber?.trim() || `PSU-FAC-${Math.random().toString(36).slice(-6).toUpperCase()}`;
+  const cleanEmail = input.email.trim().toLowerCase();
+
+  // Pre-check duplicate email
+  const { data: existingProf } = await serviceClient
+    .from("profiles")
+    .select("id")
+    .ilike("email", cleanEmail)
+    .maybeSingle();
+
+  if (existingProf) {
+    throw new Error(`An account with email "${cleanEmail}" already exists.`);
+  }
+
+  // Pre-check duplicate employee number
+  const { data: existingFac } = await serviceClient
+    .from("faculty")
+    .select("id")
+    .eq("employee_number", resolvedEmpNumber)
+    .maybeSingle();
+
+  if (existingFac) {
+    throw new Error(`Employee number "${resolvedEmpNumber}" is already registered.`);
+  }
 
   const metaData = {
     first_name: input.firstName.trim(),
@@ -192,14 +215,18 @@ export async function createFacultyAccountAction(input: CreateFacultyInput) {
   };
 
   const { data, error } = await serviceClient.auth.admin.createUser({
-    email: input.email.trim(),
+    email: cleanEmail,
     password: generatedPass,
     email_confirm: true,
     user_metadata: metaData,
   });
 
   if (error) {
-    throw new Error(error.message);
+    const msg = error.message || "";
+    if (msg.includes("Database error creating new user")) {
+      throw new Error(`Failed to create user: Email or employee number is already taken.`);
+    }
+    throw new Error(msg);
   }
 
   // Audit log
