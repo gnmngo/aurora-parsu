@@ -13,31 +13,39 @@ import {
   Calendar, 
   HardDrive, 
   Loader2, 
-  ArrowRight,
-  Maximize2,
-  Tv
+  ArrowRight, 
+  Maximize2, 
+  Tv,
+  GraduationCap
 } from "lucide-react";
+import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 
 export default function PresentationModePage() {
   const [loggingIn, setLoggingIn] = useState<string | null>(null);
   const supabase = createClient();
 
   const presentationRoles = [
-    { name: "Student", email: "student1@parsu.edu.ph", icon: Users, desc: "Submit paper, view timeline stepper, revise and check notes." },
-    { name: "Adviser", email: "adviser1@parsu.edu.ph", icon: Shield, desc: "Check advisees directory, annotate text issues, write comments." },
-    { name: "Panelist", email: "panelist1@parsu.edu.ph", icon: Award, desc: "View scheduling, complete grading rubric, sign evaluation cert." },
-    { name: "Coordinator", email: "coordinator1@parsu.edu.ph", icon: Calendar, desc: "Create defenses calendar, check conflicts, publish stages." },
-    { name: "System Admin", email: "admin1@parsu.edu.ph", icon: HardDrive, desc: "View system health, monitor active stats, trigger demo reset." }
+    { roleKey: "student", name: "Student", email: "student1@aurora.test", icon: Users, desc: "Submit paper, view timeline stepper, revise and check notes." },
+    { roleKey: "adviser", name: "Adviser", email: "adviser1@aurora.test", icon: Shield, desc: "Check advisees directory, annotate text issues, write comments." },
+    { roleKey: "panelist", name: "Panelist", email: "panelist1@aurora.test", icon: Award, desc: "View scheduling, complete grading rubric, sign evaluation cert." },
+    { roleKey: "coordinator", name: "Coordinator", email: "coord@aurora.test", icon: Calendar, desc: "Create defenses calendar, check conflicts, publish stages." },
+    { roleKey: "dean", name: "College Dean", email: "erpadayao@parsu.edu.ph", icon: GraduationCap, desc: "Executive college oversight, throughput analytics, institutional clearance." },
+    { roleKey: "admin", name: "System Admin", email: "admin@aurora.test", icon: HardDrive, desc: "View system health, monitor active stats, trigger demo reset." }
   ];
 
-  const handleRoleBypass = async (roleName: string, email: string) => {
+  const handleRoleBypass = async (roleName: string, roleKey: string) => {
     setLoggingIn(roleName);
     try {
       await supabase.auth.signOut();
       
+      const creds = await getDemoCredentialsAction(roleKey);
+      if (!creds.success || !creds.email || !creds.password) {
+        throw new Error(creds.error || "Demo credentials unavailable.");
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: "password123"
+        email: creds.email,
+        password: creds.password,
       });
 
       if (error) throw error;
@@ -110,7 +118,7 @@ export default function PresentationModePage() {
               <Card 
                 key={role.name} 
                 className="bg-slate-950 border border-slate-800 hover:border-primary/50 transition-all duration-200 p-6 flex flex-col justify-between text-left h-48 group cursor-pointer"
-                onClick={() => !isBypassing && handleRoleBypass(role.name, role.email)}
+                onClick={() => !isBypassing && handleRoleBypass(role.name, role.roleKey)}
               >
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">

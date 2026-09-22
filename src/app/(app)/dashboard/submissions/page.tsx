@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SubmissionCard } from "@/components/dashboard/submission-card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ export default function SubmissionsPage() {
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState("");
   const { isReady } = useAuthReady();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const loadSubmissions = async () => {
     setLoading(true);

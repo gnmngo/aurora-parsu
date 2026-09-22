@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
-import { emitNotification } from "@/lib/notifications/emit";
+import { emitNotificationToMany } from "@/lib/notifications/emit";
 import { emitAuditLog } from "@/lib/audit/log";
 
 
@@ -65,12 +65,17 @@ export async function adviserApproveDocumentAction(
   }
 
   // Update project status accordingly
-  await supabase
+  const { error: projUpdateErr } = await supabase
     .from("projects")
     .update({
       status: status === "approved" ? "submitted" : "revision_required",
     })
     .eq("id", doc.projects.id);
+
+  if (projUpdateErr) {
+    console.error("[adviserApproveDocumentAction] Failed to update project status:", projUpdateErr);
+    throw new Error(`Failed to update project status: ${projUpdateErr.message}`);
+  }
 
   // 3. Log Audit trail
   await emitAuditLog(supabase, {
@@ -82,8 +87,8 @@ export async function adviserApproveDocumentAction(
     entity_type: "documents",
     entity_id: documentId,
     description: `Adviser ${status} document "${doc.title}" for project "${doc.projects.title}". Remarks: ${remarks || "None"}`,
-    old_value: { status: "pending" },
-    new_value: { status },
+    old_value: { status: doc.status || "pending", adviser_approval_status: doc.adviser_approval_status || "pending" },
+    new_value: { status: status === "approved" ? "approved" : "revision_required", adviser_approval_status: status },
     ip_address: ip,
     user_agent: userAgent,
   });
@@ -129,7 +134,7 @@ export async function adviserApproveDocumentAction(
     performedByRole: "adviser",
     transitionType: "manual",
     transitionReason: `Adviser ${status} manuscript. Remarks: ${remarks || "None"}`,
-    oldStatus: "pending",
+    oldStatus: doc.adviser_approval_status || "pending",
     newStatus: status,
     metadata: { documentId, adviserId: user.id },
   });
@@ -155,6 +160,11 @@ export async function releaseProjectVerdictAction(
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const userAgent = headersList.get("user-agent") || "unknown";
 
+  const VALID_VERDICTS = ["passed", "passed_minor", "passed_major", "failed", "conditional", "re_defense"];
+  if (!VALID_VERDICTS.includes(verdictCode)) {
+    throw new Error(`Invalid verdict code: "${verdictCode}". Allowed options: ${VALID_VERDICTS.join(", ")}`);
+  }
+
   // 1. Authenticate — must be coordinator or sys_admin
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw new Error("Unauthorized. Please log in.");
@@ -175,7 +185,7 @@ export async function releaseProjectVerdictAction(
   // 2. Fetch project details
   const { data: project, error: projErr } = await supabase
     .from("projects")
-    .select("title, student_id")
+    .select("title, student_id, status")
     .eq("id", projectId)
     .single();
 
@@ -202,12 +212,13 @@ export async function releaseProjectVerdictAction(
     entity_type: "projects",
     entity_id: projectId,
     description: `Final verdict released: "${verdictCode}" for project "${project.title}". Remarks: ${remarks || "None"}.`,
+    old_value: { projectId, status: project.status },
     new_value: { projectId, verdictCode, remarks },
     ip_address: ip,
     user_agent: userAgent,
   });
 
-  // 5. Notify all student team members — non-blocking
+  // 5. Notify all student team members — non-blocking batch notification
   try {
     const recipientIds = new Set<string>();
 
@@ -230,14 +241,13 @@ export async function releaseProjectVerdictAction(
       if (m.profile_id) recipientIds.add(m.profile_id);
     });
 
-    for (const recipientId of recipientIds) {
-      await emitNotification({
-        supabase,
-        recipientProfileId: recipientId,
+    const recipientList = Array.from(recipientIds);
+    if (recipientList.length > 0) {
+      await emitNotificationToMany(supabase, recipientList, {
         title: "Final Verdict Released",
-        message: `Your defense outcome has been officially recorded: ${verdictCode.replace(/_/g, " ").toUpperCase()}. Remarks: ${remarks || "None"}.`,
+        message: `Your defense outcome has been officially recorded: ${verdictCode.replace(/_/g, " ").toUpperCase()}.${remarks ? " Remarks: " + remarks : ""}`,
         eventType: "final_verdict_released",
-        actionUrl: `/dashboard/grades`,
+        link: "/dashboard/grades",
         metadata: { projectId, verdictCode },
       });
     }
@@ -255,7 +265,7 @@ export async function releaseProjectVerdictAction(
     performedByRole: "coordinator",
     transitionType: "manual",
     transitionReason: `Final verdict released: ${verdictCode}. Remarks: ${remarks || "None"}`,
-    oldStatus: "evaluation_submitted",
+    oldStatus: project.status || "in_progress",
     newStatus: verdictCode,
     metadata: { projectId, verdictCode },
   });
@@ -279,6 +289,17 @@ export async function workflowUpdateAnnotationStatusAction(annotationId: string,
     throw new Error("Unauthorized. Please log in.");
   }
 
+  // Fetch annotation to verify existence and check project context
+  const { data: annotation, error: annErr } = await supabase
+    .from("annotations")
+    .select("id, status, created_by, project_id")
+    .eq("id", annotationId)
+    .maybeSingle();
+
+  if (annErr || !annotation) {
+    throw new Error("Annotation not found.");
+  }
+
   // Fetch current role claims
   const { data: callerRoles } = await supabase
     .from("user_roles")
@@ -295,8 +316,20 @@ export async function workflowUpdateAnnotationStatusAction(annotationId: string,
     if (!codes.includes("student")) {
       throw new Error("Permission denied. Only students can mark annotations as addressed.");
     }
+    if (annotation.project_id) {
+      const { data: isMember } = await supabase
+        .from("project_members")
+        .select("id")
+        .eq("project_id", annotation.project_id)
+        .eq("profile_id", user.id)
+        .maybeSingle();
+
+      if (!isMember && !codes.includes("coordinator") && !codes.includes("sys_admin")) {
+        throw new Error("Permission denied. You are not a member of this research project.");
+      }
+    }
   } else if (targetStatus === "verified" || targetStatus === "resolved") {
-    if (!codes.includes("adviser") && !codes.includes("panelist")) {
+    if (!codes.includes("adviser") && !codes.includes("panelist") && !codes.includes("sys_admin")) {
       throw new Error("Permission denied. Only Advisers and Panelists can verify or resolve annotations.");
     }
   } else if (targetStatus === "archived") {

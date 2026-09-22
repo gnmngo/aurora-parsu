@@ -110,6 +110,7 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
     .from("defense_schedules")
     .select("room, project_id, projects(title)")
     .eq("room", input.room)
+    .neq("status", "cancelled")
     .lt("scheduled_at", endTimeISO)
     .gt("end_at", startTimeISO)
     .maybeSingle();
@@ -121,12 +122,11 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
   // 4. Validation B: Panelist Conflicts
   if (input.panelistIds.length > 0) {
-
-
-    // Wait! Let's check overlaps manually by joining with defense_schedules
+    // Check active non-cancelled schedules in the same timeslot
     const { data: activeSchedules } = await supabase
       .from("defense_schedules")
       .select("project_id, stage_id, projects(title)")
+      .neq("status", "cancelled")
       .lt("scheduled_at", endTimeISO)
       .gt("end_at", startTimeISO);
 
@@ -245,6 +245,8 @@ export async function createDefenseScheduleAction(input: CreateScheduleInput) {
 
     if (panelError) {
       console.error("Error inserting defense panels:", panelError);
+      await supabase.from("defense_schedules").delete().eq("id", newSchedule.id);
+      throw new Error(`Failed to assign defense panelists: ${panelError.message}. Schedule was not created.`);
     }
   }
 
@@ -379,6 +381,18 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
     .maybeSingle();
 
   const adviserProfileId = adviserMember?.profile_id;
+
+  // Verify manuscript for this stage has approved adviser endorsement (BUG-D4)
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("adviser_approval_status")
+    .eq("project_id", input.projectId)
+    .eq("stage_id", input.stageId)
+    .maybeSingle();
+
+  if (!doc || doc.adviser_approval_status !== "approved") {
+    throw new Error("Adviser Endorsement Required: The manuscript for this defense stage must have an approved adviser endorsement to be rescheduled.");
+  }
 
   // Conflict of Interest Guard: An adviser cannot be a panel evaluator for their own advisee
   if (adviserProfileId && input.panelistIds.includes(adviserProfileId)) {
@@ -539,6 +553,7 @@ export async function updateDefenseScheduleAction(input: UpdateScheduleInput) {
 
     if (panelError) {
       console.error("Error inserting defense panels:", panelError);
+      throw new Error(`Failed to update defense panelists: ${panelError.message}`);
     }
   }
 
@@ -656,20 +671,20 @@ export async function cancelDefenseScheduleAction(
     .eq("project_id", projectId)
     .eq("stage_id", stageId);
 
-  // 3. Delete the schedule
-  const { error: deleteErr } = await supabase
+  // 3. Soft-cancel the schedule
+  const { error: cancelErr } = await supabase
     .from("defense_schedules")
-    .delete()
+    .update({ status: "cancelled" })
     .eq("id", scheduleId);
 
-  if (deleteErr) throw new Error("Failed to cancel defense schedule: " + deleteErr.message);
+  if (cancelErr) throw new Error("Failed to cancel defense schedule: " + cancelErr.message);
 
   // 4. Audit log
   await emitAuditLog(supabase, {
     profile_id: user.id,
     user_email: user.email || "unknown",
     user_role: "coordinator",
-    action_type: "DELETE",
+    action_type: "UPDATE",
     module: "scheduling",
     entity_type: "defense_schedules",
     entity_id: scheduleId,
@@ -727,6 +742,9 @@ export interface BatchCandidateProject {
   adviserProfileId?: string;
   hasApprovedDoc: boolean;
   adviserApprovalStatus: string;
+  hasApplicationVerified: boolean;
+  applicationStatus: string;
+  applicationId?: string;
   existingSchedule: {
     id: string;
     scheduledAt: string;
@@ -817,6 +835,12 @@ export async function getBatchDefenseCandidatesAction(filters: {
         stage_id,
         adviser_approval_status
       ),
+      defense_applications (
+        id,
+        stage_id,
+        status,
+        application_date
+      ),
       defense_schedules (
         id,
         stage_id,
@@ -864,6 +888,18 @@ export async function getBatchDefenseCandidatesAction(filters: {
       : (proj.documents as any[])?.[0];
 
     const hasApprovedDoc = docForStage?.adviser_approval_status === "approved";
+
+    // Application Gate resolution
+    const defAppForStage = filters.stageId
+      ? (proj.defense_applications as any[])?.find((a: any) => a.stage_id === filters.stageId)
+      : (proj.defense_applications as any[])?.[0];
+
+    const hasApplicationVerified =
+      defAppForStage?.status === "approved_by_chair" ||
+      defAppForStage?.status === "certified_by_adviser" ||
+      defAppForStage?.status === "scheduled";
+    const applicationStatus = defAppForStage?.status || "pending";
+
     const existingSched = filters.stageId
       ? (proj.defense_schedules as any[])?.find(
           (s: any) => s.stage_id === filters.stageId && s.status !== "cancelled"
@@ -890,6 +926,9 @@ export async function getBatchDefenseCandidatesAction(filters: {
       adviserProfileId,
       hasApprovedDoc,
       adviserApprovalStatus: docForStage?.adviser_approval_status || "not_uploaded",
+      hasApplicationVerified,
+      applicationStatus,
+      applicationId: defAppForStage?.id,
       existingSchedule: existingSched
         ? {
             id: existingSched.id,
@@ -961,9 +1000,32 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
   }
 
   const scheduledResults: any[] = [];
+  const failedResults: { projectId: string; error: string }[] = [];
 
   // Process each allocation
   for (const alloc of input.allocations) {
+    // Room conflict check (BUG-S5)
+    if (!input.isOnline) {
+      const { data: roomConflict } = await supabase
+        .from("defense_schedules")
+        .select("id, projects(title)")
+        .eq("room", input.room)
+        .neq("project_id", alloc.projectId)
+        .neq("status", "cancelled")
+        .lt("scheduled_at", alloc.endAt)
+        .gt("end_at", alloc.scheduledAt)
+        .maybeSingle();
+
+      if (roomConflict) {
+        const confTitle = (roomConflict as any)?.projects?.title || "another defense";
+        failedResults.push({
+          projectId: alloc.projectId,
+          error: `Room conflict: ${input.room} is already booked for "${confTitle}" during this timeslot.`,
+        });
+        continue;
+      }
+    }
+
     // 2. Resolve project details
     const { data: project } = await supabase
       .from("projects")
@@ -971,7 +1033,13 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
       .eq("id", alloc.projectId)
       .single();
 
-    if (!project) continue;
+    if (!project) {
+      failedResults.push({
+        projectId: alloc.projectId,
+        error: "Project record not found",
+      });
+      continue;
+    }
 
     const studentProfileId = Array.isArray(project.students)
       ? (project.students[0] as { profile_id?: string })?.profile_id
@@ -986,12 +1054,13 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
 
     const adviserProfileId = adviserMember?.profile_id;
 
-    // Remove any existing active schedule for this project and stage
+    // Soft-cancel any existing active schedule for this project and stage
     await supabase
       .from("defense_schedules")
-      .delete()
+      .update({ status: "cancelled" })
       .eq("project_id", alloc.projectId)
-      .eq("stage_id", alloc.stageId);
+      .eq("stage_id", alloc.stageId)
+      .neq("status", "cancelled");
 
     // 3. Insert new schedule
     const { data: newSchedule, error: schedError } = await supabase
@@ -1014,6 +1083,10 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
 
     if (schedError || !newSchedule) {
       console.error(`[batchScheduleDefensesAction] Error scheduling ${alloc.projectId}:`, schedError);
+      failedResults.push({
+        projectId: alloc.projectId,
+        error: schedError?.message || "Failed to create schedule record",
+      });
       continue;
     }
 
@@ -1097,6 +1170,7 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
           title: "Defense Scheduled",
           message: `Your defense for "${project.title}" has been scheduled on ${formattedDate} at ${input.room}${input.building ? ", " + input.building : ""}.`,
           eventType: "defense_scheduled",
+          link: "/dashboard/defenses",
           metadata: { scheduleId: newSchedule.id, projectId: alloc.projectId, stageId: alloc.stageId, batch: true },
         });
       }
@@ -1108,9 +1182,11 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
   }
 
   return {
-    success: true,
+    success: scheduledResults.length > 0 || failedResults.length === 0,
     count: scheduledResults.length,
     schedules: scheduledResults,
+    failedCount: failedResults.length,
+    errors: failedResults,
   };
 }
 
@@ -1153,6 +1229,12 @@ export async function completeDefenseScheduleAction(
     .eq("id", scheduleId);
 
   if (updateErr) throw new Error("Failed to mark defense as completed: " + updateErr.message);
+
+  // Update project status to under_evaluation upon defense conclusion (BUG-S8)
+  await serviceClient
+    .from("projects")
+    .update({ status: "under_evaluation" })
+    .eq("id", projectId);
 
   await emitAuditLog(supabase, {
     profile_id: user.id,

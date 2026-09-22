@@ -33,6 +33,26 @@ export interface Department {
   is_active: boolean;
 }
 
+export interface Program {
+  id: string;
+  department_id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Major {
+  id: string;
+  program_id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Role {
   id: string;
   name: string;
@@ -254,18 +274,85 @@ export interface RubricCriterionJson {
   id: string;
   name: string;
   weight: number;
+  category?: string;
+  max_score?: number;
+  description?: string;
+}
+
+export interface DefenseApplicationRequirements {
+  accomplishment_report: boolean;
+  documentation_chapters: boolean;
+  documentation_chapters_label?: string;
+  presentation_files: boolean;
+  custom_items?: Array<{ id: string; label: string; completed: boolean }>;
+}
+
+export interface AdviserCertification {
+  certified_at: string;
+  adviser_id: string;
+  adviser_name?: string;
+  signature_url?: string;
+  remarks?: string;
+}
+
+export interface CommitteeManifestation {
+  profile_id: string;
+  name: string;
+  role: "chair" | "member";
+  agreed_at: string;
+  signature_url?: string;
+}
+
+export interface ChairApproval {
+  approved_at: string;
+  chair_name: string;
+  chair_id?: string;
+  signature_url?: string;
+}
+
+export type DefenseApplicationStatus =
+  | "draft"
+  | "submitted_by_student"
+  | "certified_by_adviser"
+  | "scheduled"
+  | "approved_by_chair"
+  | "rejected";
+
+export interface DefenseApplication {
+  id: string;
+  project_id: string;
+  stage_id: string;
+  form_code: string;
+  defense_type: string;
+  application_date: string;
+  requirements_checklist: DefenseApplicationRequirements;
+  preferred_dates?: Array<{ date: string; time?: string }>;
+  status: DefenseApplicationStatus;
+  adviser_certification?: AdviserCertification | null;
+  committee_manifestations?: CommitteeManifestation[];
+  chair_approval?: ChairApproval | null;
+  defense_schedule_id?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RubricTemplate {
   id: string;
-  project_id: string;
+  project_id?: string | null;
+  stage_id?: string | null;
+  program_id?: string | null;
   title: string;
+  description?: string | null;
   criteria: RubricCriterionJson[];
   passing_score: number;
   excellent_score: number;
   target_compliance_rate: number;
   min_compliance_rate: number;
   max_major_unresolved: number;
+  is_published?: boolean;
+  is_archived?: boolean;
+  parent_template_id?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

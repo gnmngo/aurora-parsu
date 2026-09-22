@@ -14,14 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Sliders, Plus, Trash2, CheckCircle2, AlertCircle, Wand2 } from "lucide-react";
+import { Sliders, Plus, Trash2, CheckCircle2, AlertCircle, Wand2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
-import { createRubricAction, updateRubricAction } from "@/lib/rubrics/actions";
+import {
+  createRubricAction,
+  updateRubricAction,
+  PARSU_BSIT_ORAL_DEFENSE_CRITERIA,
+} from "@/lib/rubrics/actions";
 
 export interface RubricCriterionItem {
   id: string;
   name: string;
   weight: number;
+  category?: string;
+  max_score?: number;
+  description?: string;
 }
 
 export interface RubricTemplateModel {
@@ -94,6 +101,9 @@ export function RubricEditorDialog({
             id: c.id || `crit_${Date.now()}_${idx}`,
             name: c.name || "",
             weight: Number(c.weight || 0),
+            category: c.category || undefined,
+            max_score: c.max_score ? Number(c.max_score) : 100,
+            description: c.description || "",
           }))
         );
       }
@@ -105,13 +115,17 @@ export function RubricEditorDialog({
     } else {
       // Default reset
       if (projectId) setSelectedProject(projectId);
-      setTitle("Project Defense Rubric");
-      setCriteria([
-        { id: "c1", name: "Technical Rigor & Architecture", weight: 35 },
-        { id: "c2", name: "Research Methodology & Execution", weight: 30 },
-        { id: "c3", name: "Presentation & Manuscript Quality", weight: 20 },
-        { id: "c4", name: "Defense Mastery & Response to Inquiries", weight: 15 },
-      ]);
+      setTitle("ParSU BSIT Progress Report Defense Rubric (DCS-CF-04/05)");
+      setCriteria(
+        PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c, idx) => ({
+          id: c.id || `crit_${idx}`,
+          name: c.name,
+          weight: c.weight,
+          category: c.category,
+          max_score: c.max_score || 100,
+          description: c.description || "",
+        }))
+      );
       setPassingScore(75);
       setExcellentScore(85);
       setTargetCompliance(90);
@@ -119,6 +133,26 @@ export function RubricEditorDialog({
       setMaxMajor(2);
     }
   }, [rubric, projectId, open]);
+
+  const handleLoadParsuPreset = () => {
+    setTitle("ParSU BSIT Progress Report Defense Rubric (DCS-CF-04/05)");
+    setCriteria(
+      PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c, idx) => ({
+        id: c.id || `crit_${idx}`,
+        name: c.name,
+        weight: c.weight,
+        category: c.category,
+        max_score: c.max_score || 100,
+        description: c.description || "",
+      }))
+    );
+    setPassingScore(75);
+    setExcellentScore(85);
+    setTargetCompliance(90);
+    setMinCompliance(70);
+    setMaxMajor(2);
+    toast.success("Loaded official ParSU BSIT Oral Defense Criteria (DCS-CF-04/05)!");
+  };
 
   // Load project and program lists if needed
   useEffect(() => {
@@ -171,10 +205,18 @@ export function RubricEditorDialog({
     setCriteria(criteria.filter((_, i) => i !== index));
   };
 
-  const updateCriterion = (index: number, field: "name" | "weight", val: string | number) => {
+  const updateCriterion = (
+    index: number,
+    field: "name" | "weight" | "category" | "description",
+    val: string | number
+  ) => {
     const updated = [...criteria];
     if (field === "name") {
       updated[index] = { ...updated[index], name: String(val) };
+    } else if (field === "category") {
+      updated[index] = { ...updated[index], category: String(val) };
+    } else if (field === "description") {
+      updated[index] = { ...updated[index], description: String(val) };
     } else {
       updated[index] = { ...updated[index], weight: Number(val) };
     }
@@ -368,7 +410,17 @@ export function RubricEditorDialog({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleLoadParsuPreset}
+                  className="h-7 px-2 text-[10px] gap-1 font-bold border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/10"
+                  title="Load official 6 ParSU BSIT criteria (DCS-CF-04/05)"
+                >
+                  <GraduationCap className="h-3 w-3 text-amber-600" /> ParSU Preset (DCS-CF-04/05)
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -422,46 +474,55 @@ export function RubricEditorDialog({
             </div>
 
             {/* Criteria rows */}
-            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
               {criteria.map((c, idx) => (
                 <div
                   key={c.id || idx}
-                  className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border border-border/70 hover:border-border transition-colors"
+                  className="p-2 rounded-xl border border-border/70 hover:border-border transition-colors bg-muted/20 space-y-1"
                 >
-                  <span className="text-[10px] font-bold text-muted-foreground w-4 text-center">
-                    {idx + 1}
-                  </span>
-                  <Input
-                    value={c.name}
-                    onChange={(e) => updateCriterion(idx, "name", e.target.value)}
-                    placeholder="Criterion name (e.g., Technical Depth)"
-                    className="flex-1 text-xs h-8"
-                    required
-                  />
-                  <div className="flex items-center gap-1 w-20">
+                  {c.category && (
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-amber-750 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                        {c.category}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-muted-foreground w-4 text-center">
+                      {idx + 1}
+                    </span>
                     <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={c.weight || ""}
-                      onChange={(e) => updateCriterion(idx, "weight", e.target.value)}
-                      placeholder="0"
-                      className="text-center text-xs h-8 font-bold"
+                      value={c.name}
+                      onChange={(e) => updateCriterion(idx, "name", e.target.value)}
+                      placeholder="Criterion name (e.g., Technical Depth)"
+                      className="flex-1 text-xs h-8"
                       required
                     />
-                    <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                    <div className="flex items-center gap-1 w-20">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={c.weight || ""}
+                        onChange={(e) => updateCriterion(idx, "weight", e.target.value)}
+                        placeholder="0"
+                        className="text-center text-xs h-8 font-bold"
+                        required
+                      />
+                      <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeCriterion(idx)}
+                      disabled={criteria.length <= 1}
+                      className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                      title="Remove criterion"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeCriterion(idx)}
-                    disabled={criteria.length <= 1}
-                    className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-                    title="Remove criterion"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               ))}
             </div>

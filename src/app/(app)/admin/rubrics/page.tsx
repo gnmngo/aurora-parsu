@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,44 +25,59 @@ import {
   publishRubricAction,
   toggleActiveRubricAction,
   archiveRubricAction,
+  unarchiveRubricAction,
   deleteRubricAction
 } from "@/lib/rubrics/actions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RubricEditorDialog } from "@/components/grading/rubric-builder";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 
-export default function RubricsPage() {
+export default function AdminRubricsPage() {
   const [rubrics, setRubrics] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string>("all");
+  const [showArchived, setShowArchived] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const loadRubrics = async () => {
     setLoading(true);
     try {
+      let query = supabase
+        .from("rubric_templates")
+        .select(`
+          id,
+          title,
+          criteria,
+          passing_score,
+          excellent_score,
+          target_compliance_rate,
+          min_compliance_rate,
+          max_major_unresolved,
+          is_published,
+          is_active,
+          is_archived,
+          is_default,
+          program_id,
+          college_id,
+          version,
+          parent_template_id,
+          programs ( id, code, name ),
+          colleges ( id, code, name ),
+          projects ( id, title, program_id, programs(id, code, name) )
+        `)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (!showArchived) {
+        query = query.eq("is_archived", false);
+      }
+
       const [rubricRes, progRes] = await Promise.all([
-        supabase
-          .from("rubric_templates")
-          .select(`
-            id,
-            title,
-            criteria,
-            passing_score,
-            excellent_score,
-            target_compliance_rate,
-            min_compliance_rate,
-            max_major_unresolved,
-            is_published,
-            is_active,
-            is_archived,
-            version,
-            parent_template_id,
-            projects ( id, title, program_id, programs(id, code, name) )
-          `)
-          .eq("is_archived", false)
-          .order("created_at", { ascending: false }),
+        query,
         supabase
           .from("programs")
           .select("id, code, name")
@@ -86,7 +101,7 @@ export default function RubricsPage() {
 
   useEffect(() => {
     loadRubrics();
-  }, [supabase]);
+  }, [showArchived]);
 
   const handleAction = async (
     rubricId: string,
@@ -109,7 +124,13 @@ export default function RubricsPage() {
 
   const filteredRubrics = rubrics.filter((r) => {
     if (selectedProgram === "all") return true;
-    return r.projects?.program_id === selectedProgram || r.projects?.programs?.id === selectedProgram;
+    if (r.is_default) return true;
+    return (
+      r.program_id === selectedProgram ||
+      r.programs?.id === selectedProgram ||
+      r.projects?.program_id === selectedProgram ||
+      r.projects?.programs?.id === selectedProgram
+    );
   });
 
   return (
@@ -138,6 +159,15 @@ export default function RubricsPage() {
               ))}
             </select>
           </div>
+          <Button
+            variant={showArchived ? "secondary" : "outline"}
+            size="sm"
+            className="h-9 gap-1.5 text-xs font-bold"
+            onClick={() => setShowArchived((prev) => !prev)}
+          >
+            <Archive className="h-3.5 w-3.5" />
+            {showArchived ? "Archived Shown" : "Show Archived"}
+          </Button>
           <RubricEditorDialog
             onSaved={async () => {
               await loadRubrics();
@@ -174,9 +204,24 @@ export default function RubricsPage() {
                 <CardHeader className="border-b border-border bg-muted/20">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <CardTitle className="text-sm font-bold text-foreground">{rubric.title}</CardTitle>
-                        {progCode && (
+                        {rubric.is_default && (
+                          <Badge className="bg-primary/10 text-primary border border-primary/30 text-[9px] font-bold">
+                            🏛️ University Default
+                          </Badge>
+                        )}
+                        {rubric.programs?.code && (
+                          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-black">
+                            🎓 {rubric.programs.code}
+                          </Badge>
+                        )}
+                        {rubric.colleges?.code && (
+                          <Badge variant="outline" className="border-amber-500/30 text-amber-700 dark:text-amber-400 text-[9px] font-bold">
+                            🏢 {rubric.colleges.code}
+                          </Badge>
+                        )}
+                        {progCode && !rubric.programs?.code && (
                           <Badge variant="secondary" className="text-[9px] font-black">
                             {progCode}
                           </Badge>
@@ -186,12 +231,20 @@ export default function RubricsPage() {
                         </Badge>
                       </div>
                       <p className="text-[10px] text-muted-foreground font-semibold">
-                        {progName ? `${progName} • ` : ""}Project: {projectTitle}
+                        {rubric.is_default
+                          ? "Standard institutional criteria across all university degree programs (U-CF-04)"
+                          : rubric.programs?.name
+                            ? `Program Rubric: ${rubric.programs.name}`
+                            : rubric.colleges?.name
+                              ? `College Rubric: ${rubric.colleges.name}`
+                              : `${progName ? `${progName} • ` : ""}Project: ${projectTitle}`}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      {rubric.is_published ? (
+                      {rubric.is_archived ? (
+                        <Badge variant="danger" className="text-[8px] font-extrabold uppercase">Archived</Badge>
+                      ) : rubric.is_published ? (
                         <Badge variant="success" className="text-[8px] font-extrabold uppercase">Published</Badge>
                       ) : (
                         <Badge variant="outline" className="text-[8px] font-extrabold uppercase">Draft</Badge>
@@ -258,17 +311,29 @@ export default function RubricsPage() {
                         {rubric.is_active ? <XCircle className="h-3.5 w-3.5 text-warning" /> : <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
                         {rubric.is_active ? "Deactivate" : "Activate"}
                       </Button>
+                      {rubric.is_archived ? (
+                        <Button
+                          onClick={() => handleAction(rubric.id, () => unarchiveRubricAction(rubric.id), "Rubric restored successfully!")}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 rounded-lg text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                          disabled={actioningId === rubric.id}
+                        >
+                          {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />} Restore
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleAction(rubric.id, () => archiveRubricAction(rubric.id), "Rubric archived successfully!")}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 rounded-lg"
+                          disabled={actioningId === rubric.id}
+                        >
+                          {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />} Archive
+                        </Button>
+                      )}
                       <Button
-                        onClick={() => handleAction(rubric.id, () => archiveRubricAction(rubric.id), "Rubric archived successfully!")}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 gap-1 rounded-lg"
-                        disabled={actioningId === rubric.id}
-                      >
-                        {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />} Archive
-                      </Button>
-                      <Button
-                        onClick={() => handleAction(rubric.id, () => deleteRubricAction(rubric.id), "Rubric removed successfully!")}
+                        onClick={() => setConfirmDelete({ id: rubric.id, title: rubric.title })}
                         variant="danger"
                         size="sm"
                         className="h-8 gap-1 rounded-lg"
@@ -309,6 +374,39 @@ export default function RubricsPage() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2 text-rose-600">
+              <Trash2 className="h-5 w-5" />
+              Confirm Permanent Deletion
+            </DialogTitle>
+            <DialogDescription className="text-xs pt-1 text-slate-600">
+              Are you sure you want to delete the rubric template &quot;<strong className="text-slate-900">{confirmDelete?.title}</strong>&quot;? If student evaluations have already been recorded with this rubric, it will be automatically soft-deleted to protect institutional grade records.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button variant="outline" size="sm" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              className="font-bold"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                const targetId = confirmDelete.id;
+                setConfirmDelete(null);
+                await handleAction(targetId, () => deleteRubricAction(targetId), "Rubric template removed successfully!");
+              }}
+            >
+              Delete Rubric
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </RoleGuard>
   );

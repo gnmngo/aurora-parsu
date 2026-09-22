@@ -36,6 +36,8 @@ import { JoinProjectModal } from "@/components/workspace/join-project-modal";
 import { assignProjectAdviserAction, getApprovedFacultyListAction, updateProjectTeamNameAction } from "@/lib/projects/actions";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
 import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
+import { DefenseApplicationDialog } from "@/components/defenses/defense-application-dialog";
+import { getProgramFormMetadata } from "@/lib/workflow/template-resolver";
 
 interface ProjectData {
   id: string;
@@ -47,8 +49,13 @@ interface ProjectData {
   current_stage_id: string | null;
   defense_stages: { id: string; name: string; sequence_order: number } | null;
   workflow_template_id: string | null;
-  departments: { id: string; name: string } | null;
+  college_id?: string | null;
+  program_id?: string | null;
+  colleges?: { id: string; name: string; code: string } | null;
+  programs?: { id: string; name: string; code: string } | null;
+  departments: { id: string; name: string; code?: string } | null;
   students: { id: string; profiles: { first_name: string; last_name: string } | null } | null;
+  student_id?: string | null;
   // join_code is nullable — only returned if the auth user is the project owner
   join_code: string | null;
 }
@@ -146,7 +153,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function MyProjectPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState<any>(null);
@@ -180,6 +187,22 @@ export default function MyProjectPage() {
   const [selectedEvalForCert, setSelectedEvalForCert] = useState<EvaluationResult | null>(null);
   const [certDialogOpen, setCertDialogOpen] = useState(false);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
+
+  const formMeta = useMemo(() => {
+    return getProgramFormMetadata({
+      programCode: project?.programs?.code,
+      programName: project?.programs?.name,
+      collegeCode: project?.colleges?.code,
+      collegeName: project?.colleges?.name,
+      departmentName: project?.departments?.name,
+    });
+  }, [
+    project?.programs?.code,
+    project?.programs?.name,
+    project?.colleges?.code,
+    project?.colleges?.name,
+    project?.departments?.name,
+  ]);
 
   const openAdviserModal = async () => {
     setAdviserModalOpen(true);
@@ -246,9 +269,9 @@ export default function MyProjectPage() {
       if (!studentRecord) {
         const { data: newStudent } = await supabase
           .from("students")
-          .insert({ profile_id: user.id })
-          .select()
-          .single();
+          .insert({ profile_id: user.id, year_level: 4 })
+          .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id")
+          .maybeSingle();
         studentRecord = newStudent;
       }
       setStudent(studentRecord);
@@ -267,7 +290,10 @@ export default function MyProjectPage() {
         .select(`
           id, title, team_name, status, academic_year, created_at,
           current_stage_id, workflow_template_id, join_code, student_id,
+          college_id, program_id,
           defense_stages ( id, name, sequence_order ),
+          colleges ( id, name, code ),
+          programs ( id, name, code ),
           departments ( id, name ),
           students ( id, profiles ( first_name, last_name ) )
         `);
@@ -358,7 +384,7 @@ export default function MyProjectPage() {
           `)
           .in("document_version_id", versionIds)
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(500);
         if (anns) setAnnotations(anns as any);
       }
 
@@ -532,7 +558,11 @@ export default function MyProjectPage() {
       evalVerdict === "revision_required" ||
       openAnnotationsCount > 0);
 
-  const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 2;
+  const nextVersionNumber = currentVersion ? currentVersion.version_number + 1 : 1;
+  const isProjectCreator = Boolean(
+    student?.id && (project?.student_id === student.id || project?.students?.id === student.id)
+  );
+  const activeStageId = project.current_stage_id || (stages.length > 0 ? stages[0].id : undefined);
 
   return (
     <RoleGuard allowedRoles={["student"]} fallback={<AccessDenied />}>
@@ -590,10 +620,25 @@ export default function MyProjectPage() {
               )}
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <DefenseApplicationDialog
+              projectId={project.id}
+              stageId={activeStageId || ""}
+              projectTitle={project.title}
+              programName={project.departments?.name ? `BS Information Technology (${project.departments.name})` : "BS Information Technology"}
+              proponents={allMembers.filter((m: ProjectMemberDisplay) => m.member_role !== "adviser").map((m: ProjectMemberDisplay) => ({
+                name: m.profiles ? `${m.profiles.first_name} ${m.profiles.last_name}` : "Proponent",
+                isLeader: m.member_role === "student_leader" || m.is_primary,
+              }))}
+              adviser={adviser?.profiles ? {
+                name: `${adviser.profiles.first_name} ${adviser.profiles.last_name}`,
+                id: adviser.profile_id,
+              } : undefined}
+              onApplicationUpdated={loadProjectData}
+            />
             <PdfUploader
               projectId={project.id}
-              stageId={project.current_stage_id || undefined}
+              stageId={activeStageId}
               buttonText="Upload Manuscript (PDF)"
               className="font-bold shadow-sm"
               onUploadCompleted={loadProjectData}
@@ -666,6 +711,54 @@ export default function MyProjectPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* ── Official ParSU Oral Defense Application Banner ── */}
+        <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+              <FileCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground">
+                  Application for Oral Defense (Form {formMeta.formCodeApplication})
+                </h3>
+                <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary">
+                  {formMeta.isBsit ? "Official ParSU DCS" : "Official ParSU Standard"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Submit your official defense application, complete the requirements checklist (manuscript drafts &amp; presentation slides), and track Adviser &amp; Department Chair approval.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <DefenseApplicationDialog
+              projectId={project.id}
+              stageId={activeStageId || ""}
+              projectTitle={project.title}
+              programName={project.programs?.name || formMeta.programName}
+              collegeName={project.colleges?.name || formMeta.collegeHeader}
+              departmentName={project.departments?.name || formMeta.departmentHeader}
+              programCode={project.programs?.code || (formMeta.isBsit ? "BSIT" : undefined)}
+              proponents={allMembers.filter((m: ProjectMemberDisplay) => m.member_role !== "adviser").map((m: ProjectMemberDisplay) => ({
+                name: m.profiles ? `${m.profiles.first_name} ${m.profiles.last_name}` : "Proponent",
+                isLeader: m.member_role === "student_leader" || m.is_primary,
+              }))}
+              adviser={adviser?.profiles ? {
+                name: `${adviser.profiles.first_name} ${adviser.profiles.last_name}`,
+                id: adviser.profile_id,
+              } : undefined}
+              onApplicationUpdated={loadProjectData}
+              triggerButton={
+                <Button size="sm" className="h-8 gap-1.5 text-xs font-bold shadow-xs cursor-pointer">
+                  <FileText className="h-3.5 w-3.5" />
+                  Apply / View Form {formMeta.formCodeApplication}
+                </Button>
+              }
+            />
+          </div>
         </div>
 
         {/* ── Revision Required Alert Banner ─────────────────────── */}
@@ -1354,8 +1447,8 @@ export default function MyProjectPage() {
                 </Card>
               )}
 
-              {/* ── Join Code (visible to student members) ─── */}
-              {project?.join_code && (
+              {/* ── Join Code (only visible to project creator / leader) (BUG-31) ─── */}
+              {isProjectCreator && project?.join_code && (
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">

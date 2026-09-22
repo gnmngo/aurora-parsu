@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -46,13 +46,13 @@ export function PdfUploader({
 }: PdfUploaderProps) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [stages, setStages] = useState<Array<{ id: string; name: string }>>([]);
+  const [stages, setStages] = useState<{ id: string; name: string }[]>([]);
   const [selectedProject, setSelectedProject] = useState(projectId || "");
   const [selectedStage, setSelectedStage] = useState(stageId || "");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
   // Sync props if passed
@@ -87,30 +87,23 @@ export function PdfUploader({
         setProjects(projData);
         setStages(stageData);
 
-        // Safe defaults if not already set
-        if (!selectedProject && projData.length > 0) {
-          const first = projData[0];
-          setSelectedProject(first.id);
-          if (first.current_stage_id) {
-            setSelectedStage(first.current_stage_id);
-          } else if (stageData.length > 0) {
-            setSelectedStage(stageData[0].id);
-          }
-        } else if (selectedProject && !selectedStage) {
-          const activeProj = projData.find((p) => p.id === selectedProject);
-          if (activeProj?.current_stage_id) {
-            setSelectedStage(activeProj.current_stage_id);
-          } else if (stageData.length > 0) {
-            setSelectedStage(stageData[0].id);
-          }
-        }
+        setSelectedProject((prevProj) => {
+          const effectiveProj = projectId || prevProj || projData[0]?.id || "";
+          setSelectedStage((prevStage) => {
+            if (stageId) return stageId;
+            if (prevStage) return prevStage;
+            const activeProj = projData.find((p) => p.id === effectiveProj);
+            return activeProj?.current_stage_id || stageData[0]?.id || "";
+          });
+          return effectiveProj;
+        });
       } catch (err: unknown) {
         console.error("Error loading project/stage data for upload:", err);
       }
     }
 
     loadData();
-  }, [open, supabase, selectedProject, selectedStage]);
+  }, [open, supabase, projectId, stageId]);
 
   const handleProjectChange = (projId: string) => {
     setSelectedProject(projId);
@@ -254,13 +247,7 @@ export function PdfUploader({
       const nextVersion =
         versions && versions.length > 0 ? versions[0].version_number + 1 : 1;
 
-      // 4. Mark existing versions as not current
-      await supabase
-        .from("document_versions")
-        .update({ is_current: false })
-        .eq("document_id", docData.id);
-
-      // 5. Insert new document version
+      // 4. Insert new document version first to prevent zero-current version state
       const { data: verData, error: verError } = await supabase
         .from("document_versions")
         .insert({
@@ -280,6 +267,13 @@ export function PdfUploader({
         .maybeSingle();
 
       if (verError || !verData) throw verError || new Error("Failed to register document version.");
+
+      // 5. Mark older versions as not current now that new version is registered
+      await supabase
+        .from("document_versions")
+        .update({ is_current: false })
+        .eq("document_id", docData.id)
+        .neq("id", verData.id);
 
       // 6. Record upload history and event
       await supabase.from("document_upload_history").insert({

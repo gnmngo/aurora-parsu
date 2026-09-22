@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import { AccessDenied } from "@/components/auth/access-denied";
 type SearchTab = "projects" | "people" | "documents" | "schedules";
 
 function SearchContent() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const searchParams = useSearchParams();
   const initialQ = searchParams?.get("q") || "";
   
@@ -109,7 +109,7 @@ function SearchContent() {
   }, [page, activeTab]);
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean", "student"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-display">Global Search</h1>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,7 @@ export default function AnnotationsPage() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"open" | "addressed" | "all">("open");
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { user, roles } = useAuth();
 
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function AnnotationsPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean", "student"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -52,6 +52,7 @@ interface EvaluationRow {
   recommendations: string | null;
   panel_notes: string | null;
   submitted_at: string | null;
+  signed_at?: string | null;
   scores: Record<string, number> | null;
   panelist_id: string;
   project_id: string;
@@ -79,32 +80,16 @@ export default function GradesPage() {
   const [loading, setLoading] = useState(true);
   const [releasingId, setReleasingId] = useState<string | null>(null);
   const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { user, roles } = useAuth();
-  const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin"].includes(r));
+  const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin", "college_dean"].includes(r));
 
   const loadGrades = useCallback(async () => {
     if (!user) return;
     try {
-      const isCoordinatorOrAdmin = roles.some((r) =>
-        ["coordinator", "sys_admin", "college_dean"].includes(r)
-      );
       const isPanelist = roles.includes("panelist");
       const isStudent = roles.includes("student");
       const isAdviser = roles.includes("adviser");
-
-      // Fetch panel assignments to accurately identify Chairman vs Member
-      const { data: panelsData } = await supabase
-        .from("defense_panels")
-        .select("project_id, profile_id, panel_role");
-
-      const pMap: Record<string, "chair" | "member"> = {};
-      if (panelsData) {
-        panelsData.forEach((p: any) => {
-          pMap[`${p.project_id}_${p.profile_id}`] = p.panel_role;
-        });
-      }
-      setPanelRolesMap(pMap);
 
       // Rich join: stage, project proponents, program, evaluator, rubric
       const baseQuery = supabase
@@ -114,6 +99,7 @@ export default function GradesPage() {
           total_score,
           recommendations,
           panel_notes,
+          signed_at,
           submitted_at,
           scores,
           panelist_id,
@@ -123,6 +109,7 @@ export default function GradesPage() {
           projects ( 
             id, 
             title, 
+            status,
             student_id, 
             archived_at,
             programs ( code, name ),
@@ -132,14 +119,15 @@ export default function GradesPage() {
           rubric_templates ( title, criteria, passing_score )
         `)
         .eq("status", "submitted")
-        .order("submitted_at", { ascending: false });
+        .order("signed_at", { ascending: false, nullsFirst: false });
+
+      let loadedEvals: any[] = [];
 
       if (isCoordinatorOrAdmin) {
         // Full access
         const { data, error } = await baseQuery;
         if (error) throw error;
-        const activeEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
-        setEvaluations(activeEvals);
+        loadedEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
 
       } else if (isPanelist) {
         // Find all projects where user is assigned as panel member
@@ -152,11 +140,11 @@ export default function GradesPage() {
         if (projectIds.length > 0) {
           const { data, error } = await baseQuery.in("project_id", projectIds);
           if (error) throw error;
-          setEvaluations((data as unknown as EvaluationRow[]) || []);
+          loadedEvals = (data as any[]) || [];
         } else {
           const { data, error } = await baseQuery.eq("panelist_id", user.id);
           if (error) throw error;
-          setEvaluations((data as unknown as EvaluationRow[]) || []);
+          loadedEvals = (data as any[]) || [];
         }
 
       } else if (isAdviser) {
@@ -176,47 +164,69 @@ export default function GradesPage() {
 
         const { data, error } = await baseQuery.in("project_id", projectIds);
         if (error) throw error;
-        setEvaluations((data as unknown as EvaluationRow[]) || []);
+        loadedEvals = (data as any[]) || [];
 
       } else if (isStudent) {
-        // Get student record → project → evaluations for that project
-        const { data: studentRecord } = await supabase
-          .from("students")
-          .select("id")
-          .eq("profile_id", user.id)
-          .maybeSingle();
+        // Find projects as creator or team member (BUG-G5)
+        const [studentRec, memberRecs] = await Promise.all([
+          supabase.from("students").select("id").eq("profile_id", user.id).maybeSingle(),
+          supabase.from("project_members").select("project_id").eq("profile_id", user.id),
+        ]);
 
-        if (!studentRecord) {
+        const studentProjectIds = new Set<string>();
+        if (memberRecs.data) {
+          memberRecs.data.forEach((m: { project_id: string }) => studentProjectIds.add(m.project_id));
+        }
+
+        if (studentRec.data?.id) {
+          const { data: createdProjects } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("student_id", studentRec.data.id);
+          (createdProjects || []).forEach((p: { id: string }) => studentProjectIds.add(p.id));
+        }
+
+        const allStudentProjectIds = Array.from(studentProjectIds);
+        if (allStudentProjectIds.length === 0) {
           setEvaluations([]);
           setLoading(false);
           return;
         }
 
-        const { data: project } = await supabase
-          .from("projects")
-          .select("id")
-          .eq("student_id", studentRecord.id)
-          .maybeSingle();
-
-        if (!project) {
-          setEvaluations([]);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await baseQuery.eq("project_id", project.id);
+        const { data, error } = await baseQuery.in("project_id", allStudentProjectIds);
         if (error) throw error;
-        setEvaluations((data as unknown as EvaluationRow[]) || []);
+        loadedEvals = (data as any[]) || [];
 
       } else {
-        setEvaluations([]);
+        loadedEvals = [];
+      }
+
+      setEvaluations(loadedEvals as unknown as EvaluationRow[]);
+
+      // Fetch panel assignments filtered by loaded project IDs (BUG-G2)
+      const distinctProjectIds = Array.from(new Set(loadedEvals.map((e) => e.project_id).filter(Boolean)));
+      if (distinctProjectIds.length > 0) {
+        const { data: panelsData } = await supabase
+          .from("defense_panels")
+          .select("project_id, profile_id, panel_role")
+          .in("project_id", distinctProjectIds);
+
+        const pMap: Record<string, "chair" | "member"> = {};
+        if (panelsData) {
+          panelsData.forEach((p: any) => {
+            pMap[`${p.project_id}_${p.profile_id}`] = p.panel_role;
+          });
+        }
+        setPanelRolesMap(pMap);
+      } else {
+        setPanelRolesMap({});
       }
     } catch (err) {
       console.error("Error loading grades:", err);
     } finally {
       setLoading(false);
     }
-  }, [user, roles, supabase]);
+  }, [user, roles, isCoordinatorOrAdmin, supabase]);
 
   useEffect(() => {
     loadGrades();
@@ -267,7 +277,7 @@ export default function GradesPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean", "student"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Grades</h1>
@@ -279,9 +289,9 @@ export default function GradesPage() {
         {/* Coordinator: Release Final Verdict Panel */}
         {isCoordinatorOrAdmin && evaluations.length > 0 && (() => {
           // Collect unique projects with submitted evaluations
-          const projects = evaluations.reduce<{ id: string; title: string }[]>((acc, ev) => {
+          const projects = evaluations.reduce<{ id: string; title: string; status?: string }[]>((acc, ev) => {
             if (ev.projects && !acc.find((p) => p.id === ev.project_id)) {
-              acc.push({ id: ev.project_id, title: ev.projects.title });
+              acc.push({ id: ev.project_id, title: ev.projects.title, status: (ev.projects as any).status });
             }
             return acc;
           }, []);
@@ -298,11 +308,22 @@ export default function GradesPage() {
               <CardContent className="p-0 divide-y divide-border">
                 {projects.map((proj) => {
                   const isExpanded = expandedConsensusId === proj.id;
+                  const isAlreadyReleased = !!(proj.status && ["passed", "passed_minor", "passed_major", "failed", "conditional", "re_defense"].includes(proj.status));
                   return (
                     <div key={proj.id} className="p-4 space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-bold text-foreground">&ldquo;{proj.title}&rdquo;</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-bold text-foreground">&ldquo;{proj.title}&rdquo;</p>
+                            {proj.status && (
+                              <Badge
+                                variant={proj.status.startsWith("passed") ? "success" : proj.status === "failed" ? "danger" : "outline"}
+                                className="text-[9px] uppercase font-mono px-1.5 py-0"
+                              >
+                                {proj.status.replace(/_/g, " ")}
+                              </Badge>
+                            )}
+                          </div>
                           <button
                             type="button"
                             onClick={() => setExpandedConsensusId(isExpanded ? null : proj.id)}
@@ -322,7 +343,10 @@ export default function GradesPage() {
                               className="h-7 text-[10px] capitalize font-bold"
                               disabled={releasingId === proj.id}
                               onClick={async () => {
-                                if (!confirm(`Release verdict "${v.replace(/_/g, " ")}" for "${proj.title}"?`)) return;
+                                const promptMsg = isAlreadyReleased
+                                  ? `This project already has verdict "${proj.status?.replace(/_/g, " ").toUpperCase()}". Are you sure you want to change it to "${v.replace(/_/g, " ").toUpperCase()}"?`
+                                  : `Release official verdict "${v.replace(/_/g, " ").toUpperCase()}" for "${proj.title}"?`;
+                                if (!confirm(promptMsg)) return;
                                 setReleasingId(proj.id);
                                 try {
                                   await releaseProjectVerdictAction(proj.id, v);
@@ -490,10 +514,18 @@ export default function GradesPage() {
                                   )}
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <span className="text-sm font-black text-foreground block">
-                                    {score.toFixed(1)}
-                                  </span>
-                                  <span className="text-[9px] text-muted-foreground font-semibold">/100</span>
+                                  <div className="flex items-baseline justify-end gap-1">
+                                    <span className="text-sm font-black text-foreground block">
+                                      {score.toFixed(1)}
+                                    </span>
+                                    <span className="text-[9px] text-muted-foreground font-semibold">/100</span>
+                                  </div>
+                                  <Badge
+                                    variant={score >= Number(ev.rubric_templates?.passing_score ?? group.passingScore) ? "success" : "warning"}
+                                    className="text-[8px] px-1 py-0 uppercase font-black"
+                                  >
+                                    {score >= Number(ev.rubric_templates?.passing_score ?? group.passingScore) ? "Passed" : "Revision"}
+                                  </Badge>
                                 </div>
                               </div>
 
@@ -504,7 +536,7 @@ export default function GradesPage() {
                               )}
 
                               <p className="text-[9px] text-muted-foreground text-right pt-0.5">
-                                Submitted {ev.submitted_at ? format(new Date(ev.submitted_at), "MMM d, yyyy h:mm a") : "—"}
+                                Submitted {(ev.signed_at || ev.submitted_at) ? format(new Date((ev.signed_at || ev.submitted_at)!), "MMM d, yyyy h:mm a") : "—"}
                               </p>
                             </div>
                           );

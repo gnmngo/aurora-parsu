@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -82,7 +82,7 @@ export function RescheduleDefenseModal({
   const [loadingFaculty, setLoadingFaculty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!schedule || !open) return;
@@ -131,7 +131,7 @@ export function RescheduleDefenseModal({
     }
 
     loadPanelists();
-  }, [schedule, open, supabase]);
+  }, [schedule, open]);
 
   // "⚡ Set to Right Now (Live Demo / In the Moment)" handler
   const handleSetToRightNow = () => {

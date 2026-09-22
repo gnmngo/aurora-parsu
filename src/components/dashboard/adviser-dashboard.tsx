@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { 
   Users, 
@@ -17,7 +25,8 @@ import {
   History,
   Activity,
   CheckCircle2,
-  XCircle
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -29,17 +38,27 @@ interface AdviserDashboardProps {
 
 export function AdviserDashboard({ userId }: AdviserDashboardProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [advisees, setAdvisees] = useState<any[]>([]);
-  const [schedules, setSchedules] = useState<any[]>([]);
   const [pendingManuscripts, setPendingManuscripts] = useState<any[]>([]);
+  const [schedules, setSchedules] = useState<any[]>([]);
   const [commentsHistory, setCommentsHistory] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
+  const [approvalModal, setApprovalModal] = useState<{
+    open: boolean;
+    docId: string;
+    projectTitle: string;
+    status: "approved" | "rejected";
+  } | null>(null);
+  const [approvalRemarks, setApprovalRemarks] = useState("");
   
   const [activeTab, setActiveTab] = useState<"advisees" | "queue" | "activity">("advisees");
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const loadAdviserData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       // 1. Fetch project IDs where user is adviser
       const { data: memberProj } = await supabase
@@ -51,6 +70,11 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
       const projectIds = memberProj?.map((mp: any) => mp.project_id) || [];
 
       if (projectIds.length === 0) {
+        setAdvisees([]);
+        setSchedules([]);
+        setPendingManuscripts([]);
+        setCommentsHistory([]);
+        setRecentActivities([]);
         setLoading(false);
         return;
       }
@@ -92,7 +116,8 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
         if (docs) {
           const pendingList: any[] = [];
           docs.forEach((doc: any) => {
-            const latestVersion = doc.document_versions?.[doc.document_versions.length - 1];
+            const versions = [...(doc.document_versions || [])].sort((a: any, b: any) => (b.version_number ?? 0) - (a.version_number ?? 0));
+            const latestVersion = versions[0];
             if (latestVersion && ["submitted", "under_review", "revision_required", "draft", "uploading"].includes(doc.status)) {
               pendingList.push({
                 documentId: doc.id,
@@ -138,8 +163,10 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           .limit(5);
         if (logs) setRecentActivities(logs);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading adviser dashboard:", err);
+      setError(err?.message || "Failed to load adviser dashboard data");
+      toast.error("Failed to load advisee data.");
     } finally {
       setLoading(false);
     }
@@ -149,11 +176,14 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
     loadAdviserData();
   }, [userId]);
 
-  const handleApproval = async (docId: string, status: "approved" | "rejected") => {
+  const handleApproval = async (docId: string, status: "approved" | "rejected", remarks?: string) => {
     setUpdatingDocId(docId);
     try {
-      await adviserApproveDocumentAction(docId, status, `Adviser validation review: ${status}`);
-      toast.success(`Manuscript has been successfully ${status}!`);
+      const finalRemarks = remarks?.trim() || (status === "approved" ? "Endorsed for defense review" : "Revisions requested by adviser");
+      await adviserApproveDocumentAction(docId, status, finalRemarks);
+      toast.success(`Manuscript has been successfully ${status === "approved" ? "endorsed" : "marked for revisions"}!`);
+      setApprovalModal(null);
+      setApprovalRemarks("");
       loadAdviserData();
     } catch (err: any) {
       console.error(err);
@@ -168,6 +198,21 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
       <div className="flex h-44 items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center border-destructive/20 bg-destructive/5 space-y-3">
+        <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
+        <div>
+          <p className="text-sm font-bold text-slate-800">Failed to load advisee data</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+        </div>
+        <Button onClick={loadAdviserData} size="sm" variant="outline" className="gap-2">
+          Retry Loading
+        </Button>
+      </Card>
     );
   }
 
@@ -338,14 +383,30 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                               ) : (
                                 <>
                                   <Button 
-                                    onClick={() => handleApproval(m.documentId, "approved")}
+                                    onClick={() => {
+                                      setApprovalRemarks("Endorsed for defense review.");
+                                      setApprovalModal({
+                                        open: true,
+                                        docId: m.documentId,
+                                        projectTitle: m.projectTitle,
+                                        status: "approved",
+                                      });
+                                    }}
                                     size="sm" 
                                     className="h-8 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-0.5"
                                   >
                                     <CheckCircle2 className="h-3 w-3" /> Endorse for Defense
                                   </Button>
                                   <Button 
-                                    onClick={() => handleApproval(m.documentId, "rejected")}
+                                    onClick={() => {
+                                      setApprovalRemarks("");
+                                      setApprovalModal({
+                                        open: true,
+                                        docId: m.documentId,
+                                        projectTitle: m.projectTitle,
+                                        status: "rejected",
+                                      });
+                                    }}
                                     size="sm" 
                                     variant="danger"
                                     className="h-8 text-[10px] rounded-lg flex items-center gap-0.5"
@@ -455,6 +516,80 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           </Card>
         </div>
       </div>
+
+      {/* Adviser Remarks Modal */}
+      {approvalModal && (
+        <Dialog open={approvalModal.open} onOpenChange={(isOpen) => !isOpen && setApprovalModal(null)}>
+          <DialogContent className="sm:max-w-[480px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-sm font-bold">
+                {approvalModal.status === "approved" ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    Endorse Manuscript for Defense
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 text-destructive" />
+                    Request Manuscript Revisions
+                  </>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {approvalModal.status === "approved"
+                  ? `Endorse "${approvalModal.projectTitle}" to proceed to defense scheduling.`
+                  : `Return "${approvalModal.projectTitle}" to students for revisions before defense.`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2 py-2">
+              <label className="text-xs font-semibold text-slate-700">
+                {approvalModal.status === "approved" ? "Endorsement Remarks (Optional)" : "Required Revision Notes *"}
+              </label>
+              <textarea
+                value={approvalRemarks}
+                onChange={(e) => setApprovalRemarks(e.target.value)}
+                placeholder={
+                  approvalModal.status === "approved"
+                    ? "Enter any notes for the defense panel (e.g. Chapter 1-3 verified)..."
+                    : "Specify what changes are required before endorsement..."
+                }
+                rows={4}
+                className="w-full rounded-md border border-input bg-background p-3 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setApprovalModal(null)}
+                disabled={updatingDocId === approvalModal.docId}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={
+                  updatingDocId === approvalModal.docId ||
+                  (approvalModal.status === "rejected" && !approvalRemarks.trim())
+                }
+                className={approvalModal.status === "approved" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
+                variant={approvalModal.status === "approved" ? "default" : "danger"}
+                onClick={() => handleApproval(approvalModal.docId, approvalModal.status, approvalRemarks)}
+              >
+                {updatingDocId === approvalModal.docId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : approvalModal.status === "approved" ? (
+                  "Confirm Endorsement"
+                ) : (
+                  "Submit Revision Request"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

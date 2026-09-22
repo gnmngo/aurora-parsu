@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"defenses" | "pending" | "completed">("defenses");
   
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     async function loadPanelistData() {
@@ -47,8 +47,18 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
 
         const assignedProjectIds = panels?.map((p: any) => p.project_id) || [];
 
-        // 2. Fetch all active defense projects in the system
-        let projQuery = supabase
+        // Guard: if no panel assignments, show empty state immediately — never query all projects!
+        if (assignedProjectIds.length === 0) {
+          setActiveProjects([]);
+          setDefenses([]);
+          setEvaluations([]);
+          setRecentActivities([]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fetch only assigned defense projects
+        const { data: projs } = await supabase
           .from("projects")
           .select(`
             id,
@@ -62,24 +72,18 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
             )
           `)
           .is("archived_at", null)
+          .in("id", assignedProjectIds)
           .order("created_at", { ascending: false });
 
-        if (assignedProjectIds.length > 0) {
-          projQuery = projQuery.in("id", assignedProjectIds);
-        }
-
-        const { data: projs } = await projQuery;
         if (projs) setActiveProjects(projs);
 
-        // 3. Fetch defense schedules
-        if (assignedProjectIds.length > 0) {
-          const { data: scheds } = await supabase
-            .from("defense_schedules")
-            .select("*, projects(title, id)")
-            .in("project_id", assignedProjectIds)
-            .order("scheduled_at", { ascending: true });
-          if (scheds) setDefenses(scheds);
-        }
+        // 3. Fetch defense schedules for assigned projects
+        const { data: scheds } = await supabase
+          .from("defense_schedules")
+          .select("*, projects(title, id)")
+          .in("project_id", assignedProjectIds)
+          .order("scheduled_at", { ascending: true });
+        if (scheds) setDefenses(scheds);
 
         // 4. Fetch evaluations for this panelist
         const { data: evs } = await supabase
@@ -106,7 +110,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
     }
 
     loadPanelistData();
-  }, [userId, supabase]);
+  }, [userId]);
 
   if (loading) {
     return (
@@ -353,7 +357,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
                         <div>
                           <p className="font-bold text-slate-900 text-sm">"{e.projects?.title}"</p>
                           <p className="text-[10px] text-muted-foreground">
-                            Stage: {e.defense_stages?.name} • Signed {new Date(e.signed_at).toLocaleString()}
+                            Stage: {e.defense_stages?.name} • Signed {e.signed_at ? new Date(e.signed_at).toLocaleString() : e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
                           </p>
                           <div className="flex gap-2 mt-1.5 font-mono text-[9px] text-slate-600 bg-muted px-2 py-0.5 rounded border border-border w-fit">
                             Serial: {e.certificate_serial || "—"}

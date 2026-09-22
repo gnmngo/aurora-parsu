@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { registerUserAction } from "@/lib/auth/register-action";
+import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 
 const DEMO_ROLES = [
   { id: "student", label: "Student", icon: GraduationCap, color: "text-blue-600 dark:text-blue-400" },
@@ -41,7 +42,7 @@ const DEMO_ROLES = [
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { session, profile, isLoading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"signin" | "register" | "forgot">("signin");
@@ -77,17 +78,20 @@ function LoginForm() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
 
+  const hasFetchedCampuses = useRef(false);
+
   // Load campuses
   useEffect(() => {
-    if (activeTab === "register") {
+    if (activeTab === "register" && !hasFetchedCampuses.current) {
+      hasFetchedCampuses.current = true;
       supabase.from("campuses").select("id, name").order("name").then(({ data }) => {
         if (data) {
           setCampuses(data);
-          if (data.length > 0 && !regCampusId) setRegCampusId(data[0].id);
+          if (data.length > 0) setRegCampusId((prev) => prev || data[0].id);
         }
       });
     }
-  }, [activeTab, regCampusId, supabase]);
+  }, [activeTab, supabase]);
 
   // Load colleges based on campus
   useEffect(() => {
@@ -108,7 +112,8 @@ function LoginForm() {
     if (regCollegeId) {
       supabase.from("departments").select("id, name").eq("college_id", regCollegeId).order("name").then(({ data }) => {
         setDepartments(data || []);
-        setRegDepartmentId("");
+        if (data && data.length > 0) setRegDepartmentId(data[0].id);
+        else setRegDepartmentId("");
       });
     } else {
       setDepartments([]);
@@ -116,14 +121,10 @@ function LoginForm() {
     }
   }, [regCollegeId, supabase]);
 
-  // Load programs based on college
+  // Load programs based on department
   useEffect(() => {
-    if (regCollegeId) {
-      let query = supabase.from("programs").select("id, name, department_id").eq("college_id", regCollegeId);
-      if (regDepartmentId) {
-        query = query.eq("department_id", regDepartmentId);
-      }
-      query.order("name").then(({ data }) => {
+    if (regDepartmentId) {
+      supabase.from("programs").select("id, name, code").eq("department_id", regDepartmentId).order("name").then(({ data }) => {
         setPrograms(data || []);
         if (data && data.length > 0) setRegProgramId(data[0].id);
         else setRegProgramId("");
@@ -132,7 +133,7 @@ function LoginForm() {
       setPrograms([]);
       setRegProgramId("");
     }
-  }, [regCollegeId, regDepartmentId, supabase]);
+  }, [regDepartmentId, supabase]);
 
   // Load majors based on program
   useEffect(() => {
@@ -151,9 +152,14 @@ function LoginForm() {
   // Safe redirect only after session and profile are fully resolved
   useEffect(() => {
     if (!authLoading && session && profile) {
-      router.replace("/dashboard");
+      const redirectTo = searchParams.get("redirect");
+      const safePath =
+        redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+          ? redirectTo
+          : "/dashboard";
+      router.replace(safePath);
     }
-  }, [session, profile, authLoading, router]);
+  }, [session, profile, authLoading, router, searchParams]);
 
   // Handle errors passed in URL
   useEffect(() => {
@@ -206,6 +212,15 @@ function LoginForm() {
     e.preventDefault();
     if (!regEmail || !regPassword || !regFirstName || !regLastName) {
       toast.error("Please fill in your name, email, and password");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(regEmail.trim())) {
+      toast.error("Please enter a valid institutional email address");
+      return;
+    }
+    if (regPassword.length < 8) {
+      toast.error("Password must be at least 8 characters long");
       return;
     }
     if (!regNumber?.trim()) {
@@ -279,28 +294,17 @@ function LoginForm() {
 
   const handleDemoLogin = async (roleType: "student" | "adviser" | "panelist" | "coordinator" | "dean" | "admin") => {
     setLoading(true);
-    let targetEmail = "";
-    let targetPass = "Panel123!";
-
-    if (roleType === "student") {
-      targetEmail = "student1@aurora.test";
-    } else if (roleType === "adviser") {
-      targetEmail = "adviser1@aurora.test";
-    } else if (roleType === "panelist") {
-      targetEmail = "panelist1@aurora.test";
-    } else if (roleType === "coordinator") {
-      targetEmail = "coord@aurora.test";
-    } else if (roleType === "dean") {
-      targetEmail = "erpadayao@parsu.edu.ph";
-      targetPass = "Password123!";
-    } else if (roleType === "admin") {
-      targetEmail = "admin@aurora.test";
-    }
 
     try {
+      const creds = await getDemoCredentialsAction(roleType);
+      if (!creds.success || !creds.email || !creds.password) {
+        toast.error(creds.error || `Demo credentials for ${roleType} unavailable.`);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password: targetPass,
+        email: creds.email,
+        password: creds.password,
       });
 
       if (error) {

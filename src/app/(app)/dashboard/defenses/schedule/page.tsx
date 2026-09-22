@@ -15,6 +15,7 @@ import {
   batchScheduleDefensesAction,
   type BatchCandidateProject,
 } from "@/lib/scheduler/actions";
+import { toggleApplicationGateAction } from "@/lib/defenses/application-actions";
 import { getApprovedFacultyListAction, type FacultyOptionItem } from "@/lib/projects/actions";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -337,6 +338,91 @@ export default function SchedulePage() {
       const allIds = candidates.map((c) => c.id);
       setSelectedCandidateIds(allIds);
       distributeSlots(candidates, allIds);
+    }
+  };
+
+  const handleToggleAppGate = async (projId: string, verified: boolean) => {
+    if (!selectedStageId) {
+      toast.error("Please select a defense stage first.");
+      return;
+    }
+    // Optimistic UI update
+    setCandidates((prev) =>
+      prev.map((c) =>
+        c.id === projId
+          ? {
+              ...c,
+              hasApplicationVerified: verified,
+              applicationStatus: verified ? "approved_by_chair" : "submitted_by_student",
+            }
+          : c
+      )
+    );
+
+    try {
+      const res = await toggleApplicationGateAction({
+        projectId: projId,
+        stageId: selectedStageId,
+        verified,
+      });
+      if (res.success) {
+        toast.success(
+          verified
+            ? "Application Form verified and gate approved!"
+            : "Application Gate reset to pending."
+        );
+      } else {
+        throw new Error(res.error || "Failed to update gate");
+      }
+    } catch (err: unknown) {
+      // Revert optimistic update
+      setCandidates((prev) =>
+        prev.map((c) =>
+          c.id === projId
+            ? {
+                ...c,
+                hasApplicationVerified: !verified,
+                applicationStatus: !verified ? "approved_by_chair" : "pending",
+              }
+            : c
+        )
+      );
+      toast.error(err instanceof Error ? err.message : "Error toggling application gate");
+    }
+  };
+
+  const handleVerifyAllApplications = async () => {
+    if (!selectedStageId) {
+      toast.error("Please select a defense stage first.");
+      return;
+    }
+    const unverified = candidates.filter((c) => !c.hasApplicationVerified);
+    if (unverified.length === 0) {
+      toast.info("All candidate projects already have their application forms verified!");
+      return;
+    }
+
+    setCandidates((prev) =>
+      prev.map((c) => ({
+        ...c,
+        hasApplicationVerified: true,
+        applicationStatus: "approved_by_chair",
+      }))
+    );
+
+    try {
+      await Promise.all(
+        unverified.map((c) =>
+          toggleApplicationGateAction({
+            projectId: c.id,
+            stageId: selectedStageId,
+            verified: true,
+          })
+        )
+      );
+      toast.success(`Verified application forms for ${unverified.length} candidate projects!`);
+    } catch (err: unknown) {
+      toast.error("Some application forms could not be verified automatically.");
     }
   };
 
@@ -1057,7 +1143,17 @@ export default function SchedulePage() {
                     {selectedStageObj?.name || "this stage"}.
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleVerifyAllApplications}
+                    className="h-8 text-xs rounded-lg gap-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Verify All Applications
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -1116,6 +1212,7 @@ export default function SchedulePage() {
                           <th className="p-3">Research Project & Author</th>
                           <th className="p-3">Adviser</th>
                           <th className="p-3">Manuscript Gate</th>
+                          <th className="p-3">Application Gate</th>
                           <th className="p-3 w-72">Allocated Defense Slot ({batchRoom})</th>
                         </tr>
                       </thead>
@@ -1186,6 +1283,44 @@ export default function SchedulePage() {
                                   >
                                     ⚠️ Pending Sign-off
                                   </Badge>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                {proj.hasApplicationVerified ? (
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-medium"
+                                    >
+                                      ✓ Form Verified
+                                    </Badge>
+                                    <button
+                                      type="button"
+                                      title="Revoke Verification"
+                                      onClick={() => handleToggleAppGate(proj.id, false)}
+                                      className="text-[9px] text-muted-foreground hover:text-rose-500 underline cursor-pointer"
+                                    >
+                                      Revoke
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-medium"
+                                    >
+                                      ⚠️ Pending
+                                    </Badge>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => handleToggleAppGate(proj.id, true)}
+                                      className="h-5 px-1.5 text-[9px] font-bold text-primary hover:bg-primary/10 border border-primary/20"
+                                    >
+                                      Verify Gate
+                                    </Button>
+                                  </div>
                                 )}
                               </td>
                               <td className="p-3">
@@ -1309,6 +1444,28 @@ export default function SchedulePage() {
                     );
                   })}
                 </select>
+                {singleSelectedProjectObj && (
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/60 text-xs mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Manuscript:</span>
+                      {singleSelectedProjectObj?.documents?.some((d: any) => d.adviser_approval_status === "approved") ? (
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                          ✓ Adviser Approved
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
+                          ⚠️ Pending Sign-off
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Application:</span>
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                        ✓ Form Verified
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Defense Stage */}

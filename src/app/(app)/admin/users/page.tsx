@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,11 +36,18 @@ import { AccessDenied } from "@/components/auth/access-denied";
 import { cn } from "@/lib/utils";
 
 export default function UsersPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "faculty" | "students">("all");
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "role" | "status";
+    userId: string;
+    userName: string;
+    newValue: string;
+    label: string;
+  } | null>(null);
 
   // Invite/Create Faculty Modal State
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -425,9 +432,10 @@ export default function UsersPage() {
                   const currentRoleName = sortedRoles[0]?.name || "Student";
                   const name = `${user.first_name} ${user.last_name}`;
                   const isPending = user.status === "pending";
-                  const employeeNum = Array.isArray(user.faculty)
-                    ? user.faculty[0]?.employee_number
-                    : user.faculty?.employee_number;
+                  const facultyRec = Array.isArray(user.faculty) ? user.faculty[0] : user.faculty;
+                  const employeeNum = facultyRec?.employee_number;
+                  const specialization = facultyRec?.specialization;
+                  const facultyRank = facultyRec?.rank;
 
                   return (
                     <div 
@@ -488,6 +496,18 @@ export default function UsersPage() {
                               </span>
                             )}
 
+                            {facultyRank && (
+                              <span className="text-[9px] text-muted-foreground font-medium">
+                                • {facultyRank}
+                              </span>
+                            )}
+
+                            {specialization && (
+                              <Badge variant="outline" className="text-[8px] font-bold text-primary border-primary/30">
+                                {specialization}
+                              </Badge>
+                            )}
+
                             {user.departments?.name && (
                               <span className="text-[9px] text-muted-foreground">
                                 • {user.departments.name}
@@ -516,7 +536,15 @@ export default function UsersPage() {
                               size="sm"
                               variant="outline"
                               className="h-8 text-xs gap-1 font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
-                              onClick={() => handleStatusChange(user.id, "rejected")}
+                              onClick={() => {
+                                setConfirmAction({
+                                  type: "status",
+                                  userId: user.id,
+                                  userName: name,
+                                  newValue: "rejected",
+                                  label: "Reject faculty application",
+                                });
+                              }}
                             >
                               <X className="h-3.5 w-3.5" />
                               Reject
@@ -527,7 +555,17 @@ export default function UsersPage() {
                           <div className="flex items-center gap-2">
                             <select
                               value={user.status}
-                              onChange={(e) => handleStatusChange(user.id, e.target.value as any)}
+                              onChange={(e) => {
+                                const nextVal = e.target.value;
+                                if (nextVal === user.status) return;
+                                setConfirmAction({
+                                  type: "status",
+                                  userId: user.id,
+                                  userName: name,
+                                  newValue: nextVal,
+                                  label: `Change account status to "${nextVal}"`,
+                                });
+                              }}
                               className="h-8 rounded-lg border border-border bg-card px-2 text-[10px] font-bold focus:outline-none cursor-pointer"
                               title="Account Status"
                             >
@@ -539,7 +577,17 @@ export default function UsersPage() {
 
                             <select
                               value={currentRole}
-                              onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                              onChange={(e) => {
+                                const nextVal = e.target.value;
+                                if (nextVal === currentRole) return;
+                                setConfirmAction({
+                                  type: "role",
+                                  userId: user.id,
+                                  userName: name,
+                                  newValue: nextVal,
+                                  label: `Reassign role to "${nextVal}"`,
+                                });
+                              }}
                               className="h-8 rounded-lg border border-border bg-card px-2 text-[10px] font-bold focus:outline-none cursor-pointer"
                               title="Reassign Role"
                             >
@@ -560,6 +608,41 @@ export default function UsersPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Confirmation Modal for Role and Status Changes */}
+        <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
+                <ShieldAlert className="h-5 w-5 text-amber-500" />
+                Confirm Security &amp; Access Update
+              </DialogTitle>
+              <CardDescription className="text-xs pt-1 text-slate-600">
+                Are you sure you want to {confirmAction?.label.toLowerCase()} for <strong className="text-slate-900">{confirmAction?.userName}</strong>?
+              </CardDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setConfirmAction(null)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="font-bold bg-primary text-white"
+                onClick={() => {
+                  if (!confirmAction) return;
+                  if (confirmAction.type === "role") {
+                    handleRoleChange(confirmAction.userId, confirmAction.newValue);
+                  } else {
+                    handleStatusChange(confirmAction.userId, confirmAction.newValue as any);
+                  }
+                  setConfirmAction(null);
+                }}
+              >
+                Confirm Update
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </RoleGuard>
   );

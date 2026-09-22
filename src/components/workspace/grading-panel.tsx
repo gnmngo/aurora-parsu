@@ -30,7 +30,8 @@ import {
   GraduationCap,
   Building2,
   ArrowRight,
-  Trash2
+  Trash2,
+  Printer
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -63,7 +64,12 @@ import {
   createAnnotationReplyAction,
   deleteAnnotationAction 
 } from "@/lib/annotations/actions";
-import { updateDefenseChairmanRubricAction } from "@/lib/rubrics/actions";
+import {
+  updateDefenseChairmanRubricAction,
+  PARSU_BSIT_ORAL_DEFENSE_CRITERIA,
+} from "@/lib/rubrics/actions";
+import { resolveRubricTemplate } from "@/lib/workflow/template-resolver";
+import { ParsuFormsModal } from "@/components/defenses/parsu-forms-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 
@@ -332,6 +338,10 @@ export function GradingPanel({
   const [endorsing, setEndorsing] = useState(false);
   const [adviserRemarks, setAdviserRemarks] = useState("");
 
+  // Official ParSU Forms Modal state (DCS-CF-03, DCS-CF-04, DCS-CF-05)
+  const [parsuFormsOpen, setParsuFormsOpen] = useState(false);
+  const [activeParsuForm, setActiveParsuForm] = useState<"DCS-CF-03" | "DCS-CF-04" | "DCS-CF-05">("DCS-CF-04");
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -416,7 +426,7 @@ export function GradingPanel({
         ? supabase.from("document_versions").select("id, version_number, file_name, created_at").eq("id", documentVersionId).maybeSingle()
         : Promise.resolve({ data: null, error: null });
 
-      const [projResult, stageResult, rubricResult, membersResult, scheduleResult, verResult] = await Promise.all([
+      const [projResult, stageResult, membersResult, scheduleResult, verResult] = await Promise.all([
         supabase
           .from("projects")
           .select(`
@@ -425,26 +435,24 @@ export function GradingPanel({
             team_name,
             academic_year,
             workflow_template_id,
+            college_id,
+            program_id,
+            colleges ( id, name, code ),
+            programs ( id, name, code ),
             departments (
+              id,
               name,
-              colleges ( name, code )
+              colleges ( id, name, code )
             ),
             students (
               program_id,
-              programs ( name, code ),
+              programs ( id, name, code ),
               profiles ( first_name, last_name, email )
             )
           `)
           .eq("id", validProjectId)
           .maybeSingle(),
         stagePromise,
-        supabase
-          .from("rubric_templates")
-          .select("*")
-          .eq("project_id", validProjectId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
         membersPromise,
         schedulePromise,
         versionPromise,
@@ -452,34 +460,31 @@ export function GradingPanel({
 
       const projData = projResult.data;
       const stageData = stageResult.data;
-      let rubricData = rubricResult.data;
 
-      // Resilient fallback: If no project-specific rubric exists, auto-load standard university rubric
-      if (!rubricData || !rubricData.criteria || rubricData.criteria.length === 0) {
-        const { data: standardTemplate } = await supabase
-          .from("rubric_templates")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      // Dynamic Rubric Resolution Cascade: Project -> Program -> College -> University Default
+      const rawProj = (projData || {}) as any;
+      const studentObj = Array.isArray(rawProj?.students) ? rawProj?.students[0] : rawProj?.students;
+      const projProg = Array.isArray(rawProj?.programs) ? rawProj?.programs[0] : rawProj?.programs;
+      const projCol = Array.isArray(rawProj?.colleges) ? rawProj?.colleges[0] : rawProj?.colleges;
+      const deptObj = Array.isArray(rawProj?.departments) ? rawProj?.departments[0] : rawProj?.departments;
+      const deptCol = deptObj && Array.isArray(deptObj.colleges) ? deptObj.colleges[0] : deptObj?.colleges;
 
-        if (standardTemplate && standardTemplate.criteria && standardTemplate.criteria.length > 0) {
-          rubricData = standardTemplate;
-        } else {
-          rubricData = {
-            id: "00000000-0000-0000-0000-000000000001",
-            title: "Partido State University Academic Defense Rubric",
-            passing_score: 75,
-            excellent_score: 90,
-            criteria: [
-              { id: "c1", name: "Technical Rigor & Architecture", weight: 35 },
-              { id: "c2", name: "Research Methodology & Execution", weight: 30 },
-              { id: "c3", name: "Presentation & Manuscript Quality", weight: 20 },
-              { id: "c4", name: "Defense Mastery & Response to Inquiries", weight: 15 },
-            ],
-          };
-        }
-      }
+      const programId = rawProj?.program_id || studentObj?.program_id || projProg?.id;
+      const collegeId = rawProj?.college_id || projCol?.id || deptCol?.id;
+
+      const resolvedRubric = await resolveRubricTemplate(supabase, {
+        projectId: validProjectId,
+        programId,
+        collegeId,
+      });
+
+      let rubricData: any = {
+        id: resolvedRubric.id,
+        title: resolvedRubric.title,
+        passing_score: resolvedRubric.passing_score,
+        excellent_score: resolvedRubric.excellent_score,
+        criteria: resolvedRubric.criteria,
+      };
 
       let submittedDate = null;
       let versionNumber = 1;
@@ -545,7 +550,9 @@ export function GradingPanel({
           program: programObj?.name || "Information Technology",
           programCode: programObj?.code || "BSIT",
           department: deptObj?.name || "Department of Computational Sciences",
-          college: collegeObj?.code || collegeObj?.name || "CEC",
+          college: collegeObj?.name || collegeObj?.code || "College of Engineering and Computational Sciences",
+          collegeId,
+          programId,
           stageName: stageData?.name || "Defense Stage",
           stageOrder: (stageData as any)?.sequence_order ?? 1,
           academicYear: rawProj.academic_year || "2026-2027",
@@ -2271,94 +2278,226 @@ export function GradingPanel({
                 )}
               </div>
 
-              {/* Chairman Rubric Customizer Button (Item 2: Restricted to Chairman or Coordinator/Admin) */}
-              {evalStatus !== "submitted" && (
-                isChairman || roles.includes("coordinator") || roles.includes("sys_admin") ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2.5 text-[10px] gap-1.5 font-bold border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer"
-                    onClick={() => {
-                      setCustomCriteria(
-                        (rubricTemplate?.criteria || []).map((c: any) => ({
-                          id: c.id || c.name,
-                          name: c.name,
-                          description: c.description || "",
-                          weight: Number(c.weight || 0),
-                        }))
-                      );
-                      setCustomPassingScore(rubricTemplate?.passing_score ?? 75);
-                      setChairmanModalOpen(true);
-                    }}
-                  >
-                    <Crown className="h-3.5 w-3.5 text-amber-500" />
-                    Rubric Settings (Chairman)
-                  </Button>
-                ) : (
-                  <Badge variant="outline" className="text-[9px] text-muted-foreground border-border bg-muted/20 gap-1">
-                    <ShieldCheck className="h-3 w-3" /> Rubric Set by Chairman
-                  </Badge>
-                )
-              )}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Official ParSU Forms Buttons */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] gap-1 font-semibold border-primary/30 text-primary hover:bg-primary/5 cursor-pointer"
+                  onClick={() => {
+                    setActiveParsuForm("DCS-CF-04");
+                    setParsuFormsOpen(true);
+                  }}
+                  title="Print / Preview Individual Evaluation Sheet"
+                >
+                  <Printer className="h-3 w-3" />
+                  DCS-CF-04 Sheet
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] gap-1 font-semibold border-primary/30 text-primary hover:bg-primary/5 cursor-pointer"
+                  onClick={() => {
+                    setActiveParsuForm("DCS-CF-05");
+                    setParsuFormsOpen(true);
+                  }}
+                  title="Print / Preview Panel Summary Sheet"
+                >
+                  <FileText className="h-3 w-3" />
+                  DCS-CF-05 Summary
+                </Button>
+
+                {/* Chairman Rubric Customizer Button (Restricted to Chairman or Coordinator/Admin) */}
+                {evalStatus !== "submitted" && (
+                  isChairman || roles.includes("coordinator") || roles.includes("sys_admin") ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2.5 text-[10px] gap-1.5 font-bold border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer"
+                      onClick={() => {
+                        setCustomCriteria(
+                          (rubricTemplate?.criteria || []).map((c: any) => ({
+                            id: c.id || c.name,
+                            name: c.name,
+                            category: c.category,
+                            description: c.description || "",
+                            weight: Number(c.weight || 0),
+                          }))
+                        );
+                        setCustomPassingScore(rubricTemplate?.passing_score ?? 75);
+                        setChairmanModalOpen(true);
+                      }}
+                    >
+                      <Crown className="h-3.5 w-3.5 text-amber-500" />
+                      Rubric Settings (Chairman)
+                    </Button>
+                  ) : (
+                    <Badge variant="outline" className="text-[9px] text-muted-foreground border-border bg-muted/20 gap-1">
+                      <ShieldCheck className="h-3 w-3" /> Rubric Set by Chairman
+                    </Badge>
+                  )
+                )}
+              </div>
             </div>
 
-            {/* Criteria list */}
+            {/* Criteria list - Grouped by category if present */}
             <div className="space-y-4">
-              {rubricTemplate.criteria && rubricTemplate.criteria.map((criterion: any) => {
-                const key = criterion.id || criterion.name;
-                const scoreValue = scores[key] ?? 0;
-                return (
-                  <div key={key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{criterion.name}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          Weight: {criterion.weight}%
-                        </p>
+              {(() => {
+                const criteriaList = rubricTemplate.criteria || [];
+                const hasCategories = criteriaList.some((c: any) => !!c.category);
+
+                if (!hasCategories) {
+                  return criteriaList.map((criterion: any) => {
+                    const key = criterion.id || criterion.name;
+                    const scoreValue = scores[key] ?? 0;
+                    return (
+                      <div key={key} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">{criterion.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Weight: {criterion.weight}%
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={scores[key] ?? ""}
+                              disabled={evalStatus === "submitted"}
+                              onChange={(e) => {
+                                const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                setScores((s) => ({
+                                  ...s,
+                                  [key]: val,
+                                }));
+                              }}
+                              className="h-7 w-12 rounded-lg border border-border bg-card text-center text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
+                            />
+                            <span className="text-[10px] text-muted-foreground">/ 100</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={scoreValue}
+                            disabled={evalStatus === "submitted"}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setScores((s) => ({
+                                ...s,
+                                [key]: val,
+                              }));
+                            }}
+                            className="h-1 flex-1 rounded bg-muted accent-primary cursor-pointer disabled:opacity-50"
+                          />
+                          <span className="text-[10px] font-bold text-muted-foreground w-6 text-right">
+                            {scoreValue}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={scores[key] ?? ""}
-                          disabled={evalStatus === "submitted"}
-                          onChange={(e) => {
-                            const val = Math.min(100, Math.max(0, Number(e.target.value)));
-                            setScores((s) => ({
-                              ...s,
-                              [key]: val,
-                            }));
-                          }}
-                          className="h-7 w-12 rounded-lg border border-border bg-card text-center text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
-                        />
-                        <span className="text-[10px] text-muted-foreground">/ 100</span>
+                    );
+                  });
+                }
+
+                // Group by category while preserving order
+                const categories: string[] = [];
+                const grouped: Record<string, any[]> = {};
+                criteriaList.forEach((c: any) => {
+                  const cat = c.category || "General Criteria";
+                  if (!grouped[cat]) {
+                    grouped[cat] = [];
+                    categories.push(cat);
+                  }
+                  grouped[cat].push(c);
+                });
+
+                return categories.map((cat) => {
+                  const catCriteria = grouped[cat];
+                  const catSubtotal = catCriteria.reduce((sum: number, crit: any) => {
+                    const key = crit.id || crit.name;
+                    const rawScore = scores[key] ?? 0;
+                    return sum + (rawScore * (crit.weight || 0)) / 100;
+                  }, 0);
+                  const catWeight = catCriteria.reduce((sum: number, crit: any) => sum + (crit.weight || 0), 0);
+
+                  return (
+                    <div key={cat} className="space-y-3 p-3 rounded-xl bg-muted/20 border border-border/60">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-border/40">
+                        <span className="text-xs font-bold text-foreground">{cat}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono font-bold bg-background">
+                          Subtotal: {catSubtotal.toFixed(1)}% / {catWeight}%
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-3 pl-1">
+                        {catCriteria.map((criterion: any) => {
+                          const key = criterion.id || criterion.name;
+                          const scoreValue = scores[key] ?? 0;
+                          return (
+                            <div key={key} className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-semibold text-foreground">{criterion.name}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    Weight: {criterion.weight}%
+                                    {criterion.description ? ` • ${criterion.description}` : ""}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={scores[key] ?? ""}
+                                    disabled={evalStatus === "submitted"}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                      setScores((s) => ({
+                                        ...s,
+                                        [key]: val,
+                                      }));
+                                    }}
+                                    className="h-7 w-12 rounded-lg border border-border bg-card text-center text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">/ 100</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={100}
+                                  value={scoreValue}
+                                  disabled={evalStatus === "submitted"}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setScores((s) => ({
+                                      ...s,
+                                      [key]: val,
+                                    }));
+                                  }}
+                                  className="h-1 flex-1 rounded bg-muted accent-primary cursor-pointer disabled:opacity-50"
+                                />
+                                <span className="text-[10px] font-bold text-muted-foreground w-6 text-right">
+                                  {scoreValue}%
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={scoreValue}
-                        disabled={evalStatus === "submitted"}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setScores((s) => ({
-                            ...s,
-                            [key]: val,
-                          }));
-                        }}
-                        className="h-1 flex-1 rounded bg-muted accent-primary cursor-pointer disabled:opacity-50"
-                      />
-                      <span className="text-[10px] font-bold text-muted-foreground w-6 text-right">
-                        {scoreValue}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             <Separator className="bg-border/60" />
@@ -2754,7 +2893,31 @@ export function GradingPanel({
               </div>
 
               {/* Action Bar: Add Criterion & Auto-Balance */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCustomCriteria(
+                      PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c) => ({
+                        id: c.id,
+                        name: c.name,
+                        category: c.category,
+                        weight: c.weight,
+                        max_score: c.max_score || 100,
+                        description: c.description || "",
+                      }))
+                    );
+                    setCustomPassingScore(75);
+                    toast.success("Loaded official ParSU BSIT Oral Defense Rubric Preset (DCS-CF-04/05)!");
+                  }}
+                  className="h-8 text-xs font-bold gap-1.5 border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer"
+                >
+                  <GraduationCap className="h-3.5 w-3.5 text-amber-600" />
+                  ParSU BSIT Preset (DCS-CF-04/05)
+                </Button>
+
                 <Button
                   type="button"
                   variant="outline"
@@ -3013,6 +3176,40 @@ export function GradingPanel({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Printable Official ParSU Forms Modal (DCS-CF-03, DCS-CF-04, DCS-CF-05, U-CF-03/04/05) */}
+        <ParsuFormsModal
+          open={parsuFormsOpen}
+          onOpenChange={setParsuFormsOpen}
+          defaultForm={activeParsuForm}
+          collegeName={projectInfo?.college}
+          departmentName={projectInfo?.department}
+          programCode={projectInfo?.programCode}
+          projectData={{
+            title: projectInfo?.title || "Research Project",
+            program: projectInfo?.program || "BS Information Technology",
+            academicYear: projectInfo?.academicYear || "AY 2026-2027",
+            proponents: projectInfo?.proponents || [],
+            adviser: projectInfo?.adviser || undefined,
+            panelists: projectInfo?.panelists || [],
+          }}
+          defenseData={{
+            scheduledDate: projectInfo?.schedule?.scheduledAt,
+            roomOrVenue: projectInfo?.schedule?.room,
+            stageName: projectInfo?.stageName,
+          }}
+          currentEvaluatorEvaluation={{
+            evaluatorName: panelistProfile
+              ? `${panelistProfile.first_name} ${panelistProfile.last_name}`
+              : "Committee Evaluator",
+            panelRole: isChairman ? "chair" : "member",
+            scores: scores,
+            weightedScore: weightedScore,
+            verdict: deriveScoreLabel(weightedScore, rubricTemplate || { passing_score: 75, excellent_score: 85 }),
+            comments: recommendations || notes,
+          }}
+          rubricCriteria={rubricTemplate?.criteria || []}
+        />
       </div>
     </ScrollArea>
   );

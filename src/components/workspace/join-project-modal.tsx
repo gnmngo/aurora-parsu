@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, UserPlus, Sparkles } from "lucide-react";
@@ -67,6 +67,9 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
             <UserPlus className="h-5 w-5 text-primary" />
             Join Research Team
           </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Enter the 6-character team join code provided by your project lead to collaborate on this defense.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleJoin} className="space-y-4 pt-2">
           <div className="space-y-2">

@@ -4,11 +4,45 @@ import crypto from "crypto";
 import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotification } from "@/lib/notifications/emit";
 import { computeWeightedScore } from "@/lib/rubric/scoring";
 import { emitAuditLog } from "@/lib/audit/log";
+
+/**
+ * Shared helper to compute authoritative weighted score across draft and sign actions (BUG-E8)
+ */
+export async function calculateEvaluationScore(
+  supabase: any,
+  rubricTemplateId: string | null | undefined,
+  scores: Record<string, number> | undefined,
+  fallbackTotalScore?: number
+): Promise<number> {
+  let computedScore = 0;
+  if (rubricTemplateId) {
+    const { data: rubric } = await supabase
+      .from("rubric_templates")
+      .select("criteria")
+      .eq("id", rubricTemplateId)
+      .maybeSingle();
+    if (rubric?.criteria && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
+      computedScore = computeWeightedScore(rubric.criteria, scores || {});
+    }
+  }
+
+  if (computedScore === 0 && scores) {
+    const scoreVals = Object.values(scores).map(Number).filter((v) => !isNaN(v));
+    if (scoreVals.length > 0) {
+      computedScore = Number((scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length).toFixed(2));
+    }
+  }
+
+  if (computedScore === 0 && typeof fallbackTotalScore === "number" && fallbackTotalScore > 0) {
+    computedScore = fallbackTotalScore;
+  }
+
+  return computedScore;
+}
 
 async function getSafeClientContext() {
   try {
@@ -65,15 +99,20 @@ export async function saveEvaluationDraftAction(input: SaveEvaluationDraftInput)
       }
 
       // Check defense_panels assignment
-      const { data: panelAssignment } = await supabase
+      let panelQuery = supabase
         .from("defense_panels")
         .select("id")
         .eq("project_id", input.projectId)
-        .eq("profile_id", userId)
-        .maybeSingle();
+        .eq("profile_id", userId);
+
+      if (input.stageId) {
+        panelQuery = panelQuery.eq("stage_id", input.stageId);
+      }
+
+      const { data: panelAssignment } = await panelQuery.maybeSingle();
 
       if (!panelAssignment) {
-        return { success: false, error: "Permission denied. You are not an assigned defense panelist for this project." };
+        return { success: false, error: "Permission denied. You are not an assigned defense panelist for this project stage." };
       }
 
       // Check that user is not project adviser
@@ -105,29 +144,13 @@ export async function saveEvaluationDraftAction(input: SaveEvaluationDraftInput)
       return { success: false, error: "This evaluation version is already signed and submitted. It is locked against modifications." };
     }
 
-    // 4. Compute weighted score
-    let computedScore = 0;
-    if (input.rubricTemplateId) {
-      const { data: rubric } = await supabase
-        .from("rubric_templates")
-        .select("criteria")
-        .eq("id", input.rubricTemplateId)
-        .maybeSingle();
-      if (rubric?.criteria && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
-        computedScore = computeWeightedScore(rubric.criteria, input.scores);
-      }
-    }
-
-    if (computedScore === 0 && input.scores) {
-      const scoreVals = Object.values(input.scores).map(Number).filter((v) => !isNaN(v));
-      if (scoreVals.length > 0) {
-        computedScore = Number((scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length).toFixed(2));
-      }
-    }
-
-    if (computedScore === 0 && typeof input.totalScore === "number" && input.totalScore > 0) {
-      computedScore = input.totalScore;
-    }
+    // 4. Compute weighted score using shared utility (BUG-E8)
+    const computedScore = await calculateEvaluationScore(
+      supabase,
+      input.rubricTemplateId,
+      input.scores,
+      input.totalScore
+    );
 
     // 5. Save draft evaluation — update if exists, insert if new
     const evalPayload = {
@@ -242,6 +265,10 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     throw new Error("Password re-authentication is required to certify and affix your electronic signature.");
   }
 
+  if (!user.email) {
+    throw new Error("A valid account email is required to certify your signature.");
+  }
+
   // Defensively check password against Supabase Auth without mutating the active session
   const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().replace(/^["']|["']$/g, "");
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
@@ -250,7 +277,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
   });
 
   const { data: reAuthData, error: reAuthErr } = await authVerifier.auth.signInWithPassword({
-    email: user.email!,
+    email: user.email,
     password: input.password.trim(),
   });
 
@@ -363,29 +390,13 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     }
   }
 
-  // 5. Authoritatively compute total and weighted score
-  let computedScore = 0;
-  if (currentEval.rubric_template_id) {
-    const { data: rubric } = await supabase
-      .from("rubric_templates")
-      .select("criteria")
-      .eq("id", currentEval.rubric_template_id)
-      .maybeSingle();
-    if (rubric?.criteria && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
-      computedScore = computeWeightedScore(rubric.criteria, input.scores);
-    }
-  }
-
-  if (computedScore === 0 && input.scores) {
-    const scoreVals = Object.values(input.scores).map(Number).filter((v) => !isNaN(v));
-    if (scoreVals.length > 0) {
-      computedScore = Number((scoreVals.reduce((a, b) => a + b, 0) / scoreVals.length).toFixed(2));
-    }
-  }
-
-  if (computedScore === 0 && typeof input.totalScore === "number" && input.totalScore > 0) {
-    computedScore = input.totalScore;
-  }
+  // 5. Authoritatively compute total and weighted score (BUG-E8)
+  const computedScore = await calculateEvaluationScore(
+    supabase,
+    currentEval.rubric_template_id,
+    input.scores,
+    input.totalScore
+  );
 
   // 6. Build deterministic signing payload + SHA-256 hash
   const signingPayload = {
@@ -632,6 +643,22 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
     }
     const userId = user.id;
 
+    // Verify caller has panelist or admin role
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", userId);
+
+    const roleCodes = (userRoles as { roles: { code: string } | { code: string }[] | null }[])
+      ?.map((ur) => {
+        const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+        return r?.code as string | undefined;
+      }).filter(Boolean) ?? [];
+
+    if (!roleCodes.includes("panelist") && !roleCodes.includes("sys_admin")) {
+      return { success: false, error: "Permission denied. Only panelists can create evaluation revisions." };
+    }
+
     // 2. Fetch latest submitted evaluation version
     const { data: latestEval, error: fetchError } = await supabase
       .from("evaluations")
@@ -645,6 +672,13 @@ export async function createNewEvaluationVersionAction(projectId: string, stageI
 
     if (fetchError || !latestEval) {
       return { success: false, error: "No existing evaluation found to revise." };
+    }
+
+    if (latestEval.status === "draft") {
+      return {
+        success: false,
+        error: `Evaluation version ${latestEval.version} is still in draft state. Please complete and submit it before creating a revision.`,
+      };
     }
 
     const nextVersion = latestEval.version + 1;

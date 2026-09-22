@@ -77,7 +77,7 @@ export function KpiCards() {
           } else {
             setStats([
               { label: "Project Status", value: "No Project", icon: BookOpen, href: "/dashboard/my-project", actionText: "Register", description: "Submit thesis proposal" },
-              { label: "Manuscript Version", value: "None", icon: FileText, href: "/dashboard/submissions", actionText: "Upload", description: "Upload PDF manuscript" },
+              { label: "Manuscript Version", value: "None", icon: FileText, href: "/dashboard/my-project", actionText: "Upload", description: "Register project to upload PDF" },
               { label: "Open Comments", value: 0, icon: MessageSquare, href: "/dashboard/annotations", actionText: "History", description: "Review adviser feedback" },
               { label: "Next Defense", value: "Not Scheduled", icon: Calendar, href: "/dashboard/defenses", actionText: "Calendar", description: "Defense schedule & queue" },
             ]);
@@ -90,7 +90,7 @@ export function KpiCards() {
           if (!project) {
             setStats([
               { label: "Project Status", value: "No Project", icon: BookOpen, href: "/dashboard/my-project", actionText: "Register", description: "Submit thesis proposal" },
-              { label: "Manuscript Version", value: "None", icon: FileText, href: "/dashboard/submissions", actionText: "Upload", description: "Upload PDF manuscript" },
+              { label: "Manuscript Version", value: "None", icon: FileText, href: "/dashboard/my-project", actionText: "Upload", description: "Register project to upload PDF" },
               { label: "Open Comments", value: 0, icon: MessageSquare, href: "/dashboard/annotations", actionText: "History", description: "Review adviser feedback" },
               { label: "Next Defense", value: "Not Scheduled", icon: Calendar, href: "/dashboard/defenses", actionText: "Calendar", description: "Defense schedule & queue" },
             ]);
@@ -145,7 +145,7 @@ export function KpiCards() {
               value: latestVersion ? `v${latestVersion.version_number}` : "None",
               icon: FileText,
               color: "text-info",
-              href: "/dashboard/submissions",
+              href: "/dashboard/my-project",
               actionText: "Manage",
               description: "Compare versions & PDF",
             },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -106,7 +106,7 @@ export default function WorkspacePage() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     setMounted(true);
@@ -268,7 +268,7 @@ export default function WorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [projectId, rawStageId, supabase]);
+  }, [projectId, rawStageId]);
 
   useEffect(() => {
     if (projectId) {

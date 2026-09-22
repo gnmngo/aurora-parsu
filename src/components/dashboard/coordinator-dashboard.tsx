@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,102 +16,141 @@ import {
   ChevronRight, 
   Plus,
   Shield,
-  Layers
+  Layers,
+  AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 
 export function CoordinatorDashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [workloads, setWorkloads] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [totalSchedulesCount, setTotalSchedulesCount] = useState(0);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [pendingUserCount, setPendingUserCount] = useState(0);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    async function loadCoordinatorData() {
-      try {
-        // 1. Fetch pending approvals (projects in submitted state)
-        const { data: pending } = await supabase
-          .from("projects")
-          .select(`
-            id,
-            title,
-            status,
-            defense_stages ( name, id ),
-            students ( profiles ( first_name, last_name ) )
-          `)
-          .is("archived_at", null)
-          .eq("status", "submitted");
-        if (pending) setPendingApprovals(pending);
+  const loadCoordinatorData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Fetch pending approvals (projects in submitted state)
+      const { data: pending, error: pendingErr } = await supabase
+        .from("projects")
+        .select(`
+          id,
+          title,
+          status,
+          defense_stages ( name, id ),
+          students ( profiles ( first_name, last_name ) )
+        `)
+        .is("archived_at", null)
+        .eq("status", "submitted");
 
-        // 2. Fetch defense schedules
-        const { data: scheds } = await supabase
+      if (pendingErr) throw pendingErr;
+      if (pending) setPendingApprovals(pending);
+
+      // 2. Fetch defense schedules & exact total count (BUG-C4)
+      const [schedsRes, totalSchedCountRes] = await Promise.all([
+        supabase
           .from("defense_schedules")
           .select("*, projects(title, archived_at)")
+          .neq("status", "cancelled")
           .order("scheduled_at", { ascending: true })
-          .limit(10);
-        if (scheds) {
-          setSchedules(scheds.filter((s: any) => !s.projects?.archived_at));
-        }
-
-        // 3. Fetch all active projects for status stats
-        const { data: allProjs } = await supabase
-          .from("projects")
-          .select("status")
-          .is("archived_at", null);
-        
-        if (allProjs) {
-          const counts: Record<string, number> = {};
-          allProjs.forEach((p: any) => {
-            counts[p.status] = (counts[p.status] || 0) + 1;
-          });
-          setStats(counts);
-        }
-
-        // 4. Fetch faculty workload (defense panels counts)
-        const { data: panels } = await supabase
-          .from("defense_panels")
-          .select("profile_id, profiles(first_name, last_name)");
-
-        if (panels) {
-          const countsMap: Record<string, { name: string; count: number }> = {};
-          panels.forEach((p: any) => {
-            const name = p.profiles ? `${p.profiles.first_name} ${p.profiles.last_name}` : "Unknown Faculty";
-            if (!countsMap[p.profile_id]) {
-              countsMap[p.profile_id] = { name, count: 0 };
-            }
-            countsMap[p.profile_id].count += 1;
-          });
-          setWorkloads(Object.values(countsMap).sort((a, b) => b.count - a.count));
-        }
-
-        // 5. Fetch count of pending accounts for security console
-        const { count: pendingCount } = await supabase
-          .from("profiles")
+          .limit(10),
+        supabase
+          .from("defense_schedules")
           .select("id", { count: "exact", head: true })
-          .eq("status", "pending");
+          .neq("status", "cancelled"),
+      ]);
 
-        if (pendingCount !== null) {
-          setPendingUserCount(pendingCount);
-        }
-      } catch (err) {
-        console.error("Error loading coordinator dashboard:", err);
-      } finally {
-        setLoading(false);
+      if (schedsRes.data) {
+        setSchedules(schedsRes.data.filter((s: any) => !s.projects?.archived_at));
       }
-    }
+      setTotalSchedulesCount(totalSchedCountRes.count ?? (schedsRes.data?.length || 0));
 
+      // 3. Fetch all active projects for status stats
+      const { data: allProjs, error: projsErr } = await supabase
+        .from("projects")
+        .select("status")
+        .is("archived_at", null);
+
+      if (projsErr) throw projsErr;
+      if (allProjs) {
+        const counts: Record<string, number> = {};
+        allProjs.forEach((p: any) => {
+          counts[p.status] = (counts[p.status] || 0) + 1;
+        });
+        setStats(counts);
+      }
+
+      // 4. Fetch faculty workload (defense panels counts filtered by active schedules) (BUG-C2)
+      const { data: panels, error: panelsErr } = await supabase
+        .from("defense_panels")
+        .select(`
+          profile_id, 
+          profiles(first_name, last_name),
+          defense_schedules!inner(status)
+        `)
+        .neq("defense_schedules.status", "cancelled");
+
+      if (panelsErr) throw panelsErr;
+      if (panels) {
+        const countsMap: Record<string, { name: string; count: number }> = {};
+        panels.forEach((p: any) => {
+          const name = p.profiles ? `${p.profiles.first_name} ${p.profiles.last_name}` : "Unknown Faculty";
+          if (!countsMap[p.profile_id]) {
+            countsMap[p.profile_id] = { name, count: 0 };
+          }
+          countsMap[p.profile_id].count += 1;
+        });
+        setWorkloads(Object.values(countsMap).sort((a, b) => b.count - a.count));
+      }
+
+      // 5. Fetch count of pending accounts for security console
+      const { count: pendingCount } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+
+      if (pendingCount !== null) {
+        setPendingUserCount(pendingCount);
+      }
+    } catch (err: any) {
+      console.error("Error loading coordinator dashboard:", err);
+      setError(err?.message || "Failed to load coordinator dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
     loadCoordinatorData();
-  }, []);
+  }, [loadCoordinatorData]);
 
   if (loading) {
     return (
       <div className="flex h-44 items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center border-destructive/20 bg-destructive/5 space-y-3">
+        <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
+        <div>
+          <p className="text-sm font-bold text-slate-800">Coordinator Dashboard Notice</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+        </div>
+        <Button onClick={loadCoordinatorData} size="sm" variant="outline" className="gap-2">
+          Retry Loading
+        </Button>
+      </Card>
     );
   }
 
@@ -186,7 +225,7 @@ export function CoordinatorDashboard() {
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900">{schedules.length}</p>
+              <p className="text-2xl font-black text-slate-900">{totalSchedulesCount}</p>
               <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Scheduled Defenses &rarr;</p>
             </div>
           </Card>

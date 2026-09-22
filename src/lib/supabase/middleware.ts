@@ -5,9 +5,7 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const pathname = request.nextUrl.pathname;
-  const isDemoMode =
-    process.env.NEXT_PUBLIC_DEMO_MODE === "true" ||
-    !process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   if (isDemoMode) {
     return supabaseResponse;
@@ -54,7 +52,8 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
+    const safeRedirect = pathname.startsWith("/") && !pathname.startsWith("//") ? pathname : "/dashboard";
+    url.searchParams.set("redirect", safeRedirect);
     return NextResponse.redirect(url);
   }
 
@@ -66,27 +65,39 @@ export async function updateSession(request: NextRequest) {
 
   // 2. Profile Status Check & Route Guard
   if (user && isProtectedRoute) {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileErr } = await supabase
       .from("profiles")
       .select("status")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (profile && profile.status !== "approved") {
-      // Sign out on unauthorized access and redirect to login with error parameter
-      await supabase.auth.signOut();
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("error", profile.status);
-      return NextResponse.redirect(url);
+    if (profileErr) {
+      console.warn("[middleware] Profile fetch error:", profileErr.message);
+    } else {
+      const allowedStatuses = ["approved", "active"];
+      if (profile && !allowedStatuses.includes(profile.status)) {
+        // Sign out on unauthorized access and redirect to login with error parameter
+        await supabase.auth.signOut();
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.searchParams.set("error", profile.status);
+        return NextResponse.redirect(url);
+      }
     }
 
     // 3. Admin / Coordinator Route Guard
     if (pathname.startsWith("/admin")) {
-      const { data: userRoles } = await supabase
+      const { data: userRoles, error: rolesErr } = await supabase
         .from("user_roles")
         .select("roles(code)")
         .eq("profile_id", user.id);
+
+      if (rolesErr) {
+        console.error("[middleware] User roles fetch error:", rolesErr.message);
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
 
       const roles = userRoles?.map((ur: { roles: { code: string } | { code: string }[] | null }) => {
         const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;

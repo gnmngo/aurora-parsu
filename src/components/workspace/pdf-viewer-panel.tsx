@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   MessageSquarePlus,
   MessageSquare,
@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { createAnnotationAction } from "@/lib/annotations/actions";
+import { createAnnotationAction, deleteAnnotationAction } from "@/lib/annotations/actions";
 import { InteractivePdfViewer } from "./interactive-pdf-viewer";
 
 interface PdfViewerPanelProps {
@@ -73,7 +73,7 @@ export function PdfViewerPanel({
   const [severity, setSeverity] = useState<"info" | "minor" | "major" | "critical">("minor");
   const [saving, setSaving] = useState(false);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Load Annotations for the current version
   const loadAnnotations = async () => {
@@ -249,14 +249,17 @@ export function PdfViewerPanel({
   // Delete an annotation
   const handleDeleteAnnotation = async (id: string) => {
     try {
-      const { error } = await supabase.from("annotations").delete().eq("id", id);
-      if (error) throw error;
+      const res = await deleteAnnotationAction(id);
+      if (!res.success) {
+        toast.error(res.error || "Failed to remove comment.");
+        return;
+      }
 
       toast.success("Comment removed.");
       loadAnnotations();
       onAnnotationChange?.();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err?.message || "Failed to remove comment.");
     }
   };
 

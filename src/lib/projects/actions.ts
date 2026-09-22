@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { currentAcademicYear } from "@/lib/utils/academic-year";
 import { emitNotification } from "@/lib/notifications/emit";
+import { resolveWorkflowTemplate } from "@/lib/workflow/template-resolver";
 
 export interface CreateProjectActionInput {
   title: string;
@@ -88,7 +89,7 @@ export async function createProjectAction(
     let resolvedCampusId = student.campus_id;
     let resolvedDeptId = student.department_id;
     let resolvedCollegeId = student.college_id;
-    let resolvedProgId = student.program_id;
+    const resolvedProgId = student.program_id;
 
     if (!resolvedCampusId || !resolvedDeptId) {
       const { data: defaultDept } = await serviceClient
@@ -122,9 +123,18 @@ export async function createProjectAction(
       }
     }
 
-    // 4. Resolve Stage 1 (Concept Defense) if not explicitly provided
+    // 4. Resolve Workflow Template (Program-specific -> College-specific -> University Default)
+    const resolvedWorkflow = await resolveWorkflowTemplate(serviceClient, {
+      programId: resolvedProgId,
+      collegeId: resolvedCollegeId,
+    });
+    const workflowTemplateId: string | null = resolvedWorkflow?.id || null;
+
+    // 5. Resolve Initial Defense Stage (First stage of resolved workflow, or explicitly provided)
     let initialStageId = input.stageId;
-    if (!initialStageId) {
+    if (!initialStageId && resolvedWorkflow?.stages && resolvedWorkflow.stages.length > 0) {
+      initialStageId = resolvedWorkflow.stages[0].id;
+    } else if (!initialStageId) {
       const { data: firstStage } = await serviceClient
         .from("defense_stages")
         .select("id")
@@ -133,17 +143,6 @@ export async function createProjectAction(
         .maybeSingle();
 
       initialStageId = firstStage?.id || null;
-    }
-
-    // 5. Look up workflow template if program exists
-    let workflowTemplateId: string | null = null;
-    if (resolvedProgId) {
-      const { data: workflows } = await serviceClient
-        .from("workflow_templates")
-        .select("id")
-        .eq("program_id", resolvedProgId)
-        .limit(1);
-      workflowTemplateId = workflows?.[0]?.id ?? null;
     }
 
     // 6. Insert the Project
@@ -245,6 +244,7 @@ export async function createProjectAction(
       project: {
         id: project.id,
         title: project.title,
+        team_name: project.team_name,
         join_code: project.join_code,
         current_stage_id: project.current_stage_id,
       },
@@ -320,14 +320,7 @@ export async function assignProjectAdviserAction(
       return { success: false, error: "Project not found." };
     }
 
-    // 3. Remove existing adviser member if any
-    await serviceClient
-      .from("project_members")
-      .delete()
-      .eq("project_id", projectId)
-      .eq("member_role", "adviser");
-
-    // 4. Insert new adviser
+    // 3. Insert new adviser first to ensure project never has zero advisers on failure
     const { error: insertAdviserErr } = await serviceClient
       .from("project_members")
       .insert({
@@ -340,6 +333,14 @@ export async function assignProjectAdviserAction(
     if (insertAdviserErr) {
       return { success: false, error: `Failed to link adviser: ${insertAdviserErr.message}` };
     }
+
+    // 4. Remove any previous adviser member (excluding the new adviser just linked)
+    await serviceClient
+      .from("project_members")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("member_role", "adviser")
+      .neq("profile_id", facultyProfileId);
 
     // 5. Emit notification to the newly assigned adviser
     const { data: assignerProfile } = await serviceClient
@@ -516,6 +517,20 @@ export async function joinProjectAction(rawJoinCode: string): Promise<JoinProjec
       return { success: false, error: "You must be signed in to join a project." };
     }
 
+    // Role check: ensure user is a student
+    const { data: callerRoles } = await serviceClient
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", user.id);
+
+    const roleCodes = (callerRoles || [])
+      .map((ur: any) => (Array.isArray(ur.roles) ? ur.roles[0]?.code : ur.roles?.code))
+      .filter(Boolean);
+
+    if (roleCodes.length > 0 && !roleCodes.includes("student")) {
+      return { success: false, error: "Only students are authorized to join research projects via join code." };
+    }
+
     const code = rawJoinCode.trim().toUpperCase().replace(/\s+/g, "");
     if (!code || code.length < 4) {
       return { success: false, error: "Please enter a valid join code." };
@@ -543,10 +558,19 @@ export async function joinProjectAction(rawJoinCode: string): Promise<JoinProjec
       .maybeSingle();
 
     if (!existingStudent) {
-      await serviceClient.from("students").insert({
-        profile_id: user.id,
-        year_level: 4,
-      });
+      const { data: newStudent, error: studentErr } = await serviceClient
+        .from("students")
+        .insert({
+          profile_id: user.id,
+          year_level: 4,
+        })
+        .select("id, profile_id")
+        .single();
+
+      if (studentErr || !newStudent) {
+        return { success: false, error: `Failed to initialize student profile: ${studentErr?.message || "Unknown error"}` };
+      }
+      existingStudent = newStudent;
     }
 
     // 4. Check for duplicate membership

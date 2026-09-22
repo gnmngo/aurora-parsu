@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 import { Profile } from "@/types/database";
+import { isRouteAllowedForRole } from "@/lib/auth/permissions";
 
 export interface StudentProfileData {
   student_number: string;
@@ -217,6 +218,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // 5. COORDINATOR PROFILE
+      if (roleCodes.includes("coordinator")) {
+        setCoordinatorProfile({
+          assigned_department: profileData.department_id,
+          assigned_college: profileData.college_id,
+        });
+      }
+
       loadedUserRef.current = userId;
       setIsLoading(false);
     } catch (err: unknown) {
@@ -298,24 +307,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [loadUserProfile, clearAuthState]);
 
-  const hasRole = (roleCodes: string | string[]) => {
+  const hasRole = useCallback((roleCodes: string | string[]) => {
     const arr = Array.isArray(roleCodes) ? roleCodes : [roleCodes];
     return roles.some((r) => arr.includes(r));
-  };
+  }, [roles]);
 
-  const hasPermission = (permissionCode: string) => {
-    // Fine-grained permissions are role-based in AURORA.
-    // sys_admin has all permissions by definition.
-    // Future: populate permissions from DB and check here.
-    void permissionCode;
-    return roles.includes("sys_admin");
-  };
+  const hasPermission = useCallback((permissionCode: string) => {
+    if (roles.includes("sys_admin")) return true;
+    if (permissions.includes(permissionCode)) return true;
+    return roles.some((role) => isRouteAllowedForRole(role, permissionCode));
+  }, [roles, permissions]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     clearAuthState();
     window.location.href = "/login";
-  };
+  }, [clearAuthState]);
 
   return (
     <AuthContext.Provider

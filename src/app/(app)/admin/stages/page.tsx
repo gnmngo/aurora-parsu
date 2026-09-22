@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,15 +98,19 @@ export default function StagesPage() {
   // Delete Confirm Dialog State
   const [deleteConfirmStage, setDeleteConfirmStage] = useState<any | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const loadStages = async () => {
     try {
-      // 1. Load templates
+      // 1. Load templates with institutional default prioritization
       const { data: tmpls } = await supabase
         .from("workflow_templates")
-        .select("id, name, program_id, programs(code, name)")
-        .order("name");
+        .select(`
+          id, name, description, is_default, program_id, college_id,
+          programs ( code, name ),
+          colleges ( code, name )
+        `)
+        .order("is_default", { ascending: false });
 
       if (tmpls && tmpls.length > 0) {
         setTemplates(tmpls);
@@ -136,7 +140,7 @@ export default function StagesPage() {
 
   useEffect(() => {
     loadStages();
-  }, [supabase, selectedTemplateId]);
+  }, [selectedTemplateId]);
 
   // Open Create Dialog
   const handleOpenCreate = () => {
@@ -308,6 +312,8 @@ export default function StagesPage() {
     setFormReqDocs(formReqDocs.filter((t) => t !== tag));
   };
 
+  const currentTemplate = templates.find((t) => t.id === selectedTemplateId);
+
   return (
     <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6 pb-12">
@@ -323,9 +329,9 @@ export default function StagesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Program:</span>
+              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Workflow Template:</span>
               <select
                 value={selectedTemplateId}
                 onChange={(e) => setSelectedTemplateId(e.target.value)}
@@ -334,21 +340,57 @@ export default function StagesPage() {
                 {templates.map((tmpl) => {
                   const code = (tmpl.programs as any)?.code;
                   const name = (tmpl.programs as any)?.name;
+                  const collegeCode = (tmpl.colleges as any)?.code;
+                  let label = tmpl.name;
+                  if (tmpl.is_default) {
+                    label = `🏛️ [University Default] ${tmpl.name}`;
+                  } else if (code) {
+                    label = `🎓 [Program: ${code}] ${name || tmpl.name}`;
+                  } else if (collegeCode) {
+                    label = `🏢 [College: ${collegeCode}] ${tmpl.name}`;
+                  }
                   return (
                     <option key={tmpl.id} value={tmpl.id}>
-                      {code ? `[${code}] ${name || tmpl.name}` : tmpl.name}
+                      {label}
                     </option>
                   );
                 })}
               </select>
             </div>
 
-            <Button onClick={handleOpenCreate} className="gap-2 shadow-sm">
+            <Button onClick={handleOpenCreate} className="gap-2 shadow-sm cursor-pointer">
               <Plus className="h-4 w-4" />
               Add Stage
             </Button>
           </div>
         </div>
+
+        {/* Template Scope Info Banner */}
+        {currentTemplate && (
+          <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {currentTemplate.is_default ? (
+                <Badge className="bg-primary/10 text-primary border border-primary/30 font-bold text-xs py-1">
+                  🏛️ University Institutional Default (All Non-IT Colleges)
+                </Badge>
+              ) : (currentTemplate.programs as any)?.code === "BSIT" ? (
+                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs py-1">
+                  🎓 BSIT Active Pipeline (Dept. of Computational Sciences)
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="font-bold text-xs py-1">
+                  Custom Template
+                </Badge>
+              )}
+              <span className="text-muted-foreground">
+                {currentTemplate.description || (currentTemplate.is_default ? "Applies to all degree programs without dedicated workflow overrides." : "Dedicated curriculum workflow.")}
+              </span>
+            </div>
+            <div className="text-xs font-bold text-muted-foreground">
+              {stages.length} Configured Stage{stages.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+        )}
 
         {/* Stages List */}
         {loading ? (

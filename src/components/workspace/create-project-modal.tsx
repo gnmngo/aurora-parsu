@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Plus, AlertTriangle, UserCheck, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { createProjectAction, getApprovedFacultyListAction } from "@/lib/projects/actions";
 
 interface StudentRecord {
@@ -54,8 +53,6 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
     join_code: string | null;
   } | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-
-  const supabase = createClient();
   const missingHierarchy = !student;
 
   useEffect(() => {

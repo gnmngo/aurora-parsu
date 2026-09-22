@@ -44,14 +44,18 @@ export function isServiceRoleConfigured(): boolean {
 export function createServiceClient() {
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
   const serviceKey = sanitizeJwtKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const anonKey = sanitizeJwtKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const keyToUse = serviceKey || anonKey;
 
-  if (!url || !keyToUse) {
-    console.warn("[createServiceClient] Neither SUPABASE_SERVICE_ROLE_KEY nor NEXT_PUBLIC_SUPABASE_ANON_KEY is configured.");
+  if (!url) {
+    throw new Error("[createServiceClient] NEXT_PUBLIC_SUPABASE_URL is not configured.");
   }
 
-  return createSupabaseClient(url, keyToUse, {
+  if (!serviceKey) {
+    throw new Error(
+      "[createServiceClient] SUPABASE_SERVICE_ROLE_KEY is not configured. Service operations requiring elevated privileges cannot run."
+    );
+  }
+
+  return createSupabaseClient(url, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

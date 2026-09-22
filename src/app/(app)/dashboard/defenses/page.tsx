@@ -13,6 +13,7 @@ import { RescheduleDefenseModal } from "@/components/dashboard/reschedule-defens
 import { ReviseStageModal } from "@/components/dashboard/revise-stage-modal";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
 import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
+import { currentDefenseSeason } from "@/lib/utils/academic-year";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
@@ -36,13 +37,21 @@ import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { toast } from "sonner";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   updateDefenseScheduleAction,
   cancelDefenseScheduleAction,
   completeDefenseScheduleAction,
 } from "@/lib/scheduler/actions";
 
 // Helper to determine the actual defense operational status and time state
-function getDefenseStatus(sched: any) {
+export function getDefenseStatus(sched: any) {
   if (sched.status === "cancelled") {
     return {
       label: "Cancelled",
@@ -97,6 +106,7 @@ function getDefenseStatus(sched: any) {
       label: "In Session (Live)",
       badgeVariant: "warning" as const,
       isLive: true,
+      isConcluded: false,
       color: "text-blue-700 bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800",
     };
   }
@@ -106,6 +116,7 @@ function getDefenseStatus(sched: any) {
       label: "Happening Today",
       badgeVariant: "warning" as const,
       isLive: false,
+      isConcluded: false,
       color: "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
     };
   }
@@ -135,13 +146,19 @@ export default function DefensesPage() {
   const [reviseStageModalOpen, setReviseStageModalOpen] = useState(false);
   const [settingToNowId, setSettingToNowId] = useState<string | null>(null);
   const [concludingScheduleId, setConcludingScheduleId] = useState<string | null>(null);
+  const [cancelModal, setCancelModal] = useState<{
+    open: boolean;
+    schedule: any;
+    reason: string;
+  } | null>(null);
+  const [cancellingDefense, setCancellingDefense] = useState(false);
 
   // Certificate Modal State
   const [certificateData, setCertificateData] = useState<any>(null);
   const [certificateModalOpen, setCertificateModalOpen] = useState(false);
 
   const { user, profile, roles } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const isCoordinator = roles.includes("coordinator") || roles.includes("sys_admin");
 
   // Fetch workflow templates list
@@ -215,7 +232,7 @@ export default function DefensesPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedTemplateId, templates]);
+  }, [selectedTemplateId, templates]);
 
   useEffect(() => {
     fetchStages();
@@ -262,35 +279,46 @@ export default function DefensesPage() {
 
       if (error) throw error;
 
-      // Fetch evaluations for these defenses
-      const { data: evalsData } = await supabase
-        .from("evaluations")
-        .select(`
-          id,
-          project_id,
-          stage_id,
-          panelist_id,
-          total_score,
-          verdict_code,
-          status,
-          certificate_serial,
-          signature_hash,
-          signature_image,
-          submitted_at,
-          profiles:panelist_id ( first_name, last_name, email )
-        `);
+      // Fetch evaluations and panel members filtered by loaded project IDs (BUG-D2)
+      const projectIds = Array.from(new Set((schedData || []).map((s: any) => s.project_id).filter(Boolean)));
+      const [evalsRes, panelsRes] = await Promise.all([
+        projectIds.length > 0
+          ? supabase
+              .from("evaluations")
+              .select(`
+                id,
+                project_id,
+                stage_id,
+                panelist_id,
+                total_score,
+                verdict_code,
+                status,
+                certificate_serial,
+                signature_hash,
+                signature_image,
+                signed_at,
+                submitted_at,
+                profiles:panelist_id ( first_name, last_name, email )
+              `)
+              .in("project_id", projectIds)
+          : Promise.resolve({ data: [] }),
+        projectIds.length > 0
+          ? supabase
+              .from("defense_panels")
+              .select(`
+                id,
+                project_id,
+                stage_id,
+                profile_id,
+                panel_role,
+                profiles ( first_name, last_name, email )
+              `)
+              .in("project_id", projectIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
-      // Fetch panel members assigned to these defenses
-      const { data: panelsData } = await supabase
-        .from("defense_panels")
-        .select(`
-          id,
-          project_id,
-          stage_id,
-          profile_id,
-          role,
-          profiles ( first_name, last_name, email )
-        `);
+      const evalsData = evalsRes.data || [];
+      const panelsData = panelsRes.data || [];
 
       const enriched = (schedData || []).map((s: any) => {
         const matchingEvals = (evalsData || []).filter(
@@ -422,19 +450,31 @@ export default function DefensesPage() {
     }
   };
 
-  const handleCancelDefense = async (sched: any) => {
-    if (!confirm(`Cancel defense for "${sched.projects?.title}"? This cannot be undone.`)) return;
+  const handleCancelDefense = (sched: any) => {
+    setCancelModal({
+      open: true,
+      schedule: sched,
+      reason: "",
+    });
+  };
+
+  const confirmCancelDefense = async () => {
+    if (!cancelModal?.schedule) return;
+    setCancellingDefense(true);
     try {
       await cancelDefenseScheduleAction(
-        sched.id,
-        sched.project_id,
-        sched.stage_id,
-        "Cancelled by coordinator"
+        cancelModal.schedule.id,
+        cancelModal.schedule.project_id,
+        cancelModal.schedule.stage_id,
+        cancelModal.reason || "Cancelled by coordinator"
       );
       toast.success("Defense schedule cancelled.");
+      setCancelModal(null);
       await fetchSchedules();
     } catch (err: any) {
       toast.error(err?.message || "Failed to cancel defense.");
+    } finally {
+      setCancellingDefense(false);
     }
   };
 
@@ -442,7 +482,7 @@ export default function DefensesPage() {
     const prof = evalRecord.profiles;
     const panelistName = prof
       ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim()
-      : `${profile?.first_name || "Pablo"} ${profile?.last_name || "Job"}`.trim();
+      : `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "[Panelist Unavailable]";
 
     setCertificateData({
       evaluation: evalRecord,
@@ -455,7 +495,7 @@ export default function DefensesPage() {
 
   return (
     <RoleGuard
-      allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean"]}
+      allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean", "student"]}
       fallback={<AccessDenied />}
     >
       <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
@@ -906,14 +946,14 @@ export default function DefensesPage() {
                                     certificateSerial: myEval.certificate_serial || "AURORA-CERT",
                                     projectTitle: sched.projects?.title || "Research Manuscript",
                                     stageName: sched.defense_stages?.name || "Oral Defense",
-                                    panelistName: `${profile?.first_name || "Pablo"} ${profile?.last_name || "Job"}`.trim(),
+                                    panelistName: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "Faculty Evaluator",
                                     panelistRole: "Committee Panelist",
                                     verdictCode: myEval.verdict_code,
                                     totalScore: myEval.total_score || 0,
                                     signatureHash: myEval.signature_hash,
                                     signatureImage: myEval.signature_image,
-                                    academicYear: "AY 2026-2027",
-                                    signedAt: myEval.submitted_at || new Date().toISOString(),
+                                    academicYear: currentDefenseSeason(),
+                                    signedAt: myEval.signed_at || myEval.submitted_at || new Date().toISOString(),
                                   });
                                 }}
                                 className="h-7 text-[10px] font-bold gap-1 border-emerald-400 text-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950"
@@ -1088,6 +1128,55 @@ export default function DefensesPage() {
             stageName={certificateData.stageName}
             panelistName={certificateData.panelistName}
           />
+        )}
+
+        {/* Cancel Defense Confirmation Modal (BUG-D5) */}
+        {cancelModal && (
+          <Dialog open={cancelModal.open} onOpenChange={(isOpen) => !isOpen && setCancelModal(null)}>
+            <DialogContent className="sm:max-w-[460px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-sm font-bold text-rose-600">
+                  <AlertCircle className="h-4 w-4" />
+                  Cancel Defense Schedule
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Are you sure you want to cancel the defense schedule for &ldquo;{cancelModal.schedule?.projects?.title}&rdquo;? Committee evaluators and student proponents will receive cancellation notifications.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-2 py-2">
+                <label className="text-xs font-semibold text-slate-700">
+                  Cancellation Reason (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={cancelModal.reason}
+                  onChange={(e) => setCancelModal({ ...cancelModal, reason: e.target.value })}
+                  placeholder="e.g. Inclement weather, committee quorum issue..."
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelModal(null)}
+                  disabled={cancellingDefense}
+                >
+                  Keep Schedule
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  disabled={cancellingDefense}
+                  onClick={confirmCancelDefense}
+                >
+                  {cancellingDefense ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Cancellation"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </RoleGuard>

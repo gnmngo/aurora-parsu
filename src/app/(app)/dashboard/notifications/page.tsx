@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,8 +23,7 @@ import {
   Search,
   CheckCheck,
   Loader2,
-  ArrowRight,
-  ExternalLink
+  ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -47,7 +46,7 @@ export default function NotificationsPage() {
   const [filterTab, setFilterTab] = useState<"all" | "unread" | "archived">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
 
   const loadNotifications = async () => {
@@ -71,9 +70,29 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     loadNotifications();
-    // supabase singleton is stable — user?.id is the correct dependency
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`user-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `profile_id=eq.${user.id}`,
+        },
+        () => {
+          loadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, supabase]);
 
   const handleMarkRead = async (id: string, isRead: boolean) => {
     try {
@@ -188,8 +207,8 @@ export default function NotificationsPage() {
 
     const targetUrl =
       notif.link ||
-      (notif.metadata?.projectId
-        ? `/workspace/${notif.metadata.projectId}`
+      (notif.metadata?.projectId && notif.metadata?.stageId
+        ? `/workspace/${notif.metadata.projectId}/${notif.metadata.stageId}`
         : "/dashboard/my-project");
 
     router.push(targetUrl);
