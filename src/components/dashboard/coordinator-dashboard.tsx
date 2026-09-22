@@ -87,21 +87,36 @@ export function CoordinatorDashboard() {
         setStats(counts);
       }
 
-      // 4. Fetch faculty workload (defense panels counts filtered by active schedules) (BUG-C2)
-      const { data: panels, error: panelsErr } = await supabase
-        .from("defense_panels")
-        .select(`
-          profile_id, 
-          profiles(first_name, last_name),
-          defense_schedules!inner(status)
-        `)
-        .neq("defense_schedules.status", "cancelled");
+      // 4. Fetch faculty workload (defense panels counts filtered by active schedules)
+      const [panelsRes, cancelledSchedRes] = await Promise.all([
+        supabase
+          .from("defense_panels")
+          .select(`
+            profile_id, 
+            project_id,
+            stage_id,
+            profiles:profiles!defense_panels_profile_id_fkey(first_name, last_name)
+          `),
+        supabase
+          .from("defense_schedules")
+          .select("project_id, stage_id")
+          .eq("status", "cancelled"),
+      ]);
 
-      if (panelsErr) throw panelsErr;
-      if (panels) {
+      if (panelsRes.error) throw panelsRes.error;
+
+      const cancelledSet = new Set(
+        cancelledSchedRes.data?.map((s) => `${s.project_id}_${s.stage_id}`) || []
+      );
+
+      if (panelsRes.data) {
         const countsMap: Record<string, { name: string; count: number }> = {};
-        panels.forEach((p: any) => {
-          const name = p.profiles ? `${p.profiles.first_name} ${p.profiles.last_name}` : "Unknown Faculty";
+        panelsRes.data.forEach((p: any) => {
+          if (cancelledSet.has(`${p.project_id}_${p.stage_id}`)) return;
+          const prof = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+          const name = prof && (prof.first_name || prof.last_name)
+            ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim()
+            : "Unknown Faculty";
           if (!countsMap[p.profile_id]) {
             countsMap[p.profile_id] = { name, count: 0 };
           }

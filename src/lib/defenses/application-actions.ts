@@ -216,7 +216,7 @@ export async function manifestCommitteeAgreementAction(input: {
 
     const { data: app, error: appErr } = await serviceClient
       .from("defense_applications")
-      .select("*, defense_schedules(defense_panels(profile_id, panel_role))")
+      .select("*, defense_schedules(*)")
       .eq("id", input.applicationId)
       .single();
 

@@ -380,7 +380,7 @@ export default function DefensesPage() {
                 stage_id,
                 profile_id,
                 panel_role,
-                profiles ( first_name, last_name, email )
+                profiles:profiles!defense_panels_profile_id_fkey ( first_name, last_name, email )
               `)
               .in("project_id", projectIds)
           : Promise.resolve({ data: [] }),
