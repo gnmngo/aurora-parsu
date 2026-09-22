@@ -98,8 +98,11 @@ function LoginForm() {
     if (regCampusId) {
       supabase.from("colleges").select("id, name").eq("campus_id", regCampusId).order("name").then(({ data }) => {
         setColleges(data || []);
-        if (data && data.length > 0) setRegCollegeId(data[0].id);
-        else setRegCollegeId("");
+        if (data && data.length > 0) {
+          setRegCollegeId((prev) => (data.some((c) => c.id === prev) ? prev : data[0].id));
+        } else {
+          setRegCollegeId("");
+        }
       });
     } else {
       setColleges([]);
@@ -112,8 +115,6 @@ function LoginForm() {
     if (regCollegeId) {
       supabase.from("departments").select("id, name").eq("college_id", regCollegeId).order("name").then(({ data }) => {
         setDepartments(data || []);
-        if (data && data.length > 0) setRegDepartmentId(data[0].id);
-        else setRegDepartmentId("");
       });
     } else {
       setDepartments([]);
@@ -121,19 +122,26 @@ function LoginForm() {
     }
   }, [regCollegeId, supabase]);
 
-  // Load programs based on department
+  // Load programs based on college and optional department
   useEffect(() => {
-    if (regDepartmentId) {
-      supabase.from("programs").select("id, name, code").eq("department_id", regDepartmentId).order("name").then(({ data }) => {
+    if (regCollegeId) {
+      let query = supabase.from("programs").select("id, name, code, department_id").eq("college_id", regCollegeId).order("name");
+      if (regDepartmentId) {
+        query = query.eq("department_id", regDepartmentId);
+      }
+      query.then(({ data }) => {
         setPrograms(data || []);
-        if (data && data.length > 0) setRegProgramId(data[0].id);
-        else setRegProgramId("");
+        if (data && data.length > 0) {
+          setRegProgramId((prev) => (data.some((p) => p.id === prev) ? prev : data[0].id));
+        } else {
+          setRegProgramId("");
+        }
       });
     } else {
       setPrograms([]);
       setRegProgramId("");
     }
-  }, [regDepartmentId, supabase]);
+  }, [regCollegeId, regDepartmentId, supabase]);
 
   // Load majors based on program
   useEffect(() => {
@@ -587,13 +595,20 @@ function LoginForm() {
                   <select
                     id="program"
                     value={regProgramId}
-                    onChange={(e) => setRegProgramId(e.target.value)}
+                    onChange={(e) => {
+                      const selId = e.target.value;
+                      setRegProgramId(selId);
+                      const selProg = programs.find((p) => p.id === selId);
+                      if (selProg?.department_id) {
+                        setRegDepartmentId(selProg.department_id);
+                      }
+                    }}
                     className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
                     disabled={programs.length === 0}
                     required
                   >
-                    <option value="">-- Select Program --</option>
-                    {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    <option value="">{programs.length === 0 ? "-- Loading Programs... --" : "-- Select Program --"}</option>
+                    {programs.map(p => <option key={p.id} value={p.id}>{p.name} {p.code ? `(${p.code})` : ""}</option>)}
                   </select>
                 </div>
 
