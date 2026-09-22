@@ -23,9 +23,19 @@ async function fixDepartmentsRLS() {
 
     DROP POLICY IF EXISTS "campuses_select" ON public.campuses;
     CREATE POLICY "campuses_select" ON public.campuses FOR SELECT TO public USING (true);
+
+    DROP POLICY IF EXISTS "defense_stages_read_all" ON public.defense_stages;
+    DROP POLICY IF EXISTS "defense_stages_select" ON public.defense_stages;
+    CREATE POLICY "defense_stages_select" ON public.defense_stages FOR SELECT TO public USING (true);
+
+    DROP POLICY IF EXISTS "roles_select" ON public.roles;
+    CREATE POLICY "roles_select" ON public.roles FOR SELECT TO public USING (true);
+
+    DROP POLICY IF EXISTS "workflow_templates_select" ON public.workflow_templates;
+    CREATE POLICY "workflow_templates_select" ON public.workflow_templates FOR SELECT TO public USING (true);
   `);
 
-  console.log('Public SELECT policies applied to departments, colleges, and campuses!');
+  console.log('Public SELECT policies applied to departments, colleges, campuses, defense_stages, roles, and workflow_templates!');
   await client.end();
 }
 
