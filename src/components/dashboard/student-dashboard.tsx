@@ -30,7 +30,10 @@ import {
   CheckCircle2,
   ListChecks,
   Info,
-  Filter
+  Filter,
+  Trash2,
+  Lock,
+  AlertCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -42,9 +45,11 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { toast } from "sonner";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
+import { deleteDocumentVersionAction } from "@/lib/projects/actions";
 
 interface StudentDashboardProps {
   userId: string;
@@ -70,6 +75,11 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [annotationsCount, setAnnotationsCount] = useState({ total: 0, unresolved: 0, addressed: 0 });
   const [activeTab, setActiveTab] = useState<"submissions" | "revisions" | "evaluations">("submissions");
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<{
+    versionId: string;
+    fileName: string;
+  } | null>(null);
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false);
   const supabase = createClient();
 
   const loadStudentData = useCallback(async () => {
@@ -286,6 +296,33 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   useEffect(() => {
     loadStudentData();
   }, [loadStudentData]);
+
+  const handleDeleteVersion = async () => {
+    if (!deleteConfirmTarget || !project) return;
+    setIsDeletingVersion(true);
+    try {
+      const res = await deleteDocumentVersionAction({
+        versionId: deleteConfirmTarget.versionId,
+        projectId: project.id,
+      });
+
+      if (!res.success) {
+        toast.error(res.error || "Failed to delete manuscript version.");
+        return;
+      }
+
+      toast.success(
+        `Manuscript (${deleteConfirmTarget.fileName}) deleted successfully.`
+      );
+      setDeleteConfirmTarget(null);
+      await loadStudentData();
+    } catch (err: unknown) {
+      console.error("Error deleting version:", err);
+      toast.error("Failed to delete manuscript version.");
+    } finally {
+      setIsDeletingVersion(false);
+    }
+  };
 
   if (error) {
     return (
@@ -766,12 +803,39 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                           </div>
                         </div>
 
-                        <Link href={`/workspace/${project.id}/${sub.stage_id}`}>
-                          <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 rounded-lg font-semibold">
-                            <FileText className="h-3.5 w-3.5 text-primary" />
-                            View Manuscript &amp; Feedback
-                          </Button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/workspace/${project.id}/${sub.stage_id}`}>
+                            <Button variant="outline" size="sm" className="h-8 text-[11px] gap-1.5 rounded-lg font-semibold">
+                              <FileText className="h-3.5 w-3.5 text-primary" />
+                              View Manuscript &amp; Feedback
+                            </Button>
+                          </Link>
+                          {sub.approvalStatus !== "approved" ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
+                              title="Delete this uploaded file"
+                              onClick={() =>
+                                setDeleteConfirmTarget({
+                                  versionId: sub.id,
+                                  fileName: sub.file_name,
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          ) : (
+                            <div
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground/80 px-1 font-semibold"
+                              title="Officially endorsed and locked for academic integrity"
+                            >
+                              <Lock className="h-3 w-3 text-emerald-600" />
+                              <span className="hidden sm:inline">Locked</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1208,6 +1272,70 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
               Close Guide
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Manuscript Version Confirmation Dialog */}
+      <Dialog
+        open={Boolean(deleteConfirmTarget)}
+        onOpenChange={(open) => !open && setDeleteConfirmTarget(null)}
+      >
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Manuscript Version?
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-xs leading-relaxed text-muted-foreground">
+              Are you sure you want to delete{" "}
+              <strong className="text-foreground">
+                {deleteConfirmTarget?.fileName}
+              </strong>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs space-y-1 text-destructive dark:text-destructive-foreground">
+            <p className="font-bold flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4" />
+              Irreversible Action
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-normal">
+              If this file was uploaded by mistake, deleting it removes it from your project and adviser review. If this was the current version, the previous version will be promoted back to current.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isDeletingVersion}
+              onClick={() => setDeleteConfirmTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={isDeletingVersion}
+              onClick={handleDeleteVersion}
+              className="gap-1 font-bold"
+            >
+              {isDeletingVersion ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Confirm Delete
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

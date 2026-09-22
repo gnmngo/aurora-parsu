@@ -887,3 +887,209 @@ export async function upsertProgramSectionAction(input: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Deletes a document version uploaded by mistake, provided it has not been officially endorsed by an adviser.
+ * - Enforces authorization: user must be project participant (student leader/member) or coordinator/admin.
+ * - Academic record protection: prevents deletion if adviser_approval_status === 'approved' or defense stage is completed.
+ * - Storage cleanup: deletes the physical PDF from 'manuscripts' storage bucket.
+ * - Database cleanup: deletes from document_versions (cascades to annotations & upload history).
+ * - Version promotion: if deleted version was current, promotes the highest remaining version to is_current: true.
+ * - If zero versions remain, marks the document status as 'draft' or removes it.
+ * - Emits audit log and evaluation event.
+ */
+export async function deleteDocumentVersionAction(input: {
+  versionId: string;
+  projectId: string;
+}): Promise<{ success: boolean; error?: string; remainingCount?: number }> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  try {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
+
+    if (!input.versionId || !input.projectId) {
+      return { success: false, error: "Missing required parameters." };
+    }
+
+    // 1. Fetch version and document details
+    const { data: version, error: verErr } = await serviceClient
+      .from("document_versions")
+      .select("*, documents(*)")
+      .eq("id", input.versionId)
+      .maybeSingle();
+
+    if (verErr || !version) {
+      return { success: false, error: "Manuscript version not found or already deleted." };
+    }
+
+    const doc = version.documents as any;
+    if (!doc || doc.project_id !== input.projectId) {
+      return { success: false, error: "Manuscript does not belong to this project." };
+    }
+
+    // 2. Check authorization: project participant or coordinator / admin
+    const { data: member } = await serviceClient
+      .from("project_members")
+      .select("id, member_role")
+      .eq("project_id", input.projectId)
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    const { data: userRoles } = await serviceClient
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", user.id);
+
+    const roles = userRoles?.map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.code : r.roles?.code)) || [];
+    const isStaff = roles.includes("coordinator") || roles.includes("sys_admin");
+    const isProjectParticipant = Boolean(member) || doc.created_by === user.id;
+
+    if (!isProjectParticipant && !isStaff) {
+      return {
+        success: false,
+        error: "Permission denied. Only project members or research coordinators can remove uploaded documents.",
+      };
+    }
+
+    // 3. Academic Integrity Guard:
+    // If the document has already been officially endorsed by the adviser, block deletion!
+    if (doc.adviser_approval_status === "approved") {
+      return {
+        success: false,
+        error:
+          "Cannot delete an officially endorsed manuscript. It is locked as part of the formal evaluation record. If you need to make changes, please upload a new revision instead.",
+      };
+    }
+
+    // Also check if defense schedule for this stage has already been completed
+    const { data: completedDefense } = await serviceClient
+      .from("defense_schedules")
+      .select("id, status")
+      .eq("project_id", input.projectId)
+      .eq("stage_id", doc.stage_id)
+      .eq("status", "completed")
+      .maybeSingle();
+
+    if (completedDefense) {
+      return {
+        success: false,
+        error: "Cannot delete a manuscript for a defense stage that has already been completed.",
+      };
+    }
+
+    // 4. Delete physical file from Supabase Storage bucket ('manuscripts')
+    if (version.storage_path) {
+      const cleanPath = version.storage_path.replace(/^manuscripts\//, "").replace(/^\/+/, "");
+      const { error: storageErr } = await serviceClient.storage
+        .from("manuscripts")
+        .remove([cleanPath]);
+
+      if (storageErr) {
+        console.error("Warning: Storage file deletion returned error:", storageErr.message);
+      }
+    }
+
+    // 5. Delete version record from database (cascades to annotations & upload history)
+    const { error: deleteErr } = await serviceClient
+      .from("document_versions")
+      .delete()
+      .eq("id", input.versionId);
+
+    if (deleteErr) {
+      return { success: false, error: `Failed to remove document version: ${deleteErr.message}` };
+    }
+
+    // 6. Query remaining versions for this document
+    const { data: remainingVersions } = await serviceClient
+      .from("document_versions")
+      .select("*")
+      .eq("document_id", doc.id)
+      .order("version_number", { ascending: false });
+
+    const remainingCount = remainingVersions?.length || 0;
+
+    if (remainingVersions && remainingVersions.length > 0) {
+      // If the deleted version was is_current, promote the highest remaining version
+      if (version.is_current) {
+        const highestVer = remainingVersions[0];
+        await serviceClient
+          .from("document_versions")
+          .update({ is_current: true })
+          .eq("id", highestVer.id);
+
+        await serviceClient
+          .from("documents")
+          .update({
+            title: highestVer.file_name.replace(/\.[^/.]+$/, ""),
+            status: "under_review",
+          })
+          .eq("id", doc.id);
+      }
+    } else {
+      // If no versions remain, delete the empty document entry so the stage can be re-uploaded cleanly
+      await serviceClient
+        .from("documents")
+        .delete()
+        .eq("id", doc.id);
+
+      // Check if project has any other active documents
+      const { data: otherDocs } = await serviceClient
+        .from("documents")
+        .select("id")
+        .eq("project_id", input.projectId)
+        .limit(1);
+
+      if (!otherDocs || otherDocs.length === 0) {
+        await serviceClient
+          .from("projects")
+          .update({ status: "draft" })
+          .eq("id", input.projectId);
+      }
+    }
+
+    // 7. Audit log & evaluation event
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: isStaff ? "coordinator" : "student",
+      action_type: "DELETE",
+      module: "documents",
+      entity_type: "document_versions",
+      entity_id: input.versionId,
+      description: `Deleted manuscript version v${version.version_number} (${version.file_name}) from project ${input.projectId}`,
+      ip_address: ip,
+      user_agent: userAgent,
+    });
+
+    await serviceClient.from("evaluation_events").insert({
+      project_id: input.projectId,
+      stage_id: doc.stage_id,
+      event_type: "document_version_deleted",
+      payload: {
+        document_id: doc.id,
+        deleted_version_id: input.versionId,
+        version_number: version.version_number,
+        file_name: version.file_name,
+        remaining_versions_count: remainingCount,
+      },
+    });
+
+    return { success: true, remainingCount };
+  } catch (err: unknown) {
+    console.error("deleteDocumentVersionAction error:", err);
+    const msg = err instanceof Error ? err.message : "Failed to delete manuscript version.";
+    return { success: false, error: msg };
+  }
+}
+

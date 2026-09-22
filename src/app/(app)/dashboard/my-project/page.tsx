@@ -24,7 +24,7 @@ import {
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
   ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck,
-  Download, Layers, Video
+  Download, Layers, Video, Trash2, Lock
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
-import { assignProjectAdviserAction, getApprovedFacultyListAction, updateProjectTeamNameAction } from "@/lib/projects/actions";
+import {
+  assignProjectAdviserAction,
+  getApprovedFacultyListAction,
+  updateProjectTeamNameAction,
+  deleteDocumentVersionAction,
+} from "@/lib/projects/actions";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
 import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
 import { DefenseApplicationDialog } from "@/components/defenses/defense-application-dialog";
@@ -187,6 +192,12 @@ export default function MyProjectPage() {
   const [selectedEvalForCert, setSelectedEvalForCert] = useState<EvaluationResult | null>(null);
   const [certDialogOpen, setCertDialogOpen] = useState(false);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<{
+    versionId: string;
+    fileName: string;
+    versionNumber: number;
+  } | null>(null);
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false);
 
   const formMeta = useMemo(() => {
     return getProgramFormMetadata({
@@ -418,6 +429,33 @@ export default function MyProjectPage() {
   useEffect(() => {
     loadProjectData();
   }, [loadProjectData]);
+
+  const handleDeleteVersion = async () => {
+    if (!deleteConfirmTarget || !project) return;
+    setIsDeletingVersion(true);
+    try {
+      const res = await deleteDocumentVersionAction({
+        versionId: deleteConfirmTarget.versionId,
+        projectId: project.id,
+      });
+
+      if (!res.success) {
+        toast.error(res.error || "Failed to delete manuscript version.");
+        return;
+      }
+
+      toast.success(
+        `Manuscript v${deleteConfirmTarget.versionNumber} (${deleteConfirmTarget.fileName}) deleted successfully.`
+      );
+      setDeleteConfirmTarget(null);
+      await loadProjectData();
+    } catch (err: unknown) {
+      console.error("Error deleting version:", err);
+      toast.error("Failed to delete manuscript version.");
+    } finally {
+      setIsDeletingVersion(false);
+    }
+  };
 
   const openAnnotations = useMemo(() => {
     return annotations.filter((a) => a.status === "open" || a.status === "in_progress");
@@ -1611,14 +1649,27 @@ export default function MyProjectPage() {
                                 Adviser Endorsed
                               </Badge>
                             </>
-                          ) : doc.adviser_approval_status === "rejected" ? (
-                            <Badge variant="warning" className="text-[10px] font-bold">
-                              Revisions Required
-                            </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
-                              Under Review
-                            </Badge>
+                            <>
+                              <PdfUploader
+                                projectId={project.id}
+                                stageId={doc.stage_id}
+                                buttonText="Upload Revision / Replace"
+                                buttonVariant="outline"
+                                buttonSize="sm"
+                                className="h-6 text-[10px] gap-1 px-2 font-bold cursor-pointer"
+                                onUploadCompleted={loadProjectData}
+                              />
+                              {doc.adviser_approval_status === "rejected" ? (
+                                <Badge variant="warning" className="text-[10px] font-bold">
+                                  Revisions Required
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground">
+                                  Under Review
+                                </Badge>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -1669,6 +1720,32 @@ export default function MyProjectPage() {
                                     View &amp; Feedback
                                   </Link>
                                 </Button>
+                                {doc.adviser_approval_status !== "approved" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete this uploaded version"
+                                    onClick={() =>
+                                      setDeleteConfirmTarget({
+                                        versionId: v.id,
+                                        fileName: v.file_name,
+                                        versionNumber: v.version_number,
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span className="sr-only">Delete version</span>
+                                  </Button>
+                                ) : (
+                                  <div
+                                    className="flex items-center gap-1 text-[10px] text-muted-foreground/80 px-1 font-semibold"
+                                    title="Officially endorsed and locked for academic integrity"
+                                  >
+                                    <Lock className="h-3 w-3 text-emerald-600" />
+                                    <span className="hidden sm:inline">Locked</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -2673,6 +2750,70 @@ export default function MyProjectPage() {
                   <li><strong>One Member on Notes:</strong> Appoint one group member specifically to record all panel recommendations during Q&amp;A for your post-defense revisions.</li>
                 </ul>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Manuscript Version Confirmation Dialog */}
+        <Dialog
+          open={Boolean(deleteConfirmTarget)}
+          onOpenChange={(open) => !open && setDeleteConfirmTarget(null)}
+        >
+          <DialogContent className="sm:max-w-[440px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Delete Manuscript Version?
+              </DialogTitle>
+              <DialogDescription className="pt-2 text-xs leading-relaxed text-muted-foreground">
+                Are you sure you want to delete{" "}
+                <strong className="text-foreground">
+                  v{deleteConfirmTarget?.versionNumber} ({deleteConfirmTarget?.fileName})
+                </strong>
+                ?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs space-y-1 text-destructive dark:text-destructive-foreground">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4" />
+                Irreversible Action
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                If this file was uploaded by mistake, deleting it removes it from your project and adviser review. If this was the current version, the previous version will be promoted back to current.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isDeletingVersion}
+                onClick={() => setDeleteConfirmTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                disabled={isDeletingVersion}
+                onClick={handleDeleteVersion}
+                className="gap-1 font-bold"
+              >
+                {isDeletingVersion ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Confirm Delete
+                  </>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

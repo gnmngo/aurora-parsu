@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { FileUp, UploadCloud, FileText, CheckCircle2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileUp, UploadCloud, FileText, CheckCircle2, Loader2, AlertTriangle, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { computeFileSha256 } from "@/lib/documents";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ export function PdfUploader({
   const [selectedProject, setSelectedProject] = useState(projectId || "");
   const [selectedStage, setSelectedStage] = useState(stageId || "");
   const [file, setFile] = useState<File | null>(null);
+  const [confirmedCorrectFile, setConfirmedCorrectFile] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
@@ -128,6 +130,7 @@ export function PdfUploader({
     }
 
     setFile(selectedFile);
+    setConfirmedCorrectFile(false);
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -135,6 +138,11 @@ export function PdfUploader({
 
     if (!file || !selectedProject || !selectedStage) {
       toast.error("Please select a file and ensure project/stage are assigned.");
+      return;
+    }
+
+    if (!confirmedCorrectFile) {
+      toast.error("Please verify and check the confirmation box before uploading.");
       return;
     }
 
@@ -317,6 +325,7 @@ export function PdfUploader({
       });
 
       setFile(null);
+      setConfirmedCorrectFile(false);
       setOpen(false);
       if (onUploadCompleted) onUploadCompleted();
     } catch (err: unknown) {
@@ -331,8 +340,19 @@ export function PdfUploader({
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setFile(null);
+      setConfirmedCorrectFile(false);
+    }
+  };
+
+  const currentStageName =
+    stages.find((s) => s.id === selectedStage)?.name || "Defense Stage";
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size={buttonSize} variant={buttonVariant} className={cn("gap-2 font-bold shadow-sm", className)}>
           <UploadCloud className="h-4 w-4" />
@@ -340,7 +360,7 @@ export function PdfUploader({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[460px]">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileUp className="h-5 w-5 text-primary" />
@@ -391,31 +411,91 @@ export function PdfUploader({
             </div>
           )}
 
-          {/* Enhanced PDF Drag & Drop / File Selector */}
+          {/* Enhanced PDF Drag & Drop / File Selector with Error Prevention */}
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase text-muted-foreground">Manuscript PDF File</Label>
 
-            <label className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 p-6 text-center transition-colors hover:bg-muted/40 hover:border-primary/50 cursor-pointer">
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-                disabled={uploading}
-              />
-              {file ? (
-                <div className="flex flex-col items-center space-y-2 text-primary">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <CheckCircle2 className="h-6 w-6 text-primary" />
+            {file ? (
+              <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4 space-y-3">
+                {/* Pre-Upload Inspection Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate max-w-[240px] sm:max-w-[280px]" title={file.name}>
+                        {file.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB • PDF Document
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs font-bold text-foreground truncate max-w-[280px]">{file.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to submit
+                  <label className="shrink-0 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] font-bold gap-1 cursor-pointer pointer-events-none"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Change File
+                    </Button>
+                  </label>
+                </div>
+
+                {/* Target Stage Badge */}
+                <div className="flex items-center justify-between bg-background/80 rounded-xl px-3 py-2 border border-border/50 text-[11px]">
+                  <span className="text-muted-foreground font-semibold">Target Defense Stage:</span>
+                  <Badge variant="outline" className="font-bold text-[10px] text-primary border-primary/30 bg-primary/5">
+                    {currentStageName}
+                  </Badge>
+                </div>
+
+                {/* Explicit Verification Checkbox */}
+                <label className="flex items-start gap-2.5 p-3 rounded-xl bg-background border border-primary/30 cursor-pointer hover:border-primary transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={confirmedCorrectFile}
+                    onChange={(e) => setConfirmedCorrectFile(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <div className="text-left text-[11px] leading-tight select-none">
+                    <p className="font-bold text-foreground">
+                      I confirm this is the correct PDF for {currentStageName}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Please ensure this file is the intended manuscript before submitting.
                     </p>
                   </div>
+                </label>
+
+                {/* Error Prevention / Safety Net Notice */}
+                <div className="flex items-start gap-1.5 text-[10px] text-muted-foreground px-1 bg-muted/40 p-2 rounded-lg">
+                  <Info className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Safety Guarantee:</strong> If uploaded by mistake, you can remove or replace this file anytime before your adviser officially endorses it.
+                  </span>
                 </div>
-              ) : (
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 p-6 text-center transition-colors hover:bg-muted/40 hover:border-primary/50 cursor-pointer">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  disabled={uploading}
+                />
                 <div className="flex flex-col items-center space-y-2">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <UploadCloud className="h-6 w-6" />
@@ -429,8 +509,8 @@ export function PdfUploader({
                     </p>
                   </div>
                 </div>
-              )}
-            </label>
+              </label>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -440,7 +520,12 @@ export function PdfUploader({
               </Button>
             </DialogClose>
 
-            <Button type="submit" size="sm" disabled={uploading || !file}>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={uploading || !file || !confirmedCorrectFile}
+              className="font-bold"
+            >
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
