@@ -567,7 +567,7 @@ export default function DefensesPage() {
       allowedRoles={["coordinator", "panelist", "adviser", "sys_admin", "college_dean", "student"]}
       fallback={<AccessDenied />}
     >
-      <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
+      <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
         {/* Page Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -639,7 +639,7 @@ export default function DefensesPage() {
               "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
               activeTab === "scheduled"
                 ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800"
+                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <Clock className="h-3.5 w-3.5" />
@@ -651,7 +651,7 @@ export default function DefensesPage() {
               "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
               activeTab === "stages"
                 ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800"
+                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <Layers className="h-3.5 w-3.5" />
@@ -663,7 +663,7 @@ export default function DefensesPage() {
               "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
               activeTab === "calendar"
                 ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800"
+                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <Calendar className="h-3.5 w-3.5" />
@@ -1139,7 +1139,7 @@ export default function DefensesPage() {
                 {stages.map((stage) => (
                   <Card key={stage.id} className="border border-border/80 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
-                      <CardTitle className="text-sm font-bold text-slate-800 truncate max-w-[200px]">
+                      <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
                         {stage.name}
                       </CardTitle>
                       <Badge
@@ -1150,18 +1150,18 @@ export default function DefensesPage() {
                       </Badge>
                     </CardHeader>
                     <CardContent>
-                      <dl className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-600">
+                      <dl className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
                         <div>
                           <dt className="text-muted-foreground font-semibold uppercase text-[8px]">Progress</dt>
-                          <dd className="text-sm font-black text-slate-800">{stage.completionPct}%</dd>
+                          <dd className="text-sm font-black text-slate-800 dark:text-slate-200">{stage.completionPct}%</dd>
                         </div>
                         <div>
                           <dt className="text-muted-foreground font-semibold uppercase text-[8px]">Uploads</dt>
-                          <dd className="text-sm font-black text-slate-800">{stage.submissionCount}</dd>
+                          <dd className="text-sm font-black text-slate-800 dark:text-slate-200">{stage.submissionCount}</dd>
                         </div>
                         <div>
                           <dt className="text-muted-foreground font-semibold uppercase text-[8px]">Reviews</dt>
-                          <dd className="text-sm font-black text-slate-800">{stage.reviewCount}</dd>
+                          <dd className="text-sm font-black text-slate-800 dark:text-slate-200">{stage.reviewCount}</dd>
                         </div>
                       </dl>
                     </CardContent>
@@ -1223,7 +1223,7 @@ export default function DefensesPage() {
               </DialogHeader>
 
               <div className="space-y-2 py-2">
-                <label className="text-xs font-semibold text-slate-700">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Cancellation Reason (Optional)
                 </label>
                 <input

@@ -128,11 +128,11 @@ export default function DemoGuidedFlow() {
   const StepIcon = currentStep.icon;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-xs font-semibold text-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-background flex flex-col md:flex-row text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Side Stepper Navigation */}
       <div className="w-full md:w-80 bg-card border-r border-border/80 p-6 space-y-6 shrink-0 flex flex-col">
         <div className="space-y-1">
-          <h2 className="text-lg font-black text-slate-900 tracking-tight">Guided Capstone Flow</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">Guided Capstone Flow</h2>
           <p className="text-[10px] text-muted-foreground font-medium uppercase">Presentation Walkthroughs</p>
         </div>
 
@@ -141,7 +141,7 @@ export default function DemoGuidedFlow() {
             <button
               key={idx}
               onClick={() => setActiveStep(idx)}
-              className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${idx === activeStep ? "border-primary/30 bg-primary/5 text-primary shadow-sm" : "border-border/60 hover:bg-slate-50"}`}
+              className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${idx === activeStep ? "border-primary/30 bg-primary/5 text-primary shadow-sm" : "border-border/60 hover:bg-slate-50 dark:hover:bg-muted"}`}
             >
               <div className="flex items-center gap-2">
                 <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${idx === activeStep ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
@@ -180,12 +180,12 @@ export default function DemoGuidedFlow() {
               <StepIcon className="h-8 w-8" />
             </div>
             <div className="space-y-1">
-              <h1 className="text-xl font-black text-slate-900 leading-snug">{currentStep.title}</h1>
+              <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 leading-snug">{currentStep.title}</h1>
               <p className="text-xs text-muted-foreground font-semibold">Role Account: {currentStep.email || "Public Guest Access"}</p>
             </div>
           </div>
 
-          <p className="text-sm font-medium text-slate-600 leading-relaxed pt-2">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed pt-2">
             {currentStep.description}
           </p>
 

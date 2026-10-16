@@ -263,7 +263,7 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
                     <div className="flex items-center gap-2">
                       <h4 className={cn(
                         "text-xs font-bold",
-                        step.status === "completed" && "text-slate-900",
+                        step.status === "completed" && "text-slate-900 dark:text-slate-100",
                         step.status === "current" && "text-info",
                         step.status === "pending" && "text-muted-foreground"
                       )}>
@@ -291,7 +291,7 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
                 <Card key={item.id} className="border border-border shadow-sm">
                   <CardHeader className="bg-muted/10 border-b border-border/60 py-3 px-4 flex flex-row items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-slate-800">{item.name}</h4>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{item.name}</h4>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Code: {item.code}</p>
                     </div>
                     {item.avgScore && (
@@ -306,7 +306,7 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
                       <h5 className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Manuscript</h5>
                       {item.manuscript ? (
                         <div className="flex items-center justify-between bg-muted/20 p-2 rounded-lg border border-border/40">
-                          <span className="truncate max-w-[200px] font-medium text-[11px] text-slate-800">
+                          <span className="truncate max-w-[200px] font-medium text-[11px] text-slate-800 dark:text-slate-200">
                             {item.manuscript.title}
                           </span>
                           <span className="text-[9px] text-muted-foreground font-bold bg-muted px-1.5 py-0.5 rounded">
@@ -324,12 +324,12 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
                       {item.evaluations.length > 0 ? (
                         <div className="space-y-1.5">
                           {item.evaluations.map((ev: any) => (
-                            <div key={ev.id} className="flex items-center justify-between border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                            <div key={ev.id} className="flex items-center justify-between border-b border-border pb-1.5 last:border-0 last:pb-0">
                               <div>
-                                <p className="font-bold text-[11px] text-slate-800">
+                                <p className="font-bold text-[11px] text-slate-800 dark:text-slate-200">
                                   {ev.printed_name || `${ev.profiles?.first_name} ${ev.profiles?.last_name}`}
                                 </p>
-                                <p className="text-[9px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-0.5">
+                                <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
                                   <Lock className="h-2.5 w-2.5" /> {ev.certificate_serial || "Signed"}
                                 </p>
                               </div>
@@ -345,9 +345,9 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
                     </div>
 
                     {/* Stage status overview */}
-                    <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                    <div className="border-t border-border pt-2 flex items-center justify-between text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <FileCheck className="h-3 w-3" /> Verdict: <strong className="text-slate-800 capitalize">{item.verdict?.replace("_", " ") || "Pending"}</strong>
+                        <FileCheck className="h-3 w-3" /> Verdict: <strong className="text-slate-800 dark:text-slate-200 capitalize">{item.verdict?.replace("_", " ") || "Pending"}</strong>
                       </span>
                       <span>
                         {item.auditLogsCount} audit logs

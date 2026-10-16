@@ -124,7 +124,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
   const signedEvals = evaluations.filter((e) => e.status === "submitted");
 
   return (
-    <div className="space-y-6 text-xs font-semibold text-slate-800">
+    <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Quick Workspace Launcher Banner */}
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/10 shadow-xs">
         <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -133,7 +133,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               <Badge variant="outline" className="text-[9px] font-bold uppercase text-primary border-primary/40">
                 Core Feature
               </Badge>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Split-Screen Manuscript Review &amp; Rubric Grading Workspace
               </h3>
             </div>
@@ -152,31 +152,31 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600">
+          <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
             <Calendar className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{activeProjects.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{activeProjects.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Manuscripts</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
             <FileText className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{draftEvals.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{draftEvals.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Pending Evaluations</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
             <UserCheck className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{signedEvals.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{signedEvals.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Signed Certificates</p>
           </div>
         </Card>
@@ -186,19 +186,19 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
       <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
         <button
           onClick={() => setActiveTab("defenses")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "defenses" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "defenses" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Research Manuscripts ({activeProjects.length})
         </button>
         <button
           onClick={() => setActiveTab("pending")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "pending" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "pending" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Pending Drafts ({draftEvals.length})
         </button>
         <button
           onClick={() => setActiveTab("completed")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "completed" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "completed" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Signature History ({signedEvals.length})
         </button>
@@ -213,7 +213,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               {defenses.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                    <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                       <Calendar className="h-4 w-4 text-primary" /> Scheduled Defense Sessions
                     </CardTitle>
                   </CardHeader>
@@ -222,7 +222,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
                       {defenses.map((def) => (
                         <div key={def.id} className="flex items-center justify-between p-4">
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">"{def.projects?.title}"</p>
+                            <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">"{def.projects?.title}"</p>
                             <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-1">
                               <Clock className="h-3.5 w-3.5 text-muted-foreground" /> {new Date(def.scheduled_at).toLocaleString()}
                             </p>
@@ -243,7 +243,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               {/* All Assigned Manuscripts */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                  <CardTitle className="text-xs font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                     <FileText className="h-4 w-4 text-primary" /> Active Research Manuscripts
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -282,7 +282,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
                                   {p.status.replace("_", " ")}
                                 </Badge>
                               </div>
-                              <p className="font-bold text-slate-900 text-sm truncate">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 text-sm truncate">
                                 "{p.title}"
                               </p>
                               <p className="text-[10px] text-muted-foreground">
@@ -307,7 +307,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           {activeTab === "pending" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <FileText className="h-4 w-4 text-primary" /> Draft Evaluations
                 </CardTitle>
               </CardHeader>
@@ -322,7 +322,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
                     {draftEvals.map((e) => (
                       <div key={e.id} className="flex items-center justify-between p-4">
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-900 text-sm">"{e.projects?.title}"</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">"{e.projects?.title}"</p>
                           <p className="text-[10px] text-muted-foreground">
                             Stage: {e.defense_stages?.name} • Last Saved {new Date(e.updated_at).toLocaleDateString()}
                           </p>
@@ -343,7 +343,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           {activeTab === "completed" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <UserCheck className="h-4 w-4 text-primary" /> E-Signature Verification Records
                 </CardTitle>
               </CardHeader>
@@ -355,11 +355,11 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
                     {signedEvals.map((e) => (
                       <div key={e.id} className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-slate-900 text-sm">"{e.projects?.title}"</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">"{e.projects?.title}"</p>
                           <p className="text-[10px] text-muted-foreground">
                             Stage: {e.defense_stages?.name} • Signed {e.signed_at ? new Date(e.signed_at).toLocaleString() : e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
                           </p>
-                          <div className="flex gap-2 mt-1.5 font-mono text-[9px] text-slate-600 bg-muted px-2 py-0.5 rounded border border-border w-fit">
+                          <div className="flex gap-2 mt-1.5 font-mono text-[9px] text-slate-600 dark:text-slate-300 bg-muted px-2 py-0.5 rounded border border-border w-fit">
                             Serial: {e.certificate_serial || "—"}
                           </div>
                         </div>
@@ -379,7 +379,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
         {/* Side Panel: Audit Logs */}
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+            <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
               <History className="h-4 w-4 text-primary" /> Recent Actions
             </CardTitle>
           </CardHeader>
@@ -390,7 +390,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               <div className="divide-y divide-border">
                 {recentActivities.map((l) => (
                   <div key={l.id} className="p-3 text-xs space-y-1">
-                    <p className="font-bold text-slate-800">{l.description}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{l.description}</p>
                     <p className="text-[9px] text-muted-foreground">Date: {new Date(l.created_at).toLocaleDateString()}</p>
                   </div>
                 ))}

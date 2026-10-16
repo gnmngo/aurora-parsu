@@ -84,7 +84,7 @@ export default function SystemHealthPage() {
 
   return (
     <RoleGuard allowedRoles={["sys_admin"]} fallback={<AccessDenied />}>
-    <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
+    <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">System Health Diagnostics</h1>
@@ -115,44 +115,44 @@ export default function SystemHealthPage() {
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             {/* Database status */}
             <Card className="p-4 flex flex-row items-center gap-4">
-              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
                 <Database className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-slate-900">Good</p>
+                <p className="text-sm font-black text-slate-900 dark:text-slate-100">Good</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Database status</p>
               </div>
             </Card>
 
             {/* Realtime channel */}
             <Card className="p-4 flex flex-row items-center gap-4">
-              <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
                 <Activity className="h-5 w-5 animate-pulse" />
               </div>
               <div>
-                <p className="text-sm font-black text-slate-900">Connected</p>
+                <p className="text-sm font-black text-slate-900 dark:text-slate-100">Connected</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Realtime sync</p>
               </div>
             </Card>
 
             {/* Storage capacity */}
             <Card className="p-4 flex flex-row items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600">
+              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
                 <HardDrive className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-slate-900">12.4 GB / 50 GB</p>
+                <p className="text-sm font-black text-slate-900 dark:text-slate-100">12.4 GB / 50 GB</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Storage Capacity</p>
               </div>
             </Card>
 
             {/* Row Level Security */}
             <Card className="p-4 flex flex-row items-center gap-4">
-              <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-slate-900">Enforced (RLS)</p>
+                <p className="text-sm font-black text-slate-900 dark:text-slate-100">Enforced (RLS)</p>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Database Security</p>
               </div>
             </Card>
@@ -163,33 +163,33 @@ export default function SystemHealthPage() {
             {/* System statistics */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                   Academic Database Metrics
                 </CardTitle>
                 <CardDescription className="text-[10px]">
                   Total row counts from main transaction tables
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-2 font-medium text-[11px] text-slate-700">
+              <CardContent className="space-y-4 pt-2 font-medium text-[11px] text-slate-700 dark:text-slate-300">
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary" /> Active Users Profiles</span>
-                  <span className="font-bold text-slate-900">{stats.users}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.users}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span className="flex items-center gap-1.5"><Database className="h-4 w-4 text-primary" /> Registered Projects</span>
-                  <span className="font-bold text-slate-900">{stats.projects}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.projects}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span className="flex items-center gap-1.5"><FileCheck className="h-4 w-4 text-primary" /> Evaluations Submitted</span>
-                  <span className="font-bold text-slate-900">{stats.evaluations}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.evaluations}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-primary" /> System Notifications</span>
-                  <span className="font-bold text-slate-900">{stats.notifications}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.notifications}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-1.5"><History className="h-4 w-4 text-primary" /> Security Audit Logs</span>
-                  <span className="font-bold text-slate-900">{stats.logs}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.logs}</span>
                 </div>
               </CardContent>
             </Card>
@@ -197,25 +197,25 @@ export default function SystemHealthPage() {
             {/* Environment details card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                   Environment Diagnostics
                 </CardTitle>
                 <CardDescription className="text-[10px]">
                   Build parameters and runtime variables
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-2 font-medium text-[11px] text-slate-700">
+              <CardContent className="space-y-4 pt-2 font-medium text-[11px] text-slate-700 dark:text-slate-300">
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span>Application Name</span>
-                  <span className="font-bold text-slate-900">AURORA</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">AURORA</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span>Next.js Framework Build</span>
-                  <span className="font-bold text-slate-900">v16.2.7 (Turbopack)</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">v16.2.7 (Turbopack)</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span>PostgreSQL Version</span>
-                  <span className="font-bold text-slate-900">v15 (Supabase Cloud)</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">v15 (Supabase Cloud)</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>SSL Communication</span>

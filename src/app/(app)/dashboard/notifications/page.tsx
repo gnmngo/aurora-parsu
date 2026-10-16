@@ -215,7 +215,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 text-xs font-semibold text-slate-800">
+    <div className="mx-auto max-w-4xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Notification Center</h1>

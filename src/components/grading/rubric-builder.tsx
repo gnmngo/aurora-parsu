@@ -325,7 +325,7 @@ export function RubricEditorDialog({
 
       <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
             <Sliders className="h-5 w-5 text-primary" />
             {rubric?.id ? "Customize Rubric Criteria" : "Configure Custom Rubric Template"}
           </DialogTitle>

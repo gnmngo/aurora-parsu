@@ -108,9 +108,9 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
   }
 
   return (
-    <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800">
+    <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800 dark:text-slate-200">
       <CardHeader className="pb-3 border-b border-border/40">
-        <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+        <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
           <Users className="h-4 w-4 text-primary" /> Panel Consensus Metrics
         </CardTitle>
         <CardDescription className="text-[10px]">
@@ -121,11 +121,11 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
       <CardContent className="pt-4 space-y-4">
         {/* Score Discrepancy Alert Banner */}
         {isHighDiscrepancy && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 flex items-start gap-2.5 animate-in fade-in duration-300">
-            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5 animate-in fade-in duration-300">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-amber-900">Score Discrepancy Alert (σ = {stdDev} ≥ 15.0 pts)</p>
-              <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+              <p className="font-bold text-amber-900 dark:text-amber-200">Score Discrepancy Alert (σ = {stdDev} ≥ 15.0 pts)</p>
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
                 Standard deviation between panelist scores exceeds the institutional consensus threshold (15.0 points). Coordinator arbitration or panel deliberation is advised before releasing the final verdict.
               </p>
             </div>
@@ -153,7 +153,7 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
           <div className="p-3 bg-muted/40 rounded-xl flex items-center justify-between">
             <span className="text-muted-foreground">Score Consensus</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-black text-slate-800">σ = {stdDev}</span>
+              <span className="text-sm font-black text-slate-800 dark:text-slate-200">σ = {stdDev}</span>
               {isHighDiscrepancy ? (
                 <Badge variant="danger" className="text-[8px] font-extrabold uppercase">
                   Discrepancy Alert
@@ -169,19 +169,19 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
 
         {/* Statistical parameters grid */}
         <div className="grid grid-cols-4 gap-2 text-center pt-1 border-t border-border/40 pt-4">
-          <div className="p-2 bg-slate-50 rounded-lg">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
             <p className="text-muted-foreground text-[8px] uppercase">Average</p>
-            <p className="text-sm font-black text-slate-800">{average}</p>
+            <p className="text-sm font-black text-slate-800 dark:text-slate-200">{average}</p>
           </div>
-          <div className="p-2 bg-slate-50 rounded-lg">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
             <p className="text-muted-foreground text-[8px] uppercase">Median</p>
-            <p className="text-sm font-black text-slate-800">{median}</p>
+            <p className="text-sm font-black text-slate-800 dark:text-slate-200">{median}</p>
           </div>
-          <div className="p-2 bg-slate-50 rounded-lg">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
             <p className="text-muted-foreground text-[8px] uppercase">Highest</p>
             <p className="text-sm font-black text-emerald-600">{highest}</p>
           </div>
-          <div className="p-2 bg-slate-50 rounded-lg">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
             <p className="text-muted-foreground text-[8px] uppercase">Lowest</p>
             <p className="text-sm font-black text-rose-600">{lowest}</p>
           </div>
@@ -191,7 +191,7 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
         <div className="border border-border rounded-xl overflow-hidden mt-3">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-border text-[9px] font-bold uppercase text-muted-foreground">
+              <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-border text-[9px] font-bold uppercase text-muted-foreground">
                 <th className="p-3">Panelist</th>
                 <th className="p-3 text-center">Score</th>
                 <th className="p-3 text-center">Verdict</th>
@@ -211,8 +211,8 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
                     : "0.0";
                 
                 return (
-                  <tr key={ev.id} className="hover:bg-slate-50/50">
-                    <td className="p-3 font-bold text-slate-900">{name}</td>
+                  <tr key={ev.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                    <td className="p-3 font-bold text-slate-900 dark:text-slate-100">{name}</td>
                     <td className="p-3 text-center text-primary font-black">{displayScore}</td>
                     <td className="p-3 text-center">
                       <Badge variant="outline" className="capitalize text-[8px] font-extrabold">{ev.verdict_code.replace(/_/g, " ")}</Badge>

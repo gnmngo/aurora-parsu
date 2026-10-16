@@ -139,7 +139,7 @@ export function SubmissionCard({
               <FileText className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold leading-tight text-slate-900">{title}</h3>
+              <h3 className="font-semibold leading-tight text-slate-900 dark:text-slate-100">{title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {studentName} • {department}
               </p>

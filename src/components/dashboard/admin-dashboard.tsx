@@ -94,45 +94,45 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-6 text-xs font-semibold text-slate-800">
+    <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-slate-100 text-slate-800">
+          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{counts.profiles}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.profiles}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">User Accounts</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
             <Database className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{counts.projects}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.projects}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">Research Projects</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{counts.evals}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.evals}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">Evaluation Sheets</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
+          <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400">
             <HardDrive className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{counts.storageMb}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.storageMb}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">PDF Storage Usage</p>
           </div>
         </Card>
@@ -143,7 +143,7 @@ export function AdminDashboard() {
         <Card className="md:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                 <Terminal className="h-4 w-4 text-primary" /> Live Audit Trail Feed
               </CardTitle>
               <CardDescription className="text-[10px] mt-0.5">Realtime security log entries from database operations</CardDescription>
@@ -165,7 +165,7 @@ export function AdminDashboard() {
                       <span className="text-[10px] font-bold text-primary capitalize">{log.action_type} • {log.module}</span>
                       <span className="text-[9px] text-muted-foreground">{new Date(log.created_at).toLocaleTimeString()}</span>
                     </div>
-                    <p className="text-slate-800 text-[11px] font-sans font-medium">{log.description}</p>
+                    <p className="text-slate-800 dark:text-slate-200 text-[11px] font-sans font-medium">{log.description}</p>
                     <p className="text-[9px] text-muted-foreground font-sans">
                       User: {log.user_email} • IP: {log.ip_address || "local"}
                     </p>
@@ -180,7 +180,7 @@ export function AdminDashboard() {
         <Card className="h-fit">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                 <Heart className="h-4 w-4 text-primary" /> System Health
               </CardTitle>
               <CardDescription className="text-[10px]">Diagnostics statuses indicators</CardDescription>
@@ -196,7 +196,7 @@ export function AdminDashboard() {
               {healthModules.map((m) => (
                 <div key={m.name} className="flex items-center justify-between p-3">
                   <div>
-                    <p className="font-bold text-slate-800">{m.name}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{m.name}</p>
                     <p className="text-[9px] text-muted-foreground font-semibold">{m.desc}</p>
                   </div>
                   <Badge 

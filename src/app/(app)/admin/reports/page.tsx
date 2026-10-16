@@ -106,7 +106,7 @@ export default function ReportsPage() {
 
   return (
     <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
-    <div className="mx-auto max-w-7xl space-y-6 print:p-8 print:bg-white text-slate-800">
+    <div className="mx-auto max-w-7xl space-y-6 print:p-8 print:bg-white text-slate-800 dark:text-slate-200">
       <div className="flex items-center justify-between print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Reports</h1>
@@ -124,11 +124,11 @@ export default function ReportsPage() {
           className={`cursor-pointer transition-all hover:border-primary/45 hover:shadow ${activeReport === "projects" ? "border-primary ring-1 ring-primary" : ""}`}
         >
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
               <Database className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Projects Directory</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Projects Directory</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Status & AY metrics</p>
             </div>
           </CardContent>
@@ -140,11 +140,11 @@ export default function ReportsPage() {
           className={`cursor-pointer transition-all hover:border-primary/45 hover:shadow ${activeReport === "schedules" ? "border-primary ring-1 ring-primary" : ""}`}
         >
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Defense Schedules</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Defense Schedules</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Venues & timeslot logs</p>
             </div>
           </CardContent>
@@ -156,11 +156,11 @@ export default function ReportsPage() {
           className={`cursor-pointer transition-all hover:border-primary/45 hover:shadow ${activeReport === "audit" ? "border-primary ring-1 ring-primary" : ""}`}
         >
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-800">
+            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
               <Terminal className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Security Audit trail</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Security Audit trail</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Latest 100 system events</p>
             </div>
           </CardContent>
@@ -172,11 +172,11 @@ export default function ReportsPage() {
           className={`cursor-pointer transition-all hover:border-primary/45 hover:shadow ${activeReport === "grades" ? "border-primary ring-1 ring-primary" : ""}`}
         >
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
               <Award className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900">Grades & Verdicts</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Grades & Verdicts</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Scores & lock indicators</p>
             </div>
           </CardContent>
@@ -188,7 +188,7 @@ export default function ReportsPage() {
         <Card className="print:border-none print:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
             <div>
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 {activeReport} Report Preview
               </CardTitle>
               <CardDescription className="text-[10px] print:hidden">
@@ -217,13 +217,13 @@ export default function ReportsPage() {
             ) : (
               <table className="w-full text-xs text-left border-collapse min-w-[600px]">
                 <thead>
-                  <tr className="bg-muted/30 border-b border-border/80 text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                  <tr className="bg-muted/30 border-b border-border/80 text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     {Object.keys(reportData[0]).map((key) => (
                       <th key={key} className="p-3">{key.replace("_", " ")}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60 font-medium text-slate-800">
+                <tbody className="divide-y divide-border/60 font-medium text-slate-800 dark:text-slate-200">
                   {reportData.map((row, rIdx) => (
                     <tr key={rIdx} className="hover:bg-muted/10">
                       {Object.values(row).map((val: any, cIdx) => (

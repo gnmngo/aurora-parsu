@@ -194,7 +194,7 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
   const daysGrid = getDaysInMonth(currentDate);
 
   return (
-    <div className="space-y-6 text-xs font-semibold text-slate-800">
+    <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Navigation */}
         <div className="flex items-center gap-2">
@@ -213,19 +213,19 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
         <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg border border-border/40">
           <button
             onClick={() => setViewMode("month")}
-            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "month" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "month" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
           >
             Month View
           </button>
           <button
             onClick={() => setViewMode("week")}
-            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "week" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "week" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
           >
             Week View
           </button>
           <button
             onClick={() => setViewMode("day")}
-            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "day" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${viewMode === "day" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
           >
             Day View
           </button>
@@ -258,13 +258,13 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
 
                 return (
                   <div key={day.toISOString()} className="p-1 min-h-24 bg-card hover:bg-muted/10 transition-colors flex flex-col items-stretch">
-                    <span className="text-left font-bold text-slate-800 text-[10px] pl-1 pt-0.5">{day.getDate()}</span>
+                    <span className="text-left font-bold text-slate-800 dark:text-slate-200 text-[10px] pl-1 pt-0.5">{day.getDate()}</span>
                     <div className="mt-1 space-y-1 flex-1 flex flex-col justify-start">
                       {daySchedules.map((s) => (
                         <div
                           key={s.id}
                           onClick={() => handleOpenEditModal(s)}
-                          className="text-[9px] p-1 rounded bg-blue-50 border border-blue-100 text-blue-800 cursor-pointer hover:bg-blue-100/60 truncate font-semibold leading-tight"
+                          className="text-[9px] p-1 rounded bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 text-blue-800 dark:text-blue-300 cursor-pointer hover:bg-blue-100/60 dark:hover:bg-blue-900/60 truncate font-semibold leading-tight"
                         >
                           {s.projects?.title}
                         </div>
@@ -313,7 +313,7 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
                                 {s.status}
                               </Badge>
                             </div>
-                            <h4 className="text-sm font-bold text-slate-900">"{s.projects?.title}"</h4>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">"{s.projects?.title}"</h4>
                             <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground pt-0.5">
                               <span className="flex items-center gap-1">
                                 <User className="h-3.5 w-3.5" /> Student: {studentName}
@@ -378,10 +378,10 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
           <div className="bg-card w-full max-w-md border border-border shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="bg-muted/20 border-b border-border/80 px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Reschedule Defense</h3>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Reschedule Defense</h3>
                 <p className="text-[10px] text-muted-foreground">Conflict checking is done automatically</p>
               </div>
-              <button onClick={() => setSelectedSchedule(null)} className="text-muted-foreground hover:text-slate-900 font-bold text-lg">×</button>
+              <button onClick={() => setSelectedSchedule(null)} className="text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100 font-bold text-lg">×</button>
             </div>
             
             <div className="p-6 space-y-4">

@@ -206,7 +206,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
       <Card className="p-8 text-center border-destructive/20 bg-destructive/5 space-y-3">
         <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
         <div>
-          <p className="text-sm font-bold text-slate-800">Failed to load advisee data</p>
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Failed to load advisee data</p>
           <p className="text-xs text-muted-foreground">{error}</p>
         </div>
         <Button onClick={loadAdviserData} size="sm" variant="outline" className="gap-2">
@@ -219,45 +219,45 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
   const activeComments = commentsHistory.filter(c => c.status !== "verified" && c.status !== "closed");
 
   return (
-    <div className="space-y-6 text-xs font-semibold text-slate-800">
+    <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{advisees.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{advisees.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Advisees</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{pendingManuscripts.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{pendingManuscripts.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Paperless Consultations</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
             <MessageSquare className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{activeComments.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{activeComments.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Unresolved Comments</p>
           </div>
         </Card>
 
         <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600">
+          <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
             <Calendar className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900">{schedules.length}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{schedules.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Upcoming Defenses</p>
           </div>
         </Card>
@@ -267,19 +267,19 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
       <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
         <button
           onClick={() => setActiveTab("advisees")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "advisees" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "advisees" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Guidance Directory
         </button>
         <button
           onClick={() => setActiveTab("queue")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "queue" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "queue" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Paperless Review Queue ({pendingManuscripts.length})
         </button>
         <button
           onClick={() => setActiveTab("activity")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "activity" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "activity" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Activity Trails
         </button>
@@ -291,7 +291,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           {activeTab === "advisees" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <Users className="h-4 w-4 text-primary" /> Advisee Directory
                 </CardTitle>
               </CardHeader>
@@ -310,7 +310,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                       return (
                         <div key={adv.id} className="flex items-center justify-between p-4">
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">Student: {studentName}</p>
+                            <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">Student: {studentName}</p>
                             <p className="text-[10px] text-muted-foreground truncate max-w-sm mt-0.5">
                               "{adv.title}"
                             </p>
@@ -340,7 +340,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           {activeTab === "queue" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <FileText className="h-4 w-4 text-primary" /> Active Paperless Manuscripts Review Queue
                 </CardTitle>
               </CardHeader>
@@ -355,7 +355,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                     {pendingManuscripts.map((m, idx) => (
                       <div key={idx} className="flex items-center justify-between p-4">
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-900 text-sm">"{m.projectTitle}"</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">"{m.projectTitle}"</p>
                           <p className="text-[10px] text-muted-foreground">
                             Manuscript: {m.fileName} • Uploaded {new Date(m.uploadedAt).toLocaleDateString()}
                           </p>
@@ -434,7 +434,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
           {activeTab === "activity" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <Activity className="h-4 w-4 text-primary" /> Recent Guidance Activity Logs
                 </CardTitle>
               </CardHeader>
@@ -446,7 +446,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                     {recentActivities.map((l) => (
                       <div key={l.id} className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-slate-800">{l.description}</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200">{l.description}</p>
                           <p className="text-[10px] text-muted-foreground">Module: {l.module} • Date: {new Date(l.created_at).toLocaleString()}</p>
                         </div>
                         <Badge variant="outline" className="text-[8px] font-extrabold uppercase font-mono">{l.ip_address}</Badge>
@@ -463,7 +463,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                 <Calendar className="h-4 w-4 text-primary" /> Defense Schedules
               </CardTitle>
             </CardHeader>
@@ -477,7 +477,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                 <div className="divide-y divide-border max-h-80 overflow-y-auto">
                   {schedules.map((sched) => (
                     <div key={sched.id} className="p-4 text-xs space-y-1.5">
-                      <p className="font-bold text-slate-900 truncate">"{sched.projects?.title}"</p>
+                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate">"{sched.projects?.title}"</p>
                       <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" /> {new Date(sched.scheduled_at).toLocaleString()}
                       </p>
@@ -493,7 +493,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                 <History className="h-4 w-4 text-primary" /> Comment History
               </CardTitle>
             </CardHeader>
@@ -504,7 +504,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                 <div className="divide-y divide-border max-h-80 overflow-y-auto">
                   {commentsHistory.map((c) => (
                     <div key={c.id} className="p-3 text-xs space-y-1">
-                      <p className="font-bold text-slate-800">"{c.content}"</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">"{c.content}"</p>
                       <p className="text-[9px] text-muted-foreground">
                         Page {c.page_number} • Status: <span className="font-bold text-primary uppercase">{c.status}</span>
                       </p>
@@ -543,7 +543,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
             </DialogHeader>
 
             <div className="space-y-2 py-2">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {approvalModal.status === "approved" ? "Endorsement Remarks (Optional)" : "Required Revision Notes *"}
               </label>
               <textarea

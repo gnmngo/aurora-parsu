@@ -194,7 +194,7 @@ export default function UsersPage() {
 
   return (
     <RoleGuard allowedRoles={["sys_admin", "coordinator"]} fallback={<AccessDenied />}>
-      <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
+      <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management &amp; Security Console</h1>
@@ -320,16 +320,16 @@ export default function UsersPage() {
 
         {/* Pending Verification Notice Banner */}
         {pendingUsers.length > 0 && (
-          <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900">
+          <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400">
                 <Clock className="h-5 w-5 animate-pulse" />
               </div>
               <div>
                 <p className="text-sm font-bold">
                   {pendingUsers.length} Faculty Registration {pendingUsers.length === 1 ? "Application" : "Applications"} Pending Verification
                 </p>
-                <p className="text-xs text-amber-800/80 mt-0.5">
+                <p className="text-xs text-amber-800/80 dark:text-amber-300/90 mt-0.5">
                   These accounts are quarantined and cannot access defense workspaces, manuscripts, or evaluations until approved.
                 </p>
               </div>
@@ -337,7 +337,7 @@ export default function UsersPage() {
             <Button
               size="sm"
               variant="outline"
-              className="border-amber-400 bg-amber-100/50 text-amber-950 font-bold hover:bg-amber-100"
+              className="border-amber-400 bg-amber-100/50 text-amber-950 font-bold hover:bg-amber-100 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50"
               onClick={() => setActiveTab("pending")}
             >
               Review Pending ({pendingUsers.length})
@@ -397,7 +397,7 @@ export default function UsersPage() {
         {/* User Directory Table / Card */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold flex items-center justify-between uppercase text-slate-800">
+            <CardTitle className="text-sm font-bold flex items-center justify-between uppercase text-slate-800 dark:text-slate-200">
               <span className="flex items-center gap-1.5">
                 <Shield className="h-4 w-4 text-primary" /> 
                 {activeTab === "pending" ? "Pending Faculty Applications" : "User Directory & Access Control"}
@@ -453,7 +453,7 @@ export default function UsersPage() {
                         </Avatar>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-bold text-slate-900">{name}</p>
+                            <p className="font-bold text-slate-900 dark:text-slate-100">{name}</p>
                             {isPending && (
                               <Badge variant="warning" className="text-[8px] font-black uppercase">
                                 Action Required: Pending Verification
@@ -613,12 +613,12 @@ export default function UsersPage() {
         <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
+              <DialogTitle className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <ShieldAlert className="h-5 w-5 text-amber-500" />
                 Confirm Security &amp; Access Update
               </DialogTitle>
-              <CardDescription className="text-xs pt-1 text-slate-600">
-                Are you sure you want to {confirmAction?.label.toLowerCase()} for <strong className="text-slate-900">{confirmAction?.userName}</strong>?
+              <CardDescription className="text-xs pt-1 text-slate-600 dark:text-slate-300">
+                Are you sure you want to {confirmAction?.label.toLowerCase()} for <strong className="text-slate-900 dark:text-slate-100">{confirmAction?.userName}</strong>?
               </CardDescription>
             </DialogHeader>
             <DialogFooter className="gap-2 sm:gap-0 mt-4">

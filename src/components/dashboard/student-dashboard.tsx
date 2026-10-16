@@ -414,13 +414,13 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
   const isPrimaryPast = schedule && !isScheduleUpcoming(schedule);
 
   return (
-    <div className="space-y-6 text-xs font-semibold text-slate-800">
+    <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Welcome & Progress Card */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Active Research Details
               </CardTitle>
               <CardDescription className="text-[10px]">
@@ -438,7 +438,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           <CardContent className="space-y-4">
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Research Title</p>
-              <h2 className="text-lg font-black text-slate-900 leading-snug">"{project.title}"</h2>
+              <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 leading-snug">"{project.title}"</h2>
             </div>
             
             <div className="grid grid-cols-2 gap-4 border-t border-border/40 pt-4">
@@ -456,7 +456,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                     {adviser ? "Change" : "Choose"} &rarr;
                   </Link>
                 </div>
-                <p className="font-extrabold text-slate-900 mt-1 truncate">
+                <p className="font-extrabold text-slate-900 dark:text-slate-100 mt-1 truncate">
                   {adviser?.profiles 
                     ? `${adviser.profiles.first_name} ${adviser.profiles.last_name}` 
                     : "No adviser assigned yet"}
@@ -469,7 +469,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         {/* Stepper Steppers timeline */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800">
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
               Workflow Stages
             </CardTitle>
           </CardHeader>
@@ -730,19 +730,19 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
         <button
           onClick={() => setActiveTab("submissions")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "submissions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "submissions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Uploaded Manuscripts
         </button>
         <button
           onClick={() => setActiveTab("revisions")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "revisions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "revisions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Revisions Notes {annotationsCount.unresolved > 0 ? `(${annotationsCount.unresolved})` : ""}
         </button>
         <button
           onClick={() => setActiveTab("evaluations")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "evaluations" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800"}`}
+          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "evaluations" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
         >
           Panel Consensus Grades
         </button>
@@ -754,7 +754,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           {activeTab === "submissions" && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
                   <FileText className="h-4 w-4 text-primary" /> Submission versions history
                 </CardTitle>
                 <PdfUploader
@@ -783,7 +783,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                     {submissionsList.map((sub, idx) => (
                       <div key={sub.id || idx} className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-slate-900">{sub.file_name}</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100">{sub.file_name}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
                             Uploaded {new Date(sub.created_at).toLocaleString()}
                           </p>

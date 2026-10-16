@@ -132,7 +132,7 @@ export default function WorkspaceIndexPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Defense Evaluation &amp; Review Workspace
               </h1>
             </div>
@@ -175,7 +175,7 @@ export default function WorkspaceIndexPage() {
                           {proj.status.replace("_", " ")}
                         </Badge>
                       </div>
-                      <h3 className="font-bold text-slate-900 text-sm truncate">
+                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm truncate">
                         {proj.title}
                       </h3>
                       <p className="text-xs text-muted-foreground">

@@ -52,9 +52,9 @@ export function ActivityFeed() {
   }
 
   return (
-    <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800">
+    <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800 dark:text-slate-200">
       <CardHeader className="pb-3 border-b border-border/40">
-        <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800">
+        <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
           <Activity className="h-4 w-4 text-primary" /> Live Activity Feed
         </CardTitle>
         <CardDescription className="text-[10px]">
@@ -69,12 +69,12 @@ export function ActivityFeed() {
         ) : (
           <div className="divide-y divide-border">
             {activities.map((act) => (
-              <div key={act.id} className="p-4 hover:bg-slate-50/50 transition-colors flex gap-3">
+              <div key={act.id} className="p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors flex gap-3">
                 <div className="p-2 rounded-lg bg-primary/5 text-primary shrink-0 h-fit mt-0.5">
                   <Clock className="h-3.5 w-3.5" />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <p className="font-bold text-slate-900 leading-snug">
+                  <p className="font-bold text-slate-900 dark:text-slate-100 leading-snug">
                     {act.description}
                   </p>
                   <div className="flex flex-wrap gap-1.5 items-center text-[9px] text-muted-foreground font-semibold">

@@ -135,7 +135,7 @@ export default function AdminRubricsPage() {
 
   return (
     <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
-    <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800">
+    <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Rubrics Manager</h1>
@@ -316,7 +316,7 @@ export default function AdminRubricsPage() {
                           onClick={() => handleAction(rubric.id, () => unarchiveRubricAction(rubric.id), "Rubric restored successfully!")}
                           variant="outline"
                           size="sm"
-                          className="h-8 gap-1 rounded-lg text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                          className="h-8 gap-1 rounded-lg text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/40"
                           disabled={actioningId === rubric.id}
                         >
                           {actioningId === rubric.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Archive className="h-3.5 w-3.5" />} Restore
@@ -359,11 +359,11 @@ export default function AdminRubricsPage() {
                         className="flex items-center justify-between rounded-xl border border-border p-4 bg-card"
                       >
                         <div>
-                          <p className="font-bold text-sm text-slate-800">{c.name}</p>
+                          <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{c.name}</p>
                         </div>
                         <div className="flex items-center gap-4 text-xs font-semibold">
                           <span className="text-muted-foreground">Weight: {c.weight}%</span>
-                          <span className="font-bold text-slate-700">Max: 100</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">Max: 100</span>
                         </div>
                       </div>
                     ))}
@@ -379,12 +379,12 @@ export default function AdminRubricsPage() {
       <Dialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2 text-rose-600">
+            <DialogTitle className="text-base font-bold flex items-center gap-2 text-rose-600 dark:text-rose-400">
               <Trash2 className="h-5 w-5" />
               Confirm Permanent Deletion
             </DialogTitle>
-            <DialogDescription className="text-xs pt-1 text-slate-600">
-              Are you sure you want to delete the rubric template &quot;<strong className="text-slate-900">{confirmDelete?.title}</strong>&quot;? If student evaluations have already been recorded with this rubric, it will be automatically soft-deleted to protect institutional grade records.
+            <DialogDescription className="text-xs pt-1 text-slate-600 dark:text-slate-300">
+              Are you sure you want to delete the rubric template &quot;<strong className="text-slate-900 dark:text-slate-100">{confirmDelete?.title}</strong>&quot;? If student evaluations have already been recorded with this rubric, it will be automatically soft-deleted to protect institutional grade records.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0 mt-4">

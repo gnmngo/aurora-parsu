@@ -1592,11 +1592,11 @@ export function GradingPanel({
                   className={cn(
                     "text-[10px] font-bold rounded-lg border border-border bg-card px-2 py-1 focus:outline-none transition-colors cursor-pointer",
                     ann.status === "verified" && "text-emerald-700 bg-emerald-50 border-emerald-200",
-                    ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200",
-                    ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200",
-                    ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200",
-                    ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200",
-                    ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200"
+                    ann.status === "addressed" && "text-teal-700 bg-teal-50 border-teal-200 dark:text-teal-300 dark:bg-teal-950/40 dark:border-teal-800",
+                    ann.status === "in_progress" && "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-800",
+                    ann.status === "open" && "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/40 dark:border-rose-800",
+                    ann.status === "resolved" && "text-sky-700 bg-sky-50 border-sky-200 dark:text-sky-300 dark:bg-sky-950/40 dark:border-sky-800",
+                    ann.status === "closed" && "text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-900/60 dark:border-slate-700"
                   )}
                 >
                   <option value="open">Open</option>
@@ -1678,8 +1678,8 @@ export function GradingPanel({
                       : `${hist.profiles.first_name} ${hist.profiles.last_name}`
                     : "User";
                   return (
-                    <div key={hist.id} className="text-[10px] text-slate-700 leading-relaxed font-sans">
-                      <span className="font-bold text-slate-900">{changerName}</span> marked as{" "}
+                    <div key={hist.id} className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                      <span className="font-bold text-slate-900 dark:text-slate-100">{changerName}</span> marked as{" "}
                       <span className="font-extrabold capitalize text-primary">{hist.to_status}</span>
                       <span className="text-[9px] text-muted-foreground ml-1.5">
                         ({new Date(hist.changed_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })})

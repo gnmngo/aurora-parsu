@@ -76,7 +76,7 @@ export default function SubmissionsPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               {isStudent ? "My Research Submissions" : "Submissions"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -130,7 +130,7 @@ export default function SubmissionsPage() {
         {errorMessage ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 p-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive mb-3" />
-            <h3 className="text-base font-bold text-slate-900">Failed to Retrieve Submissions</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Failed to Retrieve Submissions</h3>
             <p className="mt-1 text-sm text-muted-foreground max-w-md">
               {errorMessage}
             </p>
@@ -138,7 +138,7 @@ export default function SubmissionsPage() {
               variant="outline"
               size="sm"
               onClick={loadSubmissions}
-              className="mt-4 gap-2 bg-white"
+              className="mt-4 gap-2"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry Query
@@ -153,7 +153,7 @@ export default function SubmissionsPage() {
         ) : filteredSubmissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-16 text-center">
             <Inbox className="h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">No Submissions Found</h3>
+            <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">No Submissions Found</h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-md">
               {isStudent
                 ? "You have not submitted a manuscript yet. Upload your PDF manuscript or configure your project in My Project to begin."

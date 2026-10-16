@@ -315,7 +315,7 @@ export function CertificateDialog({
         </DialogHeader>
 
         {/* Certificate Display Area */}
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-inner">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-inner">
           <div
             ref={printAreaRef}
             className="bg-white border-4 border-double border-primary/40 p-6 sm:p-8 rounded-lg shadow-md relative"
@@ -447,10 +447,10 @@ export function CertificateDialog({
               type="button"
               variant="outline"
               onClick={handleDownloadJson}
-              className="h-9 text-xs rounded-xl gap-1.5 border-slate-200 hover:bg-slate-50 cursor-pointer"
+              className="h-9 text-xs rounded-xl gap-1.5 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200 cursor-pointer"
               title="Download verification receipt JSON file"
             >
-              <FileJson className="h-3.5 w-3.5 text-slate-500" />
+              <FileJson className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
               <span>Receipt (.json)</span>
             </Button>
 

@@ -2335,7 +2335,7 @@ export default function MyProjectPage() {
 
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Select Faculty Adviser *</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Select Faculty Adviser *</label>
                 <select
                   value={selectedFacultyId}
                   onChange={(e) => setSelectedFacultyId(e.target.value)}

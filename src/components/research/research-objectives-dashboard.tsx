@@ -324,13 +324,13 @@ export function ResearchObjectivesDashboard() {
                       <tbody key={char.id} className="divide-y divide-border/60">
                         {/* Characteristic Header Row */}
                         <tr className="bg-muted/10 font-bold">
-                          <td className="py-2.5 px-4 text-slate-900 font-extrabold flex items-center gap-2">
+                          <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-extrabold flex items-center gap-2">
                             <span className="rounded bg-primary/10 text-primary text-[9px] font-black px-1.5 py-0.5">
                               {char.code}
                             </span>
                             {char.name}
                           </td>
-                          <td className="py-2.5 px-3 text-center font-mono font-black text-slate-900">
+                          <td className="py-2.5 px-3 text-center font-mono font-black text-slate-900 dark:text-slate-100">
                             {char.mean ? char.mean.toFixed(2) : "4.85"}
                           </td>
                           <td className="py-2.5 px-3 text-center font-mono text-muted-foreground">
