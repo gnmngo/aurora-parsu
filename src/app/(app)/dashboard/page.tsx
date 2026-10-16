@@ -55,13 +55,40 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* If user has college_dean role, lock to College Dean view without dropdown selection */}
+        {/* If user has college_dean role, lock to College Dean view */}
         {roles && roles.includes("college_dean") ? (
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="h-8 px-3 text-xs font-bold gap-1.5 border-primary/30 text-primary bg-primary/5 shadow-xs">
               <Shield className="h-3.5 w-3.5 text-primary" />
               College Dean &bull; CEC Oversight
             </Badge>
+          </div>
+        ) : roles && roles.length > 1 ? (
+          <div className="flex items-center gap-1 bg-muted/70 p-1 rounded-xl border border-border/80">
+            {roles.map((r) => {
+              const roleLabels: Record<string, string> = {
+                coordinator: "Coordinator",
+                adviser: "Adviser",
+                panelist: "Panelist",
+                sys_admin: "Admin",
+                student: "Student",
+              };
+              const isActive = activeRole === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setActiveRole(r)}
+                  className={`px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-bold ${
+                    isActive
+                      ? "bg-card text-primary shadow-xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+                  }`}
+                >
+                  {roleLabels[r] || r}
+                </button>
+              );
+            })}
           </div>
         ) : null}
       </div>
@@ -70,7 +97,7 @@ export default function DashboardPage() {
       <WelcomeCard />
 
       {/* Role-scoped KPI cards — each role sees only their relevant stats */}
-      <KpiCards />
+      <KpiCards activeRole={activeRole} />
 
       {/* Role-specific dashboard panel */}
       {activeRole === "student" && <StudentDashboard userId={user?.id || ""} />}

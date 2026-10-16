@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
@@ -8,12 +8,13 @@ import { Users, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface ConsensusDashboardProps {
   projectId: string;
+  isStudentView?: boolean;
 }
 
-export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
+export function ConsensusDashboard({ projectId, isStudentView = false }: ConsensusDashboardProps) {
   const [evaluations, setEvaluations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     async function loadConsensusData() {
@@ -111,16 +112,18 @@ export function ConsensusDashboard({ projectId }: ConsensusDashboardProps) {
     <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800 dark:text-slate-200">
       <CardHeader className="pb-3 border-b border-border/40">
         <CardTitle className="text-sm font-bold flex items-center gap-1.5 uppercase text-slate-800 dark:text-slate-200">
-          <Users className="h-4 w-4 text-primary" /> Panel Consensus Metrics
+          <Users className="h-4 w-4 text-primary" /> {isStudentView ? "Evaluation & Verdict Summary" : "Panel Consensus Metrics"}
         </CardTitle>
         <CardDescription className="text-[10px]">
-          Statistical consensus variables. Displays only latest signed evaluation worksheets.
+          {isStudentView
+            ? "Official defense evaluations and panel consensus outcome."
+            : "Statistical consensus variables. Displays only latest signed evaluation worksheets."}
         </CardDescription>
       </CardHeader>
       
       <CardContent className="pt-4 space-y-4">
-        {/* Score Discrepancy Alert Banner */}
-        {isHighDiscrepancy && (
+        {/* Score Discrepancy Alert Banner — only visible to panel and coordinators */}
+        {!isStudentView && isHighDiscrepancy && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5 animate-in fade-in duration-300">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>

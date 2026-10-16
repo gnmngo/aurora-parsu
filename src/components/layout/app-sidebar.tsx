@@ -160,7 +160,7 @@ export function AppSidebar({ className }: { className?: string }) {
 
   const filteredAdminNav = adminNav.filter((item) => {
     if (roles.includes("sys_admin")) return true;
-    if (roles.includes("coordinator") || roles.includes("college_dean")) {
+    if (roles.includes("coordinator")) {
       return ["/admin/rubrics", "/admin/stages", "/admin/reports"].includes(item.href);
     }
     return false;

@@ -92,13 +92,23 @@ export default function AnnotationsPage() {
           setAnnotations((data as unknown as AnnotationRow[]) || []);
 
         } else if (isAdviserOrPanelist) {
-          // BUG-H6: Resolve the allowed project IDs first, then apply server-side filter
-          const { data: memberProjects } = await supabase
-            .from("project_members")
-            .select("project_id")
-            .eq("profile_id", user!.id);
+          // Resolve allowed project IDs from both project_members (adviser) and defense_panels (panelist)
+          const [{ data: memberProjects }, { data: panelProjects }] = await Promise.all([
+            supabase
+              .from("project_members")
+              .select("project_id")
+              .eq("profile_id", user!.id),
+            supabase
+              .from("defense_panels")
+              .select("project_id")
+              .eq("profile_id", user!.id),
+          ]);
 
-          const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
+          const idSet = new Set<string>();
+          (memberProjects || []).forEach((m: { project_id: string }) => idSet.add(m.project_id));
+          (panelProjects || []).forEach((p: { project_id: string }) => idSet.add(p.project_id));
+
+          const projectIds = Array.from(idSet);
           if (projectIds.length === 0) {
             setAnnotations([]);
             setLoading(false);

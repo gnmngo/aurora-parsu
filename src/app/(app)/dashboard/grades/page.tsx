@@ -83,6 +83,7 @@ export default function GradesPage() {
   const supabase = useMemo(() => createClient(), []);
   const { user, roles } = useAuth();
   const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin", "college_dean"].includes(r));
+  const canReleaseVerdict = roles.some((r) => ["coordinator", "sys_admin"].includes(r));
 
   const loadGrades = useCallback(async () => {
     if (!user) return;
@@ -287,7 +288,7 @@ export default function GradesPage() {
         </div>
 
         {/* Coordinator: Release Final Verdict Panel */}
-        {isCoordinatorOrAdmin && evaluations.length > 0 && (() => {
+        {canReleaseVerdict && evaluations.length > 0 && (() => {
           // Collect unique projects with submitted evaluations
           const projects = evaluations.reduce<{ id: string; title: string; status?: string }[]>((acc, ev) => {
             if (ev.projects && !acc.find((p) => p.id === ev.project_id)) {

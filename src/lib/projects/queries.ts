@@ -75,10 +75,83 @@ export function mapProjectsToSubmissions(projects: { id: string; title: string; 
   });
 }
 
+export interface FetchSubmissionsFilter {
+  userId?: string;
+  roles?: string[];
+}
+
 export async function fetchSubmissions(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  filter?: FetchSubmissionsFilter
 ): Promise<SubmissionRow[]> {
-  const { data, error } = await supabase
+  const isManagement = filter?.roles?.some((r) =>
+    ["coordinator", "sys_admin", "college_dean"].includes(r)
+  );
+
+  let allowedProjectIds: string[] | null = null;
+
+  if (filter?.userId && !isManagement) {
+    const isStudent = filter.roles?.includes("student");
+    const isAdviser = filter.roles?.includes("adviser");
+    const isPanelist = filter.roles?.includes("panelist");
+
+    const idSet = new Set<string>();
+
+    // 1. If student: projects where user is creator/leader or in project_members
+    if (isStudent) {
+      const [{ data: studentRec }, { data: memberRows }] = await Promise.all([
+        supabase
+          .from("students")
+          .select("id")
+          .eq("profile_id", filter.userId)
+          .maybeSingle(),
+        supabase
+          .from("project_members")
+          .select("project_id")
+          .eq("profile_id", filter.userId),
+      ]);
+
+      if (studentRec?.id) {
+        const { data: ownProjects } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("student_id", studentRec.id);
+        ownProjects?.forEach((p: { id: string }) => idSet.add(p.id));
+      }
+
+      memberRows?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
+    }
+
+    // 2. If adviser: projects where user is adviser in project_members
+    if (isAdviser) {
+      const { data: advisedProjects } = await supabase
+        .from("project_members")
+        .select("project_id")
+        .eq("profile_id", filter.userId)
+        .eq("member_role", "adviser");
+
+      advisedProjects?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
+    }
+
+    // 3. If panelist: projects assigned in defense_panels
+    if (isPanelist) {
+      const { data: panelProjects } = await supabase
+        .from("defense_panels")
+        .select("project_id")
+        .eq("profile_id", filter.userId);
+
+      panelProjects?.forEach((p: { project_id: string }) => idSet.add(p.project_id));
+    }
+
+    allowedProjectIds = Array.from(idSet);
+
+    // If scoped role has 0 assigned/owned projects, return empty array immediately
+    if (allowedProjectIds.length === 0) {
+      return [];
+    }
+  }
+
+  let query = supabase
     .from("projects")
     .select(
       `
@@ -112,8 +185,13 @@ export async function fetchSubmissions(
       )
     `
     )
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
+    .is("archived_at", null);
+
+  if (allowedProjectIds !== null) {
+    query = query.in("id", allowedProjectIds);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) {
     logSupabaseError("fetchSubmissions", error);

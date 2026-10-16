@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -31,19 +31,23 @@ interface KpiStat {
   description?: string;
 }
 
-export function KpiCards() {
+interface KpiCardsProps {
+  activeRole?: string;
+}
+
+export function KpiCards({ activeRole }: KpiCardsProps = {}) {
   const [stats, setStats] = useState<KpiStat[]>([]);
   const [loading, setLoading] = useState(true);
   const { isReady } = useAuthReady();
   const { roles, user, profile } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!isReady || !user) return;
 
     async function fetchKpis() {
       try {
-        const primaryRole = roles.includes("college_dean") ? "college_dean" : roles[0] || "student";
+        const primaryRole = activeRole || (roles.includes("college_dean") ? "college_dean" : roles[0] || "student");
 
         if (primaryRole === "student") {
           // 1. Resolve student project via project_members or students.id
@@ -369,7 +373,7 @@ export function KpiCards() {
     }
 
     fetchKpis();
-  }, [isReady, user, roles, supabase]);
+  }, [isReady, user, roles, activeRole]);
 
   if (loading) {
     return (

@@ -28,18 +28,19 @@ export default function SubmissionsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
   const { isReady } = useAuthReady();
-  const { roles } = useAuth();
+  const { user, roles } = useAuth();
   const supabase = useMemo(() => createClient(), []);
 
   const isStudent = Boolean(roles?.includes("student") && !roles?.some(r => ["coordinator", "sys_admin", "adviser"].includes(r)));
   const isManagement = Boolean(roles?.some(r => ["coordinator", "sys_admin"].includes(r)));
   const isAdviser = Boolean(roles?.includes("adviser"));
+  const canUpload = isStudent || isAdviser || isManagement;
 
   const loadSubmissions = async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const rows = await fetchSubmissions(supabase);
+      const rows = await fetchSubmissions(supabase, { userId: user?.id, roles });
       setSubmissionsList(rows);
     } catch (err: unknown) {
       logSupabaseError("Submissions.loadSubmissions", err);
@@ -103,10 +104,12 @@ export default function SubmissionsPage() {
                 </Link>
               </Button>
             )}
-            <PdfUploader
-              onUploadCompleted={loadSubmissions}
-              buttonText={isStudent ? "Upload Manuscript" : "Upload PDF"}
-            />
+            {canUpload && (
+              <PdfUploader
+                onUploadCompleted={loadSubmissions}
+                buttonText={isStudent ? "Upload Manuscript" : "Upload PDF"}
+              />
+            )}
           </div>
         </div>
 

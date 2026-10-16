@@ -1006,7 +1006,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
           )}
 
           {activeTab === "evaluations" && (
-            <ConsensusDashboard projectId={project.id} />
+            <ConsensusDashboard projectId={project.id} isStudentView={true} />
           )}
         </div>
 

@@ -1174,7 +1174,7 @@ export default function DefensesPage() {
 
         {/* ── TAB 3: CALENDAR VIEW ────────────────────────────────────────── */}
         {activeTab === "calendar" && (
-          <CalendarView userRole={roles[0] || "student"} externalSchedules={programSchedules} />
+          <CalendarView userRole={isCoordinator ? "coordinator" : (roles[0] || "student")} externalSchedules={programSchedules} />
         )}
 
         {/* Reschedule Defense Modal */}

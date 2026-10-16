@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,8 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ userRole, externalSchedules }: CalendarViewProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const canReschedule = userRole === "coordinator" || userRole === "sys_admin";
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -113,21 +114,17 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
     setCurrentDate(d);
   };
 
-  // Reschedule trigger
+  // Schedule details & reschedule modal trigger
   const handleOpenEditModal = (sched: any) => {
-    if (userRole !== "coordinator" && userRole !== "sys_admin") {
-      toast.error("Access denied. Only coordinators can reschedule defenses.");
-      return;
-    }
     setSelectedSchedule(sched);
-    setEditRoom(sched.room);
+    setEditRoom(sched.room || "");
     setEditBuilding(sched.building || "Goa Campus");
     const d = new Date(sched.scheduled_at);
     
     // format as YYYY-MM-DD
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
     // format as HH:MM
-    const timeStr = d.toTimeString().slice(0, 5);
+    const timeStr = !isNaN(d.getTime()) ? d.toTimeString().slice(0, 5) : "";
 
     setEditDate(dateStr);
     setEditTime(timeStr);
@@ -329,14 +326,16 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleOpenEditModal(s)}>
-                              Reschedule
-                            </Button>
-                            {userRole === "coordinator" || userRole === "sys_admin" ? (
+                            {canReschedule && (
+                              <Button size="sm" variant="outline" className="h-8 rounded-lg cursor-pointer" onClick={() => handleOpenEditModal(s)}>
+                                Reschedule
+                              </Button>
+                            )}
+                            {canReschedule ? (
                               <Button
                                 size="sm"
                                 variant="danger"
-                                className="h-8 rounded-lg text-[10px]"
+                                className="h-8 rounded-lg text-[10px] cursor-pointer"
                                 disabled={cancelling}
                                 onClick={async () => {
                                   if (!confirm(`Cancel defense for "${s.projects?.title}"? This cannot be undone.`)) return;
@@ -372,47 +371,104 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
         </div>
       )}
 
-      {/* Edit schedule modal overlay */}
+      {/* Schedule modal overlay */}
       {selectedSchedule && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card w-full max-w-md border border-border shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="bg-muted/20 border-b border-border/80 px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Reschedule Defense</h3>
-                <p className="text-[10px] text-muted-foreground">Conflict checking is done automatically</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  {canReschedule ? "Reschedule Defense" : "Defense Schedule Details"}
+                </h3>
+                <p className="text-[10px] text-muted-foreground">
+                  {canReschedule ? "Conflict checking is done automatically" : "Official defense session information"}
+                </p>
               </div>
-              <button onClick={() => setSelectedSchedule(null)} className="text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100 font-bold text-lg">×</button>
+              <button onClick={() => setSelectedSchedule(null)} className="text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100 font-bold text-lg cursor-pointer">×</button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold">Room / Venue</label>
-                <Input value={editRoom} onChange={(e) => setEditRoom(e.target.value)} placeholder="e.g. Room 204" className="h-9 text-xs" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold">Date</label>
-                  <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 text-xs" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold">Time</label>
-                  <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-9 text-xs" />
-                </div>
-              </div>
+            {canReschedule ? (
+              <>
+                <div className="p-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold">Room / Venue</label>
+                    <Input value={editRoom} onChange={(e) => setEditRoom(e.target.value)} placeholder="e.g. Room 204" className="h-9 text-xs" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-muted-foreground uppercase font-bold">Date</label>
+                      <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 text-xs" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-muted-foreground uppercase font-bold">Time</label>
+                      <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-9 text-xs" />
+                    </div>
+                  </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold">Duration (Minutes)</label>
-                <Input type="number" value={editDuration} onChange={(e) => setEditDuration(Number(e.target.value))} className="h-9 text-xs" />
-              </div>
-            </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold">Duration (Minutes)</label>
+                    <Input type="number" value={editDuration} onChange={(e) => setEditDuration(Number(e.target.value))} className="h-9 text-xs" />
+                  </div>
+                </div>
 
-            <div className="bg-muted/10 border-t border-border px-6 py-4 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedSchedule(null)} disabled={saving} className="h-8 rounded-lg">Cancel</Button>
-              <Button size="sm" onClick={handleSaveReschedule} disabled={saving} className="h-8 rounded-lg">
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
-              </Button>
-            </div>
+                <div className="bg-muted/10 border-t border-border px-6 py-4 flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedSchedule(null)} disabled={saving} className="h-8 rounded-lg cursor-pointer">Cancel</Button>
+                  <Button size="sm" onClick={handleSaveReschedule} disabled={saving} className="h-8 rounded-lg cursor-pointer">
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-6 space-y-3.5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Project</span>
+                    <h4 className="text-sm font-bold text-foreground leading-snug">
+                      "{selectedSchedule.projects?.title || "Untitled Project"}"
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/40">
+                      <span className="text-[9px] font-bold uppercase text-muted-foreground">Stage</span>
+                      <p className="text-xs font-bold text-foreground mt-0.5">
+                        {selectedSchedule.defense_stages?.name || "Defense Stage"}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-muted/30 border border-border/40">
+                      <span className="text-[9px] font-bold uppercase text-muted-foreground">Status</span>
+                      <p className="text-xs font-bold capitalize text-foreground mt-0.5">
+                        {selectedSchedule.status || "Scheduled"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-border/50 text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CalendarIcon className="h-4 w-4 text-primary shrink-0" />
+                      <span>{new Date(selectedSchedule.scheduled_at).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4 text-primary shrink-0" />
+                      <span>
+                        {new Date(selectedSchedule.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {new Date(selectedSchedule.end_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ({selectedSchedule.duration_minutes || 60} mins)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                      <span>Room {selectedSchedule.room || "TBA"} • {selectedSchedule.building || "Goa Campus"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-muted/10 border-t border-border px-6 py-3.5 flex justify-end">
+                  <Button size="sm" onClick={() => setSelectedSchedule(null)} className="h-8 rounded-lg cursor-pointer">
+                    Close
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

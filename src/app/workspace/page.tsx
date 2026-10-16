@@ -37,6 +37,7 @@ export default function WorkspaceIndexPage() {
 
         // If user is authenticated, query their relevant defense projects
         if (user) {
+          const isManagement = roles.some((r) => ["coordinator", "sys_admin", "college_dean"].includes(r));
           const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin"].includes(r));
           const isPanelist = roles.includes("panelist");
           const isAdviser = roles.includes("adviser");
@@ -58,27 +59,67 @@ export default function WorkspaceIndexPage() {
             .order("created_at", { ascending: false })
             .limit(10);
 
-          if (isStudent) {
-            // Find student's own project
-            const { data: studentRecord } = await supabase
-              .from("students")
-              .select("id")
-              .eq("profile_id", user.id)
-              .maybeSingle();
+          if (!isManagement) {
+            if (isStudent) {
+              // Find student's own project via students table or project_members
+              const [{ data: studentRecord }, { data: memberRows }] = await Promise.all([
+                supabase
+                  .from("students")
+                  .select("id")
+                  .eq("profile_id", user.id)
+                  .maybeSingle(),
+                supabase
+                  .from("project_members")
+                  .select("project_id")
+                  .eq("profile_id", user.id),
+              ]);
 
-            if (studentRecord) {
-              query = query.eq("student_id", studentRecord.id);
-            }
-          } else if (isPanelist) {
-            // Find projects where user is assigned as panelist
-            const { data: panelAssignments } = await supabase
-              .from("defense_panels")
-              .select("project_id")
-              .eq("profile_id", user.id);
+              const sIds = new Set<string>();
+              if (studentRecord?.id) {
+                const { data: ownProjs } = await supabase
+                  .from("projects")
+                  .select("id")
+                  .eq("student_id", studentRecord.id);
+                ownProjs?.forEach((p) => sIds.add(p.id));
+              }
+              memberRows?.forEach((m) => sIds.add(m.project_id));
+              const studentProjIds = Array.from(sIds);
 
-            const projIds = panelAssignments?.map((p) => p.project_id) || [];
-            if (projIds.length > 0) {
-              query = query.in("id", projIds);
+              if (studentProjIds.length === 0) {
+                setProjects([]);
+                setLoading(false);
+                return;
+              }
+              query = query.in("id", studentProjIds);
+            } else {
+              // Faculty: adviser and/or panelist
+              const [{ data: memberProjects }, { data: panelProjects }] = await Promise.all([
+                isAdviser
+                  ? supabase
+                      .from("project_members")
+                      .select("project_id")
+                      .eq("profile_id", user.id)
+                      .eq("member_role", "adviser")
+                  : Promise.resolve({ data: [] }),
+                isPanelist
+                  ? supabase
+                      .from("defense_panels")
+                      .select("project_id")
+                      .eq("profile_id", user.id)
+                  : Promise.resolve({ data: [] }),
+              ]);
+
+              const idSet = new Set<string>();
+              (memberProjects || []).forEach((m: { project_id: string }) => idSet.add(m.project_id));
+              (panelProjects || []).forEach((p: { project_id: string }) => idSet.add(p.project_id));
+
+              const allowedProjIds = Array.from(idSet);
+              if (allowedProjIds.length === 0) {
+                setProjects([]);
+                setLoading(false);
+                return;
+              }
+              query = query.in("id", allowedProjIds);
             }
           }
 
