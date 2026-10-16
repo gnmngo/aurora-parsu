@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createAnnotationAction, deleteAnnotationAction } from "@/lib/annotations/actions";
 import { InteractivePdfViewer } from "./interactive-pdf-viewer";
+import { exportAnnotatedManuscriptPdf } from "@/lib/documents/annotated-pdf-exporter";
 
 interface PdfViewerPanelProps {
   title: string;
@@ -65,6 +66,7 @@ export function PdfViewerPanel({
   const [showRemarksDrawer, setShowRemarksDrawer] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Form states for new remark
   const [commentText, setCommentText] = useState("");
@@ -72,6 +74,30 @@ export function PdfViewerPanel({
   const [sectionRef, setSectionRef] = useState("");
   const [severity, setSeverity] = useState<"info" | "minor" | "major" | "critical">("minor");
   const [saving, setSaving] = useState(false);
+
+  const handleExportAnnotatedPdf = async () => {
+    const pageCanvases = document.querySelectorAll("[data-page-number] canvas, [id^='pdf-page-'] canvas");
+    const numPages = pageCanvases.length;
+    if (numPages === 0) {
+      toast.error("Please ensure the interactive manuscript is loaded before exporting.");
+      return;
+    }
+    try {
+      setIsExporting(true);
+      toast.info("Generating annotated PDF with reviewer markings...", { id: "panel-export-toast" });
+      await exportAnnotatedManuscriptPdf({
+        manuscriptTitle: title || "Research Manuscript",
+        numPages,
+        annotations,
+      });
+      toast.success("Annotated manuscript with faculty markings downloaded!", { id: "panel-export-toast" });
+    } catch (err) {
+      console.error("[PdfViewerPanel] Export error:", err);
+      toast.error("Failed to generate annotated PDF.", { id: "panel-export-toast" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -338,6 +364,21 @@ export function PdfViewerPanel({
           {pdfUrl && (
             <>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportAnnotatedPdf}
+                disabled={isExporting}
+                className="h-8 gap-1 rounded-lg text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-xs"
+                title="Download PDF with all freehand pen marks and faculty remarks baked in"
+              >
+                {isExporting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">Export with Markings</span>
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 gap-1 rounded-lg text-xs"
@@ -377,6 +418,7 @@ export function PdfViewerPanel({
               selectedAnnotationId={selectedAnnotationId}
               onSelectAnnotation={setSelectedAnnotationId}
               onAnnotationCreated={handleAnnotationCreated}
+              manuscriptTitle={title}
             />
           ) : (
             <iframe

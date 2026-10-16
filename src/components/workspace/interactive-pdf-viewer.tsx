@@ -25,6 +25,7 @@ import {
   PenTool,
   MousePointer,
   Check,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ import {
   updateAnnotationStatusAction,
   deleteAnnotationAction,
 } from "@/lib/annotations/actions";
+import { exportAnnotatedManuscriptPdf } from "@/lib/documents/annotated-pdf-exporter";
 
 // Configure local PDF worker
 if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -105,6 +107,7 @@ interface InteractivePdfViewerProps {
   onAnnotationCreated?: () => void;
   selectedAnnotationId?: string | null;
   onSelectAnnotation?: (id: string | null) => void;
+  manuscriptTitle?: string;
 }
 
 export function InteractivePdfViewer({
@@ -116,12 +119,15 @@ export function InteractivePdfViewer({
   onAnnotationCreated,
   selectedAnnotationId,
   onSelectAnnotation,
+  manuscriptTitle,
 }: InteractivePdfViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [scale, setScale] = useState<number>(1.15);
   const [annotations, setAnnotations] = useState<AnnotationItem[]>([]);
   const [loadingAnnotations, setLoadingAnnotations] = useState(false);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationItem | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Floating Selection State (Google Docs style)
   const [pendingSelection, setPendingSelection] = useState<{
@@ -302,6 +308,33 @@ export function InteractivePdfViewer({
       }
     }
   }, [selectedAnnotationId, annotations]);
+
+  // 1a. Export Annotated PDF with All Reviewer Markings
+  const handleExportAnnotatedPdf = async () => {
+    if (!numPages || numPages <= 0) {
+      toast.error("Manuscript pages are still loading. Please wait a moment.");
+      return;
+    }
+    try {
+      setIsExporting(true);
+      toast.info("Generating annotated PDF with faculty drawings and remarks...", { id: "export-annotated-pdf" });
+      await exportAnnotatedManuscriptPdf({
+        manuscriptTitle: manuscriptTitle || "Research Manuscript",
+        numPages,
+        annotations,
+        onProgress: (current, total) => {
+          setExportProgress({ current, total });
+        },
+      });
+      toast.success("Annotated manuscript with faculty markings downloaded successfully!", { id: "export-annotated-pdf" });
+    } catch (err) {
+      console.error("[InteractivePdfViewer] Export error:", err);
+      toast.error("Failed to generate annotated PDF.", { id: "export-annotated-pdf" });
+    } finally {
+      setIsExporting(false);
+      setExportProgress(null);
+    }
+  };
 
   // 1b. Freehand Pen Drawing Handlers
   const getNormalizedPoint = (e: React.PointerEvent<SVGSVGElement>, svgEl: SVGSVGElement) => {
@@ -926,6 +959,27 @@ export function InteractivePdfViewer({
               <span className="md:hidden font-medium">Highlight text to comment</span>
             </>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportAnnotatedPdf}
+            disabled={isExporting}
+            className="h-7 text-xs font-semibold gap-1.5 px-2.5 rounded-md cursor-pointer border-primary/30 text-primary hover:bg-primary/10 transition-all shadow-xs"
+            title="Download PDF with all freehand pen marks and faculty remarks baked in"
+          >
+            {isExporting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {isExporting && exportProgress
+                ? `Exporting ${exportProgress.current}/${exportProgress.total}...`
+                : "Export with Markings"}
+            </span>
+            <span className="sm:hidden">{isExporting ? "..." : "Export"}</span>
+          </Button>
+
           <Badge variant="outline" className="text-[10px] ml-1 font-bold">
             {annotations.length} Markups
           </Badge>
@@ -965,6 +1019,7 @@ export function InteractivePdfViewer({
             return (
               <div
                 key={`page_${pageNum}`}
+                id={`pdf-page-${pageNum}`}
                 data-page-number={pageNum}
                 className="relative bg-white shadow-xl rounded-md transition-shadow border border-slate-200 dark:border-slate-800"
               >
@@ -1044,9 +1099,26 @@ export function InteractivePdfViewer({
                               fill="none"
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              className="opacity-70 animate-pulse"
+                              className="opacity-70 animate-pulse pointer-events-none"
                             />
                           )}
+                          {/* Invisible wider hit-stroke so students and faculty can easily click/tap fine drawings */}
+                          <path
+                            d={coords.svgPath}
+                            stroke="transparent"
+                            strokeWidth={Math.max((coords.strokeWidth || 3) + 12, 16)}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="cursor-pointer pointer-events-auto"
+                            style={{ pointerEvents: "stroke" }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAnnotation(ann);
+                              onSelectAnnotation?.(ann.id);
+                            }}
+                          />
                           <path
                             d={coords.svgPath}
                             stroke={strokeColor}
@@ -1054,10 +1126,12 @@ export function InteractivePdfViewer({
                             fill="none"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            style={{ pointerEvents: "stroke" }}
                             className={cn(
-                              "cursor-pointer transition-all hover:stroke-[4.5px]",
+                              "cursor-pointer transition-all hover:stroke-[4.5px] pointer-events-auto",
                               isSelected && "filter drop-shadow-md"
                             )}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveAnnotation(ann);
