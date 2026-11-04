@@ -105,7 +105,7 @@ export async function updateSession(request: NextRequest) {
       }).filter(Boolean) || [];
 
       const hasAdminAccess = roles.some((r) =>
-        r && ["sys_admin", "coordinator"].includes(r)
+        r && ["sys_admin", "coordinator", "college_dean"].includes(r)
       );
 
       if (!hasAdminAccess) {
@@ -118,3 +118,4 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse;
 }
+

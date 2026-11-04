@@ -26,7 +26,7 @@ async function authorizeRubricManager(supabase: SupabaseClient, allowPanelist = 
     return r?.code as string | undefined;
   }).filter(Boolean) ?? [];
 
-  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin") || (allowPanelist && codes.includes("panelist"));
+  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin") || codes.includes("college_dean") || (allowPanelist && codes.includes("panelist"));
   if (!isAuthorized) {
     throw new Error("Permission denied. Only defense committee members or coordinators can manage rubrics.");
   }
@@ -704,4 +704,5 @@ export async function updateDefenseChairmanRubricAction(input: UpdateDefenseChai
     return { success: false, error: err?.message || "Failed to update rubric" };
   }
 }
+
 

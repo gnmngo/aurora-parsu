@@ -184,6 +184,41 @@ export default function SchedulePage() {
     return programs.filter((p) => !p.department_id || collegeDeptIds.includes(p.department_id));
   }, [programs, departments, selectedCollegeId]);
 
+  // Filter stages based on selected program and college
+  // BSIT uses its 5-stage Capstone workflow; all other colleges stick with the 3 main defense stages
+  const filteredStages = useMemo(() => {
+    const isBsit = programs.find((p) => p.id === selectedProgramId)?.code === "BSIT";
+    if (isBsit) {
+      const bsitStages = stages.filter(
+        (s) =>
+          s.workflow_template_id === "70000000-0000-0000-0000-000000000001" ||
+          ["concept", "title", "progress_1", "progress_2", "final"].includes(s.code)
+      );
+      if (bsitStages.length > 0) return bsitStages;
+    }
+
+    // For other colleges/programs: stick with the 3 main defense stages: Title, Proposal, Final
+    const threeMainCodes = ["title", "proposal", "final"];
+    const candidateStages = stages.filter((s) => threeMainCodes.includes(s.code));
+
+    // Deduplicate by code so the scheduler cleanly selects from the 3 main defense stages
+    const seenCodes = new Set<string>();
+    const uniqueStages: typeof stages = [];
+    for (const s of candidateStages) {
+      if (!seenCodes.has(s.code)) {
+        seenCodes.add(s.code);
+        uniqueStages.push(s);
+      }
+    }
+    return uniqueStages.length > 0 ? uniqueStages : stages;
+  }, [stages, selectedProgramId, programs]);
+
+  useEffect(() => {
+    if (filteredStages.length > 0 && !filteredStages.some((s) => s.id === selectedStageId)) {
+      setSelectedStageId(filteredStages[0].id);
+    }
+  }, [filteredStages, selectedStageId]);
+
   // Load batch candidates whenever college, program, or stage changes
   useEffect(() => {
     async function fetchCandidates() {
@@ -869,7 +904,7 @@ export default function SchedulePage() {
                     required
                   >
                     <option value="">-- Select Defense Stage --</option>
-                    {stages.map((s) => (
+                    {filteredStages.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name} ({s.code.toUpperCase()})
                       </option>
@@ -1470,7 +1505,7 @@ export default function SchedulePage() {
                   required
                 >
                   <option value="">-- Choose Defense Stage --</option>
-                  {stages.map((s) => (
+                  {filteredStages.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>

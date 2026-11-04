@@ -344,12 +344,22 @@ export default function MyProjectPage() {
         if (stageData && stageData.length > 0) fetchedStages = stageData;
       }
       if (fetchedStages.length === 0) {
+        // Fall back to institutional default workflow stages (3 main defense stages)
+        const { data: defaultTemplate } = await supabase
+          .from("workflow_templates")
+          .select("id")
+          .eq("is_default", true)
+          .maybeSingle();
+
+        const templateIdToUse = defaultTemplate?.id || "10000000-0000-0000-0000-000000000000";
+
         const { data: defaultStages } = await supabase
           .from("defense_stages")
           .select("id, name, code, sequence_order, description, is_enabled")
+          .eq("workflow_template_id", templateIdToUse)
           .eq("is_enabled", true)
           .order("sequence_order");
-        if (defaultStages) fetchedStages = defaultStages;
+        if (defaultStages && defaultStages.length > 0) fetchedStages = defaultStages;
       }
       setStages(fetchedStages);
 

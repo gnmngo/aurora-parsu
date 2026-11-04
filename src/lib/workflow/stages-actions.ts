@@ -42,9 +42,9 @@ async function authorizeCoordinatorOrAdmin(supabase: any) {
     })
     .filter(Boolean) ?? [];
 
-  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin");
+  const isAuthorized = codes.includes("coordinator") || codes.includes("sys_admin") || codes.includes("college_dean");
   if (!isAuthorized) {
-    throw new Error("Permission denied. Only Coordinators and Administrators can modify defense stages.");
+    throw new Error("Permission denied. Only College Deans, Coordinators, and Administrators can modify defense stages.");
   }
 
   return user;
@@ -336,3 +336,4 @@ export async function deleteStageAction(stageId: string) {
 
   return { success: true };
 }
+

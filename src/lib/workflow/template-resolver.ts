@@ -146,12 +146,36 @@ export async function resolveWorkflowTemplate(
   if (!chosenTemplate) return null;
 
   // Fetch stages associated with this workflow template
-  const { data: stages } = await supabase
+  let { data: stages } = await supabase
     .from("defense_stages")
     .select("id, code, name, sequence_order, description, is_enabled, required_documents, passing_score")
     .eq("workflow_template_id", chosenTemplate.id)
     .eq("is_enabled", true)
     .order("sequence_order", { ascending: true });
+
+  // If chosen template has no stages configured, fall back to university default template (3 main stages)
+  if ((!stages || stages.length === 0) && !chosenTemplate.is_default) {
+    const { data: defTemplate } = await supabase
+      .from("workflow_templates")
+      .select("id, name, description, program_id, college_id, is_default")
+      .eq("is_default", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (defTemplate) {
+      const { data: defStages } = await supabase
+        .from("defense_stages")
+        .select("id, code, name, sequence_order, description, is_enabled, required_documents, passing_score")
+        .eq("workflow_template_id", defTemplate.id)
+        .eq("is_enabled", true)
+        .order("sequence_order", { ascending: true });
+
+      if (defStages && defStages.length > 0) {
+        chosenTemplate = defTemplate;
+        stages = defStages;
+      }
+    }
+  }
 
   return {
     ...chosenTemplate,

@@ -134,7 +134,7 @@ export default function AdminRubricsPage() {
   });
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -411,3 +411,4 @@ export default function AdminRubricsPage() {
     </RoleGuard>
   );
 }
+

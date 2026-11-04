@@ -315,7 +315,7 @@ export default function StagesPage() {
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6 pb-12">
         {/* Top Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -946,3 +946,4 @@ export default function StagesPage() {
     </RoleGuard>
   );
 }
+

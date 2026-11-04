@@ -793,7 +793,7 @@ export async function getAcademicHierarchyAction() {
     serviceClient.from("colleges").select("id, name, code").order("name"),
     serviceClient.from("departments").select("id, name, code, college_id").order("name"),
     serviceClient.from("programs").select("id, name, code, department_id, college_id").order("name"),
-    serviceClient.from("defense_stages").select("id, name, code, sequence_order").order("sequence_order"),
+    serviceClient.from("defense_stages").select("id, name, code, sequence_order, workflow_template_id").order("sequence_order"),
   ]);
 
   return {
