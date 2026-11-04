@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Building2, Shield, BookOpen, Layers, Sparkles } from "lucide-react";
+import { GraduationCap, Building2, Shield, BookOpen, Layers, Sparkles, Award } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthReady } from "@/hooks/use-auth-ready";
@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { logSupabaseError } from "@/lib/supabase/errors";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { IsoEvaluationDialog } from "@/components/research/iso-evaluation-dialog";
 
 export function WelcomeCard() {
   const { profile, roles, activeRole, isLoading } = useAuth();
@@ -162,6 +163,17 @@ export function WelcomeCard() {
                   <GraduationCap className="mr-1 h-3 w-3" />
                   {departmentName}
                 </Badge>
+                <IsoEvaluationDialog
+                  triggerButton={
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/25 hover:bg-amber-400/35 border border-amber-300/40 px-2.5 py-0.5 text-xs font-bold text-amber-100 transition-colors cursor-pointer"
+                    >
+                      <Award className="h-3 w-3 text-amber-300" />
+                      Take Survey (SUS &amp; UTAUT)
+                    </button>
+                  }
+                />
               </div>
             </div>
 

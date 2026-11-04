@@ -3,7 +3,8 @@
  * 
  * Specifically structured to support:
  * - Research Objective 2: System Architecture, Modules, and Technical Performance Benchmarks
- * - Research Objective 3: ISO/IEC 25010 Software Quality Evaluation & Operational Workflow Metrics
+ * - Research Objective 3: Operational Workflow Metrics
+ * - Research Objective 4: System Usability Scale (SUS) & UTAUT Acceptability Evaluation
  */
 
 // ─── Research Objective 2: Technical Performance & Telemetry Types ───────────
@@ -63,7 +64,7 @@ export interface Objective2TelemetrySummary {
   recentProbes: TelemetryLogEntry[];
 }
 
-// ─── Research Objective 3: ISO/IEC 25010 Evaluation Types ─────────────────────
+// ─── Research Objective 4: SUS & UTAUT Evaluation Types ─────────────────────
 
 export type RespondentRole =
   | "student"
@@ -74,16 +75,24 @@ export type RespondentRole =
   | "it_expert"
   | "sys_admin";
 
+export interface SurveyDemographicProfile {
+  fullName?: string;
+  ageGroup: "17 – 19" | "20 – 22" | "23 or Above";
+  gender: "Male" | "Female" | "Prefer not to say";
+}
+
 export interface IsoSubCriterion {
   id: string;
   name: string;
   question: string;
+  isReverseCoded?: boolean;
 }
 
 export interface IsoCharacteristic {
   id: string;
   code: string;
   name: string;
+  partLabel?: string;
   description: string;
   subCriteria: IsoSubCriterion[];
 }
@@ -91,7 +100,8 @@ export interface IsoCharacteristic {
 export type LikertRating = 1 | 2 | 3 | 4 | 5;
 
 export interface IsoEvaluationSubmission {
-  ratings: Record<string, LikertRating>; // key is subCriterion id (e.g. 'fs_completeness': 5)
+  ratings: Record<string, LikertRating>;
+  demographics?: SurveyDemographicProfile;
   comments?: string;
 }
 
@@ -118,6 +128,8 @@ export interface SubCriterionStatistic {
   id: string;
   name: string;
   question: string;
+  isReverseCoded?: boolean;
+  rawMean?: number;
   mean: number;
   standardDeviation: number;
   interpretation: VerbalInterpretation;
@@ -127,6 +139,7 @@ export interface CharacteristicStatistic {
   id: string;
   code: string;
   name: string;
+  partLabel?: string;
   mean: number;
   standardDeviation: number;
   interpretation: VerbalInterpretation;
@@ -148,6 +161,8 @@ export interface IsoEvaluationSummary {
   grandMean: number;
   grandStandardDeviation: number;
   overallInterpretation: VerbalInterpretation;
+  susCompositeScore?: number;
+  susAdjectiveRating?: string;
   characteristics: CharacteristicStatistic[];
   roleBreakdown: RoleGroupScore[];
   hasUserEvaluated: boolean;

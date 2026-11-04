@@ -216,7 +216,7 @@ export function AppSidebar({ className }: { className?: string }) {
               className="flex w-full items-center gap-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 px-3 py-2 text-xs font-bold text-amber-200 transition-all hover:bg-amber-500/30 hover:text-white"
             >
               <Award className="h-4 w-4 text-amber-400 shrink-0" />
-              <span className="truncate">ISO 25010 Evaluation</span>
+              <span className="truncate">System Survey (SUS &amp; UTAUT)</span>
             </button>
           }
         />
