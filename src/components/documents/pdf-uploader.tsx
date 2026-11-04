@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { FileUp, UploadCloud, FileText, CheckCircle2, Loader2, AlertTriangle, RefreshCw, Info } from "lucide-react";
+import { FileUp, UploadCloud, FileText, Loader2, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { computeFileSha256 } from "@/lib/documents";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,14 @@ interface ProjectOption {
   id: string;
   title: string;
   current_stage_id: string | null;
+  workflow_template_id?: string | null;
+}
+
+interface StageOption {
+  id: string;
+  name: string;
+  sequence_order: number;
+  workflow_template_id?: string | null;
 }
 
 interface PdfUploaderProps {
@@ -47,7 +55,7 @@ export function PdfUploader({
 }: PdfUploaderProps) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [stages, setStages] = useState<{ id: string; name: string }[]>([]);
+  const [allStages, setAllStages] = useState<StageOption[]>([]);
   const [selectedProject, setSelectedProject] = useState(projectId || "");
   const [selectedStage, setSelectedStage] = useState(stageId || "");
   const [file, setFile] = useState<File | null>(null);
@@ -71,23 +79,24 @@ export function PdfUploader({
         const [projRes, stageRes] = await Promise.all([
           supabase
             .from("projects")
-            .select("id, title, current_stage_id")
+            .select("id, title, current_stage_id, workflow_template_id")
             .order("created_at", { ascending: false }),
 
           supabase
             .from("defense_stages")
-            .select("id, name")
+            .select("id, name, sequence_order, workflow_template_id")
+            .eq("is_enabled", true)
             .order("sequence_order", { ascending: true }),
         ]);
 
         if (projRes.error) throw projRes.error;
         if (stageRes.error) throw stageRes.error;
 
-        const projData = projRes.data ?? [];
-        const stageData = stageRes.data ?? [];
+        const projData = (projRes.data ?? []) as ProjectOption[];
+        const stageData = (stageRes.data ?? []) as StageOption[];
 
         setProjects(projData);
-        setStages(stageData);
+        setAllStages(stageData);
 
         setSelectedProject((prevProj) => {
           const effectiveProj = projectId || prevProj || projData[0]?.id || "";
@@ -95,7 +104,11 @@ export function PdfUploader({
             if (stageId) return stageId;
             if (prevStage) return prevStage;
             const activeProj = projData.find((p) => p.id === effectiveProj);
-            return activeProj?.current_stage_id || stageData[0]?.id || "";
+            if (activeProj?.current_stage_id) return activeProj.current_stage_id;
+            const projStages = activeProj?.workflow_template_id
+              ? stageData.filter((s) => s.workflow_template_id === activeProj.workflow_template_id)
+              : stageData;
+            return projStages[0]?.id || stageData[0]?.id || "";
           });
           return effectiveProj;
         });
@@ -107,11 +120,31 @@ export function PdfUploader({
     loadData();
   }, [open, supabase, projectId, stageId]);
 
+  // Filter stages to the currently selected project's workflow_template_id
+  const stages = useMemo(() => {
+    const activeProj = projects.find((p) => p.id === selectedProject);
+    if (activeProj?.workflow_template_id) {
+      const matching = allStages.filter((s) => s.workflow_template_id === activeProj.workflow_template_id);
+      if (matching.length > 0) return matching;
+    }
+    // Deduplicate by name if no template match
+    const seen = new Set<string>();
+    return allStages.filter((s) => {
+      const key = s.name.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [allStages, projects, selectedProject]);
+
   const handleProjectChange = (projId: string) => {
     setSelectedProject(projId);
     const p = projects.find((x) => x.id === projId);
     if (p?.current_stage_id) {
       setSelectedStage(p.current_stage_id);
+    } else if (p?.workflow_template_id) {
+      const firstStage = allStages.find((s) => s.workflow_template_id === p.workflow_template_id);
+      if (firstStage) setSelectedStage(firstStage.id);
     }
   };
 
@@ -198,7 +231,8 @@ export function PdfUploader({
 
       if (storageError) throw storageError;
 
-      // 2. Query or create document record
+      // 2. Query or create document record (set status to under_review and adviser_approval_status to pending
+      // so the student can delete/replace before endorsement and the adviser can review & endorse!)
       let docData: { id: string } | null = null;
       const { data: existingDoc } = await supabase
         .from("documents")
@@ -212,9 +246,9 @@ export function PdfUploader({
           .from("documents")
           .update({
             title: file.name.replace(/\.[^/.]+$/, ""),
-            status: "approved",
-            adviser_approval_status: "approved",
-            approval_remarks: "Auto-endorsed by adviser for defense demonstration",
+            status: "under_review",
+            adviser_approval_status: "pending",
+            approval_remarks: null,
           })
           .eq("id", existingDoc.id)
           .select()
@@ -229,9 +263,9 @@ export function PdfUploader({
             project_id: targetProjectId,
             stage_id: targetStageId,
             title: file.name.replace(/\.[^/.]+$/, ""),
-            status: "approved",
-            adviser_approval_status: "approved",
-            approval_remarks: "Auto-endorsed by adviser for defense demonstration",
+            status: "under_review",
+            adviser_approval_status: "pending",
+            approval_remarks: null,
             created_by: userId,
           })
           .select()
@@ -349,7 +383,9 @@ export function PdfUploader({
   };
 
   const currentStageName =
-    stages.find((s) => s.id === selectedStage)?.name || "Defense Stage";
+    stages.find((s) => s.id === selectedStage)?.name ||
+    allStages.find((s) => s.id === selectedStage)?.name ||
+    "Defense Stage";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -404,7 +440,7 @@ export function PdfUploader({
               >
                 {stages.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    Stage {s.sequence_order}: {s.name}
                   </option>
                 ))}
               </select>

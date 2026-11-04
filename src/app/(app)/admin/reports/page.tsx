@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { 
-  FileBarChart, 
   Download, 
   Printer, 
   Loader2, 
@@ -20,7 +19,7 @@ import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 
 export default function ReportsPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any[]>([]);
@@ -105,7 +104,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["coordinator", "sys_admin"]} fallback={<AccessDenied />}>
+    <RoleGuard allowedRoles={["coordinator", "sys_admin", "college_dean"]} fallback={<AccessDenied />}>
     <div className="mx-auto max-w-7xl space-y-6 print:p-8 print:bg-white text-slate-800 dark:text-slate-200">
       <div className="flex items-center justify-between print:hidden">
         <div>

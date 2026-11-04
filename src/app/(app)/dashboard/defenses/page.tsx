@@ -163,9 +163,12 @@ export default function DefensesPage() {
   const [certificateData, setCertificateData] = useState<any>(null);
   const [certificateModalOpen, setCertificateModalOpen] = useState(false);
 
-  const { user, profile, roles } = useAuth();
+  const { user, profile, roles, activeRole } = useAuth();
   const supabase = useMemo(() => createClient(), []);
-  const isCoordinator = roles.includes("coordinator") || roles.includes("sys_admin");
+  const effectiveRole = activeRole || roles[0] || "student";
+  const isCoordinator = ["coordinator", "sys_admin"].includes(effectiveRole);
+  const isManagement = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
+  const isStudent = effectiveRole === "student";
 
   // Section Advisers Management State
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
@@ -307,11 +310,60 @@ export default function DefensesPage() {
     fetchStages();
   }, [fetchStages]);
 
-  // Fetch all scheduled defenses with their evaluations and panels
+  // Fetch scheduled defenses scoped strictly to the active role
   const fetchSchedules = useCallback(async () => {
+    if (!user?.id) return;
     setLoadingSchedules(true);
     try {
-      const { data: schedData, error } = await supabase
+      let allowedProjectIds: string[] | null = null;
+
+      if (!isManagement) {
+        const idSet = new Set<string>();
+        if (effectiveRole === "student") {
+          const [{ data: studentRec }, { data: memberRows }] = await Promise.all([
+            supabase
+              .from("students")
+              .select("id")
+              .eq("profile_id", user.id)
+              .maybeSingle(),
+            supabase
+              .from("project_members")
+              .select("project_id")
+              .eq("profile_id", user.id),
+          ]);
+
+          if (studentRec?.id) {
+            const { data: ownProjs } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("student_id", studentRec.id);
+            ownProjs?.forEach((p: { id: string }) => idSet.add(p.id));
+          }
+          memberRows?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
+        } else if (effectiveRole === "adviser") {
+          const { data: advRows } = await supabase
+            .from("project_members")
+            .select("project_id")
+            .eq("profile_id", user.id)
+            .eq("member_role", "adviser");
+          advRows?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
+        } else if (effectiveRole === "panelist") {
+          const { data: panRows } = await supabase
+            .from("defense_panels")
+            .select("project_id")
+            .eq("profile_id", user.id);
+          panRows?.forEach((p: { project_id: string }) => idSet.add(p.project_id));
+        }
+
+        allowedProjectIds = Array.from(idSet);
+        if (allowedProjectIds.length === 0) {
+          setSchedules([]);
+          setLoadingSchedules(false);
+          return;
+        }
+      }
+
+      let schedQuery = supabase
         .from("defense_schedules")
         .select(`
           id,
@@ -345,6 +397,12 @@ export default function DefensesPage() {
           )
         `)
         .order("scheduled_at", { ascending: false });
+
+      if (allowedProjectIds !== null) {
+        schedQuery = schedQuery.in("project_id", allowedProjectIds);
+      }
+
+      const { data: schedData, error } = await schedQuery;
 
       if (error) throw error;
 
@@ -410,7 +468,7 @@ export default function DefensesPage() {
     } finally {
       setLoadingSchedules(false);
     }
-  }, [supabase]);
+  }, [supabase, user?.id, effectiveRole, isManagement]);
 
   useEffect(() => {
     fetchSchedules();
@@ -571,37 +629,49 @@ export default function DefensesPage() {
         {/* Page Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Defenses Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {isStudent
+                ? "My Defense Schedule"
+                : effectiveRole === "adviser"
+                ? "Advisee Oral Defenses"
+                : effectiveRole === "panelist"
+                ? "Assigned Panel Defenses"
+                : "Defenses Management"}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground font-medium">
-              Manage oral defense schedules, live deliberation panels, and workflow progression.
+              {isStudent
+                ? "Track your scheduled oral defenses, committee assignments, and evaluation results."
+                : "Manage oral defense schedules, live deliberation panels, and workflow progression."}
             </p>
           </div>
 
           <div className="flex gap-2 items-center print:hidden">
-            {/* Academic Program & Workflow Selector */}
-            <div className="flex items-center gap-1.5 mr-2">
-              <Settings className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={selectedTemplateId}
-                onChange={(e) => setSelectedTemplateId(e.target.value)}
-                className="h-8 rounded-lg border border-border bg-card px-2.5 text-[11px] font-bold focus:outline-none cursor-pointer shadow-2xs"
-                title="Filter defense schedules and workflows by Academic Program"
-              >
-                <option value="all">All Academic Programs &amp; Workflows</option>
-                {templates.map((t) => {
-                  const progCode = (t.programs as any)?.code;
-                  const progName = (t.programs as any)?.name;
-                  const label = progCode
-                    ? `${progCode} — ${progName || t.name}`
-                    : t.name;
-                  return (
-                    <option key={t.id} value={t.id}>
-                      {label}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            {/* Academic Program & Workflow Selector (shown to faculty/management) */}
+            {!isStudent && (
+              <div className="flex items-center gap-1.5 mr-2">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  className="h-8 rounded-lg border border-border bg-card px-2.5 text-[11px] font-bold focus:outline-none cursor-pointer shadow-2xs"
+                  title="Filter defense schedules and workflows by Academic Program"
+                >
+                  <option value="all">All Academic Programs &amp; Workflows</option>
+                  {templates.map((t) => {
+                    const progCode = (t.programs as any)?.code;
+                    const progName = (t.programs as any)?.name;
+                    const label = progCode
+                      ? `${progCode} — ${progName || t.name}`
+                      : t.name;
+                    return (
+                      <option key={t.id} value={t.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
 
             {isCoordinator && (
               <div className="flex items-center gap-2">
@@ -645,18 +715,20 @@ export default function DefensesPage() {
             <Clock className="h-3.5 w-3.5" />
             <span>Oral Defenses ({programSchedules.filter((s) => s.status !== "cancelled").length})</span>
           </button>
-          <button
-            onClick={() => setActiveTab("stages")}
-            className={cn(
-              "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
-              activeTab === "stages"
-                ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <Layers className="h-3.5 w-3.5" />
-            <span>Defense Stages</span>
-          </button>
+          {!isStudent && (
+            <button
+              onClick={() => setActiveTab("stages")}
+              className={cn(
+                "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                activeTab === "stages"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
+              )}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Defense Stages</span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("calendar")}
             className={cn(

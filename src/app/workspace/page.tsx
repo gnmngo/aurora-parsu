@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function WorkspaceIndexPage() {
   const router = useRouter();
-  const { user, profile, roles, isLoading: authLoading } = useAuth();
+  const { user, roles, activeRole, isLoading: authLoading } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
   const [stages, setStages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,10 +37,11 @@ export default function WorkspaceIndexPage() {
 
         // If user is authenticated, query their relevant defense projects
         if (user) {
-          const isManagement = roles.some((r) => ["coordinator", "sys_admin", "college_dean"].includes(r));
-          const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin"].includes(r));
-          const isPanelist = roles.includes("panelist");
-          const isAdviser = roles.includes("adviser");
+          const effectiveRole = activeRole || roles[0] || "student";
+          const isManagement = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
+          const isStudent = effectiveRole === "student";
+          const isPanelist = effectiveRole === "panelist";
+          const isAdviser = effectiveRole === "adviser";
 
           let query = supabase
             .from("projects")
@@ -148,7 +149,7 @@ export default function WorkspaceIndexPage() {
     }
 
     loadWorkspaceList();
-  }, [user, roles, authLoading, router, supabase]);
+  }, [user, roles, activeRole, authLoading, router, supabase]);
 
   if (loading || authLoading) {
     return (

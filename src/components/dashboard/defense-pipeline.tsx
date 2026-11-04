@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Check, Circle, Clock } from "lucide-react";
+import { Check, Clock, Layers } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { logSupabaseError } from "@/lib/supabase/errors";
 import { useAuthReady } from "@/hooks/use-auth-ready";
@@ -16,37 +16,71 @@ interface DefensePipelineProps {
 }
 
 export function DefensePipeline({ templateId }: DefensePipelineProps) {
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [localTemplateId, setLocalTemplateId] = useState<string>(
+    templateId && templateId !== "all" ? templateId : "70000000-0000-0000-0000-000000000001"
+  );
   const [stages, setStages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { isReady } = useAuthReady();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    if (!isReady) {
-      return;
+    if (templateId && templateId !== "all") {
+      setLocalTemplateId(templateId);
     }
+  }, [templateId]);
 
-    async function fetchStages() {
+  useEffect(() => {
+    if (!isReady) return;
+
+    async function loadTemplatesAndStages() {
       try {
+        setLoading(true);
+        const { data: tplData } = await supabase
+          .from("workflow_templates")
+          .select("id, name, programs(code, name), colleges(code, name)")
+          .order("name");
+
+        if (tplData && tplData.length > 0) {
+          setTemplates(tplData);
+        }
+
+        const effectiveTemplateId =
+          templateId && templateId !== "all"
+            ? templateId
+            : localTemplateId || tplData?.[0]?.id || "70000000-0000-0000-0000-000000000001";
+
         let query = supabase
           .from("defense_stages")
           .select("*")
+          .eq("is_enabled", true)
           .order("sequence_order");
 
-        if (templateId && templateId !== "all") {
-          query = query.eq("workflow_template_id", templateId);
+        if (effectiveTemplateId) {
+          query = query.eq("workflow_template_id", effectiveTemplateId);
         }
 
         const { data: dbStages } = await query;
 
         if (!dbStages) return;
 
-        const { data: docs } = await supabase.from("documents").select("stage_id");
-        const { data: evals } = await supabase.from("evaluations").select("stage_id, status");
+        const stageIds = dbStages.map((s) => s.id);
+        const [docsRes, evalsRes] = await Promise.all([
+          stageIds.length > 0
+            ? supabase.from("documents").select("stage_id").in("stage_id", stageIds)
+            : Promise.resolve({ data: [] }),
+          stageIds.length > 0
+            ? supabase.from("evaluations").select("stage_id, status").in("stage_id", stageIds)
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        const docs = docsRes.data || [];
+        const evals = evalsRes.data || [];
 
         const stagesData = dbStages.map((stage) => {
-          const stageDocs = docs?.filter((d) => d.stage_id === stage.id) || [];
-          const stageEvals = evals?.filter((e) => e.stage_id === stage.id && e.status === "submitted") || [];
+          const stageDocs = docs.filter((d) => d.stage_id === stage.id);
+          const stageEvals = evals.filter((e) => e.stage_id === stage.id && e.status === "submitted");
 
           return {
             id: stage.id,
@@ -68,10 +102,10 @@ export function DefensePipeline({ templateId }: DefensePipelineProps) {
         setLoading(false);
       }
     }
-    fetchStages();
-  }, [isReady, supabase, templateId]);
+    loadTemplatesAndStages();
+  }, [isReady, supabase, templateId, localTemplateId]);
 
-  if (loading) {
+  if (loading && stages.length === 0) {
     return (
       <Card className="h-64 animate-pulse bg-muted/30" />
     );
@@ -79,17 +113,49 @@ export function DefensePipeline({ templateId }: DefensePipelineProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Defense Pipeline</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Track progress across defense stages
-        </p>
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-primary" />
+            Defense Pipeline
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Track progress across customized college &amp; program defense stages
+          </p>
+        </div>
+
+        {(!templateId || templateId === "all") && templates.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Workflow:</span>
+            <select
+              value={localTemplateId}
+              onChange={(e) => setLocalTemplateId(e.target.value)}
+              className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            >
+              {templates.map((t) => {
+                const prog = Array.isArray(t.programs) ? t.programs[0] : t.programs;
+                const col = Array.isArray(t.colleges) ? t.colleges[0] : t.colleges;
+                const prefix = prog?.code || col?.code;
+                return (
+                  <option key={t.id} value={t.id}>
+                    {prefix ? `[${prefix}] ${t.name}` : t.name}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="relative">
           <div className="absolute left-0 right-0 top-8 hidden h-0.5 bg-border lg:block" />
 
-          <div className="grid gap-4 lg:grid-cols-5">
+          <div
+            className={cn(
+              "grid gap-4",
+              stages.length === 3 ? "lg:grid-cols-3" : stages.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-5"
+            )}
+          >
             {stages.map((stage, i) => (
               <motion.div
                 key={stage.id}

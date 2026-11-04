@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Building2, Shield, BookOpen, Layers, ArrowRight, Sparkles } from "lucide-react";
+import { GraduationCap, Building2, Shield, BookOpen, Layers, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthReady } from "@/hooks/use-auth-ready";
@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export function WelcomeCard() {
-  const { profile, roles, isLoading } = useAuth();
+  const { profile, roles, activeRole, isLoading } = useAuth();
   const { isReady } = useAuthReady();
   const [projectInfo, setProjectInfo] = useState<{
     title?: string;
@@ -23,14 +23,15 @@ export function WelcomeCard() {
     collegeName?: string;
     departmentName?: string;
   }>({});
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const effectiveRole = activeRole || roles[0] || "student";
 
   useEffect(() => {
     if (!isReady || !profile) return;
 
     async function fetchUserContext() {
       try {
-        const isStudent = roles.includes("student");
+        const isStudent = effectiveRole === "student" || roles.includes("student");
 
         // Load college & department affiliation
         const collegeId = (profile as any).college_id;
@@ -60,7 +61,7 @@ export function WelcomeCard() {
         }
         setAffiliation({ collegeName: cName, departmentName: dName });
 
-        if (isStudent) {
+        if (effectiveRole === "student") {
           // Check project_members first
           const { data: memberRows } = await supabase
             .from("project_members")
@@ -102,7 +103,11 @@ export function WelcomeCard() {
               stageName: (proj.defense_stages as any)?.name || "Not Assigned",
               status: (proj.status || "draft").replace(/_/g, " "),
             });
+          } else {
+            setProjectInfo(null);
           }
+        } else {
+          setProjectInfo(null);
         }
       } catch (err) {
         logSupabaseError("WelcomeCard.fetchUserContext", err);
@@ -110,7 +115,7 @@ export function WelcomeCard() {
     }
 
     fetchUserContext();
-  }, [isReady, profile, roles, supabase]);
+  }, [isReady, profile, roles, effectiveRole, supabase]);
 
   if (isLoading || !profile) {
     return (
@@ -120,8 +125,12 @@ export function WelcomeCard() {
 
   const collegeName = affiliation.collegeName || (profile as any).colleges?.name || "CEC - College of Engineering and Computational Sciences";
   const departmentName = affiliation.departmentName || (profile as any).departments?.name || "Department of Computational Sciences";
-  const primaryRole = roles.includes("college_dean") ? "college_dean" : roles[0] || "User";
-  const roleName = primaryRole === "college_dean" ? "College Dean" : primaryRole.replace(/_/g, " ");
+  const roleName =
+    effectiveRole === "college_dean"
+      ? "College Dean"
+      : effectiveRole === "sys_admin"
+      ? "System Administrator"
+      : effectiveRole.replace(/_/g, " ");
 
   return (
     <motion.div
@@ -156,7 +165,7 @@ export function WelcomeCard() {
               </div>
             </div>
 
-            {projectInfo ? (
+            {effectiveRole === "student" && projectInfo ? (
               <Link
                 href="/dashboard/my-project"
                 className="flex flex-col gap-2 sm:items-end group cursor-pointer no-underline focus:outline-none focus:ring-2 focus:ring-white/40 rounded-xl p-2 hover:bg-white/10 transition-all"
@@ -176,7 +185,7 @@ export function WelcomeCard() {
                   </Badge>
                 </div>
               </Link>
-            ) : roles.includes("college_dean") ? (
+            ) : effectiveRole === "college_dean" ? (
               <div className="flex flex-col gap-2 sm:items-end">
                 <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Executive Navigation</p>
                 <Link
@@ -186,7 +195,7 @@ export function WelcomeCard() {
                   <Shield className="h-3.5 w-3.5" /> College Defense Oversight &rarr;
                 </Link>
               </div>
-            ) : roles.includes("adviser") ? (
+            ) : effectiveRole === "adviser" ? (
               <div className="flex flex-col gap-2 sm:items-end">
                 <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
                 <Link
@@ -196,7 +205,17 @@ export function WelcomeCard() {
                   <BookOpen className="h-3.5 w-3.5" /> Advisee Review Queue &rarr;
                 </Link>
               </div>
-            ) : roles.includes("coordinator") || roles.includes("sys_admin") ? (
+            ) : effectiveRole === "panelist" ? (
+              <div className="flex flex-col gap-2 sm:items-end">
+                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <Link
+                  href="/workspace"
+                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Open Evaluation Workspace &rarr;
+                </Link>
+              </div>
+            ) : effectiveRole === "coordinator" || effectiveRole === "sys_admin" ? (
               <div className="flex flex-col gap-2 sm:items-end">
                 <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
                 <Link

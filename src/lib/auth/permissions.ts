@@ -73,10 +73,8 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/workspace",
   ],
   /**
-   * College Dean — read-only institutional oversight.
-   * Can view grades, defenses, annotations, and analytics.
-   * Cannot create/update/delete anything.
-   * Does NOT have access to /admin routes.
+   * College Dean — institutional oversight & college workflow customization.
+   * Can view grades, defenses, annotations, analytics, reports, and customize college stages/rubrics.
    */
   college_dean: [
     "/dashboard",
@@ -88,6 +86,9 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/dashboard/analytics",
     "/dashboard/settings",
     "/dashboard/notifications",
+    "/admin/rubrics",
+    "/admin/stages",
+    "/admin/reports",
     "/workspace",
   ],
   sys_admin: [
@@ -132,6 +133,7 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
     "/dashboard/my-project",
     "/workspace",
     "/dashboard/defenses",
+    "/dashboard/submissions",
     "/dashboard/annotations",
     "/dashboard/grades",
     "/dashboard/notifications",
@@ -197,5 +199,5 @@ export const ROLE_SIDEBAR_LINKS: Record<RoleCode, string[]> = {
   ],
 };
 
-/** Admin nav only shown for coordinator / sys_admin */
-export const ADMIN_ROLES: RoleCode[] = ["coordinator", "sys_admin"];
+/** Admin nav shown for coordinator / sys_admin / college_dean */
+export const ADMIN_ROLES: RoleCode[] = ["coordinator", "sys_admin", "college_dean"];

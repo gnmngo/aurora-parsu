@@ -4,11 +4,9 @@ import { WelcomeCard } from "@/components/dashboard/welcome-card";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { DefensePipeline } from "@/components/dashboard/defense-pipeline";
 import { ProjectTimelineAndHistory } from "@/components/dashboard/project-timeline-and-history";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
 
 // Role-specific dashboards
 import { StudentDashboard } from "@/components/dashboard/student-dashboard";
@@ -19,20 +17,7 @@ import { DeanDashboard } from "@/components/dashboard/dean-dashboard";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 
 export default function DashboardPage() {
-  const { roles, user, isLoading: authLoading } = useAuth();
-  const [activeRole, setActiveRole] = useState<string>("");
-
-  useEffect(() => {
-    if (roles && roles.length > 0 && !activeRole) {
-      if (roles.includes("college_dean")) {
-        setActiveRole("college_dean");
-      } else {
-        const preferredOrder = ["coordinator", "sys_admin", "adviser", "panelist", "student"];
-        const selected = preferredOrder.find((r) => roles.includes(r)) || roles[0];
-        setActiveRole(selected);
-      }
-    }
-  }, [roles, activeRole]);
+  const { roles, activeRole, setActiveRole, user, isLoading: authLoading } = useAuth();
 
   if (authLoading || !activeRole) {
     return (
@@ -47,7 +32,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* Page header with role switcher for multi-role users */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -55,42 +40,44 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* If user has college_dean role, lock to College Dean view */}
-        {roles && roles.includes("college_dean") ? (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {activeRole === "college_dean" && (
             <Badge variant="outline" className="h-8 px-3 text-xs font-bold gap-1.5 border-primary/30 text-primary bg-primary/5 shadow-xs">
               <Shield className="h-3.5 w-3.5 text-primary" />
-              College Dean &bull; CEC Oversight
+              College Dean &bull; Institutional Oversight
             </Badge>
-          </div>
-        ) : roles && roles.length > 1 ? (
-          <div className="flex items-center gap-1 bg-muted/70 p-1 rounded-xl border border-border/80">
-            {roles.map((r) => {
-              const roleLabels: Record<string, string> = {
-                coordinator: "Coordinator",
-                adviser: "Adviser",
-                panelist: "Panelist",
-                sys_admin: "Admin",
-                student: "Student",
-              };
-              const isActive = activeRole === r;
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setActiveRole(r)}
-                  className={`px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-bold ${
-                    isActive
-                      ? "bg-card text-primary shadow-xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-                  }`}
-                >
-                  {roleLabels[r] || r}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+          )}
+
+          {roles && roles.length > 1 && (
+            <div className="flex items-center gap-1 bg-muted/70 p-1 rounded-xl border border-border/80">
+              {roles.map((r) => {
+                const roleLabels: Record<string, string> = {
+                  college_dean: "College Dean",
+                  coordinator: "Coordinator",
+                  adviser: "Adviser",
+                  panelist: "Panelist",
+                  sys_admin: "Admin",
+                  student: "Student",
+                };
+                const isActive = activeRole === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setActiveRole(r)}
+                    className={`px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-bold ${
+                      isActive
+                        ? "bg-card text-primary shadow-xs border border-border/60"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+                    }`}
+                  >
+                    {roleLabels[r] || r}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Welcome card (personalized) */}

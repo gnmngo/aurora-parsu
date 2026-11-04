@@ -253,350 +253,364 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
     const supabase = await createClient();
     const { ip, userAgent } = await getSafeClientContext();
 
-  // 1. Authenticate user (secure — uses getUser() not getSession())
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    throw new Error("Unauthorized. Please sign in again.");
-  }
-  const userId = user.id;
+    // 1. Authenticate user (secure — uses getUser() not getSession())
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      throw new Error("Unauthorized. Please sign in again.");
+    }
+    const userId = user.id;
 
-  // 1b. Step-Up Credential Re-Authentication (RA 8792 Legal Non-Repudiation)
-  if (!input.password || !input.password.trim()) {
-    throw new Error("Password re-authentication is required to certify and affix your electronic signature.");
-  }
-
-  if (!user.email) {
-    throw new Error("A valid account email is required to certify your signature.");
-  }
-
-  // Defensively check password against Supabase Auth without mutating the active session
-  const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().replace(/^["']|["']$/g, "");
-  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-  const authVerifier = createSupabaseClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: reAuthData, error: reAuthErr } = await authVerifier.auth.signInWithPassword({
-    email: user.email,
-    password: input.password.trim(),
-  });
-
-  if (reAuthErr || !reAuthData.user || reAuthData.user.id !== userId) {
-    throw new Error("Password re-authentication failed. Incorrect account password. Electronic signature authorization denied under Republic Act No. 8792.");
-  }
-
-  // 2. Fetch evaluation and verify ownership + lock status
-  const { data: currentEval, error: fetchError } = await supabase
-    .from("evaluations")
-    .select("*")
-    .eq("id", input.evaluationId)
-    .single();
-
-  if (fetchError || !currentEval) {
-    throw new Error("Evaluation record not found.");
-  }
-
-  if (currentEval.panelist_id !== userId) {
-    throw new Error("Permission denied. You can only sign your own evaluations.");
-  }
-
-  if (currentEval.status === "submitted") {
-    throw new Error("This evaluation version is already signed and locked.");
-  }
-
-  // 2b. Verify panelist authorization & role
-  const { data: userRolesData } = await supabase
-    .from("user_roles")
-    .select("roles(code)")
-    .eq("profile_id", userId);
-
-  const roleCodes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
-    ?.map((ur) => { const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles; return r?.code as string | undefined; })
-    .filter(Boolean) ?? [];
-
-  const isSysAdmin = roleCodes.includes("sys_admin");
-
-  if (!isSysAdmin) {
-    if (!roleCodes.includes("panelist")) {
-      throw new Error("Permission denied. Only faculty panel members can submit evaluations.");
+    // 1b. Step-Up Credential Re-Authentication (RA 8792 Legal Non-Repudiation)
+    if (!input.password || !input.password.trim()) {
+      throw new Error("Password re-authentication is required to certify and affix your electronic signature.");
     }
 
-    // Check defense_panels assignment
-    const { data: panelAssignment } = await supabase
-      .from("defense_panels")
-      .select("id")
-      .eq("project_id", currentEval.project_id)
-      .eq("profile_id", userId)
-      .maybeSingle();
-
-    if (!panelAssignment) {
-      throw new Error("Permission denied. You are not an assigned defense panelist for this project.");
+    if (!user.email) {
+      throw new Error("A valid account email is required to certify your signature.");
     }
 
-    // Check that user is not the project adviser
-    const { data: adviserMember } = await supabase
-      .from("project_members")
-      .select("id")
-      .eq("project_id", currentEval.project_id)
-      .eq("profile_id", userId)
-      .eq("member_role", "adviser")
-      .maybeSingle();
+    // Defensively check password against Supabase Auth without mutating the active session
+    const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().replace(/^["']|["']$/g, "");
+    const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+    const authVerifier = createSupabaseClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
-    if (adviserMember) {
-      throw new Error("Academic integrity violation: The project adviser cannot serve as an evaluation panelist.");
+    const { data: reAuthData, error: reAuthErr } = await authVerifier.auth.signInWithPassword({
+      email: user.email,
+      password: input.password.trim(),
+    });
+
+    if (reAuthErr || !reAuthData.user || reAuthData.user.id !== userId) {
+      throw new Error("Password re-authentication failed. Incorrect account password. Electronic signature authorization denied under Republic Act No. 8792.");
     }
-  }
 
-  // 3. Generate certificate serial via DB sequence (atomic — no race condition)
-  //    Falls back to COUNT-based serial if sequence not yet migrated
-  let certificateSerial: string;
-  try {
-    const { data: serialData, error: seqErr } = await supabase
-      .rpc("generate_certificate_serial")
-      .single();
-    if (seqErr || !serialData) throw new Error(seqErr?.message ?? "No serial");
-    certificateSerial = serialData as string;
-  } catch {
-    const currentYear = new Date().getFullYear();
-    const { count } = await supabase
+    // 2. Fetch evaluation and verify ownership + lock status
+    const { data: currentEval, error: fetchError } = await supabase
       .from("evaluations")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "submitted");
-    const serialNum = String((count ?? 0) + 1).padStart(6, "0");
-    certificateSerial = `AURORA-${currentYear}-${serialNum}`;
-  }
+      .select("*")
+      .eq("id", input.evaluationId)
+      .single();
 
-  // 4. Upload signature image to Supabase Storage — NEVER store base64 in DB
-  const signedAt = new Date().toISOString();
-  let signatureStoragePath: string | null = null;
-  let signatureFileHash: string | null = null;
-
-  if (input.signatureImage) {
-    try {
-      const base64Data = input.signatureImage.replace(/^data:image\/\w+;base64,/, "");
-      const buffer = Buffer.from(base64Data, "base64");
-      signatureFileHash = crypto.createHash("sha256").update(base64Data).digest("hex");
-      const year = new Date().getFullYear();
-      const month = String(new Date().getMonth() + 1).padStart(2, "0");
-      const storagePath = `${year}/${month}/${certificateSerial}-${input.signatureType}.png`;
-      const storageClient = createServiceClient() || supabase;
-      const { error: uploadErr } = await storageClient.storage
-        .from("signatures")
-        .upload(storagePath, buffer, { contentType: "image/png", cacheControl: "3600", upsert: true });
-      if (!uploadErr) signatureStoragePath = storagePath;
-      else console.warn("[signEvaluationAction] Storage upload notice:", uploadErr.message);
-    } catch (uploadEx: unknown) {
-      console.warn("[signEvaluationAction] Storage exception:", uploadEx instanceof Error ? uploadEx.message : uploadEx);
+    if (fetchError || !currentEval) {
+      throw new Error("Evaluation record not found.");
     }
-  }
 
-  // 5. Authoritatively compute total and weighted score (BUG-E8)
-  const computedScore = await calculateEvaluationScore(
-    supabase,
-    currentEval.rubric_template_id,
-    input.scores,
-    input.totalScore
-  );
+    if (currentEval.panelist_id !== userId) {
+      throw new Error("Permission denied. You can only sign your own evaluations.");
+    }
 
-  // 6. Build deterministic signing payload + SHA-256 hash
-  const signingPayload = {
-    evaluationId: input.evaluationId,
-    projectId: currentEval.project_id,
-    stageId: currentEval.stage_id,
-    panelistId: userId,
-    scores: input.scores,
-    totalScore: computedScore,
-    verdictCode: input.verdictCode,
-    panelNotes: input.panelNotes,
-    recommendations: input.recommendations,
-    printedName: input.printedName,
-    positionRole: input.positionRole,
-    certificateSerial,
-    signedAt,
-  };
-  const payloadJson = JSON.stringify(signingPayload, Object.keys(signingPayload).sort());
-  const payloadHash = crypto.createHash("sha256").update(payloadJson, "utf8").digest("hex");
-  const certificateHash = crypto.createHash("sha256").update(`${certificateSerial}|${payloadHash}`).digest("hex");
+    if (currentEval.status === "submitted") {
+      throw new Error("This evaluation version is already signed and locked.");
+    }
 
-  // 6b. Ensure project status allows transition to submitted evaluation
-  // If the project is currently 'scheduled', transition it to 'in_progress' so that
-  // the academic workflow state machine validation trigger allows resolving to passed/revision_required
-  const serviceClient = createServiceClient();
-  if (serviceClient) {
+    // 2b. Verify panelist authorization & role
+    const { data: userRolesData } = await supabase
+      .from("user_roles")
+      .select("roles(code)")
+      .eq("profile_id", userId);
+
+    const roleCodes = (userRolesData as { roles: { code: string } | { code: string }[] | null }[])
+      ?.map((ur) => { const r = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles; return r?.code as string | undefined; })
+      .filter(Boolean) ?? [];
+
+    const isSysAdmin = roleCodes.includes("sys_admin");
+
+    if (!isSysAdmin) {
+      if (!roleCodes.includes("panelist")) {
+        throw new Error("Permission denied. Only faculty panel members can submit evaluations.");
+      }
+
+      // Check defense_panels assignment
+      const { data: panelAssignment } = await supabase
+        .from("defense_panels")
+        .select("id")
+        .eq("project_id", currentEval.project_id)
+        .eq("profile_id", userId)
+        .maybeSingle();
+
+      if (!panelAssignment) {
+        throw new Error("Permission denied. You are not an assigned defense panelist for this project.");
+      }
+
+      // Check that user is not the project adviser
+      const { data: adviserMember } = await supabase
+        .from("project_members")
+        .select("id")
+        .eq("project_id", currentEval.project_id)
+        .eq("profile_id", userId)
+        .eq("member_role", "adviser")
+        .maybeSingle();
+
+      if (adviserMember) {
+        throw new Error("Academic integrity violation: The project adviser cannot serve as an evaluation panelist.");
+      }
+    }
+
+    // 3. Generate certificate serial via DB sequence (atomic — no race condition)
+    //    Falls back to COUNT-based serial if sequence not yet migrated
+    let certificateSerial: string;
     try {
-      const { data: projectStatusCheck } = await serviceClient
+      const { data: serialData, error: seqErr } = await supabase
+        .rpc("generate_certificate_serial")
+        .single();
+      if (seqErr || !serialData) throw new Error(seqErr?.message ?? "No serial");
+      certificateSerial = serialData as string;
+    } catch {
+      const currentYear = new Date().getFullYear();
+      const { count } = await supabase
+        .from("evaluations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "submitted");
+      const serialNum = String((count ?? 0) + 1).padStart(6, "0");
+      certificateSerial = `AURORA-${currentYear}-${serialNum}`;
+    }
+
+    // 4. Upload signature image to Supabase Storage — NEVER store base64 in DB
+    const signedAt = new Date().toISOString();
+    let signatureStoragePath: string | null = null;
+    let signatureFileHash: string | null = null;
+
+    if (input.signatureImage) {
+      if (input.signatureImage.startsWith("data:image")) {
+        try {
+          const base64Data = input.signatureImage.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, "base64");
+          signatureFileHash = crypto.createHash("sha256").update(base64Data).digest("hex");
+          const year = new Date().getFullYear();
+          const month = String(new Date().getMonth() + 1).padStart(2, "0");
+          const storagePath = `${year}/${month}/${certificateSerial}-${input.signatureType}.png`;
+          const storageClient = createServiceClient() || supabase;
+          const { error: uploadErr } = await storageClient.storage
+            .from("signatures")
+            .upload(storagePath, buffer, { contentType: "image/png", cacheControl: "3600", upsert: true });
+          if (!uploadErr) signatureStoragePath = storagePath;
+          else console.warn("[signEvaluationAction] Storage upload notice:", uploadErr.message);
+        } catch (uploadEx: unknown) {
+          console.warn("[signEvaluationAction] Storage exception:", uploadEx instanceof Error ? uploadEx.message : uploadEx);
+        }
+      } else {
+        // Panelist used their registered Official Signature Baseline from signature_profiles
+        const { data: sigProf } = await supabase
+          .from("signature_profiles")
+          .select("signature_storage_path, fingerprint_sha256")
+          .eq("profile_id", userId)
+          .maybeSingle();
+        signatureStoragePath = sigProf?.signature_storage_path || input.signatureImage;
+        signatureFileHash =
+          sigProf?.fingerprint_sha256 ||
+          crypto.createHash("sha256").update(input.signatureImage).digest("hex");
+      }
+    }
+
+    // 5. Authoritatively compute total and weighted score (BUG-E8)
+    const computedScore = await calculateEvaluationScore(
+      supabase,
+      currentEval.rubric_template_id,
+      input.scores,
+      input.totalScore
+    );
+
+    // 6. Build deterministic signing payload + SHA-256 hash
+    const signingPayload = {
+      evaluationId: input.evaluationId,
+      projectId: currentEval.project_id,
+      stageId: currentEval.stage_id,
+      panelistId: userId,
+      scores: input.scores,
+      totalScore: computedScore,
+      verdictCode: input.verdictCode,
+      panelNotes: input.panelNotes,
+      recommendations: input.recommendations,
+      printedName: input.printedName,
+      positionRole: input.positionRole,
+      certificateSerial,
+      signedAt,
+    };
+    const payloadJson = JSON.stringify(signingPayload, Object.keys(signingPayload).sort());
+    const payloadHash = crypto.createHash("sha256").update(payloadJson, "utf8").digest("hex");
+    const certificateHash = crypto.createHash("sha256").update(`${certificateSerial}|${payloadHash}`).digest("hex");
+
+    // 6b. Ensure project status allows transition to submitted evaluation
+    // If the project is currently 'scheduled', transition it to 'in_progress' so that
+    // the academic workflow state machine validation trigger allows resolving to passed/revision_required
+    const serviceClient = createServiceClient();
+    if (serviceClient) {
+      try {
+        const { data: projectStatusCheck } = await serviceClient
+          .from("projects")
+          .select("status")
+          .eq("id", currentEval.project_id)
+          .maybeSingle();
+
+        if (projectStatusCheck?.status === "scheduled") {
+          await serviceClient
+            .from("projects")
+            .update({ status: "in_progress" })
+            .eq("id", currentEval.project_id);
+        }
+      } catch (transErr) {
+        console.warn("[signEvaluationAction] Transition to in_progress notice:", transErr);
+      }
+    }
+
+    // 7. Update Evaluation Record — server is authoritative
+    const { data: updatedEval, error: updateError } = await supabase
+      .from("evaluations")
+      .update({
+        scores: input.scores,
+        total_score: computedScore,
+        weighted_score: computedScore,
+        verdict_code: input.verdictCode,
+        panel_notes: input.panelNotes,
+        recommendations: input.recommendations,
+        status: "submitted",
+        signature_type: input.signatureType,
+        // Store storage path only — never raw base64
+        signature_image: signatureStoragePath,
+        signature_hash: payloadHash,
+        signed_at: signedAt,
+        submitted_at: signedAt,
+        verified: true,
+        verified_by_system: true,
+        certificate_serial: certificateSerial,
+        ip_address: ip,
+        user_agent: userAgent,
+        device_info: { browser: userAgent, ip, signatureType: input.signatureType },
+      })
+      .eq("id", input.evaluationId)
+      .eq("panelist_id", userId)   // Ownership check in WHERE clause
+      .select()
+      .single();
+
+    if (updateError || !updatedEval) {
+      throw new Error(`Failed to update evaluation score sheet: ${updateError?.message}`);
+    }
+
+    // 8. Create immutable digital_signatures record (non-blocking)
+    try {
+      const dbClient = serviceClient || supabase;
+      // Mark any existing active signature for this evaluation as superseded first
+      await dbClient
+        .from("digital_signatures")
+        .update({ status: "superseded" })
+        .eq("evaluation_id", input.evaluationId)
+        .eq("status", "active");
+
+      const { error: sigErr } = await dbClient
+        .from("digital_signatures")
+        .insert({
+          evaluation_id: input.evaluationId,
+          panelist_id: userId,
+          certificate_serial: certificateSerial,
+          payload_hash: payloadHash,
+          certificate_hash: certificateHash,
+          signature_hash: signatureFileHash,
+          hash_algorithm: "SHA-256",
+          signing_payload: signingPayload as unknown as Record<string, unknown>,
+          signature_storage_path: signatureStoragePath,
+          signed_at: signedAt,
+          ip_address: ip,
+          user_agent: userAgent,
+          device_info: { signatureType: input.signatureType },
+          status: "active",
+        });
+      if (sigErr) console.warn("[signEvaluationAction] digital_signatures insert notice:", sigErr.message);
+    } catch (dsEx: unknown) {
+      console.warn("[signEvaluationAction] digital_signatures exception:", dsEx instanceof Error ? dsEx.message : dsEx);
+    }
+
+    // 9. Insert audit log
+    try {
+      await emitAuditLog(supabase, {
+        profile_id: userId,
+        user_email: user.email || "unknown",
+        user_role: "panelist",
+        action_type: "SUBMIT",
+        module: "grading",
+        entity_type: "evaluations",
+        entity_id: input.evaluationId,
+        description: `Signed and submitted evaluation v${updatedEval.version} with certificate serial ${certificateSerial}`,
+        new_value: {
+          evaluation_id: input.evaluationId,
+          version: updatedEval.version,
+          certificate_serial: certificateSerial,
+          signature_hash: payloadHash,
+          total_score: computedScore,
+          verdict_code: input.verdictCode,
+          reauthentication_method: "password_verified",
+        },
+        ip_address: ip,
+        user_agent: userAgent,
+      });
+    } catch (auditEx) {
+      console.warn("[signEvaluationAction] Audit log exception (non-fatal):", auditEx);
+    }
+
+    // 10. Fire evaluation event trigger (non-blocking)
+    try {
+      const dbClient = serviceClient || supabase;
+      await dbClient.from("evaluation_events").insert({
+        project_id: updatedEval.project_id,
+        stage_id: updatedEval.stage_id,
+        event_type: "evaluation_submitted",
+        payload: {
+          evaluation_id: input.evaluationId,
+          total_score: computedScore,
+          rubric_template_id: updatedEval.rubric_template_id,
+        },
+      });
+    } catch (evEx) {
+      console.warn("[signEvaluationAction] evaluation_events notice:", evEx);
+    }
+
+    // 11. Record workflow history (non-blocking)
+    try {
+      await recordWorkflowTransition(supabase, {
+        projectId: currentEval.project_id,
+        fromStageId: currentEval.stage_id,
+        toStageId: currentEval.stage_id,
+        transitionedBy: userId,
+        performedByRole: "panelist",
+        transitionType: "manual",
+        transitionReason: `Evaluation signed. Certificate: ${certificateSerial}`,
+        oldStatus: "draft",
+        newStatus: "submitted",
+        metadata: { evaluationId: input.evaluationId, certificateSerial },
+      });
+    } catch (whEx) {
+      console.warn("[signEvaluationAction] workflow transition notice:", whEx);
+    }
+
+    // 12. Notify student co-authors and committee (centralized dispatcher, non-blocking)
+    try {
+      const { data: projectMeta } = await supabase
         .from("projects")
-        .select("status")
+        .select("student_id, title")
         .eq("id", currentEval.project_id)
         .maybeSingle();
 
-      if (projectStatusCheck?.status === "scheduled") {
-        await serviceClient
-          .from("projects")
-          .update({ status: "in_progress" })
-          .eq("id", currentEval.project_id);
+      if (projectMeta?.student_id) {
+        const { data: studentRecord } = await supabase
+          .from("students")
+          .select("profile_id")
+          .eq("id", projectMeta.student_id)
+          .maybeSingle();
+        if (studentRecord?.profile_id) {
+          await emitNotification({
+            supabase,
+            recipientProfileId: studentRecord.profile_id,
+            title: "Defense Evaluation Signed",
+            message: `A panelist has completed and digitally signed their evaluation for "${projectMeta.title || 'your defense'}".`,
+            eventType: "grade_released",
+            actionUrl: `/dashboard/grades`,
+            metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
+          });
+        }
       }
-    } catch (transErr) {
-      console.warn("[signEvaluationAction] Transition to in_progress notice:", transErr);
+    } catch (notifEx: unknown) {
+      console.warn("[signEvaluationAction] Notification notice:", notifEx instanceof Error ? notifEx.message : notifEx);
     }
-  }
-
-  // 7. Update Evaluation Record — server is authoritative
-  const { data: updatedEval, error: updateError } = await supabase
-    .from("evaluations")
-    .update({
-      scores: input.scores,
-      total_score: computedScore,
-      weighted_score: computedScore,
-      verdict_code: input.verdictCode,
-      panel_notes: input.panelNotes,
-      recommendations: input.recommendations,
-      status: "submitted",
-      signature_type: input.signatureType,
-      // Store storage path only — never raw base64
-      signature_image: signatureStoragePath,
-      signature_hash: payloadHash,
-      signed_at: signedAt,
-      verified: true,
-      verified_by_system: true,
-      certificate_serial: certificateSerial,
-      ip_address: ip,
-      user_agent: userAgent,
-      device_info: { browser: userAgent, ip, signatureType: input.signatureType },
-    })
-    .eq("id", input.evaluationId)
-    .eq("panelist_id", userId)   // Ownership check in WHERE clause
-    .select()
-    .single();
-
-  if (updateError || !updatedEval) {
-    throw new Error(`Failed to update evaluation score sheet: ${updateError?.message}`);
-  }
-
-  // 8. Create immutable digital_signatures record (non-blocking)
-  try {
-    const dbClient = serviceClient || supabase;
-    // Mark any existing active signature for this evaluation as superseded first
-    await dbClient
-      .from("digital_signatures")
-      .update({ status: "superseded" })
-      .eq("evaluation_id", input.evaluationId)
-      .eq("status", "active");
-
-    const { error: sigErr } = await dbClient
-      .from("digital_signatures")
-      .insert({
-        evaluation_id: input.evaluationId,
-        panelist_id: userId,
-        certificate_serial: certificateSerial,
-        payload_hash: payloadHash,
-        certificate_hash: certificateHash,
-        signature_hash: signatureFileHash,
-        hash_algorithm: "SHA-256",
-        signing_payload: signingPayload as unknown as Record<string, unknown>,
-        signature_storage_path: signatureStoragePath,
-        signed_at: signedAt,
-        ip_address: ip,
-        user_agent: userAgent,
-        device_info: { signatureType: input.signatureType },
-        status: "active",
-      });
-    if (sigErr) console.warn("[signEvaluationAction] digital_signatures insert notice:", sigErr.message);
-  } catch (dsEx: unknown) {
-    console.warn("[signEvaluationAction] digital_signatures exception:", dsEx instanceof Error ? dsEx.message : dsEx);
-  }
-
-  // 9. Insert audit log
-  try {
-    await emitAuditLog(supabase, {
-      profile_id: userId,
-      user_email: user.email || "unknown",
-      user_role: "panelist",
-      action_type: "SUBMIT",
-      module: "grading",
-      entity_type: "evaluations",
-      entity_id: input.evaluationId,
-      description: `Signed and submitted evaluation v${updatedEval.version} with certificate serial ${certificateSerial}`,
-      new_value: {
-        evaluation_id: input.evaluationId,
-        version: updatedEval.version,
-        certificate_serial: certificateSerial,
-        signature_hash: payloadHash,
-        total_score: computedScore,
-        verdict_code: input.verdictCode,
-        reauthentication_method: "password_verified",
-      },
-      ip_address: ip,
-      user_agent: userAgent,
-    });
-  } catch (auditEx) {
-    console.warn("[signEvaluationAction] Audit log exception (non-fatal):", auditEx);
-  }
-
-  // 10. Fire evaluation event trigger (non-blocking)
-  try {
-    const dbClient = serviceClient || supabase;
-    await dbClient.from("evaluation_events").insert({
-      project_id: updatedEval.project_id,
-      stage_id: updatedEval.stage_id,
-      event_type: "evaluation_submitted",
-      payload: {
-        evaluation_id: input.evaluationId,
-        total_score: computedScore,
-        rubric_template_id: updatedEval.rubric_template_id,
-      },
-    });
-  } catch (evEx) {
-    console.warn("[signEvaluationAction] evaluation_events notice:", evEx);
-  }
-
-  // 11. Record workflow history (non-blocking)
-  try {
-    await recordWorkflowTransition(supabase, {
-      projectId: currentEval.project_id,
-      fromStageId: currentEval.stage_id,
-      toStageId: currentEval.stage_id,
-      transitionedBy: userId,
-      performedByRole: "panelist",
-      transitionType: "manual",
-      transitionReason: `Evaluation signed. Certificate: ${certificateSerial}`,
-      oldStatus: "draft",
-      newStatus: "submitted",
-      metadata: { evaluationId: input.evaluationId, certificateSerial },
-    });
-  } catch (whEx) {
-    console.warn("[signEvaluationAction] workflow transition notice:", whEx);
-  }
-
-  // 12. Notify student co-authors and committee (centralized dispatcher, non-blocking)
-  try {
-    const { data: projectMeta } = await supabase
-      .from("projects")
-      .select("student_id, title")
-      .eq("id", currentEval.project_id)
-      .maybeSingle();
-
-    if (projectMeta?.student_id) {
-      const { data: studentRecord } = await supabase
-        .from("students")
-        .select("profile_id")
-        .eq("id", projectMeta.student_id)
-        .maybeSingle();
-      if (studentRecord?.profile_id) {
-        await emitNotification({
-          supabase,
-          recipientProfileId: studentRecord.profile_id,
-          title: "Defense Evaluation Signed",
-          message: `A panelist has completed and digitally signed their evaluation for "${projectMeta.title || 'your defense'}".`,
-          eventType: "grade_released",
-          actionUrl: `/dashboard/grades`,
-          metadata: { certificateSerial, evaluationId: input.evaluationId, projectId: currentEval.project_id },
-        });
-      }
-    }
-  } catch (notifEx: unknown) {
-    console.warn("[signEvaluationAction] Notification notice:", notifEx instanceof Error ? notifEx.message : notifEx);
-  }
 
     return {
       success: true,
@@ -611,6 +625,7 @@ export async function signEvaluationAction(input: SignEvaluationInput) {
         panel_notes: updatedEval.panel_notes,
         recommendations: updatedEval.recommendations,
         signed_at: updatedEval.signed_at,
+        submitted_at: updatedEval.submitted_at,
         certificate_serial: updatedEval.certificate_serial,
         signature_hash: updatedEval.signature_hash || payloadHash,
         signature_image: signatureStoragePath || input.signatureImage,

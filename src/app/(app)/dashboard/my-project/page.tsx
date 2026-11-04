@@ -129,6 +129,7 @@ interface EvaluationResult {
   weighted_score?: number;
   verdict_code?: string;
   status: string;
+  signed_at?: string | null;
   submitted_at: string;
   recommendations: string | null;
   certificate_serial?: string;
@@ -419,14 +420,14 @@ export default function MyProjectPage() {
       const { data: evals } = await supabase
         .from("evaluations")
         .select(`
-          id, total_score, weighted_score, verdict_code, status, submitted_at, recommendations,
+          id, total_score, weighted_score, verdict_code, status, signed_at, submitted_at, recommendations,
           certificate_serial, signature_hash, signature_image, scores,
           profiles ( first_name, last_name ),
           defense_stages ( name )
         `)
         .eq("project_id", proj.id)
         .eq("status", "submitted")
-        .order("submitted_at", { ascending: false });
+        .order("signed_at", { ascending: false, nullsFirst: false });
       if (evals) setEvaluations(evals as any);
 
     } catch (err) {
@@ -2207,7 +2208,9 @@ export default function MyProjectPage() {
                             <p className="text-sm font-bold text-foreground">{panelistName}</p>
                             <p className="text-[10px] text-muted-foreground">
                               {(evalItem.defense_stages as any)?.name || "Defense"} •{" "}
-                              {evalItem.submitted_at ? format(new Date(evalItem.submitted_at), "MMM d, yyyy") : ""}
+                              {(evalItem.signed_at || evalItem.submitted_at)
+                                ? format(new Date((evalItem.signed_at || evalItem.submitted_at)!), "MMM d, yyyy")
+                                : ""}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -2276,7 +2279,7 @@ export default function MyProjectPage() {
                                     panelistName,
                                     totalScore: score,
                                     verdictCode: evalItem.verdict_code,
-                                    signedAt: evalItem.submitted_at,
+                                    signedAt: evalItem.signed_at || evalItem.submitted_at,
                                     signatureHash: evalItem.signature_hash,
                                     signatureImage: evalItem.signature_image,
                                     scores: evalItem.scores,

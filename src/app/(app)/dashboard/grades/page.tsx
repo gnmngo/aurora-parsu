@@ -81,16 +81,17 @@ export default function GradesPage() {
   const [releasingId, setReleasingId] = useState<string | null>(null);
   const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
-  const { user, roles } = useAuth();
-  const isCoordinatorOrAdmin = roles.some((r) => ["coordinator", "sys_admin", "college_dean"].includes(r));
-  const canReleaseVerdict = roles.some((r) => ["coordinator", "sys_admin"].includes(r));
+  const { user, roles, activeRole } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "student";
+  const isCoordinatorOrAdmin = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
+  const canReleaseVerdict = ["coordinator", "sys_admin"].includes(effectiveRole);
 
   const loadGrades = useCallback(async () => {
     if (!user) return;
     try {
-      const isPanelist = roles.includes("panelist");
-      const isStudent = roles.includes("student");
-      const isAdviser = roles.includes("adviser");
+      const isPanelist = effectiveRole === "panelist";
+      const isStudent = effectiveRole === "student";
+      const isAdviser = effectiveRole === "adviser";
 
       // Rich join: stage, project proponents, program, evaluator, rubric
       const baseQuery = supabase
@@ -227,7 +228,7 @@ export default function GradesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, roles, isCoordinatorOrAdmin, supabase]);
+  }, [user, effectiveRole, isCoordinatorOrAdmin, supabase]);
 
   useEffect(() => {
     loadGrades();

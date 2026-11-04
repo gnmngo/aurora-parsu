@@ -1,23 +1,49 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Lock, Eye, EyeOff, ShieldCheck, KeyRound, Building2 } from "lucide-react";
+import {
+  Loader2,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  KeyRound,
+  Building2,
+  PenTool,
+  Upload,
+  CheckCircle2,
+  RotateCcw,
+} from "lucide-react";
+import { getSignatureProfileAction, saveSignatureProfileAction } from "@/lib/signatures/actions";
 
 export default function SettingsPage() {
-  const { profile, signOut, isLoading: authLoading } = useAuth();
+  const { profile, roles, signOut, isLoading: authLoading } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [collegeInfo, setCollegeInfo] = useState<{ id: string; name: string; code: string } | null>(null);
   const [departments, setDepartments] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Electronic Signature Baseline State
+  const [sigProfile, setSigProfile] = useState<any>(null);
+  const [sigPreviewUrl, setSigPreviewUrl] = useState<string | null>(null);
+  const [academicRank, setAcademicRank] = useState("Defense Panel Member");
+  const [sigMode, setSigMode] = useState<"draw" | "upload">("draw");
+  const [isDrawingSig, setIsDrawingSig] = useState(false);
+  const [hasDrawnSig, setHasDrawnSig] = useState(false);
+  const [uploadedSigBase64, setUploadedSigBase64] = useState<string | null>(null);
+  const [isSavingSig, setIsSavingSig] = useState(false);
+  const sigCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sigFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Security / Password Change State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -29,6 +55,28 @@ export default function SettingsPage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
+  const isFacultyOrStaff = roles.some((r) =>
+    ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(r)
+  );
+
+  const initSigCanvas = useCallback(() => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 420;
+    const height = rect.height || 140;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = "#1e3a8a";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  }, []);
 
   useEffect(() => {
     async function loadProfileAndDepartments() {
@@ -57,9 +105,149 @@ export default function SettingsPage() {
       if (deptData) {
         setDepartments(deptData);
       }
+
+      // Load signature baseline profile
+      try {
+        const sp = await getSignatureProfileAction();
+        if (sp) {
+          setSigProfile(sp);
+          if (sp.academic_rank) setAcademicRank(sp.academic_rank);
+          if (sp.signature_storage_path) {
+            const cleanPath = sp.signature_storage_path.replace(/^signatures\//, "").replace(/^\/+/, "");
+            const { data } = await supabase.storage.from("signatures").createSignedUrl(cleanPath, 7200);
+            if (data?.signedUrl) {
+              setSigPreviewUrl(data.signedUrl);
+            } else {
+              const { data: pubData } = supabase.storage.from("signatures").getPublicUrl(cleanPath);
+              if (pubData?.publicUrl) setSigPreviewUrl(pubData.publicUrl);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load signature profile:", err);
+      }
     }
     loadProfileAndDepartments();
   }, [profile, supabase]);
+
+  useEffect(() => {
+    if (sigMode === "draw") {
+      const t = setTimeout(initSigCanvas, 100);
+      return () => clearTimeout(t);
+    }
+  }, [sigMode, initSigCanvas]);
+
+  const getSigCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    if ("touches" in e) {
+      if (e.touches.length === 0) return { x: 0, y: 0 };
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const startSigDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.strokeStyle = "#1e3a8a";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const coords = getSigCoords(e);
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+    setIsDrawingSig(true);
+    setHasDrawnSig(true);
+  };
+
+  const drawSig = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawingSig) return;
+    e.preventDefault();
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const coords = getSigCoords(e);
+    ctx.lineTo(coords.x, coords.y);
+    ctx.stroke();
+  };
+
+  const stopSigDraw = () => setIsDrawingSig(false);
+
+  const clearSigCanvas = () => {
+    initSigCanvas();
+    setHasDrawnSig(false);
+  };
+
+  const handleSigFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file (PNG, JPG, WebP).");
+      return;
+    }
+    if (f.size > 2 * 1024 * 1024) {
+      toast.error("Signature image must be under 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setUploadedSigBase64(ev.target?.result as string);
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const handleSaveSignatureBaseline = async () => {
+    if (!profile) return;
+    let base64ToSave = "";
+    if (sigMode === "draw") {
+      if (!hasDrawnSig || !sigCanvasRef.current) {
+        toast.error("Please draw your signature on the pad before saving.");
+        return;
+      }
+      base64ToSave = sigCanvasRef.current.toDataURL("image/png");
+    } else {
+      if (!uploadedSigBase64) {
+        toast.error("Please select a signature image file before saving.");
+        return;
+      }
+      base64ToSave = uploadedSigBase64;
+    }
+
+    setIsSavingSig(true);
+    try {
+      const fullName = `${firstName || profile.first_name} ${lastName || profile.last_name}`.trim().toUpperCase();
+      const res = await saveSignatureProfileAction({
+        fullName,
+        academicRank: academicRank.trim() || "Defense Panel Member",
+        officialEmail: profile.email,
+        departmentId: departmentId || undefined,
+        signatureImageBase64: base64ToSave,
+      });
+
+      if (!res.success) {
+        toast.error(res.error || "Failed to save signature baseline.");
+        return;
+      }
+
+      setSigPreviewUrl(base64ToSave);
+      setSigProfile((prev: any) => ({
+        ...prev,
+        public_signature_id: res.publicSignatureId,
+        academic_rank: academicRank,
+      }));
+      toast.success("Official Electronic Signature Baseline saved!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save signature baseline.");
+    } finally {
+      setIsSavingSig(false);
+    }
+  };
 
   if (authLoading || !profile) {
     return (
@@ -112,7 +300,6 @@ export default function SettingsPage() {
       });
 
       toast.success("Profile updated successfully!");
-      // Reload page or let context fetch update
       window.location.reload();
     } catch (err: any) {
       console.error(err);
@@ -198,7 +385,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your profile and preferences
+          Manage your profile, electronic signature baseline, and security preferences
         </p>
       </div>
 
@@ -298,11 +485,168 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Official Electronic Signature Baseline Card (Faculty / Committee / Admin) */}
+      {isFacultyOrStaff && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Official Electronic Signature Baseline
+              </CardTitle>
+              {sigPreviewUrl && (
+                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Registered Baseline
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Register or update your official institutional e-signature used when signing rubric evaluations and defense clearance certificates (RA 8792 compliant).
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sigPreviewUrl && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-foreground">Current Registered Signature</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    ID: <span className="font-mono font-semibold">{sigProfile?.public_signature_id || "SIG-PSU-ACTIVE"}</span>
+                  </p>
+                </div>
+                <div className="h-14 w-48 bg-white rounded-lg border border-border p-1.5 flex items-center justify-center">
+                  <img
+                    src={sigPreviewUrl}
+                    alt="Registered Official Signature"
+                    className="max-h-full max-w-full object-contain pointer-events-none"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-muted-foreground font-semibold">Academic Rank / Committee Title</label>
+              <Input
+                value={academicRank}
+                onChange={(e) => setAcademicRank(e.target.value)}
+                placeholder="e.g. Associate Professor IV / Defense Panel Member"
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={sigMode === "draw" ? "default" : "outline"}
+                onClick={() => setSigMode("draw")}
+                className="h-8 text-xs gap-1.5"
+              >
+                <PenTool className="h-3.5 w-3.5" /> Draw Signature
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={sigMode === "upload" ? "default" : "outline"}
+                onClick={() => setSigMode("upload")}
+                className="h-8 text-xs gap-1.5"
+              >
+                <Upload className="h-3.5 w-3.5" /> Upload PNG/JPG
+              </Button>
+            </div>
+
+            {sigMode === "draw" ? (
+              <div className="space-y-2">
+                <div className="relative border border-border rounded-xl overflow-hidden bg-muted/10 h-36">
+                  <canvas
+                    ref={sigCanvasRef}
+                    onMouseDown={startSigDraw}
+                    onMouseMove={drawSig}
+                    onMouseUp={stopSigDraw}
+                    onMouseLeave={stopSigDraw}
+                    onTouchStart={startSigDraw}
+                    onTouchMove={drawSig}
+                    onTouchEnd={stopSigDraw}
+                    className="w-full h-full block touch-none cursor-crosshair relative z-10"
+                  />
+                  <div className="absolute bottom-8 left-6 right-6 border-b border-dashed border-slate-300 pointer-events-none z-0" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSigCanvas}
+                    className="absolute bottom-2 right-2 h-7 text-[10px] rounded-lg px-2.5 z-20 gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Clear
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Draw your signature above to register or replace your official signature baseline.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border p-4 text-center space-y-2 bg-muted/10">
+                {uploadedSigBase64 ? (
+                  <div className="space-y-2">
+                    <div className="h-20 max-w-[220px] mx-auto bg-white rounded-lg border border-border p-2 flex items-center justify-center">
+                      <img src={uploadedSigBase64} alt="Uploaded signature" className="max-h-full max-w-full object-contain" />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUploadedSigBase64(null)}
+                      className="h-7 text-xs text-rose-600"
+                    >
+                      Remove Image
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Upload className="h-6 w-6 text-muted-foreground mx-auto" />
+                    <p className="text-xs font-semibold">Upload Transparent PNG or JPG Signature</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => sigFileInputRef.current?.click()}
+                      className="h-7 text-xs"
+                    >
+                      Browse Image
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={sigFileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={handleSigFileUpload}
+                  className="hidden"
+                />
+              </div>
+            )}
+
+            <Button onClick={handleSaveSignatureBaseline} disabled={isSavingSig}>
+              {isSavingSig ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving Signature Baseline...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Save Official Signature Baseline
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-primary" />
-            Security & Password
+            Security &amp; Password
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             Ensure your account uses a secure password to protect academic evaluation integrity.

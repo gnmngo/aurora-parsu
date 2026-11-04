@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Layers, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { Layers, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { coordinatorOverrideProjectStageAction } from "@/lib/workflow/coordinator-actions";
@@ -23,6 +23,7 @@ interface ReviseStageModalProps {
     id: string;
     title: string;
     current_stage_id?: string;
+    workflow_template_id?: string | null;
     status?: string;
   } | null;
   onSuccess?: () => void;
@@ -49,7 +50,7 @@ export function ReviseStageModal({
   const [reason, setReason] = useState("");
   const [loadingStages, setLoadingStages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!open || !project) return;
@@ -61,16 +62,44 @@ export function ReviseStageModal({
     async function loadStages() {
       setLoadingStages(true);
       try {
-        const { data } = await supabase
+        // Resolve the target project's workflow_template_id so we only show its stages
+        let templateId = project?.workflow_template_id || null;
+        if (!templateId && project?.id) {
+          const { data: projRow } = await supabase
+            .from("projects")
+            .select("workflow_template_id")
+            .eq("id", project.id)
+            .maybeSingle();
+          templateId = projRow?.workflow_template_id || null;
+        }
+
+        let query = supabase
           .from("defense_stages")
-          .select("id, name, sequence_order, is_enabled")
+          .select("id, name, sequence_order, is_enabled, workflow_template_id")
           .eq("is_enabled", true)
           .order("sequence_order");
 
+        if (templateId) {
+          query = query.eq("workflow_template_id", templateId);
+        }
+
+        const { data } = await query;
+
         if (data) {
-          setStages(data);
-          if (!project?.current_stage_id && data.length > 0) {
-            setSelectedStageId(data[0].id);
+          // Deduplicate by stage name if no templateId was present
+          let filtered = data;
+          if (!templateId) {
+            const seen = new Set<string>();
+            filtered = data.filter((st) => {
+              const key = `${st.sequence_order}:${st.name.trim().toLowerCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+          }
+          setStages(filtered);
+          if (!project?.current_stage_id && filtered.length > 0) {
+            setSelectedStageId(filtered[0].id);
           }
         }
       } catch (err) {

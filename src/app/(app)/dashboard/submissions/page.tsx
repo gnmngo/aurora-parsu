@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { SubmissionCard } from "@/components/dashboard/submission-card";
@@ -28,19 +28,23 @@ export default function SubmissionsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
   const { isReady } = useAuthReady();
-  const { user, roles } = useAuth();
+  const { user, roles, activeRole } = useAuth();
   const supabase = useMemo(() => createClient(), []);
 
-  const isStudent = Boolean(roles?.includes("student") && !roles?.some(r => ["coordinator", "sys_admin", "adviser"].includes(r)));
-  const isManagement = Boolean(roles?.some(r => ["coordinator", "sys_admin"].includes(r)));
-  const isAdviser = Boolean(roles?.includes("adviser"));
+  const effectiveRole = activeRole || roles[0] || "student";
+  const isStudent = effectiveRole === "student";
+  const isManagement = ["coordinator", "sys_admin"].includes(effectiveRole);
+  const isAdviser = effectiveRole === "adviser";
   const canUpload = isStudent || isAdviser || isManagement;
 
-  const loadSubmissions = async () => {
+  const loadSubmissions = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const rows = await fetchSubmissions(supabase, { userId: user?.id, roles });
+      const rows = await fetchSubmissions(supabase, {
+        userId: user?.id,
+        roles: [effectiveRole],
+      });
       setSubmissionsList(rows);
     } catch (err: unknown) {
       logSupabaseError("Submissions.loadSubmissions", err);
@@ -50,16 +54,14 @@ export default function SubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, user?.id, effectiveRole]);
 
   useEffect(() => {
     if (!isReady) {
       return;
     }
     loadSubmissions();
-    // loadSubmissions is defined in component body; isReady is the correct trigger dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady]);
+  }, [isReady, loadSubmissions]);
 
   const filteredSubmissions = submissionsList.filter(
     (sub) =>

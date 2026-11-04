@@ -40,6 +40,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   roles: string[];
+  activeRole: string;
+  setActiveRole: (role: string) => void;
   permissions: string[];
   studentProfile: StudentProfileData | null;
   facultyProfile: FacultyProfileData | null;
@@ -59,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
+  const [activeRole, setActiveRoleState] = useState<string>("");
   const [permissions, setPermissions] = useState<string[]>([]);
   const [studentProfile, setStudentProfile] =
     useState<StudentProfileData | null>(null);
@@ -72,17 +75,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadingRef = useRef<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
 
+  const setActiveRole = useCallback((role: string) => {
+    setActiveRoleState(role);
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", role);
+      }
+    } catch {}
+  }, []);
+
   const clearAuthState = useCallback(() => {
     setUser(null);
     setSession(null);
     setProfile(null);
     setRoles([]);
+    setActiveRoleState("");
     setPermissions([]);
     setStudentProfile(null);
     setFacultyProfile(null);
     setCoordinatorProfile(null);
     loadingRef.current = null;
     loadedUserRef.current = null;
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("aurora_active_role");
+      }
+    } catch {}
   }, []);
 
   const loadUserProfile = useCallback(async (userId: string) => {
@@ -162,6 +180,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       setRoles(roleCodes);
+
+      if (roleCodes.length > 0) {
+        let initialRole = roleCodes[0];
+        try {
+          if (typeof window !== "undefined") {
+            const savedRole = sessionStorage.getItem("aurora_active_role");
+            if (savedRole && roleCodes.includes(savedRole)) {
+              initialRole = savedRole;
+            }
+          }
+        } catch {}
+        setActiveRoleState(initialRole);
+      }
 
       // 3. STUDENT PROFILE
       if (roleCodes.includes("student")) {
@@ -333,6 +364,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         profile,
         roles,
+        activeRole: activeRole || roles[0] || "",
+        setActiveRole,
         permissions,
         studentProfile,
         facultyProfile,

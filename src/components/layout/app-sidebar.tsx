@@ -23,13 +23,12 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { APP_NAME } from "@/constants/app";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { currentDefenseSeason } from "@/lib/utils/academic-year";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { ROLE_SIDEBAR_LINKS, ADMIN_ROLES, type RoleCode } from "@/lib/auth/permissions";
+import { ROLE_SIDEBAR_LINKS, type RoleCode } from "@/lib/auth/permissions";
 import { IsoEvaluationDialog } from "@/components/research/iso-evaluation-dialog";
 
 const mainNav = [
@@ -100,7 +99,7 @@ function NavItem({
 }
 
 export function AppSidebar({ className }: { className?: string }) {
-  const { user, roles, isLoading } = useAuth();
+  const { user, roles, activeRole, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const supabase = useMemo(() => createClient(), []);
 
@@ -149,18 +148,21 @@ export function AppSidebar({ className }: { className?: string }) {
     };
   }, [user, supabase]);
 
-  // Aggregate allowed links across all user roles (e.g. Coordinator who is also an Adviser)
-  const allowedHrefs = roles.length > 0
-    ? Array.from(new Set(roles.flatMap((r) => ROLE_SIDEBAR_LINKS[r as RoleCode] ?? [])))
-    : ROLE_SIDEBAR_LINKS.student;
+  // Strictly scope sidebar navigation to the active role so role switching is seamless
+  const effectiveRole = (activeRole || roles[0] || "student") as RoleCode;
+  const allowedHrefs =
+    ROLE_SIDEBAR_LINKS[effectiveRole] ?? ROLE_SIDEBAR_LINKS.student;
 
   const filteredMainNav = isLoading
     ? []
     : mainNav.filter((item) => allowedHrefs.includes(item.href));
 
   const filteredAdminNav = adminNav.filter((item) => {
-    if (roles.includes("sys_admin")) return true;
-    if (roles.includes("coordinator")) {
+    if (effectiveRole === "sys_admin") return true;
+    if (effectiveRole === "coordinator") {
+      return ["/admin/users", "/admin/rubrics", "/admin/stages", "/admin/reports"].includes(item.href);
+    }
+    if (effectiveRole === "college_dean") {
       return ["/admin/rubrics", "/admin/stages", "/admin/reports"].includes(item.href);
     }
     return false;
@@ -195,7 +197,7 @@ export function AppSidebar({ className }: { className?: string }) {
             <Separator className="my-4 bg-white/10" />
 
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50">
-              Administration
+              {effectiveRole === "college_dean" ? "Academic Governance" : "Administration"}
             </p>
             <nav className="flex flex-col gap-1">
               {filteredAdminNav.map((item) => (

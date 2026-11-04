@@ -44,19 +44,16 @@ export default function AnnotationsPage() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"open" | "addressed" | "all">("open");
   const supabase = useMemo(() => createClient(), []);
-  const { user, roles } = useAuth();
+  const { user, roles, activeRole } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "student";
 
   useEffect(() => {
     if (!user) return;
 
     async function loadAnnotations() {
       try {
-        const isAdviserOrPanelist = roles.some((r) =>
-          ["adviser", "panelist"].includes(r)
-        );
-        const isCoordinatorOrAdmin = roles.some((r) =>
-          ["coordinator", "sys_admin", "college_dean"].includes(r)
-        );
+        const isAdviserOrPanelist = ["adviser", "panelist"].includes(effectiveRole);
+        const isCoordinatorOrAdmin = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
 
         // BUG-C1: Use `created_by` (actual FK) not `profile_id` (non-existent column)
         const baseSelect = `
@@ -92,16 +89,21 @@ export default function AnnotationsPage() {
           setAnnotations((data as unknown as AnnotationRow[]) || []);
 
         } else if (isAdviserOrPanelist) {
-          // Resolve allowed project IDs from both project_members (adviser) and defense_panels (panelist)
+          // Resolve allowed project IDs strictly for the active role (adviser vs panelist)
           const [{ data: memberProjects }, { data: panelProjects }] = await Promise.all([
-            supabase
-              .from("project_members")
-              .select("project_id")
-              .eq("profile_id", user!.id),
-            supabase
-              .from("defense_panels")
-              .select("project_id")
-              .eq("profile_id", user!.id),
+            effectiveRole === "adviser"
+              ? supabase
+                  .from("project_members")
+                  .select("project_id")
+                  .eq("profile_id", user!.id)
+                  .eq("member_role", "adviser")
+              : Promise.resolve({ data: [] }),
+            effectiveRole === "panelist"
+              ? supabase
+                  .from("defense_panels")
+                  .select("project_id")
+                  .eq("profile_id", user!.id)
+              : Promise.resolve({ data: [] }),
           ]);
 
           const idSet = new Set<string>();
@@ -204,7 +206,7 @@ export default function AnnotationsPage() {
 
     loadAnnotations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, roles.join(",")]);
+  }, [user?.id, effectiveRole]);
 
   const openCount = annotations.filter((ann) => ann.status === "open" || ann.status === "in_progress").length;
   const addressedCount = annotations.filter((ann) => ["addressed", "resolved", "verified", "closed"].includes(ann.status)).length;
