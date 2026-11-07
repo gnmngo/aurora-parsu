@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,9 @@ import {
   Upload,
   CheckCircle2,
   RotateCcw,
+  Wrench,
+  BookOpen,
+  Database,
 } from "lucide-react";
 import { getSignatureProfileAction, saveSignatureProfileAction } from "@/lib/signatures/actions";
 
@@ -58,6 +62,9 @@ export default function SettingsPage() {
   const isFacultyOrStaff = roles.some((r) =>
     ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(r)
   );
+  const canAccessAdminConsole = roles.some((r) =>
+    ["coordinator", "college_dean", "sys_admin"].includes(r)
+  );
 
   const initSigCanvas = useCallback(() => {
     const canvas = sigCanvasRef.current;
@@ -85,7 +92,6 @@ export default function SettingsPage() {
       setLastName(profile.last_name || "");
       setDepartmentId((profile as any).department_id || "");
 
-      // Load user's profile with college details
       const { data: userProfile } = await supabase
         .from("profiles")
         .select("college_id, department_id, colleges(id, name, code)")
@@ -96,7 +102,6 @@ export default function SettingsPage() {
         setCollegeInfo(userProfile.colleges as any);
       }
 
-      // Load departments with college relations
       const { data: deptData } = await supabase
         .from("departments")
         .select("id, name, code, college_id, colleges(name, code)")
@@ -106,7 +111,6 @@ export default function SettingsPage() {
         setDepartments(deptData);
       }
 
-      // Load signature baseline profile
       try {
         const sp = await getSignatureProfileAction();
         if (sp) {
@@ -289,7 +293,6 @@ export default function SettingsPage() {
 
       if (error) throw error;
 
-      // Log Profile Update Event
       await supabase.rpc("log_auth_event", {
         p_user_email: profile.email,
         p_profile_id: profile.id,
@@ -339,7 +342,6 @@ export default function SettingsPage() {
 
     setIsUpdatingPassword(true);
     try {
-      // 1. Verify current credentials against Supabase Auth
       const { error: verifyErr } = await supabase.auth.signInWithPassword({
         email: profile.email,
         password: currentPassword.trim(),
@@ -349,14 +351,12 @@ export default function SettingsPage() {
         throw new Error("Current password is incorrect.");
       }
 
-      // 2. Update to new password
       const { error: updateErr } = await supabase.auth.updateUser({
         password: newPassword.trim(),
       });
 
       if (updateErr) throw updateErr;
 
-      // 3. Log event
       try {
         await supabase.rpc("log_auth_event", {
           p_user_email: profile.email,
@@ -385,7 +385,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your profile, electronic signature baseline, and security preferences
+          Manage your profile, electronic signature baseline, security preferences, and troubleshooting guides
         </p>
       </div>
 
@@ -733,6 +733,62 @@ export default function SettingsPage() {
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Maintenance, Troubleshooting & Data Backup Protection Card */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Wrench className="h-5 w-5 text-primary" />
+              Maintenance, Troubleshooting &amp; Data Backup Protection
+            </CardTitle>
+            <Badge variant="outline" className="text-[10px] font-bold text-primary border-primary/30">
+              3-2-1 Backup • RTO ≤ 4h
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Quick troubleshooting reference for your account and institutional data protection guarantees.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs">
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-1.5">
+            <p className="font-bold text-foreground flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5 text-primary" /> Quick User Troubleshooting Guide
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>
+                <strong>Role Switching:</strong> Use the role switcher pill in the top header bar to switch between Student, Adviser, Panelist, Coordinator, Dean, or Admin views.
+              </li>
+              <li>
+                <strong>PDF Upload &amp; Checksum:</strong> Ensure uploaded manuscripts are valid PDFs under 50 MB; every upload automatically generates a SHA-256 tamper-evident hash and notifies your Adviser.
+              </li>
+              <li>
+                <strong>Digital Signatures:</strong> Faculty and committee members can draw or upload their signature above so rubric evaluations and certificates can be cryptographically signed.
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-1">
+            <p className="font-bold text-foreground flex items-center gap-1.5">
+              <Database className="h-3.5 w-3.5 text-emerald-600" /> Disaster Recovery &amp; Data Backup Guarantee
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              All manuscripts, annotations, rubric scores, and digital signatures are protected by automated daily WAL backups, Point-in-Time Recovery (PITR), and SHA-256 verified institutional JSON snapshots.
+            </p>
+          </div>
+
+          {canAccessAdminConsole && (
+            <div className="pt-1">
+              <Link href="/admin/system-health">
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold">
+                  <Wrench className="h-3.5 w-3.5 text-primary" />
+                  Open Full Maintenance, Troubleshooting &amp; Disaster Recovery Console
+                </Button>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
 

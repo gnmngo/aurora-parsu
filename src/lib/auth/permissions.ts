@@ -74,7 +74,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
   ],
   /**
    * College Dean — institutional oversight & college workflow customization.
-   * Can view grades, defenses, annotations, analytics, reports, and customize college stages/rubrics.
+   * Can view grades, defenses, annotations, analytics, reports, system maintenance/DR, and customize college stages/rubrics.
    */
   college_dean: [
     "/dashboard",
@@ -89,6 +89,7 @@ export const ROLE_ROUTE_PERMISSIONS: Record<RoleCode, string[]> = {
     "/admin/rubrics",
     "/admin/stages",
     "/admin/reports",
+    "/admin/system-health",
     "/workspace",
   ],
   sys_admin: [

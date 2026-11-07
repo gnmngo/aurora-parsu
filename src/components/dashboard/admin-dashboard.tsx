@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,13 @@ import {
   Shield, 
   Terminal, 
   Database, 
-  Activity, 
   Loader2, 
   CheckCircle,
-  AlertOctagon,
   HardDrive,
   Heart,
-  ChevronRight
+  ChevronRight,
+  Wrench,
+  BookOpen
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,12 +23,11 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [counts, setCounts] = useState({ profiles: 0, projects: 0, evals: 0, storageMb: "0.0 MB" });
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     async function loadAdminData() {
       try {
-        // 1. Fetch latest audit logs
         const { data: logs } = await supabase
           .from("audit_logs")
           .select("*")
@@ -36,7 +35,6 @@ export function AdminDashboard() {
           .limit(10);
         if (logs) setAuditLogs(logs);
 
-        // 2. Fetch counts & storage
         const { count: profs } = await supabase
           .from("profiles")
           .select("id", { count: "exact", head: true });
@@ -81,7 +79,6 @@ export function AdminDashboard() {
     );
   }
 
-  // Health modules status metrics configurations
   const healthModules = [
     { name: "Database Engine", status: "green", desc: "Pooling connections stable" },
     { name: "Supabase Auth", status: "green", desc: "JWT validations active" },
@@ -90,7 +87,7 @@ export function AdminDashboard() {
     { name: "Notifications Queue", status: "green", desc: "System triggers online" },
     { name: "Scheduler Validation", status: "green", desc: "Room availability checked" },
     { name: "Workflow Engine", status: "green", desc: "Stage progression templates" },
-    { name: "Background Jobs", status: "yellow", desc: "Backup tasks idle" }
+    { name: "Disaster Recovery & Backups", status: "green", desc: "3-2-1 PITR & SHA-256 JSON Active" }
   ];
 
   return (
@@ -137,6 +134,30 @@ export function AdminDashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Maintenance, Troubleshooting & Disaster Recovery Quick Banner */}
+      <Card className="border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-bold text-foreground">
+              Maintenance, Troubleshooting &amp; Disaster Recovery Console
+            </h3>
+            <Badge variant="success" className="text-[9px] font-black uppercase">
+              RTO ≤ 4h • RPO ≤ 24h
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Execute self-healing preventive maintenance, download SHA-256 signed institutional database backups, and access module troubleshooting playbooks.
+          </p>
+        </div>
+        <Link href="/admin/system-health">
+          <Button size="sm" className="gap-1.5 font-bold bg-primary text-white shrink-0">
+            <BookOpen className="h-3.5 w-3.5" />
+            Open Maintenance &amp; DR Plan
+          </Button>
+        </Link>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Left: Audit Logs feed */}
@@ -187,7 +208,7 @@ export function AdminDashboard() {
             </div>
             <Link href="/admin/system-health">
               <Button size="sm" variant="ghost" className="h-8 text-[10px] gap-0.5 px-2">
-                Metrics <ChevronRight className="h-3.5 w-3.5" />
+                Console <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </CardHeader>

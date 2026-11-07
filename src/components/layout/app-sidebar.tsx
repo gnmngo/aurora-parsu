@@ -21,6 +21,7 @@ import {
   Sparkles,
   Search,
   BookOpen,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
@@ -50,6 +51,7 @@ const adminNav = [
   { href: "/admin/rubrics", label: "Rubrics", icon: ClipboardList },
   { href: "/admin/stages", label: "Defense Stages", icon: Layers },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
+  { href: "/admin/system-health", label: "Maintenance & DR Backup", icon: Wrench },
   { href: "/admin/audit", label: "Audit Logs", icon: ScrollText },
 ];
 
@@ -160,10 +162,21 @@ export function AppSidebar({ className }: { className?: string }) {
   const filteredAdminNav = adminNav.filter((item) => {
     if (effectiveRole === "sys_admin") return true;
     if (effectiveRole === "coordinator") {
-      return ["/admin/users", "/admin/rubrics", "/admin/stages", "/admin/reports"].includes(item.href);
+      return [
+        "/admin/users",
+        "/admin/rubrics",
+        "/admin/stages",
+        "/admin/reports",
+        "/admin/system-health",
+      ].includes(item.href);
     }
     if (effectiveRole === "college_dean") {
-      return ["/admin/rubrics", "/admin/stages", "/admin/reports"].includes(item.href);
+      return [
+        "/admin/rubrics",
+        "/admin/stages",
+        "/admin/reports",
+        "/admin/system-health",
+      ].includes(item.href);
     }
     return false;
   });
