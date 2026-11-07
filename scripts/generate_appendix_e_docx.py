@@ -306,68 +306,39 @@ def create_appendix_e_docx(output_paths):
         r_desc_val.font.size = Pt(10)
         r_desc_val.font.color.rgb = RGBColor(71, 85, 105)
 
-        # Code Block
-        # We format lines in a styled box / table with line numbers
+        # Code Block: single clean container with syntax highlighting (no multi-row line number artifact)
         code_lines = code.strip().split("\n")
-        
-        code_table = doc.add_table(rows=len(code_lines), cols=2)
-        code_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        
+        t_box = doc.add_table(rows=1, cols=1)
+        t_box.alignment = WD_TABLE_ALIGNMENT.CENTER
+        c = t_box.rows[0].cells[0]
+        c.width = Inches(6.0)
+        set_cell_margins(c, top=80, bottom=80, left=100, right=100)
+        set_cell_shading(c, "F8FAFC")
+        set_cell_borders(c,
+                         top={'val': 'single', 'sz': 4, 'color': 'CBD5E1'},
+                         bottom={'val': 'single', 'sz': 4, 'color': 'CBD5E1'},
+                         left={'val': 'single', 'sz': 18, 'color': '800000'},
+                         right={'val': 'single', 'sz': 4, 'color': 'CBD5E1'})
+        p1 = c.paragraphs[0]
+        p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p1.paragraph_format.space_before = Pt(0)
+        p1.paragraph_format.space_after = Pt(0)
+        p1.paragraph_format.line_spacing = 1.12
+
         for idx, line in enumerate(code_lines):
-            line_num = idx + 1
-            row = code_table.rows[idx]
-            
-            # cantSplit
-            trPr = row._tr.get_or_add_trPr()
-            trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
-            
-            # Cell 0: Line Number
-            c0 = row.cells[0]
-            c0.width = Inches(0.45)
-            set_cell_margins(c0, top=15, bottom=15, left=30, right=40)
-            set_cell_shading(c0, "F1F5F9")
-            set_cell_borders(c0,
-                             top=None, bottom=None,
-                             left={'val': 'single', 'sz': 6, 'color': 'CBD5E1'},
-                             right={'val': 'single', 'sz': 6, 'color': 'E2E8F0'})
-            
-            p0 = c0.paragraphs[0]
-            p0.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            p0.paragraph_format.space_before = Pt(0)
-            p0.paragraph_format.space_after = Pt(0)
-            p0.paragraph_format.line_spacing = 1.0
-            r_num = p0.add_run(str(line_num))
-            r_num.font.name = "Consolas"
-            r_num.font.size = Pt(7.5)
-            r_num.font.color.rgb = RGBColor(148, 163, 184)
-            
-            # Cell 1: Code Content
-            c1 = row.cells[1]
-            c1.width = Inches(5.55)
-            set_cell_margins(c1, top=15, bottom=15, left=60, right=50)
-            set_cell_shading(c1, "F8FAFC")
-            set_cell_borders(c1,
-                             top=None, bottom=None, left=None,
-                             right={'val': 'single', 'sz': 6, 'color': 'CBD5E1'})
-            
-            p1 = c1.paragraphs[0]
-            p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            p1.paragraph_format.space_before = Pt(0)
-            p1.paragraph_format.space_after = Pt(0)
-            p1.paragraph_format.line_spacing = 1.0
-            
-            # Highlight comments or strings subtly if desired
+            if idx > 0:
+                p1.add_run("\n")
             clean_line = line if line else " "
             r_code = p1.add_run(clean_line)
             r_code.font.name = "Consolas"
-            r_code.font.size = Pt(8.0)
-            
+            r_code.font.size = Pt(8.2)
             stripped = clean_line.strip()
             if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
                 r_code.font.italic = True
-                r_code.font.color.rgb = RGBColor(100, 116, 139) # slate gray
+                r_code.font.color.rgb = RGBColor(100, 116, 139)
             elif stripped.startswith("export") or stripped.startswith("import") or stripped.startswith("function") or stripped.startswith("const"):
-                r_code.font.color.rgb = RGBColor(30, 41, 59)
+                r_code.font.bold = True
+                r_code.font.color.rgb = RGBColor(109, 40, 217)
             else:
                 r_code.font.color.rgb = RGBColor(15, 23, 42)
 
@@ -378,8 +349,13 @@ def create_appendix_e_docx(output_paths):
 
     # Save to all target paths
     for p in output_paths:
-        doc.save(p)
-        print(f"Successfully generated DOCX at: {p}")
+        try:
+            doc.save(p)
+            print(f"Successfully generated DOCX at: {p}")
+        except PermissionError:
+            alt_p = p.replace(".docx", "_Updated.docx")
+            doc.save(alt_p)
+            print(f"File locked in Word ({p}); saved updated copy to: {alt_p}")
 
 if __name__ == "__main__":
     targets = [

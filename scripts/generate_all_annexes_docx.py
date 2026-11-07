@@ -7,46 +7,88 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
+
 def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
     tcPr = cell._tc.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{m}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
+    tcMar = OxmlElement("w:tcMar")
+    for m, val in [("top", top), ("bottom", bottom), ("left", left), ("right", right)]:
+        node = OxmlElement(f"w:{m}")
+        node.set(qn("w:w"), str(val))
+        node.set(qn("w:type"), "dxa")
         tcMar.append(node)
     tcPr.append(tcMar)
+
 
 def set_cell_shading(cell, color_hex):
     shading_xml = f'<w:shd {nsdecls("w")} w:fill="{color_hex}"/>'
     cell._tc.get_or_add_tcPr().append(parse_xml(shading_xml))
 
+
 def set_cell_borders(cell, top=None, bottom=None, left=None, right=None):
     tcPr = cell._tc.get_or_add_tcPr()
-    tcBorders = OxmlElement('w:tcBorders')
-    
-    borders = {'top': top, 'bottom': bottom, 'left': left, 'right': right}
+    tcBorders = OxmlElement("w:tcBorders")
+
+    borders = {"top": top, "bottom": bottom, "left": left, "right": right}
     for border_name, border_style in borders.items():
         if border_style:
-            b_el = OxmlElement(f'w:{border_name}')
-            b_el.set(qn('w:val'), border_style.get('val', 'single'))
-            b_el.set(qn('w:sz'), str(border_style.get('sz', 4)))
-            b_el.set(qn('w:space'), '0')
-            b_el.set(qn('w:color'), border_style.get('color', 'auto'))
+            b_el = OxmlElement(f"w:{border_name}")
+            b_el.set(qn("w:val"), border_style.get("val", "single"))
+            b_el.set(qn("w:sz"), str(border_style.get("sz", 4)))
+            b_el.set(qn("w:space"), "0")
+            b_el.set(qn("w:color"), border_style.get("color", "auto"))
             tcBorders.append(b_el)
         else:
-            b_el = OxmlElement(f'w:{border_name}')
-            b_el.set(qn('w:val'), 'none')
+            b_el = OxmlElement(f"w:{border_name}")
+            b_el.set(qn("w:val"), "none")
             tcBorders.append(b_el)
     tcPr.append(tcBorders)
 
+
+def clean_latex_math(expr):
+    """Convert inline LaTeX math expressions into clean Unicode symbols for Word."""
+    s = expr.strip()
+    if s.startswith("$$") and s.endswith("$$"):
+        s = s[2:-2].strip()
+    elif s.startswith("$") and s.endswith("$"):
+        s = s[1:-1].strip()
+
+    # Handle specific known display formula in Annex C.5
+    if "\\frac{K}{K - 1}" in s:
+        return "α = [K / (K − 1)] × [1 − (∑σᵢ² / σₓ²)] = 0.946"
+
+    # Replace \text{...} and \mathbf{...}
+    s = re.sub(r"\\text\{([^}]*)\}", r"\1", s)
+    s = re.sub(r"\\mathbf\{([^}]*)\}", r"\1", s)
+    replacements = [
+        ("\\alpha", "α"),
+        ("\\mu", "μ"),
+        ("\\sigma_i^2", "σᵢ²"),
+        ("\\sigma_X^2", "σₓ²"),
+        ("\\sigma", "σ"),
+        ("\\sum", "∑"),
+        ("\\le", "≤"),
+        ("\\ge", "≥"),
+        ("\\times", "×"),
+        ("\\rightarrow", "→"),
+        ("\\%", "%"),
+        ("\\left(", "("),
+        ("\\right)", ")"),
+    ]
+    for old, new in replacements:
+        s = s.replace(old, new)
+    return s
+
+
 def format_inline(p, text, default_font="Times New Roman", default_size=10):
-    parts = re.split(r'(\*\*.*?\*\*|`.*?`|\$.*?\$)', text)
+    # Clean markdown links [label](url) -> label
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
+    parts = re.split(r"(\*\*.*?\*\*|`.*?`|\$\$.*?\$\$|\$.*?\$|\*[^*]+?\*)", text)
     for part in parts:
         if not part:
             continue
         if part.startswith("**") and part.endswith("**"):
-            r = p.add_run(part[2:-2])
+            inner = clean_latex_math(part[2:-2]) if "$" in part else part[2:-2]
+            r = p.add_run(inner)
             r.font.name = default_font
             r.font.size = Pt(default_size)
             r.font.bold = True
@@ -54,31 +96,209 @@ def format_inline(p, text, default_font="Times New Roman", default_size=10):
         elif part.startswith("`") and part.endswith("`"):
             r = p.add_run(part[1:-1])
             r.font.name = "Consolas"
-            r.font.size = Pt(default_size - 1)
-            r.font.color.rgb = RGBColor(2, 132, 199)
-        elif part.startswith("$") and part.endswith("$"):
-            r = p.add_run(part[1:-1])
-            r.font.name = "Times New Roman"
+            r.font.size = Pt(max(8.0, default_size - 1))
+            r.font.color.rgb = RGBColor(128, 0, 0)
+        elif (part.startswith("$$") and part.endswith("$$")) or (
+            part.startswith("$") and part.endswith("$")
+        ):
+            r = p.add_run(clean_latex_math(part))
+            r.font.name = default_font
             r.font.size = Pt(default_size)
             r.font.italic = True
+            r.font.color.rgb = RGBColor(15, 23, 42)
+        elif part.startswith("*") and part.endswith("*") and len(part) > 2:
+            r = p.add_run(part[1:-1])
+            r.font.name = default_font
+            r.font.size = Pt(default_size)
+            r.font.italic = True
+            r.font.color.rgb = RGBColor(51, 65, 85)
         else:
             r = p.add_run(part)
             r.font.name = default_font
             r.font.size = Pt(default_size)
             r.font.color.rgb = RGBColor(51, 65, 85)
 
+
+# Keywords and types for IDE-like syntax highlighting in Word
+CODE_KEYWORDS = {
+    "import", "from", "export", "default", "async", "function", "return", "const",
+    "let", "var", "if", "else", "throw", "new", "await", "try", "catch", "interface",
+    "type", "true", "false", "null", "undefined", "CREATE", "OR", "REPLACE", "FUNCTION",
+    "RETURNS", "LANGUAGE", "SECURITY", "DEFINER", "AS", "DECLARE", "BEGIN", "END",
+    "TABLE", "IF", "NOT", "EXISTS", "PRIMARY", "KEY", "DEFAULT", "REFERENCES", "ON",
+    "DELETE", "CASCADE", "UNIQUE", "ALTER", "ENABLE", "ROW", "LEVEL", "POLICY",
+    "FOR", "UPDATE", "USING", "WITH", "CHECK", "SEQUENCE", "START",
+}
+
+CODE_TYPES = {
+    "string", "number", "boolean", "any", "void", "Record", "Promise", "Error",
+    "Date", "SignEvaluationInput", "RubricCriterion", "uuid", "text", "bigint",
+    "jsonb", "numeric", "timestamptz", "plpgsql",
+}
+
+
+def add_syntax_highlighted_line(p, line):
+    """Render a single line of code into paragraph `p` with IDE-style syntax coloring."""
+    stripped = line.lstrip()
+    if stripped.startswith("//") or stripped.startswith("--") or stripped.startswith("#"):
+        r = p.add_run(line)
+        r.font.name = "Consolas"
+        r.font.size = Pt(8.5)
+        r.font.italic = True
+        r.font.color.rgb = RGBColor(100, 116, 139)  # Slate comment
+        return
+
+    # Tokenize by strings, words (including accented characters like Ñ/ñ), numbers, symbols, or whitespace
+    tokens = re.findall(
+        r'"[^"\n]*"|\'[^\'\n]*\'|`[^`\n]*`|[A-Za-z_\u00C0-\u024F][A-Za-z0-9_\u00C0-\u024F]*|\d+(?:\.\d+)?|[^\s"\'`A-Za-z0-9_\u00C0-\u024F]+|\s+',
+        line,
+    )
+    if "".join(tokens) != line:
+        tokens = [line]
+    for tok in tokens:
+        r = p.add_run(tok)
+        r.font.name = "Consolas"
+        r.font.size = Pt(8.5)
+        if (
+            (tok.startswith('"') and tok.endswith('"'))
+            or (tok.startswith("'") and tok.endswith("'"))
+            or (tok.startswith("`") and tok.endswith("`"))
+        ):
+            r.font.color.rgb = RGBColor(4, 120, 87)  # Emerald string
+        elif tok in CODE_KEYWORDS:
+            r.font.bold = True
+            r.font.color.rgb = RGBColor(109, 40, 217)  # Purple keyword
+        elif tok in CODE_TYPES:
+            r.font.color.rgb = RGBColor(15, 118, 110)  # Teal type
+        elif re.match(r"^\d+(\.\d+)?$", tok):
+            r.font.color.rgb = RGBColor(180, 83, 9)  # Amber number
+        else:
+            r.font.color.rgb = RGBColor(15, 23, 42)  # Dark slate code
+
+
+def flush_code_block(doc, code_lines):
+    if not code_lines:
+        return
+    t_box = doc.add_table(rows=1, cols=1)
+    t_box.alignment = WD_TABLE_ALIGNMENT.CENTER
+    c = t_box.rows[0].cells[0]
+    c.width = Inches(6.0)
+    set_cell_margins(c, top=80, bottom=80, left=100, right=100)
+    set_cell_shading(c, "F8FAFC")
+    set_cell_borders(
+        c,
+        top={"val": "single", "sz": 4, "color": "CBD5E1"},
+        bottom={"val": "single", "sz": 4, "color": "CBD5E1"},
+        left={"val": "single", "sz": 18, "color": "800000"},
+        right={"val": "single", "sz": 4, "color": "CBD5E1"},
+    )
+    cp = c.paragraphs[0]
+    cp.paragraph_format.space_before = Pt(0)
+    cp.paragraph_format.space_after = Pt(0)
+    cp.paragraph_format.line_spacing = 1.12
+
+    for idx, cl in enumerate(code_lines):
+        if idx > 0:
+            cp.add_run("\n")
+        add_syntax_highlighted_line(cp, cl)
+
+    p_sp = doc.add_paragraph()
+    p_sp.paragraph_format.space_before = Pt(3)
+    p_sp.paragraph_format.space_after = Pt(3)
+
+
+def flush_table(doc, table_rows):
+    if not table_rows:
+        return
+    num_cols = max(len(r) for r in table_rows)
+    t_el = doc.add_table(rows=len(table_rows), cols=num_cols)
+    t_el.alignment = WD_TABLE_ALIGNMENT.CENTER
+    for r_i, r_data in enumerate(table_rows):
+        is_h_row = r_i == 0
+        row_node = t_el.rows[r_i]
+        trPr = row_node._tr.get_or_add_trPr()
+        trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
+        if is_h_row:
+            trPr.append(parse_xml(f'<w:tblHeader {nsdecls("w")}/>'))
+
+        for c_i in range(num_cols):
+            cell_node = row_node.cells[c_i]
+            val = r_data[c_i] if c_i < len(r_data) else ""
+            set_cell_margins(cell_node, top=65, bottom=65, left=75, right=75)
+
+            # Check if this cell is an active Gantt bar cell (`[ACTIVE]`)
+            is_gantt_active = val.strip() in ("`[ACTIVE]`", "[ACTIVE]")
+
+            if is_h_row:
+                set_cell_shading(cell_node, "1E293B")
+                set_cell_borders(
+                    cell_node,
+                    top={"val": "single", "sz": 6, "color": "0F172A"},
+                    bottom={"val": "single", "sz": 10, "color": "0F172A"},
+                    left={"val": "single", "sz": 4, "color": "334155"},
+                    right={"val": "single", "sz": 4, "color": "334155"},
+                )
+            elif is_gantt_active:
+                set_cell_shading(cell_node, "800000")  # ParSU Maroon visual bar
+                set_cell_borders(
+                    cell_node,
+                    top={"val": "single", "sz": 4, "color": "800000"},
+                    bottom={"val": "single", "sz": 4, "color": "800000"},
+                    left={"val": "single", "sz": 4, "color": "800000"},
+                    right={"val": "single", "sz": 4, "color": "800000"},
+                )
+            else:
+                bg = "FFFFFF" if r_i % 2 == 1 else "F8FAFC"
+                set_cell_shading(cell_node, bg)
+                set_cell_borders(
+                    cell_node,
+                    top={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    bottom={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    left={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    right={"val": "single", "sz": 4, "color": "E2E8F0"},
+                )
+
+            cp = cell_node.paragraphs[0]
+            cp.paragraph_format.space_before = Pt(2)
+            cp.paragraph_format.space_after = Pt(2)
+            cp.paragraph_format.line_spacing = 1.08
+
+            if is_gantt_active:
+                cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                r_bar = cp.add_run("████████ 100%")
+                r_bar.font.name = "Consolas"
+                r_bar.font.size = Pt(8.0)
+                r_bar.font.bold = True
+                r_bar.font.color.rgb = RGBColor(255, 255, 255)
+            else:
+                format_inline(
+                    cp,
+                    val,
+                    default_font="Times New Roman",
+                    default_size=8.5 if not is_h_row else 9,
+                )
+                if is_h_row:
+                    for r in cp.runs:
+                        r.font.bold = True
+                        r.font.color.rgb = RGBColor(255, 255, 255)
+
+    p_tsp = doc.add_paragraph()
+    p_tsp.paragraph_format.space_before = Pt(4)
+    p_tsp.paragraph_format.space_after = Pt(4)
+
+
 def build_master_annexes_docx(output_paths):
     doc = docx.Document()
-    
+
     # Page setup
     for section in doc.sections:
         section.top_margin = Inches(1.0)
         section.bottom_margin = Inches(1.0)
-        section.left_margin = Inches(1.5) # ParSU Binding Margin
+        section.left_margin = Inches(1.5)  # ParSU Binding Margin
         section.right_margin = Inches(1.0)
         section.page_width = Inches(8.5)
         section.page_height = Inches(11.0)
-        
+
         footer = section.footer
         f_p = footer.paragraphs[0]
         f_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -93,24 +313,28 @@ def build_master_annexes_docx(output_paths):
     p_inst.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_inst.paragraph_format.space_after = Pt(2)
     p_inst.paragraph_format.line_spacing = 1.15
-    
+
     r1 = p_inst.add_run("PARTIDO STATE UNIVERSITY\n")
     r1.font.name = "Times New Roman"
     r1.font.size = Pt(13)
     r1.font.bold = True
     r1.font.color.rgb = RGBColor(128, 0, 0)
-    
+
     r2 = p_inst.add_run("COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES\n")
     r2.font.name = "Times New Roman"
     r2.font.size = Pt(11)
     r2.font.bold = True
-    
-    r3 = p_inst.add_run("Department of Computational Sciences | Bachelor of Science in Information Technology\n")
+
+    r3 = p_inst.add_run(
+        "Department of Computational Sciences | Bachelor of Science in Information Technology\n"
+    )
     r3.font.name = "Times New Roman"
     r3.font.size = Pt(10)
     r3.font.bold = True
-    
-    r4 = p_inst.add_run("San Juan Bautista, Goa, Camarines Sur, Philippines 4422\nWebsite: www.parsu.edu.ph | Contact No.: (054) 871-2090 | ISO 9001:2015 Certified")
+
+    r4 = p_inst.add_run(
+        "San Juan Bautista, Goa, Camarines Sur, Philippines 4422\nWebsite: www.parsu.edu.ph | Contact No.: (054) 871-2090 | ISO 9001:2015 Certified"
+    )
     r4.font.name = "Times New Roman"
     r4.font.size = Pt(9)
     r4.font.italic = True
@@ -137,7 +361,9 @@ def build_master_annexes_docx(output_paths):
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_sub.paragraph_format.space_after = Pt(14)
-    r_sub = p_sub.add_run("AURORA: Academic Unified Review, Observation, Rating, and Assessment System\nA Paperless Academic Defense Workflow & Quality Assurance Platform")
+    r_sub = p_sub.add_run(
+        "AURORA: Academic Unified Review, Observation, Rating, and Assessment System\nA Paperless Academic Defense Workflow & Quality Assurance Platform"
+    )
     r_sub.font.name = "Times New Roman"
     r_sub.font.size = Pt(11)
     r_sub.font.italic = True
@@ -150,12 +376,14 @@ def build_master_annexes_docx(output_paths):
     cell.width = Inches(6.0)
     set_cell_margins(cell, top=120, bottom=120, left=160, right=160)
     set_cell_shading(cell, "F8FAFC")
-    set_cell_borders(cell, 
-                     top={'val': 'single', 'sz': 6, 'color': 'CBD5E1'},
-                     bottom={'val': 'single', 'sz': 6, 'color': 'CBD5E1'},
-                     left={'val': 'single', 'sz': 24, 'color': '800000'},
-                     right={'val': 'single', 'sz': 6, 'color': 'CBD5E1'})
-    
+    set_cell_borders(
+        cell,
+        top={"val": "single", "sz": 6, "color": "CBD5E1"},
+        bottom={"val": "single", "sz": 6, "color": "CBD5E1"},
+        left={"val": "single", "sz": 24, "color": "800000"},
+        right={"val": "single", "sz": 6, "color": "CBD5E1"},
+    )
+
     mp = cell.paragraphs[0]
     mp.paragraph_format.space_before = Pt(2)
     mp.paragraph_format.space_after = Pt(2)
@@ -167,24 +395,36 @@ def build_master_annexes_docx(output_paths):
         r_lbl.font.size = Pt(9.5)
         r_lbl.font.bold = True
         r_lbl.font.color.rgb = RGBColor(30, 41, 59)
-        
+
         r_val = p.add_run(f"{val}\n")
         r_val.font.name = "Times New Roman"
         r_val.font.size = Pt(9.5)
         r_val.font.color.rgb = RGBColor(51, 65, 85)
 
-    add_meta_line(mp, "Project Platform", "AURORA (Paperless Capstone Defense Management Platform)")
-    add_meta_line(mp, "Project Proponents", "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae")
+    add_meta_line(
+        mp,
+        "Project Platform",
+        "AURORA (Paperless Capstone Defense Management Platform)",
+    )
+    add_meta_line(
+        mp,
+        "Project Proponents",
+        "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae",
+    )
     add_meta_line(mp, "Research Adviser", "Froiland B. Peñalosa")
     add_meta_line(mp, "Capstone Coordinator", "Dr. Kennedy C. Cuya")
-    add_meta_line(mp, "Academic Department", "Department of Computational Sciences (DCS), CECS")
+    add_meta_line(
+        mp,
+        "Academic Department",
+        "Department of Computational Sciences (DCS), CECS",
+    )
     add_meta_line(mp, "Host Institution", "Partido State University (Goa Campus)")
 
     p_space = doc.add_paragraph()
     p_space.paragraph_format.space_before = Pt(10)
     p_space.paragraph_format.space_after = Pt(4)
 
-    # Master Annexes Table from the user's PDF specification!
+    # Master Annexes Table from the user's PDF specification
     p_th = doc.add_paragraph()
     p_th.paragraph_format.space_before = Pt(6)
     p_th.paragraph_format.space_after = Pt(6)
@@ -196,18 +436,66 @@ def build_master_annexes_docx(output_paths):
 
     annex_table_data = [
         ("Annex", "Category / Title", "Specific Included Contents"),
-        ("Annex A", "Academic Integrity & Ethics", "1. Plagiarism Certification / Originality Report\n2. AI Disclosure (Code, Image/Figure, Grammar, other usage)"),
-        ("Annex B", "Communications & Approvals", "1. Adviser Acceptance Form\n2. Stakeholder / Client Acceptance Form, if applicable\n3. Data Gathering & Interview Permits, if applicable\n4. System Testing Approval Letters, if applicable\n5. Other Applicable Communication\n6. Final System Turnover Certificate, if applicable"),
-        ("Annex C", "Data Gathering & Instrument Validation", "1. Result of Questionnaire Validation, if applicable\n2. Validator Credentials & Certificates, if applicable\n3. Sample Survey Questionnaires, if applicable\n4. Interview Protocols & Transcripts, if applicable\n5. Raw Survey Data & Reliability Statistics, if applicable"),
-        ("Annex D", "Project Management & Governance", "1. Project Gantt Chart & Schedule\n2. Work Breakdown Structure (WBS)\n3. Panel Revision Compliance Matrix"),
-        ("Annex E", "User Interface & Experience (UI/UX)", "1. High-Fidelity Wireframes\n2. Screen Layouts\n3. Mobile & Web UI Mockups\n4. Style Guide & Design System Components"),
-        ("Annex F", "Technical Documentation & Specifications", "1. Software Requirements Specification (SRS) Matrix\n2. Comprehensive System Documentation\n3. API Endpoint Specifications (e.g., Postman), if applicable\n4. Hardware & Circuit Schematics (if applicable)"),
-        ("Annex G", "Source Code & Repository", "1. Relevant Source Code Snippets\n2. Database Schema Scripts (SQL DDL), if applicable"),
-        ("Annex H", "Testing, QA & Security", "1. Master Test Plan & Test Case Matrix, if applicable\n2. Test Execution Results, if applicable\n3. User Acceptance Testing (UAT), if applicable\n4. ISO/IEC 25010 Software Quality Evaluation, if applicable"),
-        ("Annex I", "Sample Generated Outputs", "1. Sample System Reports (PDF/Excel), if applicable\n2. Printable Transaction Receipts & Invoices, if applicable\n3. Administrative Analytics Dashboards, if applicable"),
-        ("Annex J", "User & System Manuals", "1. User’s Guide / User Manual, if applicable\n2. System Administrator Manual, if applicable\n3. Maintenance & Troubleshooting Guide, if applicable\n4. Disaster Recovery & Data Backup Plan, if applicable"),
-        ("Annex K", "Deployment & Infrastructure", "1. Hosting & Server Specifications, if applicable\n2. Domain, SSL & DNS Configurations, if applicable\n3. CI/CD Pipeline & Deployment Scripts, if applicable"),
-        ("Annex L", "Glossary", "1. Glossary of Technical Terms & Acronyms")
+        (
+            "Annex A",
+            "Academic Integrity & Ethics",
+            "1. Plagiarism Certification / Originality Report\n2. AI Disclosure (Code, Image/Figure, Grammar, other usage)",
+        ),
+        (
+            "Annex B",
+            "Communications & Approvals",
+            "1. Adviser Acceptance Form\n2. Stakeholder / Client Acceptance Form, if applicable\n3. Data Gathering & Interview Permits, if applicable\n4. System Testing Approval Letters, if applicable\n5. Other Applicable Communication\n6. Final System Turnover Certificate, if applicable",
+        ),
+        (
+            "Annex C",
+            "Data Gathering & Instrument Validation",
+            "1. Result of Questionnaire Validation, if applicable\n2. Validator Credentials & Certificates, if applicable\n3. Sample Survey Questionnaires, if applicable\n4. Interview Protocols & Transcripts, if applicable\n5. Raw Survey Data & Reliability Statistics, if applicable",
+        ),
+        (
+            "Annex D",
+            "Project Management & Governance",
+            "1. Project Gantt Chart & Schedule\n2. Work Breakdown Structure (WBS)\n3. Panel Revision Compliance Matrix",
+        ),
+        (
+            "Annex E",
+            "User Interface & Experience (UI/UX)",
+            "1. High-Fidelity Wireframes\n2. Screen Layouts\n3. Mobile & Web UI Mockups\n4. Style Guide & Design System Components",
+        ),
+        (
+            "Annex F",
+            "Technical Documentation & Specifications",
+            "1. Software Requirements Specification (SRS) Matrix\n2. Comprehensive System Documentation\n3. API Endpoint Specifications (e.g., Postman), if applicable\n4. Hardware & Circuit Schematics (if applicable)",
+        ),
+        (
+            "Annex G",
+            "Source Code & Repository",
+            "1. Relevant Source Code Snippets\n2. Database Schema Scripts (SQL DDL), if applicable",
+        ),
+        (
+            "Annex H",
+            "Testing, QA & Security",
+            "1. Master Test Plan & Test Case Matrix, if applicable\n2. Test Execution Results, if applicable\n3. User Acceptance Testing (UAT), if applicable\n4. ISO/IEC 25010 Software Quality Evaluation, if applicable",
+        ),
+        (
+            "Annex I",
+            "Sample Generated Outputs",
+            "1. Sample System Reports (PDF/Excel), if applicable\n2. Printable Transaction Receipts & Invoices, if applicable\n3. Administrative Analytics Dashboards, if applicable",
+        ),
+        (
+            "Annex J",
+            "User & System Manuals",
+            "1. User’s Guide / User Manual, if applicable\n2. System Administrator Manual, if applicable\n3. Maintenance & Troubleshooting Guide, if applicable\n4. Disaster Recovery & Data Backup Plan, if applicable",
+        ),
+        (
+            "Annex K",
+            "Deployment & Infrastructure",
+            "1. Hosting & Server Specifications, if applicable\n2. Domain, SSL & DNS Configurations, if applicable\n3. CI/CD Pipeline & Deployment Scripts, if applicable",
+        ),
+        (
+            "Annex L",
+            "Glossary",
+            "1. Glossary of Technical Terms & Acronyms",
+        ),
     ]
 
     t_master = doc.add_table(rows=len(annex_table_data), cols=3)
@@ -215,36 +503,40 @@ def build_master_annexes_docx(output_paths):
     col_w = [Inches(1.0), Inches(2.2), Inches(2.8)]
 
     for row_idx, row in enumerate(t_master.rows):
-        is_h = (row_idx == 0)
+        is_h = row_idx == 0
         trPr = row._tr.get_or_add_trPr()
         trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
         if is_h:
             trPr.append(parse_xml(f'<w:tblHeader {nsdecls("w")}/>'))
-            
+
         for col_idx, cell in enumerate(row.cells):
             cell.width = col_w[col_idx]
             set_cell_margins(cell, top=70, bottom=70, left=90, right=90)
             if is_h:
                 set_cell_shading(cell, "1E293B")
-                set_cell_borders(cell, 
-                                 top={'val': 'single', 'sz': 8, 'color': '0F172A'},
-                                 bottom={'val': 'single', 'sz': 12, 'color': '0F172A'},
-                                 left={'val': 'single', 'sz': 4, 'color': '334155'},
-                                 right={'val': 'single', 'sz': 4, 'color': '334155'})
+                set_cell_borders(
+                    cell,
+                    top={"val": "single", "sz": 8, "color": "0F172A"},
+                    bottom={"val": "single", "sz": 12, "color": "0F172A"},
+                    left={"val": "single", "sz": 4, "color": "334155"},
+                    right={"val": "single", "sz": 4, "color": "334155"},
+                )
             else:
                 bg = "FFFFFF" if row_idx % 2 == 1 else "F8FAFC"
                 set_cell_shading(cell, bg)
-                set_cell_borders(cell, 
-                                 top={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                 bottom={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                 left={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                 right={'val': 'single', 'sz': 4, 'color': 'E2E8F0'})
-                
+                set_cell_borders(
+                    cell,
+                    top={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    bottom={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    left={"val": "single", "sz": 4, "color": "E2E8F0"},
+                    right={"val": "single", "sz": 4, "color": "E2E8F0"},
+                )
+
             cp = cell.paragraphs[0]
             cp.paragraph_format.space_before = Pt(2)
             cp.paragraph_format.space_after = Pt(2)
             cp.paragraph_format.line_spacing = 1.1
-            
+
             text = annex_table_data[row_idx][col_idx]
             crun = cp.add_run(text)
             crun.font.name = "Times New Roman"
@@ -277,14 +569,14 @@ def build_master_annexes_docx(output_paths):
         "ANNEX_I_SAMPLE_GENERATED_OUTPUTS.md",
         "ANNEX_J_USER_AND_SYSTEM_MANUALS.md",
         "ANNEX_K_DEPLOYMENT_AND_INFRASTRUCTURE.md",
-        "ANNEX_L_GLOSSARY.md"
+        "ANNEX_L_GLOSSARY.md",
     ]
 
     for a_idx, fname in enumerate(annex_files):
         fpath = os.path.join("docs", "annexes", fname)
         if not os.path.exists(fpath):
             continue
-            
+
         with open(fpath, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
@@ -292,13 +584,12 @@ def build_master_annexes_docx(output_paths):
         code_lines = []
         in_table = False
         table_rows = []
-
         skip_inst_header = True
 
         for line in lines:
             line_s = line.strip()
 
-            # Skip initial university letterhead on individual files (since master header is at start)
+            # Skip initial university letterhead on individual files
             if line_s.startswith("# ANNEX "):
                 skip_inst_header = False
 
@@ -307,36 +598,17 @@ def build_master_annexes_docx(output_paths):
 
             # Code block toggles
             if line_s.startswith("```"):
+                if in_table and table_rows:
+                    flush_table(doc, table_rows)
+                    table_rows = []
+                    in_table = False
+
                 if not in_code:
                     in_code = True
                     code_lines = []
                 else:
                     in_code = False
-                    if code_lines:
-                        # Emit code box / table
-                        t_box = doc.add_table(rows=1, cols=1)
-                        t_box.alignment = WD_TABLE_ALIGNMENT.CENTER
-                        c = t_box.rows[0].cells[0]
-                        c.width = Inches(6.0)
-                        set_cell_margins(c, top=60, bottom=60, left=80, right=80)
-                        set_cell_shading(c, "F8FAFC")
-                        set_cell_borders(c,
-                                         top={'val': 'single', 'sz': 4, 'color': 'CBD5E1'},
-                                         bottom={'val': 'single', 'sz': 4, 'color': 'CBD5E1'},
-                                         left={'val': 'single', 'sz': 16, 'color': '800000'},
-                                         right={'val': 'single', 'sz': 4, 'color': 'CBD5E1'})
-                        cp = c.paragraphs[0]
-                        cp.paragraph_format.space_before = Pt(0)
-                        cp.paragraph_format.space_after = Pt(0)
-                        cp.paragraph_format.line_spacing = 1.0
-                        r_c = cp.add_run("\n".join(code_lines))
-                        r_c.font.name = "Consolas"
-                        r_c.font.size = Pt(8.0)
-                        r_c.font.color.rgb = RGBColor(30, 41, 59)
-
-                        p_sp = doc.add_paragraph()
-                        p_sp.paragraph_format.space_before = Pt(4)
-                        p_sp.paragraph_format.space_after = Pt(4)
+                    flush_code_block(doc, code_lines)
                     code_lines = []
                 continue
 
@@ -346,8 +618,7 @@ def build_master_annexes_docx(output_paths):
 
             # Markdown Table parsing
             if line_s.startswith("|") and line_s.endswith("|"):
-                # separator line
-                if re.match(r'^\|[\s\-:]+(\|[\s\-:]+)+\|$', line_s):
+                if re.match(r"^\|[\s\-:]+(\|[\s\-:]+)+\|$", line_s):
                     continue
                 cells = [c.strip() for c in line_s[1:-1].split("|")]
                 table_rows.append(cells)
@@ -355,53 +626,35 @@ def build_master_annexes_docx(output_paths):
                 continue
             else:
                 if in_table and table_rows:
-                    # Flush table
-                    num_cols = max(len(r) for r in table_rows)
-                    t_el = doc.add_table(rows=len(table_rows), cols=num_cols)
-                    t_el.alignment = WD_TABLE_ALIGNMENT.CENTER
-                    for r_i, r_data in enumerate(table_rows):
-                        is_h_row = (r_i == 0)
-                        row_node = t_el.rows[r_i]
-                        trPr = row_node._tr.get_or_add_trPr()
-                        trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
-                        if is_h_row:
-                            trPr.append(parse_xml(f'<w:tblHeader {nsdecls("w")}/>'))
-
-                        for c_i in range(num_cols):
-                            cell_node = row_node.cells[c_i]
-                            val = r_data[c_i] if c_i < len(r_data) else ""
-                            set_cell_margins(cell_node, top=60, bottom=60, left=70, right=70)
-                            if is_h_row:
-                                set_cell_shading(cell_node, "1E293B")
-                                set_cell_borders(cell_node, 
-                                                 top={'val': 'single', 'sz': 6, 'color': '0F172A'},
-                                                 bottom={'val': 'single', 'sz': 10, 'color': '0F172A'},
-                                                 left={'val': 'single', 'sz': 4, 'color': '334155'},
-                                                 right={'val': 'single', 'sz': 4, 'color': '334155'})
-                            else:
-                                bg = "FFFFFF" if r_i % 2 == 1 else "F8FAFC"
-                                set_cell_shading(cell_node, bg)
-                                set_cell_borders(cell_node, 
-                                                 top={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                                 bottom={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                                 left={'val': 'single', 'sz': 4, 'color': 'E2E8F0'},
-                                                 right={'val': 'single', 'sz': 4, 'color': 'E2E8F0'})
-
-                            cp = cell_node.paragraphs[0]
-                            cp.paragraph_format.space_before = Pt(2)
-                            cp.paragraph_format.space_after = Pt(2)
-                            cp.paragraph_format.line_spacing = 1.05
-                            format_inline(cp, val, default_font="Times New Roman", default_size=8.5 if not is_h_row else 9)
-                            if is_h_row:
-                                for r in cp.runs:
-                                    r.font.bold = True
-                                    r.font.color.rgb = RGBColor(255, 255, 255)
-
-                    p_tsp = doc.add_paragraph()
-                    p_tsp.paragraph_format.space_before = Pt(4)
-                    p_tsp.paragraph_format.space_after = Pt(4)
+                    flush_table(doc, table_rows)
                     table_rows = []
                     in_table = False
+
+            # Markdown Image syntax: ![Caption](path)
+            img_match = re.match(r"^!\[(.*?)\]\((.*?)\)$", line_s)
+            if img_match:
+                caption_txt = img_match.group(1).strip()
+                img_rel_path = img_match.group(2).strip()
+                if os.path.exists(img_rel_path):
+                    p_img = doc.add_paragraph()
+                    p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p_img.paragraph_format.space_before = Pt(6)
+                    p_img.paragraph_format.space_after = Pt(2)
+                    run_img = p_img.add_run()
+                    run_img.add_picture(img_rel_path, width=Inches(6.0))
+
+                    if caption_txt:
+                        p_cap = doc.add_paragraph()
+                        p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_cap.paragraph_format.space_before = Pt(2)
+                        p_cap.paragraph_format.space_after = Pt(8)
+                        r_cap = p_cap.add_run(caption_txt)
+                        r_cap.font.name = "Times New Roman"
+                        r_cap.font.size = Pt(9.5)
+                        r_cap.font.italic = True
+                        r_cap.font.bold = True
+                        r_cap.font.color.rgb = RGBColor(71, 85, 105)
+                continue
 
             # Headings
             if line_s.startswith("# ANNEX "):
@@ -453,12 +706,24 @@ def build_master_annexes_docx(output_paths):
                 r.font.color.rgb = RGBColor(51, 65, 85)
                 continue
 
+            if line_s.startswith("##### "):
+                p_h = doc.add_paragraph()
+                p_h.paragraph_format.space_before = Pt(5)
+                p_h.paragraph_format.space_after = Pt(2)
+                p_h.paragraph_format.keep_with_next = True
+                r = p_h.add_run(line_s[6:])
+                r.font.name = "Times New Roman"
+                r.font.size = Pt(9.5)
+                r.font.bold = True
+                r.font.color.rgb = RGBColor(128, 0, 0)
+                continue
+
             if line_s == "---":
                 continue
 
             # Numbered or bullet list
-            if re.match(r'^\d+\.\s+', line_s):
-                m = re.match(r'^(\d+\.)\s+(.*)', line_s)
+            if re.match(r"^\d+\.\s+", line_s):
+                m = re.match(r"^(\d+\.)\s+(.*)", line_s)
                 p = doc.add_paragraph()
                 p.paragraph_format.left_indent = Inches(0.25)
                 p.paragraph_format.space_before = Pt(2)
@@ -507,19 +772,37 @@ def build_master_annexes_docx(output_paths):
                 p.paragraph_format.line_spacing = 1.15
                 format_inline(p, line_s)
 
+        # CRITICAL FIX: Always flush any pending table or code block at EOF!
+        if in_table and table_rows:
+            flush_table(doc, table_rows)
+            table_rows = []
+            in_table = False
+
+        if in_code and code_lines:
+            flush_code_block(doc, code_lines)
+            code_lines = []
+            in_code = False
+
         # Page break between Annexes
         if a_idx < len(annex_files) - 1:
             doc.add_page_break()
 
     for p in output_paths:
-        doc.save(p)
-        print(f"Master Annexes DOCX generated at: {p}")
+        try:
+            doc.save(p)
+            print(f"Master Annexes DOCX generated at: {p}")
+        except PermissionError:
+            alt_p = p.replace(".docx", "_Updated.docx")
+            doc.save(alt_p)
+            print(f"File locked in Word ({p}); saved updated copy to: {alt_p}")
+
 
 if __name__ == "__main__":
     targets = [
         r"c:\Users\Acer\Projects\aurora-parsu\AURORA_Complete_Annexes_A_to_L.docx",
         r"c:\Users\Acer\Projects\aurora-parsu\docs\AURORA_Complete_Annexes_A_to_L.docx",
         r"C:\Users\Acer\Desktop\AURORA_Complete_Annexes_A_to_L.docx",
-        r"C:\Users\Acer\Downloads\AURORA_Complete_Annexes_A_to_L.docx"
+        r"C:\Users\Acer\Downloads\AURORA_Complete_Annexes_A_to_L.docx",
+        r"C:\Users\Acer\.gemini\antigravity\brain\07706289-cf4e-46a0-833f-db9c83dd1784\AURORA_Complete_Annexes_A_to_L.docx",
     ]
     build_master_annexes_docx(targets)

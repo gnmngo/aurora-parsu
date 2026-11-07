@@ -13,114 +13,70 @@
 
 ## I.1 SAMPLE SYSTEM REPORTS (OFFICIAL INSTITUTIONAL FORMS)
 
-The AURORA platform generates standardized, printable departmental reports that replace traditional physical paper forms.
+The AURORA platform generates standardized, printable departmental reports that replace traditional physical paper forms while preserving full compliance with Partido State University's ISO 9001:2015 quality management documentation standards.
 
 ### 1. Form DCS-CF-03: Application for Oral Defense & Adviser Certification
-```text
-+-------------------------------------------------------------------------------------------------------+
-| PARTIDO STATE UNIVERSITY - COLLEGE OF ENGINEERING & COMPUTATIONAL SCIENCES                           |
-| Department of Computational Sciences | Form DCS-CF-03 (Revision 2026)                                 |
-| APPLICATION FOR CAPSTONE ORAL DEFENSE & ADVISER CERTIFICATION                                        |
-+-------------------------------------------------------------------------------------------------------+
-| Project Title: AURORA: Paperless Academic Defense Workflow & Quality Assurance Platform               |
-| Proponents: Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae        |
-| Degree Program: Bachelor of Science in Information Technology (BSIT)                                  |
-| Defense Stage Applied: Final Oral Defense                                                             |
-+-------------------------------------------------------------------------------------------------------+
-| PREREQUISITE COMPLIANCE VERIFICATION:                                                                 |
-| [X] Similarity Index Screening: 11% (Turnitin Certificate Verified)                                   |
-| [X] Technical Adviser Endorsement: Endorsed for Deliberation                                          |
-| [X] Required Manuscript Annotations: All Critical/Major Concerns Addressed                            |
-| [X] Academic Registrar Clearance: Enrolled in Capstone Project 2                                      |
-+-------------------------------------------------------------------------------------------------------+
-| ADVISER CERTIFICATION & RECOMMENDATION:                                                               |
-| "I hereby certify that I have reviewed the final draft of the manuscript and examined the working     |
-| software prototype. I recommend the proponents for Final Oral Defense Deliberation."                 |
-|                                                                                                       |
-| Digitally Certified by: FROILAND B. PEÑALOSA (Research Adviser)                                       |
-| Date Certified: October 2, 2026                                                                       |
-+-------------------------------------------------------------------------------------------------------+
-```
 
-### 2. Form DCS-CF-04: Oral Defense Evaluation Sheet & Score Summary
-```text
-+-------------------------------------------------------------------------------------------------------+
-| PARTIDO STATE UNIVERSITY - DEPARTMENT OF COMPUTATIONAL SCIENCES                                       |
-| Form DCS-CF-04: OFFICIAL ORAL DEFENSE EVALUATION SCORE SHEET                                           |
-+-------------------------------------------------------------------------------------------------------+
-| Project: AURORA System (BSIT-2026-001)                      | Date: October 2, 2026                   |
-| Panel Evaluator: Dr. Aris Thorne                            | Role: Panel Committee Chair             |
-+-------------------------------------------------------------------------------------------------------+
-| CRITERIA EVALUATION MATRIX:                                                                           |
-| 1. Manuscript Quality & Documentation (Weight: 30%) ........ Raw Score: 95.00 -> Weighted: 28.50%    |
-| 2. System Implementation & Demonstration (Weight: 35%) ..... Raw Score: 96.00 -> Weighted: 33.60%    |
-| 3. Oral Presentation & Technical Competence (Weight: 25%) .. Raw Score: 92.00 -> Weighted: 23.00%    |
-| 4. Question & Answer / Defense Mastery (Weight: 10%) ....... Raw Score: 94.00 -> Weighted:  9.40%    |
-+-------------------------------------------------------------------------------------------------------+
-| COMPOSITE WEIGHTED RATING: 94.50% (PASSED - EXCELLENT)                                                |
-| VERDICT: APPROVED (NO SUBSTANTIVE REVISIONS REQUIRED)                                                 |
-|                                                                                                       |
-| ELECTRONIC SIGNATURE CERTIFICATION (REPUBLIC ACT NO. 8792):                                           |
-| Certificate Serial Number: AURORA-2026-000001                                                         |
-| SHA-256 Verification Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          |
-| Status: Signed, Timestamped, and Immutable                                                            |
-+-------------------------------------------------------------------------------------------------------+
-```
+| Field / Section | Official Generated Institutional Record (Form DCS-CF-03, Rev. 2026) |
+| :--- | :--- |
+| **Institution & Department** | Partido State University — College of Engineering and Computational Sciences (Department of Computational Sciences) |
+| **Project Title** | *AURORA: Academic Unified Review, Observation, Rating, and Assessment — A Paperless Academic Defense Workflow & Quality Assurance Platform* |
+| **Student Proponents** | Mañago, Gene Vincent • Castillo, Carol Ann • Buenafe, Rona Mae • Encinas, Lara Mae |
+| **Degree Program & Stage** | Bachelor of Science in Information Technology (BSIT) — **Final Oral Defense** |
+| **Prerequisite 1: Turnitin Check** | **VERIFIED** — Overall Similarity Index: **11.0%** (Compliant with $\le 20.0\%$ Departmental Threshold) |
+| **Prerequisite 2: Manuscript & Code** | **VERIFIED** — Complete Manuscript (`v3`, SHA-256: `8f9a2b...c3d4`) and Working Cloud Prototype Uploaded |
+| **Prerequisite 3: Panel Revisions** | **VERIFIED** — All Prior Critical and Major Annotations Addressed and Closed ($14 / 14$) |
+| **Adviser Certification Statement** | *"I hereby certify that I have reviewed the final draft of the manuscript and examined the working software prototype. I recommend the proponents for Final Oral Defense Deliberation."* |
+| **Digitally Certified By** | **FROILAND B. PEÑALOSA** (Research Adviser, Department of Computational Sciences) |
+| **Date & Status** | October 2, 2026 — **ENDORSED & CLEARED FOR SCHEDULING** (Noted by **Dr. Kennedy C. Cuya**, Capstone Coordinator) |
 
 ---
 
-## I.2 PRINTABLE TRANSACTION RECEIPTS & DIGITAL DEFENSE RECEIPTS
+### 2. Form DCS-CF-04: Official Oral Defense Evaluation Score Sheet
 
-AURORA generates formal verification receipts for every legally finalized defense evaluation to support institutional archiving and non-repudiation.
+| Criterion / Evaluation Field | Weight | Raw Score (0–100) | Weighted Rating | Remarks / Verification |
+| :--- | :---: | :---: | :---: | :--- |
+| **1. Manuscript Quality & Technical Documentation** | **30%** | 95.00 | **28.50%** | Comprehensive Chapters 1–5 and complete Annexes A–L. |
+| **2. System Prototype Implementation & Live Demo** | **35%** | 96.00 | **33.60%** | Full-stack Next.js 16 + Supabase cloud system verified. |
+| **3. Oral Presentation & Delivery Mastery** | **25%** | 92.00 | **23.00%** | Clear architectural explanation and role demonstration. |
+| **4. Question & Answer / Technical Defense** | **10%** | 94.00 | **9.40%** | Accurate defense of RA 8792 cryptography and RLS security. |
+| **COMPOSITE WEIGHTED RATING** | **100%** | — | **94.50%** | **PASSED — EXCELLENT (Approved without Revisions)** |
+| **Evaluator & Committee Role** | **Panel Chair** | — | **Dr. Kennedy C. Cuya, DIT** | Department of Computational Sciences, ParSU |
+| **RA 8792 Certificate Serial** | `AURORA-2026-000001` | — | **Locked & Signed** | SHA-256: `e3b0c44298fc1c149afbf4c8996fb924...b7852b855` |
 
-### Printable Cryptographic Defense Receipt
-```text
-========================================================================================
-                          PARTIDO STATE UNIVERSITY
-                 College of Engineering and Computational Sciences
-                OFFICIAL DIGITAL DEFENSE VERIFICATION RECEIPT
-========================================================================================
-Receipt Reference: REC-2026-10-02-001
-Certificate Serial: AURORA-2026-000001
-Deliberation Date: October 2, 2026 10:14 AM PHT
-Venue: CECS Conference Room & Virtual Room #1
+---
 
-PROJECT DETAILS:
-  Title: AURORA: Academic Unified Review, Observation, Rating, and Assessment System
-  Proponents: Mañago, Gene Vincent; Castillo, Carol Ann; Buenafe, Rona Mae; Encinas, Lara Mae
-  Program: Bachelor of Science in Information Technology (BSIT)
-  Research Adviser: Froiland B. Peñalosa
+## I.2 PRINTABLE CRYPTOGRAPHIC DEFENSE VERIFICATION RECEIPT
 
-PANEL VERDICT SUMMARY:
-  Evaluator: Dr. Aris Thorne
-  Committee Role: Panel Chairman
-  Total Weighted Score: 94.50%
-  Deliberation Verdict: APPROVED
+AURORA generates a tamper-evident digital verification receipt for every legally finalized defense evaluation to support institutional archiving and non-repudiation under Republic Act No. 8792.
 
-LEGAL COMPLIANCE (REPUBLIC ACT NO. 8792):
-  Auth Method: Step-Up Re-Authentication via Encrypted Session
-  Signer IP Address: 120.29.74.12
-  User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0
-  Payload SHA-256: 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069
-
-PUBLIC AUTHENTICATION URL:
-  https://aurora-parsu.vercel.app/verify/AURORA-2026-000001
-========================================================================================
-```
+| Receipt Attribute | Authoritative Cryptographic Record |
+| :--- | :--- |
+| **Receipt Reference Number** | `REC-2026-10-02-001` |
+| **Certificate Serial Number** | `AURORA-2026-000001` |
+| **Deliberation Timestamp** | October 2, 2026 • 10:14:22 AM PHT (UTC+8) |
+| **Deliberation Venue** | CECS Conference Room & AURORA Split-Screen Workspace |
+| **Project Title** | *AURORA: Academic Unified Review, Observation, Rating, and Assessment System* |
+| **Proponents** | Mañago, Gene Vincent; Castillo, Carol Ann; Buenafe, Rona Mae; Encinas, Lara Mae |
+| **Research Adviser** | **Froiland B. Peñalosa** (Department of Computational Sciences) |
+| **Signing Evaluator & Role** | **Dr. Kennedy C. Cuya** — Panel Committee Chairperson |
+| **Composite Score & Verdict** | **94.50% — APPROVED (PASSED WITH DISTINCTION)** |
+| **RA 8792 Authentication Method** | Step-Up Password Re-Authentication via Encrypted Session (`signInWithPassword`) |
+| **Payload SHA-256 Digest** | `7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069` |
+| **Public Verification Endpoint** | `https://aurora-parsu.vercel.app/verify/AURORA-2026-000001` |
 
 ---
 
 ## I.3 ADMINISTRATIVE ANALYTICS DASHBOARDS
 
-The platform features an executive reporting dashboard providing real-time operational intelligence to the College Dean, Department Chairperson, and Capstone Coordinator.
+The platform features an executive reporting dashboard (`/dashboard/analytics`) providing real-time operational intelligence to the College Dean (**Engr. Emelina R. Padayao**), Department Chairperson / Capstone Coordinator (**Dr. Kennedy C. Cuya**), and System Administrator.
 
 ### Key Executive Analytics Views:
-
 1. **Deliberation Throughput & Defense Progressions:**
-   - Visual progress bars showing percentage of capstone teams that have passed Title Defense (100%), Proposal Defense (92%), and Final Defense (75%).
+   - Visual progress bars tracking the percentage of capstone teams that have completed Concept Defense ($100\%$), Title Defense ($100\%$), Proposal Defense ($92\%$), and Final Oral Defense ($85\%$).
 2. **Institutional Verdict Breakdown:**
-   - Dynamic distribution charts categorizing defense outcomes: Approved ($68\%$), Approved with Minor Revisions ($24\%$), Major Revisions / Re-defense ($8\%$), Failed ($0\%$).
-3. **Faculty Workload & Panel Assignment Distribution:**
-   - Real-time balancing chart preventing faculty overload by tracking active advisership counts and panel commitments per semester.
-4. **Average Turnaround Time Metric:**
-   - Real-time counter showing average days elapsed between manuscript submission and adviser endorsement (reduced from 18.4 days in manual paper processes to **2.6 days** in AURORA).
+   - Dynamic distribution charts categorizing defense outcomes across the college: *Approved* ($68\%$), *Approved with Minor Revisions* ($24\%$), *Major Revisions / Re-Defense* ($8\%$), and *Failed* ($0\%$).
+3. **Objective 4 (SUS & UTAUT) Live Acceptability Telemetry:**
+   - Real-time aggregation of the 10-item System Usability Scale (**91.8 / 100, Grade A**) and 27-item UTAUT constructs (**Grand Mean = 4.86 / 5.00, Highly Acceptable**) across all stakeholder roles.
+4. **Average Manuscript Review Turnaround Time:**
+   - Real-time KPI counter demonstrating the reduction in manuscript review and endorsement turnaround time from **18.4 days** (traditional paper routing) to **2.6 days** in AURORA.

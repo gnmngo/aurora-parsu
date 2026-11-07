@@ -11,119 +11,87 @@
 
 ---
 
-## E.1 HIGH-FIDELITY WIREFRAMES
+## E.1 HIGH-FIDELITY VISUAL MOCKUPS & SCREEN WIREFRAMES
 
-The AURORA platform is architected with a modern, dual-purpose design paradigm: an information-dense, distraction-free productivity environment for faculty reviewers, paired with an accessible, guided portal for student proponents.
+The AURORA platform is architected with a modern, dual-purpose design paradigm: an information-dense, distraction-free productivity environment for faculty reviewers (Advisers, Panelists, Coordinators, and College Deans), paired with an accessible, guided milestone portal for student proponents.
 
-### Wireframe 1: Proponent Capstone Hub & Stage Progression Wireframe
-```text
-+-------------------------------------------------------------------------------------------------------+
-| [AURORA ParSU Logo]   [Dashboard]  [My Projects]  [Submissions]  [Defenses]       [User: Student] [v] |
-+-------------------------------------------------------------------------------------------------------+
-|  PROJECT: Automated Solar Irradiance Forecasting (BSIT-2026-004)                                      |
-|  Current Stage: Title Defense | Status: Under Review | Adviser: Froiland B. Peñalosa                  |
-+-------------------------------------------------------------------------------------------------------+
-|  +-------------------------------------------------------+  +---------------------------------------+ |
-|  | STAGE PROGRESSION PIPELINE                           |  | MANUSCRIPT DOCUMENTS                  | |
-|  | [O] Title Defense =====> [ ] Proposal =====> [ ] Final |  | Latest: Draft_v3.pdf (14.2 MB)        | |
-|  | Status: Adviser Endorsement Pending                   |  | SHA-256: 8f9a2b...c3d4                | |
-|  |                                                       |  | [ Upload Revised PDF ]                | |
-|  | REQUIREMENTS CHECKLIST (DCS-CF-03):                   |  |                                       | |
-|  | [X] Similarity Report (Turnitin: 11%)                 |  | ADVISER FEEDBACK                      | |
-|  | [X] Adviser Endorsement Form                          |  | - 4 Unresolved Annotations            | |
-|  | [ ] Panel Schedule Confirmed                          |  | - 1 Critical Methodology Concern      | |
-|  +-------------------------------------------------------+  +---------------------------------------+ |
-+-------------------------------------------------------------------------------------------------------+
-```
+### Figure E.1: Student Proponent Capstone Hub & Stage Progression Interface
+The Proponent Capstone Hub consolidates the 4-stage CEC defense progression pipeline (*Concept Paper*, *Title Defense*, *Proposal Defense*, and *Final Oral Defense*), the interactive **Form DCS-CF-03** Oral Defense Application prerequisite checklist, SHA-256 manuscript version tracking, and direct access to the **Objective 4 (SUS & UTAUT)** evaluation survey.
 
-### Wireframe 2: Dual-Pane Review Workspace (Adviser & Panelist Viewport)
-```text
-+-------------------------------------------------------------------------------------------------------+
-| [< Back to Defenses]  MANUSCRIPT: Smart Campus IoT Gateway (v2)  Page [ 12 ] / 85  [Zoom: 100%] [Help]|
-+-------------------------------------------------------------------+-----------------------------------+
-|  PDF VIEWPORT (Interactive PDF.js Canvas)                         |  ANNOTATIONS & EVALUATION DRAWER  |
-|                                                                   |                                   |
-|  4.2 Hardware Architecture & Circuitry                            |  [ Filter: All | Critical (1) ]   |
-|  -------------------------------------                            |                                   |
-|  The NodeMCU ESP8266 microcontroller receives                     |  +-----------------------------+  |
-|  continuous sensor streams via I2C bus.                           |  | Page 12 - Methodology (Major)  |  |
-|  [==============================================================] |  | By: Dr. Aris Thorne (10:14 AM) |  |
-|  [ HIGHLIGHTED REGION: Sensor sampling rate is 10ms without buffer] |  | "Sampling at 10ms will saturate|  |
-|  [==============================================================] |  | the WiFi buffer. Use 500ms."   |  |
-|                                                                   |  | [Reply] [Mark Resolved]        |  |
-|  Data is then routed to the cloud messaging broker.               |  +-----------------------------+  |
-|                                                                   |  +-----------------------------+  |
-|                                                                   |  | SCORE SHEET: DCS-CF-04        |  |
-|                                                                   |  | Manuscript Quality (30%): [27] |  |
-|                                                                   |  | System Demo (35%):        [32] |  |
-|                                                                   |  | [ Complete Digital Signature ]|  |
-|                                                                   |  +-----------------------------+  |
-+-------------------------------------------------------------------+-----------------------------------+
-```
+![Figure E.1: Proponent Capstone Hub & Defense Stage Progression Interface](public/diagrams/aurora_mockup_student_hub.png)
+
+| UI Region / Component | Functional Specification | Key Data Elements Displayed |
+| :--- | :--- | :--- |
+| **Left Navigation Sidebar** | Role-scoped navigation menu driven by PostgreSQL RBAC claims (`student`). | Dashboard, My Project, Submissions, Inline Annotations, Defenses, Grades, SUS & UTAUT Survey. |
+| **Project Header Banner** | Displays active capstone project metadata and assigned faculty supervision. | Project Title, Code (`BSIT-2026-001`), Research Adviser (**Prof. Froiland B. Peñalosa**), and Stage Badge. |
+| **4-Stage Progression Stepper** | Dynamic milestone tracker reflecting college-specific workflow templates. | Stage completion status (`Completed`, `Active`), weighted defense scores, and schedule timestamps. |
+| **Form DCS-CF-03 Gating Card** | Real-time prerequisite checklist gating eligibility for oral defense scheduling. | Turnitin similarity index ($11\% \le 20\%$), resolved annotations ($14/14$), and Adviser digital endorsement. |
+| **Manuscript SHA-256 Card** | Cryptographic version control panel verifying binary integrity of uploaded PDFs. | Active version pointer (`v3`, `is_current = true`), file size, and 64-character FIPS 180-4 SHA-256 digest. |
+
+---
+
+### Figure E.2: Dual-Pane Split-Screen Review & Rubric Evaluation Workspace
+The Dual-Pane Review Workspace (`/workspace/[projectId]/[stageId]`) eliminates paper-based manuscript routing by synchronizing an interactive **PDF.js vector canvas** (left 60% viewport) with a real-time **Coordinate Annotation & Form DCS-CF-04 Rubric Scoring Drawer** (right 40% viewport).
+
+![Figure E.2: Dual-Pane Review & Rubric Evaluation Workspace](public/diagrams/aurora_mockup_review_workspace.png)
+
+| Viewport Pane | Interactive Controls & Ergonomic Features | Technical Implementation |
+| :--- | :--- | :--- |
+| **Left Viewport (60%): Interactive PDF.js Canvas** | Zoom controls ($75\%$–$200\%$), page jumper, text highlight selector, and normalized bounding-box pin overlays (`x%, y%, w%, h%`). | Renders private S3 signed URLs via `PDF.js`; persists coordinates as resolution-independent percentages. |
+| **Right Viewport Top: Threaded Annotations** | Severity-tagged comment cards (*Critical*, *Major*, *Minor*) with one-click page jump and proponent reply threads. | Synchronized in real time across panelists via Supabase PostgreSQL Write-Ahead Log (WAL) WebSockets. |
+| **Right Viewport Bottom: Form DCS-CF-04 & RA 8792 Signer** | Live weighted criteria inputs ($30\% + 35\% + 25\% + 10\% = 100\%$), automatic verdict derivation, and step-up password re-authentication. | Computes weighted scores via `computeWeightedScore()` and locks records with a SHA-256 signature hash. |
 
 ---
 
 ## E.2 SCREEN LAYOUTS & RESPONSIVE GRID SPECIFICATIONS
 
-The application is engineered using **Tailwind CSS v4** and structured on an adaptive 12-column responsive grid system:
+The application is engineered using **Tailwind CSS v4** and structured on an adaptive 12-column CSS Grid and Flexbox layout system:
 
-### 1. Viewport Breakpoint Standards:
-- **Mobile (`sm: 640px`)**: Single-column vertical stack with collapsable bottom navigation sheet.
-- **Tablet (`md: 768px`)**: Two-column layout with icon-only sidebar and collapsible drawers.
-- **Desktop (`lg: 1024px`)**: Fixed 260px left sidebar, dynamic fluid main workspace.
-- **Widescreen Review (`xl: 1280px+`)**: Optimized 60/40 dual-pane split view (PDF canvas left 60%, interactive review sidebar right 40%).
-
-### 2. Navigation Architecture:
-- **Global Header**: University institutional identifier, notification bell with unread badge counter, and role-switching user profile menu.
-- **Sidebar Navigation**: Role-tailored routes based on PostgreSQL custom user claims (Dashboard, Submissions, Annotations, Deliberations, Grades, Executive Analytics, Maintenance & DR Backup, and Settings).
+| Viewport Tier | Breakpoint Width | Layout Structure & Navigation Behavior | Target Device Class |
+| :--- | :---: | :--- | :--- |
+| **Mobile Compact** | `sm: < 768px` | Single-column vertical card stack with slide-over drawer navigation and touch-friendly action pills. | Smartphones (iOS / Android) |
+| **Tablet Split** | `md: 768px – 1023px` | Collapsible icon-rail sidebar with two-column dashboard metric cards and tabbed PDF/Rubric switcher. | iPads & Android Tablets |
+| **Desktop Standard** | `lg: 1024px – 1279px` | Fixed `260px` dark-slate left sidebar with fluid 12-column main content container and modal dialogs. | Standard Laptops ($1366 \times 768$) |
+| **Widescreen Review** | `xl: >= 1280px` | Full dual-pane 60/40 split-screen evaluation workspace with simultaneous PDF rendering and rubric grading. | Desktop Monitors ($1920 \times 1080+$) |
 
 ---
 
-## E.3 MOBILE & WEB UI MOCKUPS
+## E.3 MOBILE & WEB UI COMPONENT SPECIFICATIONS
 
-### Web Desktop Mockup Components
-1. **Interactive Defense Scheduler Modal**:
-   - Visual timeslot picker with automatic red-tag collision warning for double-booked venues.
-   - Panelist selector dropdown automatically disabling the assigned Research Adviser to preserve academic integrity.
-2. **Digital Signature Modal (RA 8792)**:
-   - Three input modes: Drawn (HTML5 Canvas vector drawing), Typed (academic cursive font rendering), or Uploaded (PNG transparent signature stamp).
-   - Mandatory step-up password confirmation field with red security badge warning.
-
-### Mobile Viewport Mockups
-1. **Student Status Tracker Card**:
-   - Touch-optimized progression timeline showing defense schedule countdown, venue room assignment, and link to meeting room for online defenses.
-2. **Quick Verdict Card**:
-   - High-contrast visual verdict badge (*Approved*, *Approved with Minor Revisions*, *Re-defense*) with instantaneous PDF certificate download button.
+1. **Interactive Defense Scheduler & Conflict Guard Modal (`/dashboard/defenses/schedule`)**:
+   - Features a real-time room and timeslot picker with automatic red-badge collision alerts for overlapping venue bookings.
+   - Integrates the **Academic Conflict-of-Interest Firewall**, which automatically disables selecting a project's assigned Research Adviser (**Prof. Froiland B. Peñalosa**) as a voting member of that project's evaluation panel.
+2. **RA 8792 Cryptographic Digital Signature Modal**:
+   - Supports three signature capture modes: **Drawn** (HTML5 Canvas freehand stroke), **Typed** (stylized legal script), or **Saved Baseline Profile** (`/dashboard/settings`).
+   - Enforces mandatory step-up password re-authentication before generating the immutable `AURORA-YYYY-NNNNNN` certificate serial.
+3. **Maintenance, Troubleshooting & Disaster Recovery Console (`/admin/system-health`)**:
+   - Three-tab administrative command center featuring 6 live subsystem integrity probes, one-click **Self-Healing Maintenance**, **3-2-1 Disaster Recovery Backup Export**, and a client-side **SHA-256 Backup Integrity Verifier**.
 
 ---
 
 ## E.4 STYLE GUIDE & DESIGN SYSTEM COMPONENTS
 
-AURORA adheres to an institutional design system reflecting Partido State University's visual identity combined with modern software ergonomics.
+AURORA adheres to an institutional design system reflecting Partido State University's official visual identity combined with high-contrast accessibility standards (WCAG 2.1 AA).
 
 ### 1. Institutional Color Palette
 
-| Token Name | Hex Code | Tailwind Class | Application / Meaning |
-| :--- | :--- | :--- | :--- |
-| **ParSU Maroon** | `#800000` | `bg-[#800000]` | Primary brand color, institutional headers, major CTAs |
-| **ParSU Gold** | `#DAA520` | `text-[#DAA520]` | Secondary accent, badges, ratings, milestone alerts |
-| **Slate Dark** | `#0F172A` | `bg-slate-900` | Navigation sidebar background, primary typography |
-| **Slate Light** | `#F8FAFC` | `bg-slate-50` | Page background, workspace canvas, light card containers |
-| **Status Approved** | `#16A34A` | `bg-emerald-600` | Passing verdicts, verified requirements, completed reviews |
-| **Status Warning** | `#EA580C` | `bg-orange-600` | Minor revisions, similarity index near threshold |
-| **Status Critical** | `#DC2626` | `bg-rose-600` | Re-defense, room conflicts, plagiarism violation |
+| Token Name | Hex Code | Tailwind Utility | Application / Semantic Meaning |
+| :--- | :---: | :--- | :--- |
+| **ParSU Maroon** | `#800000` | `bg-[#800000]` | Primary institutional brand color, active navigation states, primary CTAs |
+| **ParSU Gold** | `#DAA520` | `text-[#DAA520]` | Secondary university accent, milestone highlights, excellence badges |
+| **Slate Dark** | `#0F172A` | `bg-slate-900` | Sidebar navigation surface, table headers, primary display typography |
+| **Slate Surface** | `#F8FAFC` | `bg-slate-50` | App background canvas, card containers, code block surfaces |
+| **Status Approved** | `#16A34A` | `bg-emerald-600` | Passing defense verdicts, verified SHA-256 hashes, healthy probes |
+| **Status Warning** | `#EA580C` | `bg-orange-600` | Minor revisions required, pending endorsements, threshold alerts |
+| **Status Critical** | `#DC2626` | `bg-rose-600` | Re-defense verdicts, room/panelist scheduling conflicts, security blocks |
 
 ### 2. Typography Hierarchy
 
-| Style Level | Font Family | Size | Weight | Line Height | Usage |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display Header** | `Inter`, sans-serif | 24px (1.5rem) | Bold (700) | 2rem | Page titles, executive KPI totals |
-| **Section Header** | `Inter`, sans-serif | 18px (1.125rem) | SemiBold (600) | 1.75rem | Modal headers, card titles |
-| **Body Text** | `Inter`, sans-serif | 14px (0.875rem) | Regular (400) | 1.5rem | Form descriptions, table data |
-| **Code & Serials** | `Consolas`, monospace | 13px (0.8125rem) | Medium (500) | 1.25rem | Certificate serials, hashes, SQL |
+| Style Level | Font Family | Size | Weight | Line Height | Primary Interface Usage |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Display Header** | `Inter`, sans-serif | `24px` (`1.5rem`) | Bold (`700`) | `2.0rem` | Page headers, executive KPI summary counters |
+| **Section Header** | `Inter`, sans-serif | `18px` (`1.125rem`) | SemiBold (`600`) | `1.75rem` | Card titles, dialog headers, rubric section headers |
+| **Body Copy** | `Inter`, sans-serif | `14px` (`0.875rem`) | Regular (`400`) | `1.5rem` | Form controls, table cells, annotation comment threads |
+| **Monospace / Hash** | `Consolas`, monospace | `13px` (`0.8125rem`) | Medium (`500`) | `1.25rem` | SHA-256 digests, `AURORA-YYYY-NNNNNN` serials, SQL/JSON logs |
 
-### 3. Reusable UI Design Components
-- **Buttons (`Button`)**: Primary (`bg-[#800000] hover:bg-[#600000]`), Secondary (`bg-slate-100 hover:bg-slate-200`), Destructive (`bg-rose-600`), and Ghost variants with integrated loading spinners.
-- **Badges (`Badge`)**: Rounded-full pill tags with status-mapped color tokens.
-- **Card Containers (`Card`)**: Border radius `rounded-xl`, subtle border `border-slate-200/80`, drop-shadow `shadow-sm`.
-- **Modals (`Dialog`)**: Accessible backdrop overlay with focus traps and keyboard `ESC` dismissal.
+*Design System Verification:* All UI components are implemented using accessible Radix UI primitives (`Dialog`, `Tabs`, `Select`, `Tooltip`) styled with Tailwind CSS v4 utility tokens.

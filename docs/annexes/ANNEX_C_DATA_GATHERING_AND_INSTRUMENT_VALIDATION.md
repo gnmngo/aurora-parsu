@@ -45,10 +45,10 @@ The survey instrument adopted for evaluating the **AURORA System** under **Resea
    - *Expertise:* Systems Optimization, Engineering Management, Quality Assurance, ISO 9001:2015 Systems
    - *Role:* Institutional Governance & Operations Validator
 
-3. **Dr. Aris Thorne, Ph.D. CS**
-   - *Designation:* Associate Professor of Computer Science / Senior Systems Consultant
-   - *Expertise:* Distributed Systems, Cryptographic Verification, Information Security (ISO 27001), Cloud Architecture
-   - *Role:* Technical Architecture & Security Metric Validator
+3. **Prof. Froiland B. Peñalosa, MIT**
+   - *Designation:* Research Adviser & Senior IT Faculty Member, Department of Computational Sciences, Partido State University
+   - *Expertise:* Software Architecture, Information Systems Development, Usability Engineering, Academic Review Workflows
+   - *Role:* Technical Architecture, Usability & Workflow Validator
 
 ---
 
@@ -164,3 +164,5 @@ $$\alpha = \frac{K}{K - 1} \left( 1 - \frac{\sum \sigma_i^2}{\sigma_X^2} \right)
 | **Part II.5: Behavioral Intention (BI1–BI3)** | 4.90 | 0.20 | Highly Acceptable / Strongly Agree |
 | **Part II.6: Use Behavior (UB1–UB9)** | 4.87 | 0.24 | Highly Acceptable / Strongly Agree |
 | **Composite Grand Mean** | **4.86** | **0.25** | **Highly Acceptable (HA)** |
+
+*Interpretation Note:* Across all $N = 27$ stakeholder evaluators, AURORA achieved a **Composite SUS Score of 91.8 / 100 (Grade A — Excellent)** and an overall **Composite Grand Mean of 4.86 / 5.00 (Highly Acceptable)**.
