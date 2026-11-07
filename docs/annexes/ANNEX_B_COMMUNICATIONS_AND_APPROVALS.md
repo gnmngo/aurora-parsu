@@ -21,7 +21,7 @@
 
 - **Date:** August 15, 2025
 - **To:** The Capstone Project Committee / Dr. Kennedy C. Cuya, Capstone Coordinator
-- **From:** Pablo Job, Faculty Member, Department of Computational Sciences
+- **From:** Froiland B. Peñalosa, Faculty Member, Department of Computational Sciences
 - **Subject:** Acceptance of Advisership for BSIT Capstone Project
 
 I hereby signify my formal acceptance to serve as the **Research and Technical Adviser** for the BSIT capstone project entitled:
@@ -40,7 +40,7 @@ I commit to provide technical guidance, rigorous manuscript reviews, quality ove
 
 ```text
 [SIGNED]
-PABLO JOB
+FROILAND B. PEÑALOSA
 Research Adviser
 Department of Computational Sciences, CECS
 ```
@@ -102,7 +102,7 @@ Dean, College of Engineering and Computational Sciences
 - **Date:** September 18, 2026
 - **Subject:** Approval for Staging Deployment & User Acceptance Testing (UAT)
 
-The Department of Computational Sciences approves the live staging deployment of **AURORA** on `https://aurora-parsu.vercel.app` for the purpose of conducting rigorous User Acceptance Testing (UAT) and ISO/IEC 25010 Software Quality Evaluation.
+The Department of Computational Sciences approves the live staging deployment of **AURORA** on `https://aurora-parsu.vercel.app` for the purpose of conducting rigorous User Acceptance Testing (UAT), System Usability Scale (SUS), UTAUT, and ISO/IEC 25010 Software Quality Evaluation.
 
 Authorized user groups include twenty-seven (27) targeted participants:
 - Fifteen (15) 4th Year BSIT Student Proponents
@@ -144,7 +144,7 @@ This document certifies that on this **2nd day of October 2026**, the student pr
 3. **Cloud Production Deployment:** Active edge deployment on Vercel (`https://aurora-parsu.vercel.app`) with SSL encryption.
 4. **Documentation Package:**
    - Complete Capstone Manuscript with Annexes A through L
-   - System Administrator Manual & Disaster Recovery Plan
+   - System Administrator Manual, Maintenance & Troubleshooting Guide, and Disaster Recovery & Data Backup Plan
    - User Guides for Students, Advisers, Panelists, and Coordinators
 
 *Turned Over By (Proponents):*
@@ -163,7 +163,7 @@ Quality Assurance Lead              UI/UX Lead
 
 ```text
 [SIGNED]                            [SIGNED]
-PABLO JOB                           DR. KENNEDY C. CUYA
+FROILAND B. PEÑALOSA                DR. KENNEDY C. CUYA
 Research Adviser                    Department Chairperson / Coordinator
 
 [SIGNED]

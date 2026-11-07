@@ -18,7 +18,7 @@
 ========================================================================================
 Project Proponents:
   Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae
-Adviser: Pablo Job | Capstone Coordinator: Dr. Kennedy C. Cuya
+Adviser: Froiland B. Peñalosa | Capstone Coordinator: Dr. Kennedy C. Cuya
 Department of Computational Sciences, College of Engineering and Computational Sciences
 Partido State University
 ========================================================================================

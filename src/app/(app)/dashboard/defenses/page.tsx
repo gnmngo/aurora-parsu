@@ -1051,7 +1051,7 @@ export default function DefensesPage() {
                         </div>
 
                         {/* Middle Row: Live Evaluation Updates & Current User Evaluation Callout */}
-                        {/* 1. If current user (e.g. Pablo Job) submitted an evaluation */}
+                        {/* 1. If current user (e.g. Froiland B. Peñalosa) submitted an evaluation */}
                         {myEval && myEval.status === "submitted" && (
                           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
                             <div className="flex items-center gap-2">

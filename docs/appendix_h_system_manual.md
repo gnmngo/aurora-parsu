@@ -19,7 +19,7 @@
 Developed by:
   Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae
 Under the Supervision of:
-  Pablo Job (Research Adviser) | Dr. Kennedy C. Cuya (Defense Coordinator)
+  Froiland B. Peñalosa (Research Adviser) | Dr. Kennedy C. Cuya (Defense Coordinator)
 Department of Computational Sciences, College of Engineering and Computational Sciences
 Partido State University
 ========================================================================================
@@ -191,7 +191,7 @@ Once your manuscript is uploaded, you must officially file for defense schedulin
 ```
 
 ### 3.1 Authentication & Advisee Directory Access
-1. Access the portal at `/login` and enter your faculty adviser credentials (e.g., `panelist1@aurora.test` / `Panel123!` for **Pablo Job**).
+1. Access the portal at `/login` and enter your faculty adviser credentials (e.g., `panelist1@aurora.test` / `Panel123!` for **Froiland B. Peñalosa**).
 2. The **Adviser Dashboard** opens, displaying:
    - **Advisee Project Cards**: A roster of all capstone groups officially assigned to your supervision.
    - **Pending Endorsements Badge**: Highlights submissions awaiting your endorsement.
@@ -360,7 +360,7 @@ To schedule an individual defense session:
 ```
 
 6. **Automated Conflict Validation**:
-   - **Conflict of Interest Check**: If you accidentally select the project's research adviser (e.g., Pablo Job) as a panel evaluator, AURORA immediately blocks the action with a clear policy violation alert.
+   - **Conflict of Interest Check**: If you accidentally select the project's research adviser (e.g., Froiland B. Peñalosa) as a panel evaluator, AURORA immediately blocks the action with a clear policy violation alert.
    - **Room Conflict Check**: Prevents overlapping bookings for the same room.
    - **Panelist Double-Booking Check**: Flags evaluators already assigned to another defense during that timeslot.
 7. Click **Confirm & Publish Schedule**. The system notifies the student proponents, adviser, and appointed panelists.
@@ -458,7 +458,7 @@ System administrators manage campus hierarchy and role delegations:
 | **"Adviser Conflict of Interest Violation"** | The appointed panel evaluator is also the primary research adviser. | Academic regulations strictly prohibit this. Select an independent faculty evaluator for the panel committee. |
 | **"Password re-authentication failed."** | Incorrect password entered during the RA 8792 digital signature step. | Enter the exact account password (`Panel123!` for demo accounts) to re-verify identity. |
 | **"Manuscript PDF fails to render."** | Browser extension blocking iframe/canvas or unsupported file format. | Ensure the uploaded file is a valid PDF document. Disable ad-blockers for the AURORA domain. |
-| **"Adviser Approval Gate locked."** | Research adviser has not yet clicked *Endorse for Defense*. | Sign in as the designated adviser (Pablo Job), open the workspace, and click **Endorse for Defense**. (In demo mode, this gate is auto-cleared). |
+| **"Adviser Approval Gate locked."** | Research adviser has not yet clicked *Endorse for Defense*. | Sign in as the designated adviser (Froiland B. Peñalosa), open the workspace, and click **Endorse for Defense**. (In demo mode, this gate is auto-cleared). |
 
 ---
 

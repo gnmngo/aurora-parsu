@@ -37,7 +37,7 @@ The AURORA platform generates standardized, printable departmental reports that 
 | "I hereby certify that I have reviewed the final draft of the manuscript and examined the working     |
 | software prototype. I recommend the proponents for Final Oral Defense Deliberation."                 |
 |                                                                                                       |
-| Digitally Certified by: PABLO JOB (Research Adviser)                                                  |
+| Digitally Certified by: FROILAND B. PEÑALOSA (Research Adviser)                                       |
 | Date Certified: October 2, 2026                                                                       |
 +-------------------------------------------------------------------------------------------------------+
 ```
@@ -89,6 +89,7 @@ PROJECT DETAILS:
   Title: AURORA: Academic Unified Review, Observation, Rating, and Assessment System
   Proponents: Mañago, Gene Vincent; Castillo, Carol Ann; Buenafe, Rona Mae; Encinas, Lara Mae
   Program: Bachelor of Science in Information Technology (BSIT)
+  Research Adviser: Froiland B. Peñalosa
 
 PANEL VERDICT SUMMARY:
   Evaluator: Dr. Aris Thorne

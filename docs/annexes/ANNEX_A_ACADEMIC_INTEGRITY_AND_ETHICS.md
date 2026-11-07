@@ -14,7 +14,7 @@
 Project Proponents:
   Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae
 Degree Program: Bachelor of Science in Information Technology (BSIT)
-Research Adviser: Pablo Job | Capstone Coordinator: Dr. Kennedy C. Cuya
+Research Adviser: Froiland B. Peñalosa | Capstone Coordinator: Dr. Kennedy C. Cuya
 ========================================================================================
 ```
 
@@ -52,7 +52,7 @@ The undersigned research adviser has scrutinized the originality report and conf
 
 ```text
 [SIGNED]
-PABLO JOB
+FROILAND B. PEÑALOSA
 Research Adviser
 Department of Computational Sciences
 Partido State University
@@ -80,9 +80,7 @@ The proponents affirm that no AI system was utilized to generate synthetic resea
 *Certified by Proponents:*
 
 ```text
-GENE VINCENT MAÑAGO             CAROL ANN CASTILLO
-Lead Proponent / Developer      Systems Analyst
-
-RONA MAE BUENAFE                LARA MAE ENCINAS
-Quality Assurance Lead          UI/UX Designer & Documenter
+[SIGNED]                      [SIGNED]                      [SIGNED]                      [SIGNED]
+GENE VINCENT MAÑAGO           CAROL ANN CASTILLO            RONA MAE BUENAFE              LARA MAE ENCINAS
+Lead Developer                Systems Analyst               Quality Assurance Lead        UI/UX & Documentation
 ```

@@ -21,7 +21,7 @@ The AURORA platform is architected with a modern, dual-purpose design paradigm: 
 | [AURORA ParSU Logo]   [Dashboard]  [My Projects]  [Submissions]  [Defenses]       [User: Student] [v] |
 +-------------------------------------------------------------------------------------------------------+
 |  PROJECT: Automated Solar Irradiance Forecasting (BSIT-2026-004)                                      |
-|  Current Stage: Title Defense | Status: Under Review | Adviser: Pablo Job                             |
+|  Current Stage: Title Defense | Status: Under Review | Adviser: Froiland B. Peñalosa                  |
 +-------------------------------------------------------------------------------------------------------+
 |  +-------------------------------------------------------+  +---------------------------------------+ |
 |  | STAGE PROGRESSION PIPELINE                           |  | MANUSCRIPT DOCUMENTS                  | |
@@ -75,7 +75,7 @@ The application is engineered using **Tailwind CSS v4** and structured on an ada
 
 ### 2. Navigation Architecture:
 - **Global Header**: University institutional identifier, notification bell with unread badge counter, and role-switching user profile menu.
-- **Sidebar Navigation**: Role-tailored routes based on PostgreSQL custom user claims (Dashboard, Submissions, Annotations, Deliberations, Grades, Executive Analytics, and Settings).
+- **Sidebar Navigation**: Role-tailored routes based on PostgreSQL custom user claims (Dashboard, Submissions, Annotations, Deliberations, Grades, Executive Analytics, Maintenance & DR Backup, and Settings).
 
 ---
 

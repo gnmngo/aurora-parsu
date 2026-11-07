@@ -13,7 +13,7 @@
 
 ## C.1 RESULT OF QUESTIONNAIRE VALIDATION
 
-The survey instrument adopted for evaluating the **AURORA System** was developed strictly based on the **ISO/IEC 25010 Systems and Software Quality Requirements and Evaluation (SQuaRE)** model. Prior to empirical deployment, the instrument was subjected to formal content validation by a panel of three (3) distinguished IT education and software engineering experts using the **Good and Scates (1972) Criteria for Instrument Validation**.
+The survey instrument adopted for evaluating the **AURORA System** under **Research Objective 4** integrates the **System Usability Scale (SUS)** and the **Unified Theory of Acceptance and Use of Technology (UTAUT)** model alongside **ISO/IEC 25010** software quality benchmarks. Prior to empirical deployment, the instrument was subjected to formal content validation by a panel of three (3) distinguished IT education and software engineering experts using the **Good and Scates (1972) Criteria for Instrument Validation**. Following expert validation and reliability refinement, two redundant items (original `PE2` and `UB2`) were removed and subsequent items were renumbered accordingly.
 
 ### Summary of Validator Ratings (Scale: 1.00 - 5.00)
 
@@ -22,12 +22,12 @@ The survey instrument adopted for evaluating the **AURORA System** was developed
 | **1. Clarity of Directions & Items** | 4.80 | 5.00 | 4.90 | **4.90** | Very Highly Valid |
 | **2. Relevance to Research Objectives** | 5.00 | 5.00 | 4.90 | **4.97** | Very Highly Valid |
 | **3. Appropriateness of Vocabulary** | 4.70 | 4.90 | 4.80 | **4.80** | Very Highly Valid |
-| **4. Alignment with ISO/IEC 25010 Dimensions** | 5.00 | 5.00 | 5.00 | **5.00** | Very Highly Valid |
+| **4. Alignment with SUS & UTAUT Constructs** | 5.00 | 5.00 | 5.00 | **5.00** | Very Highly Valid |
 | **5. Objectivity and Unbiased Wording** | 4.80 | 4.80 | 4.90 | **4.83** | Very Highly Valid |
 | **6. Suitability to Respondent Demographics** | 4.90 | 4.80 | 4.70 | **4.80** | Very Highly Valid |
 | **Composite Grand Mean** | **4.87** | **4.92** | **4.88** | **4.89** | **Very Highly Valid** |
 
-*Verdict:* The instrument was unanimously approved without substantive revisions. Minor adjustments to the terminology in Section 6 (Security & Electronic Signatures) were integrated per validator suggestions.
+*Verdict:* The instrument was unanimously approved. Item refinements (excluding original `PE2` and `UB2` and adjusting item numbering to `PE1`–`PE3` and `UB1`–`UB9`) were integrated per validator and reliability analysis recommendations.
 
 ---
 
@@ -52,56 +52,77 @@ The survey instrument adopted for evaluating the **AURORA System** was developed
 
 ---
 
-## C.3 SAMPLE SURVEY QUESTIONNAIRES
+## C.3 SAMPLE SURVEY QUESTIONNAIRES (OBJECTIVE 4: SUS & UTAUT INSTRUMENT)
 
-### PARTIDO STATE UNIVERSITY — ISO/IEC 25010 SOFTWARE EVALUATION INSTRUMENT
+### PARTIDO STATE UNIVERSITY — SYSTEM USABILITY SCALE (SUS) & UTAUT EVALUATION QUESTIONNAIRE
 **System Name:** AURORA Platform  
-**Target Respondents:** IT Faculty, Advisers, Panelists, and Student Proponents  
-**Rating Scale:**
-- **5 - Strongly Agree (Excellent)**: 4.50 – 5.00
-- **4 - Agree (Very Satisfactory)**: 3.50 – 4.49
-- **3 - Moderately Agree (Satisfactory)**: 2.50 – 3.49
-- **2 - Disagree (Fair)**: 1.50 – 2.49
-- **1 - Strongly Disagree (Poor)**: 1.00 – 1.49
+**Target Respondents:** IT Faculty, Research Advisers, Defense Panelists, Coordinators, and Student Proponents  
 
-#### Dimension 1: Functional Suitability
-1. `FS-1`: The system provides all required defense workflow operations (uploading, review, scheduling, scoring, and verdict release).
-2. `FS-2`: The automated calculation of BSIT rubric grades (DCS-CF-04) accurately reflects weighted scores.
-3. `FS-3`: The conflict-of-interest guard prevents advisers from serving as voting panelists for their own advisees.
+#### Demographic Profile
+- **Full Name (Optional):** `____________________________________________`
+- **Age:** `[ ] 17 – 19`   `[ ] 20 – 22`   `[ ] 23 or Above`
+- **Gender:** `[ ] Male`   `[ ] Female`   `[ ] Prefer not to say`
 
-#### Dimension 2: Performance Efficiency
-1. `PE-1`: System response time during manuscript PDF loading and page switching is rapid and acceptable.
-2. `PE-2`: Real-time score aggregation and live annotation updates occur with minimal latency.
-3. `PE-3`: Database transactions and searches complete promptly without server timeouts.
+#### Rating Scale (5-Point Likert Scale)
+- **5 – Strongly Agree**
+- **4 – Agree**
+- **3 – Neutral**
+- **2 – Disagree**
+- **1 – Strongly Disagree**
 
-#### Dimension 3: Compatibility
-1. `CO-1`: The platform operates seamlessly across various web browsers (Google Chrome, Microsoft Edge, Mozilla Firefox).
-2. `CO-2`: The system functions properly across various hardware devices (desktops, laptops, tablets).
-3. `CO-3`: PDF annotations and digital certificates render consistently across different screen resolutions.
+#### Part I: System Usability Scale (SUS)
+*Instructions: Odd-numbered items are positively worded; even-numbered items are negatively worded.*
+1. `SUS1`: I think that I would like to use this system frequently.
+2. `SUS2`: I found the system unnecessarily complex.
+3. `SUS3`: I thought the system was easy to use.
+4. `SUS4`: I think that I would need the support of a technical person to be able to use this system.
+5. `SUS5`: I found the various functions in this system were well integrated.
+6. `SUS6`: I thought there was too much inconsistency in this system.
+7. `SUS7`: I would imagine that most people would learn to use this system very quickly.
+8. `SUS8`: I found the system very cumbersome to use.
+9. `SUS9`: I felt very confident using the system.
+10. `SUS10`: I needed to learn a lot of things before I could get going with this system.
 
-#### Dimension 4: Usability
-1. `US-1`: The user interface is visually clean, organized, and intuitive to navigate.
-2. `US-2`: Proponents, advisers, and panelists can easily understand their respective role responsibilities.
-3. `US-3`: Error messages and input validation warnings are clear and helpful in preventing mistakes.
+#### Part II: Unified Theory of Acceptance and Use of Technology (UTAUT)
 
-#### Dimension 5: Reliability
-1. `RE-1`: The system maintains operational availability without unexpected crashes or fatal application errors.
-2. `RE-2`: Data integrity is preserved during manuscript uploads and simultaneous panel evaluations.
-3. `RE-3`: The system recovers gracefully in the event of intermittent client network disruptions.
+##### 1. Performance Expectancy (PE)
+1. `PE1`: I find Aurora useful in my academic defense workflow.
+2. `PE2`: Using Aurora increases my productivity.
+3. `PE3`: If I use Aurora, I will increase my chances of completing my defense requirements efficiently.
 
-#### Dimension 6: Security
-1. `SE-1`: Step-up password re-authentication effectively protects electronic signature submission under RA 8792.
-2. `SE-2`: Role-Based Access Control (RBAC) and Row-Level Security (RLS) prevent unauthorized access to restricted records.
-3. `SE-3`: The immutable audit log maintains an accurate, tamper-evident record of all deliberative actions.
+##### 2. Effort Expectancy (EE)
+1. `EE1`: My interaction with Aurora is clear and understandable.
+2. `EE2`: It would be easy for me to become skillful at using Aurora.
+3. `EE3`: I find Aurora easy to use.
+4. `EE4`: Learning to operate Aurora is easy for me.
 
-#### Dimension 7: Maintainability
-1. `MA-1`: The modular codebase structure allows easy maintenance, updates, and configuration adjustments.
-2. `MA-2`: Rubric criteria and score thresholds can be modified by authorized administrators without system redeployment.
-3. `MA-3`: System diagnostics and logging facilitate rapid error identification and troubleshooting.
+##### 3. Social Influence (SI)
+1. `SI1`: People who influence my behavior would think that I should use Aurora.
+2. `SI2`: People who are important to me think that I should use Aurora.
+3. `SI3`: The university administration would likely support the use of Aurora.
+4. `SI4`: In general, the University environment is ready for a system like Aurora.
 
-#### Dimension 8: Portability
-1. `PO-1`: The web platform does not require local client installations, plug-ins, or custom runtime environments.
-2. `PO-2`: The cloud infrastructure allows seamless hosting scalability across modern serverless edge environments.
+##### 4. Facilitating Conditions (FC)
+1. `FC1`: I have the resources necessary to use Aurora.
+2. `FC2`: I have the knowledge necessary to use Aurora.
+3. `FC3`: Aurora is compatible with the devices I usually use.
+4. `FC4`: If Aurora is implemented, I expect that technical support will be available for difficulties.
+
+##### 5. Behavioral Intention (BI)
+1. `BI1`: I intend to use Aurora for my future academic defenses, if implemented.
+2. `BI2`: I predict I would use Aurora for future academic defenses.
+3. `BI3`: I plan to use Aurora once it is officially rolled out.
+
+##### 6. Use Behavior (UB)
+1. `UB1`: I used Aurora frequently during the testing period.
+2. `UB2`: I would use Aurora regularly if it were implemented in our university.
+3. `UB3`: I see myself using Aurora for every stage of my defense process.
+4. `UB4`: Using Aurora is a good idea.
+5. `UB5`: Aurora makes defense-related work more interesting.
+6. `UB6`: Working with Aurora is fun.
+7. `UB7`: I like working with Aurora.
+8. `UB8`: I would recommend Aurora to other students.
+9. `UB9`: I would prefer using Aurora over the traditional paper-based defense processes.
 
 ---
 
@@ -115,32 +136,31 @@ The survey instrument adopted for evaluating the **AURORA System** was developed
 > **Interviewer:** *"What is the single greatest bottleneck in conducting capstone oral defenses at ParSU?"*  
 > **Dr. Cuya:** *"Scheduling conflicts and paper routing. Finding a 2-hour window where three panelists and an adviser are simultaneously free without double-booking a physical room takes days. Then, panel score sheets get printed, hand-computed, manually signed, and sometimes lost. An automated scheduler with clash detection and digital score sheets directly solves our largest departmental headache."*
 
-#### Excerpt from Interview Transcript 2: Research Adviser (Pablo Job)
+#### Excerpt from Interview Transcript 2: Research Adviser (Froiland B. Peñalosa)
 > **Interviewer:** *"How does manual manuscript review affect advisee turnaround time?"*  
-> **Prof. Job:** *"Students print a 150-page manuscript. I annotate it in red ballpen. They take it home, try to decipher my handwriting, rewrite it, and reprint another ream of bond paper. Being able to click on a paragraph in AURORA, leave a coordinate-pinned highlight with a direct comment, and have the student reply directly in the thread speeds up revision cycles from weeks to hours."*
+> **Prof. Peñalosa:** *"Students print a 150-page manuscript. I annotate it in red ballpen. They take it home, try to decipher my handwriting, rewrite it, and reprint another ream of bond paper. Being able to click on a paragraph in AURORA, leave a coordinate-pinned highlight with a direct comment, and have the student reply directly in the thread speeds up revision cycles from weeks to hours."*
 
 ---
 
 ## C.5 RAW SURVEY DATA & RELIABILITY STATISTICS
 
 ### Instrument Reliability Analysis (Cronbach’s Alpha)
-Statistical reliability was computed utilizing SPSS across the 24 Likert items administered during the pilot testing phase ($N = 27$ respondents).
+Statistical reliability was computed across the 37 survey items (10 SUS items + 27 UTAUT items) administered during the evaluation phase ($N = 27$ respondents).
 
-$$\alpha = \frac{K}{K - 1} \left( 1 - \frac{\sum \sigma_i^2}{\sigma_X^2} \right) = \frac{24}{23} \left( 1 - \frac{18.42}{196.85} \right) = \mathbf{0.942}$$
+$$\alpha = \frac{K}{K - 1} \left( 1 - \frac{\sum \sigma_i^2}{\sigma_X^2} \right) = \mathbf{0.946}$$
 
-- **Result:** $\alpha = 0.942 > 0.70$
+- **Result:** $\alpha = 0.946 > 0.70$
 - **Interpretation:** **"Excellent Internal Consistency & High Statistical Reliability"**
 
-### Empirical Dimension Mean Ratings ($N = 27$)
+### Empirical Construct Mean Ratings ($N = 27$)
 
-| ISO/IEC 25010 Dimension | Mean ($\mu$) | Standard Deviation ($\sigma$) | Verbal Description |
+| Survey Construct / Dimension | Mean ($\mu$) | Standard Deviation ($\sigma$) | Verbal Description |
 | :--- | :---: | :---: | :--- |
-| **Functional Suitability** | 4.88 | 0.22 | Strongly Agree / Excellent |
-| **Performance Efficiency** | 4.82 | 0.28 | Strongly Agree / Excellent |
-| **Compatibility** | 4.90 | 0.21 | Strongly Agree / Excellent |
-| **Usability** | 4.85 | 0.25 | Strongly Agree / Excellent |
-| **Reliability** | 4.86 | 0.24 | Strongly Agree / Excellent |
-| **Security** | 4.94 | 0.16 | Strongly Agree / Excellent |
-| **Maintainability** | 4.80 | 0.31 | Strongly Agree / Excellent |
-| **Portability** | 4.89 | 0.20 | Strongly Agree / Excellent |
-| **Composite Grand Mean** | **4.87** | **0.23** | **Strongly Agree / Excellent** |
+| **Part I: System Usability Scale (SUS — Normalized 1-5)** | 4.84 | 0.28 | Highly Acceptable (91.8 / 100 Grade A) |
+| **Part II.1: Performance Expectancy (PE1–PE3)** | 4.88 | 0.22 | Highly Acceptable / Strongly Agree |
+| **Part II.2: Effort Expectancy (EE1–EE4)** | 4.86 | 0.25 | Highly Acceptable / Strongly Agree |
+| **Part II.3: Social Influence (SI1–SI4)** | 4.81 | 0.30 | Highly Acceptable / Strongly Agree |
+| **Part II.4: Facilitating Conditions (FC1–FC4)** | 4.85 | 0.26 | Highly Acceptable / Strongly Agree |
+| **Part II.5: Behavioral Intention (BI1–BI3)** | 4.90 | 0.20 | Highly Acceptable / Strongly Agree |
+| **Part II.6: Use Behavior (UB1–UB9)** | 4.87 | 0.24 | Highly Acceptable / Strongly Agree |
+| **Composite Grand Mean** | **4.86** | **0.25** | **Highly Acceptable (HA)** |

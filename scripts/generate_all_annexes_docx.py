@@ -175,7 +175,7 @@ def build_master_annexes_docx(output_paths):
 
     add_meta_line(mp, "Project Platform", "AURORA (Paperless Capstone Defense Management Platform)")
     add_meta_line(mp, "Project Proponents", "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae")
-    add_meta_line(mp, "Research Adviser", "Pablo Job")
+    add_meta_line(mp, "Research Adviser", "Froiland B. Peñalosa")
     add_meta_line(mp, "Capstone Coordinator", "Dr. Kennedy C. Cuya")
     add_meta_line(mp, "Academic Department", "Department of Computational Sciences (DCS), CECS")
     add_meta_line(mp, "Host Institution", "Partido State University (Goa Campus)")
@@ -197,16 +197,16 @@ def build_master_annexes_docx(output_paths):
     annex_table_data = [
         ("Annex", "Category / Title", "Specific Included Contents"),
         ("Annex A", "Academic Integrity & Ethics", "1. Plagiarism Certification / Originality Report\n2. AI Disclosure (Code, Image/Figure, Grammar, other usage)"),
-        ("Annex B", "Communications & Approvals", "1. Adviser Acceptance Form\n2. Stakeholder / Client Acceptance Form\n3. Data Gathering & Interview Permits\n4. System Testing Approval Letters\n5. Other Applicable Communication\n6. Final System Turnover Certificate"),
-        ("Annex C", "Data Gathering & Instrument Validation", "1. Result of Questionnaire Validation\n2. Validator Credentials & Certificates\n3. Sample Survey Questionnaires\n4. Interview Protocols & Transcripts\n5. Raw Survey Data & Reliability Statistics"),
+        ("Annex B", "Communications & Approvals", "1. Adviser Acceptance Form\n2. Stakeholder / Client Acceptance Form, if applicable\n3. Data Gathering & Interview Permits, if applicable\n4. System Testing Approval Letters, if applicable\n5. Other Applicable Communication\n6. Final System Turnover Certificate, if applicable"),
+        ("Annex C", "Data Gathering & Instrument Validation", "1. Result of Questionnaire Validation, if applicable\n2. Validator Credentials & Certificates, if applicable\n3. Sample Survey Questionnaires, if applicable\n4. Interview Protocols & Transcripts, if applicable\n5. Raw Survey Data & Reliability Statistics, if applicable"),
         ("Annex D", "Project Management & Governance", "1. Project Gantt Chart & Schedule\n2. Work Breakdown Structure (WBS)\n3. Panel Revision Compliance Matrix"),
         ("Annex E", "User Interface & Experience (UI/UX)", "1. High-Fidelity Wireframes\n2. Screen Layouts\n3. Mobile & Web UI Mockups\n4. Style Guide & Design System Components"),
-        ("Annex F", "Technical Documentation & Specifications", "1. Software Requirements Specification (SRS) Matrix\n2. Comprehensive System Documentation\n3. API Endpoint Specifications (e.g., Postman)\n4. Hardware & Circuit Schematics (if applicable)"),
+        ("Annex F", "Technical Documentation & Specifications", "1. Software Requirements Specification (SRS) Matrix\n2. Comprehensive System Documentation\n3. API Endpoint Specifications (e.g., Postman), if applicable\n4. Hardware & Circuit Schematics (if applicable)"),
         ("Annex G", "Source Code & Repository", "1. Relevant Source Code Snippets\n2. Database Schema Scripts (SQL DDL), if applicable"),
-        ("Annex H", "Testing, QA & Security", "1. Master Test Plan & Test Case Matrix\n2. Test Execution Results\n3. User Acceptance Testing (UAT), if applicable\n4. ISO/IEC 25010 Software Quality Evaluation"),
-        ("Annex I", "Sample Generated Outputs", "1. Sample System Reports (PDF/Excel), if applicable\n2. Printable Transaction Receipts & Invoices\n3. Administrative Analytics Dashboards"),
-        ("Annex J", "User & System Manuals", "1. User’s Guide / User Manual\n2. System Administrator Manual\n3. Maintenance & Troubleshooting Guide\n4. Disaster Recovery & Data Backup Plan"),
-        ("Annex K", "Deployment & Infrastructure", "1. Hosting & Server Specifications\n2. Domain, SSL & DNS Configurations\n3. CI/CD Pipeline & Deployment Scripts"),
+        ("Annex H", "Testing, QA & Security", "1. Master Test Plan & Test Case Matrix, if applicable\n2. Test Execution Results, if applicable\n3. User Acceptance Testing (UAT), if applicable\n4. ISO/IEC 25010 Software Quality Evaluation, if applicable"),
+        ("Annex I", "Sample Generated Outputs", "1. Sample System Reports (PDF/Excel), if applicable\n2. Printable Transaction Receipts & Invoices, if applicable\n3. Administrative Analytics Dashboards, if applicable"),
+        ("Annex J", "User & System Manuals", "1. User’s Guide / User Manual, if applicable\n2. System Administrator Manual, if applicable\n3. Maintenance & Troubleshooting Guide, if applicable\n4. Disaster Recovery & Data Backup Plan, if applicable"),
+        ("Annex K", "Deployment & Infrastructure", "1. Hosting & Server Specifications, if applicable\n2. Domain, SSL & DNS Configurations, if applicable\n3. CI/CD Pipeline & Deployment Scripts, if applicable"),
         ("Annex L", "Glossary", "1. Glossary of Technical Terms & Acronyms")
     ]
 

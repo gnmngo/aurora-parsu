@@ -18,69 +18,92 @@ AURORA provides dedicated operational guides for each institutional stakeholder 
 ### J.1.1 Student Proponent Guide
 1. **Accessing the Portal:** Visit `https://aurora-parsu.vercel.app/login` and log in using your institutional email.
 2. **Team Formation:** The lead proponent clicks **Create Project**, inputs the approved title, and shares the generated 8-character **Join Code** with teammates.
-3. **Manuscript Submission:** Navigate to **Workspace > Submissions**, drag-and-drop your latest PDF manuscript. The system computes its SHA-256 fingerprint.
+3. **Manuscript Submission:** Navigate to **Submissions** or **My Project**, drag-and-drop your latest PDF manuscript, and select the target defense stage from your college's customized workflow (4 stages for CEC; 3 customizable stages for other colleges). The system computes its FIPS 180-4 SHA-256 fingerprint and sets status to `under_review` (`pending` adviser endorsement).
 4. **Filing Defense Application (DCS-CF-03):** Fill in the requirements checklist (Turnitin score, adviser clearance, preferred defense dates).
-5. **Viewing Feedback & Remarks:** Open the **Annotations Drawer** to view adviser comments. Click on any annotation to view the highlighted page segment and reply to notes.
-6. **Accessing Defense Outcomes:** Check the **Grades** tab to review composite panel evaluations, download Form DCS-CF-04, and view your verification serial number.
+5. **Viewing Feedback & Remarks:** Open the **Annotations** view or **Review Workspace** to view adviser and panelist comments. Click on any annotation to jump to the highlighted page segment and reply to notes.
+6. **Accessing Defense Outcomes:** Check the **Grades** tab to review composite panel evaluations, download Form DCS-CF-04, and view your verifiable clearance certificate serial number (`AURORA-YYYY-XXXX`).
 
-### J.1.2 Research Adviser Guide
-1. **Advisee Directory:** Click **My Advisees** to view all capstone groups under your supervision.
-2. **Dual-Pane Annotation:** Open the project workspace. Drag bounding boxes directly on text segments to create highlighted annotations. Categorize comments by severity (*Critical*, *Major*, *Minor*) and tag rubric criteria.
-3. **Endorsing for Defense:** When satisfied with revisions, navigate to **DCS-CF-03 Certification**, review the student checklist, and click **Endorse for Oral Defense**. This unlocks the scheduling phase for the coordinator.
+### J.1.2 Research Adviser Guide (e.g., Prof. Froiland B. Peñalosa)
+1. **Advisee Directory:** Click **Dashboard** or **Submissions** to view all capstone groups under your supervision.
+2. **Dual-Pane Annotation:** Open the project in the **Review Workspace** (`/workspace`). Select text or draw freehand / bounding-box annotations directly on the manuscript PDF. Categorize comments by severity (*Critical*, *Major*, *Minor*) and tag rubric criteria.
+3. **Endorsing for Defense:** When satisfied with revisions, click **Approve & Endorse for Defense** (or **Request Revisions**) on the manuscript card. Endorsement automatically unlocks the project for defense scheduling by the Coordinator.
 
 ### J.1.3 Faculty Panel Evaluator Guide
-1. **Defense Calendar:** View your assigned deliberation schedule under **Defenses > Schedule**.
-2. **Live Evaluation Workspace:** During the defense deliberation, access the live scoring worksheet.
-3. **Scoring Criteria (DCS-CF-04):** Input raw scores for Manuscript Quality (30%), System Demonstration (35%), Oral Competence (25%), and Q&A (10%).
-4. **Digital Signature (RA 8792):** Select signature method (Drawn, Typed, or Uploaded). Enter your password for step-up re-authentication. Click **Finalize & Lock Evaluation**.
+1. **Defense Calendar:** View your assigned deliberation schedule under **Defenses**.
+2. **Live Evaluation Workspace:** During the oral defense, launch the split-screen **Review Workspace** (`/workspace/[projectId]/[stageId]`) to view the PDF manuscript on the left and the interactive rubric scoring drawer on the right.
+3. **Scoring Criteria (DCS-CF-04):** Score each dynamic rubric criterion (weights normalized to 100%).
+4. **Digital Signature (RA 8792):** Ensure your official signature baseline is registered in **Settings** (`/dashboard/settings`) or draw/upload your signature directly in the signing modal, then click **Finalize & Lock Evaluation**.
 
 ---
 
 ## J.2 SYSTEM ADMINISTRATOR MANUAL
 
 ### J.2.1 Defense Coordinator Command Hub
-1. **Application Vetting:** Review submitted DCS-CF-03 applications. Confirm adviser digital endorsement.
-2. **Defense Scheduling:**
-   - Single Schedule: Select room, start time, duration, and panel committee. The system automatically warns if a room collision or panelist clash occurs.
-   - Batch Auto-Scheduler: Use the batch scheduling algorithm to automatically distribute multiple defenses across academic calendar windows.
-3. **Panel Composition:** Assign one Committee Chair and two voting Panelists. The assigned Research Adviser is automatically isolated from the voting panel.
-4. **Stage Transition:** Advance projects to subsequent milestones (*Title -> Proposal -> Final Defense*) upon consensus approval.
+1. **Application & Endorsement Vetting:** Review adviser-endorsed manuscripts and DCS-CF-03 applications.
+2. **Defense Scheduling (`/dashboard/defenses/schedule`):**
+   - **Single Schedule:** Select room, start time, duration, and panel committee. The system automatically blocks room collisions, panelist time clashes, or adviser conflict-of-interest violations.
+   - **Batch Auto-Scheduler:** Automatically distribute multiple eligible projects across conflict-free time windows and rooms.
+3. **Customizable Defense Stages (`/admin/stages`) & Rubrics (`/admin/rubrics`):**
+   - CEC utilizes the 4-stage progression (*Concept Paper*, *Title Defense*, *Proposal Defense*, *Final Oral Defense*), while other colleges default to the 3 main defense stages (*Title Defense*, *Proposal Defense*, *Final Oral Defense*) with full stage and rubric customization.
 
-### J.2.2 College Dean & Executive Operations
-1. **Executive Analytics:** Monitor college-wide throughput, pass/fail ratios, and departmental defense KPIs.
-2. **Audit Ledger:** Review the immutable audit log under `/admin/audit` to inspect deliberative actions, IP addresses, and timestamps.
-3. **User Management:** Manage faculty and student accounts, assign role privileges (`sys_admin`, `coordinator`, `adviser`, `panelist`, `college_dean`).
+### J.2.2 College Dean & System Administrator Operations
+1. **Executive Analytics (`/dashboard/analytics`):** Monitor college-wide throughput, pass/fail ratios, Objective 2 latency benchmarks, and Objective 4 (SUS & UTAUT) acceptability survey statistics.
+2. **User Management & Security (`/admin/users`):** Approve pending registrations, onboard faculty accounts, and manage role assignments (`student`, `adviser`, `panelist`, `coordinator`, `college_dean`, `sys_admin`).
+3. **Maintenance, Troubleshooting & Disaster Recovery Console (`/admin/system-health`):** Run live subsystem diagnostics, trigger one-click self-healing maintenance, and export/verify SHA-256 signed institutional database backups.
+4. **Audit Ledger (`/admin/audit`):** Inspect the immutable audit trail recording actor email, role, action type, IP address, and state diffs.
 
 ---
 
 ## J.3 MAINTENANCE & TROUBLESHOOTING GUIDE
 
-| Issue / Symptom | Possible Root Cause | Recommended Operational Solution |
-| :--- | :--- | :--- |
-| **"Conflict of Interest Violation" Error** | Coordinator assigned the project's adviser to the panel committee. | Select an alternate faculty panelist who is not an adviser for this group. |
-| **"Room Conflict" Alert** | Chosen venue is already booked for another defense during this timeslot. | Choose an alternate room or adjust the defense start time by $\pm 90$ minutes. |
-| **"Password Re-Authentication Failed"** | Incorrect password entered during signature finalization. | Re-enter your active account password carefully. Signature requires active verification under RA 8792. |
-| **PDF Manuscript Fails to Render** | Corrupted PDF export or unsupported PDF version ($> 2.0$). | Re-export the manuscript as standard PDF/A or standard PDF 1.7 and re-upload. |
-| **"Adviser Approval Required" Block** | Project attempting to schedule defense before adviser endorses Form DCS-CF-03. | Advise the research adviser to sign the endorsement certification in their portal. |
+### J.3.1 Preventive System Maintenance Schedule (SOP)
+
+| Frequency | Responsible Role | Target Subsystem | Preventive Maintenance Procedure | Verification Metric |
+| :--- | :--- | :--- | :--- | :--- |
+| **Daily** | System Admin / Automated Probes | PostgreSQL 15 Pool, RLS & Realtime WSS | Verify database connection pool health, Row-Level Security (RLS) enforcement, automated daily WAL backup completion, and WebSocket latency. | Status = Healthy; Latency $< 200\text{ ms}$; 0 RLS errors. |
+| **Weekly (Fridays)** | System Admin / Coordinator | Disaster Recovery Vault & Self-Healing Engine | Click **Export DR Backup Snapshot** in `/admin/system-health`; click **Run Self-Healing Maintenance**; inspect `/admin/audit`. | Signed `.json` backup archived offsite; 100% active pointers. |
+| **Monthly** | System Administrator | S3 Storage Buckets & SHA-256 Verifier | Audit `manuscripts`, `signatures`, and `certificates` bucket utilization; verify latest backup archive in the **SHA-256 Integrity Verifier**. | Storage $< 80\%$ quota; 100% SHA-256 checksum match. |
+| **Semestral Rollover** | Coordinator, College Dean & Admin | Workflow Stages, Rubrics & User Directory | Archive completed capstone dockets; review college Defense Stages (`/admin/stages`) and Rubric Templates (`/admin/rubrics`); onboard new faculty. | All college workflows active; rubric weights sum to 100%. |
+
+### J.3.2 Automated Subsystem Integrity Probes & Self-Healing Maintenance
+Accessible via `/admin/system-health` (**Tab 1: Maintenance & Live Diagnostics**), AURORA provides six automated probes and a **Run Self-Healing Maintenance** utility:
+1. **PostgreSQL Relational Engine & RLS (`postgres_engine`):** Verifies active connection pooling and Row-Level Security enforcement.
+2. **Manuscript Storage & SHA-256 Version Pointers (`manuscript_versions`):** Detects any document where versions exist without an active `is_current = true` flag and automatically promotes the latest version pointer.
+3. **RA 8792 Cryptographic Digital Signatures (`digital_signatures`):** Audits all faculty profiles against `user_signatures` and automatically provisions a verifiable SHA-256 baseline signature for any approved faculty account missing one.
+4. **College Workflow Templates & Defense Stages (`workflow_stages`):** Verifies ordered defense stages across all university colleges.
+5. **Dynamic Rubric Scoring & Consensus Engine (`rubric_engine`):** Confirms active rubric templates have criterion weights summing to 100%.
+6. **Security Audit Trail & Non-Repudiation Ledger (`audit_ledger`):** Confirms append-only audit logging across all system modules.
+
+### J.3.3 Comprehensive Module Troubleshooting Matrix
+
+| Code & Priority | Module | Observed Symptom / Issue | Root Cause | Step-by-Step Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| **TS-AUTH-01** *(Medium)* | Authentication & RBAC | User logs in but sees *Pending Approval* or restricted navigation. | Account status is `pending` or active role in header Role Switcher is set to another role. | 1. Approve the user in `/admin/users`. 2. Use the top header **Role Switcher** pill to switch active role context. |
+| **TS-PDF-01** *(High)* | Manuscript PDF & Storage | Uploaded PDF does not appear in Adviser Queue or shows older version. | Upload was interrupted before `is_current` version pointer completed. | 1. Open `/admin/system-health` and click **Run Self-Healing Maintenance**. 2. Confirm manuscript status in `/dashboard/submissions` is `under_review`. |
+| **TS-WS-01** *(Low)* | Split-Screen Workspace | Realtime annotations do not sync immediately across panelists. | Transient WebSocket (WSS) disconnect or network sleep. | 1. Reselect the stage in the workspace header or refresh the page to re-subscribe to the Supabase WAL channel. |
+| **TS-SCHED-01** *(Medium)* | Defense Scheduling | *Room Conflict*, *Panelist Clash*, or *Conflict of Interest* error. | Overlapping non-cancelled schedule or adviser selected as voting panelist. | 1. Cancel/reschedule postponed sessions in `/dashboard/defenses` first. 2. Select an independent panelist or use **Batch Auto-Schedule**. |
+| **TS-RUBRIC-01** *(Medium)* | Rubric Management | Rubric template cannot be saved in `/admin/rubrics`. | Sum of criterion weights does not equal 100%. | 1. Adjust criterion weights in the Rubric Builder until total equals 100%, then save. |
+| **TS-SIG-01** *(High)* | Digital Signatures & Certificates | Panelist cannot lock evaluation or `/verify/[serial]` fails. | Missing active electronic signature baseline or mistyped certificate serial. | 1. Save an Electronic Signature Baseline in `/dashboard/settings` (or run Self-Healing Maintenance). 2. Copy exact serial (`AURORA-YYYY-XXXX`) into `/verify`. |
 
 ---
 
-## J.4 DISASTER RECOVERY & DATA BACKUP PLAN
+## J.4 DISASTER RECOVERY & DATA BACKUP PLAN (DRP / BCP)
 
-To guarantee business continuity and satisfy ISO/IEC 25010 reliability metrics, AURORA enforces a comprehensive Disaster Recovery and Backup Protocol.
+To guarantee institutional business continuity and satisfy **ISO/IEC 25010 Recoverability** and **NPC Circular No. 16-01 (Data Privacy Act of 2012)**, AURORA enforces a formal Disaster Recovery and Data Backup Plan accessible at `/admin/system-health` (**Tab 2: Disaster Recovery & Data Backup Plan**).
 
-### 1. Key Recovery Metrics:
-- **Recovery Point Objective (RPO):** $< 1.0\text{ hour}$ (Maximum allowable data loss window).
-- **Recovery Time Objective (RTO):** $< 15\text{ minutes}$ (Maximum allowable system downtime during failover).
+### J.4.1 Service Level Objectives & 3-2-1 Backup Architecture
+- **Recovery Time Objective (RTO):** $\le 4\text{ Hours}$ for full relational database and object storage restoration ($\le 15\text{ minutes}$ for cloud application failover).
+- **Recovery Point Objective (RPO):** $\le 24\text{ Hours}$ via automated daily snapshots and on-demand pre-defense JSON exports (near-zero data loss via continuous Write-Ahead Logging PITR).
+- **3-2-1 Backup Rule:**
+  1. **Tier 1 (Primary Live Cluster):** Managed PostgreSQL 15 cluster with RLS and S3 object storage (`manuscripts`, `signatures`, `certificates`).
+  2. **Tier 2 (Automated Cloud Daily Snapshots & WAL PITR):** Daily physical snapshots retained for 30 days plus continuous WAL archiving for point-in-time recovery.
+  3. **Tier 3 (Offsite Cryptographically Signed JSON Cold Archives):** Weekly and pre-defense on-demand snapshots generated via **Export DR Backup Snapshot** (`exportInstitutionalBackupAction`), exporting all 20 relational tables into `AURORA_DR_Backup_YYYY-MM-DD_<sha256>.json` with a verifiable FIPS 180-4 SHA-256 digest.
 
-### 2. Automated Cloud Backup Strategy:
-- **Daily Automated Snapshots:** Supabase Cloud creates daily physical database snapshots stored in multi-region cold storage.
-- **Point-in-Time Recovery (PITR):** Write-Ahead Logging (WAL) archives allow restoring the database to any millisecond within the previous 7 days.
-- **Storage Bucket Redundancy:** Manuscript and signature storage buckets in AWS S3 (Singapore) are configured with 99.999999999% (11 9's) durability.
+### J.4.2 Catastrophic Disaster Recovery Playbooks
 
-### 3. Local Administrative Backup Scripts:
-Administrative PowerShell scripts are located in `docs/scripts/` to execute on-demand institutional database and file backups:
-- **`backup-db.ps1`**: Dumps schema and data tables into encrypted `.sql` archive.
-- **`restore-db.ps1`**: Restores database snapshot to recovery cluster.
-- **`backup-storage.ps1`**: Downloads and mirrors all manuscript PDFs and digital signature assets.
-- **`restore-storage.ps1`**: Re-syncs storage assets to secondary storage bucket.
+| Scenario | Target RTO / RPO | Step-by-Step Recovery & Restoration Procedure |
+| :--- | :--- | :--- |
+| **Scenario A: Relational Database Corruption or Accidental Deletion** | RTO $\le 2\text{h}$ / RPO $\le 24\text{h}$ | 1. Restrict writes or enable maintenance mode. 2. Trigger Supabase Point-in-Time Recovery (PITR) for cluster rollback, or validate the latest `AURORA_DR_Backup_*.json` in the **SHA-256 Integrity Verifier** (`/admin/system-health`) and restore affected tables. 3. Click **Run Self-Healing Maintenance** to verify foreign-key pointers. |
+| **Scenario B: Manuscript PDF Storage Outage or File Tampering** | RTO $\le 3\text{h}$ / RPO $0\text{h}$ | 1. Compare `document_versions.checksum_sha256` against binary file hashes in the `manuscripts` bucket. 2. Restore missing/altered PDFs from the replicated institutional S3 archive. 3. Re-verify SHA-256 digests before re-opening the workspace. |
+| **Scenario C: Compromised Credentials or Auth Lockout** | RTO $\le 30\text{m}$ / RPO $0\text{h}$ | 1. Set compromised profile status to `suspended` in `/admin/users` (Edge Middleware revokes active sessions immediately). 2. Rotate `SUPABASE_SERVICE_ROLE_KEY` if administrative keys were exposed. 3. Audit `/admin/audit` by `user_email` and `ip_address`. |
+| **Scenario D: Cloud Application Host Failover** | RTO $\le 15\text{m}$ / RPO $0\text{h}$ | 1. Promote the last known-good immutable production deployment in Vercel. 2. Confirm environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`). 3. Click **Re-Run Diagnostics** in `/admin/system-health`. |

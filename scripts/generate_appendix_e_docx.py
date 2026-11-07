@@ -153,7 +153,7 @@ def create_appendix_e_docx(output_paths):
 
     add_meta_line(mp, "Project Platform", "AURORA (Paperless Capstone Defense Management Platform)")
     add_meta_line(mp, "Project Proponents", "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae")
-    add_meta_line(mp, "Research Adviser", "Pablo Job")
+    add_meta_line(mp, "Research Adviser", "Froiland B. Peñalosa")
     add_meta_line(mp, "Capstone Coordinator", "Dr. Kennedy C. Cuya")
     add_meta_line(mp, "Academic Department", "Department of Computational Sciences (DCS), CECS")
     add_meta_line(mp, "Host Institution", "Partido State University (Goa Campus)")
