@@ -59,8 +59,8 @@ export async function submitDefenseApplicationAction(input: {
       return { success: false, error: "Permission denied. You are not a member of this project." };
     }
 
-    const defenseType = input.defenseType || "Progress Report";
-    const formCode = input.formCode || "DCS-CF-03";
+    const defenseType = input.defenseType || "Oral Defense";
+    const formCode = input.formCode || "DCS-CF-01";
 
     // Upsert into defense_applications
     const { data: application, error: upsertErr } = await serviceClient
@@ -483,7 +483,7 @@ export async function toggleApplicationGateAction(input: {
         .insert({
           project_id: input.projectId,
           stage_id: input.stageId,
-          form_code: "DCS-CF-03",
+          form_code: "DCS-CF-01",
           defense_type: "Oral Defense",
           requirements_checklist: {
             accomplishment_report: true,

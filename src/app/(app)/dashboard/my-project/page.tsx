@@ -680,7 +680,10 @@ export default function MyProjectPage() {
               projectId={project.id}
               stageId={activeStageId || ""}
               projectTitle={project.title}
-              programName={project.departments?.name ? `BS Information Technology (${project.departments.name})` : "BS Information Technology"}
+              programName={project.programs?.name || formMeta.programName}
+              collegeName={project.colleges?.name || formMeta.collegeHeader}
+              departmentName={project.departments?.name || formMeta.departmentHeader}
+              programCode={project.programs?.code || (formMeta.isBsit ? "BSIT" : undefined)}
               proponents={allMembers.filter((m: ProjectMemberDisplay) => m.member_role !== "adviser").map((m: ProjectMemberDisplay) => ({
                 name: m.profiles ? `${m.profiles.first_name} ${m.profiles.last_name}` : "Proponent",
                 isLeader: m.member_role === "student_leader" || m.is_primary,

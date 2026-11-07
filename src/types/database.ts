@@ -299,6 +299,15 @@ export interface DefenseApplicationRequirements {
   documentation_chapters_label?: string;
   presentation_files: boolean;
   custom_items?: Array<{ id: string; label: string; completed: boolean }>;
+  // Official BSIT DCS-CF-01 Application for Oral Defense fields
+  date_today?: string;
+  members_line_1?: string;
+  members_line_2?: string;
+  concept_1?: string;
+  concept_2?: string;
+  concept_3?: string;
+  fully_accomplished_form?: boolean;
+  documentation_3_copies?: boolean;
 }
 
 export interface AdviserCertification {

@@ -321,7 +321,7 @@ export function getProgramFormMetadata(options: {
       collegeHeader: options.collegeName || "College of Engineering and Computational Sciences",
       departmentHeader: options.departmentName || "Department of Computational Sciences",
       programName: "BS Information Technology",
-      formCodeApplication: "DCS-CF-03",
+      formCodeApplication: "DCS-CF-01",
       formCodeEvaluation: "DCS-CF-04",
       formCodeSummary: "DCS-CF-05",
       addresseeTitle: "THE DEPARTMENT CHAIRPERSON",

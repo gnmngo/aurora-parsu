@@ -13,22 +13,24 @@
 
 ## I.1 SAMPLE SYSTEM REPORTS (OFFICIAL INSTITUTIONAL FORMS)
 
-The AURORA platform generates standardized, printable departmental reports that replace traditional physical paper forms while preserving full compliance with Partido State University's ISO 9001:2015 quality management documentation standards.
+The AURORA platform generates standardized, printable departmental reports that preserve full compliance with Partido State University's ISO 9001:2015 quality management documentation standards. For **BSIT Capstone Papers**, AURORA uses the exact official **`DCS-CF-01` Application for Oral Defense** document.
 
-### 1. Form DCS-CF-03: Application for Oral Defense & Adviser Certification
+### 1. Official BSIT Form `DCS-CF-01`: APPLICATION FOR ORAL DEFENSE
 
-| Field / Section | Official Generated Institutional Record (Form DCS-CF-03, Rev. 2026) |
+| Official `DCS-CF-01` Field / Section | Official Generated Institutional Record (`DCS-CF-01`) |
 | :--- | :--- |
-| **Institution & Department** | Partido State University — College of Engineering and Computational Sciences (Department of Computational Sciences) |
-| **Project Title** | *AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University* |
-| **Student Proponents** | Mañago, Gene Vincent D. • Castillo, Carol Ann B. • Buenafe, Rona Mae S. • Encinas, Lara Mae B. • Bares, Leomer |
-| **Degree Program & Stage** | Bachelor of Science in Information Technology (BSIT) — **Final Oral Defense** |
-| **Prerequisite 1: Turnitin Check** | **VERIFIED** — Overall Similarity Index: **11.0%** (Compliant with $\le 20.0\%$ Departmental Threshold) |
-| **Prerequisite 2: Manuscript & Code** | **VERIFIED** — Complete Manuscript (`v3`, SHA-256: `8f9a2b...c3d4`) and Working Cloud Prototype Uploaded |
-| **Prerequisite 3: Panel Revisions** | **VERIFIED** — All Prior Critical and Major Annotations Addressed and Closed ($14 / 14$) |
-| **Adviser Certification Statement** | *"I hereby certify that I have reviewed the final draft of the manuscript and examined the working software prototype. I recommend the proponents for Final Oral Defense Deliberation."* |
-| **Digitally Certified By** | **FROILAND B. PEÑALOSA** (Research Adviser, Department of Computational Sciences) |
-| **Date & Status** | November 2026 — **ENDORSED & CLEARED FOR SCHEDULING** (Noted by **Dr. Kennedy C. Cuya**, Capstone Coordinator) |
+| **Header Banner & Document Code** | `PARTIDO STATE UNIVERSITY • COLLEGE OF ENGINEERING AND COMPUTATIONAL SCIENCES • DEPARTMENT OF COMPUTATIONAL SCIENCES • CAPSTONE AND RESEARCH PROJECT` — **`DCS-CF-01`** |
+| **Form Title** | **APPLICATION FOR ORAL DEFENSE** |
+| **Date Today** | November 2026 |
+| **Name of Members** | Mañago, Gene Vincent D. • Castillo, Carol Ann B. • Buenafe, Rona Mae S. • Encinas, Lara Mae B. • Bares, Leomer |
+| **Capstone Working Titles — Concept 1** | *AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University* |
+| **Capstone Working Titles — Concept 2** | *(Concept Paper 2 Working Title)* |
+| **Capstone Working Titles — Concept 3** | *(Concept Paper 3 Working Title)* |
+| **REQUIREMENTS** | `[✓]` **Fully Accomplished Application Form**<br>`[✓]` **Documentation (Printed, three [3] copies)** — *• Chapter 1-3 of Concept 1; • Concept Paper (2 & 3)*<br>`[✓]` **Presentation Files** |
+| **CERTIFICATION OF THE ADVISER** | *"This is to certify that I have thoroughly evaluated the project for Title Defense requirements in accordance with the prescribed requirements and have reviewed and verified the completeness and accuracy of the documents submitted with this application. Based on this evaluation, I hereby recommend that the above name of students be permitted to proceed with the progress report defense."* |
+| **Signature of Adviser over Printed Name** | **FROILAND B. PEÑALOSA** |
+| **Evaluation Committee Members** | *"Affixed below is my name and signature as manifestation that I agree to the above schedule."*<br>• **MEMBER:** Rowell John B. Artiaga, DIT &nbsp;&nbsp;|&nbsp;&nbsp; **MEMBER:** Michael B. Amata<br>• **CHAIRMAN:** Salvador V. Briones II, MAEd |
+| **Approved By** | **KENNEDY C. CUYA, DIT** — *DEPARTMENT CHAIR* |
 
 ---
 
@@ -41,7 +43,7 @@ The AURORA platform generates standardized, printable departmental reports that 
 | **3. Oral Presentation & Delivery Mastery** | **25%** | 92.00 | **23.00%** | Clear architectural explanation and role demonstration. |
 | **4. Question & Answer / Technical Defense** | **10%** | 94.00 | **9.40%** | Accurate defense of RA 8792 cryptography and RLS security. |
 | **COMPOSITE WEIGHTED RATING** | **100%** | — | **94.50%** | **PASSED — EXCELLENT (Approved without Revisions)** |
-| **Evaluator & Committee Role** | **Panel Chair** | — | **Dr. Kennedy C. Cuya, DIT** | Department of Computational Sciences, ParSU |
+| **Evaluator & Committee Role** | **Panel Chair** | — | **Salvador V. Briones II, MAEd** | Panel of Examiners Chairperson, ParSU |
 | **RA 8792 Certificate Serial** | `AURORA-2026-000001` | — | **Locked & Signed** | SHA-256: `e3b0c44298fc1c149afbf4c8996fb924...b7852b855` |
 
 ---
@@ -52,14 +54,14 @@ AURORA generates a tamper-evident digital verification receipt for every legally
 
 | Receipt Attribute | Authoritative Cryptographic Record |
 | :--- | :--- |
-| **Receipt Reference Number** | `REC-2026-10-02-001` |
+| **Receipt Reference Number** | `REC-2026-11-01-001` |
 | **Certificate Serial Number** | `AURORA-2026-000001` |
 | **Deliberation Timestamp** | November 2026 • 10:14:22 AM PHT (UTC+8) |
 | **Deliberation Venue** | CECS Conference Room & AURORA Split-Screen Workspace |
-| **Project Title** | *AURORA: Academic Unified Review, Observation, Rating, and Assessment System* |
+| **Project Title** | *AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University* |
 | **Proponents** | Mañago, Gene Vincent D.; Castillo, Carol Ann B.; Buenafe, Rona Mae S.; Encinas, Lara Mae B.; Bares, Leomer |
 | **Research Adviser** | **Froiland B. Peñalosa** (Department of Computational Sciences) |
-| **Signing Evaluator & Role** | **Dr. Kennedy C. Cuya** — Panel Committee Chairperson |
+| **Signing Evaluator & Role** | **Salvador V. Briones II, MAEd** — Panel Committee Chairperson |
 | **Composite Score & Verdict** | **94.50% — APPROVED (PASSED WITH DISTINCTION)** |
 | **RA 8792 Authentication Method** | Step-Up Password Re-Authentication via Encrypted Session (`signInWithPassword`) |
 | **Payload SHA-256 Digest** | `7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069` |
@@ -69,7 +71,7 @@ AURORA generates a tamper-evident digital verification receipt for every legally
 
 ## I.3 ADMINISTRATIVE ANALYTICS DASHBOARDS
 
-The platform features an executive reporting dashboard (`/dashboard/analytics`) providing real-time operational intelligence to the College Dean (**Engr. Emelina R. Padayao**), Department Chairperson / Capstone Coordinator (**Dr. Kennedy C. Cuya**), and System Administrator.
+The platform features an executive reporting dashboard (`/dashboard/analytics`) providing real-time operational intelligence to the College Dean (**Engr. Emelina R. Padayao, SE**), Department Chairperson & Capstone Reader (**Kennedy C. Cuya, DIT**), Capstone & Research Coordinator (**Froiland B. Peñalosa**), and System Administrator.
 
 ### Key Executive Analytics Views:
 1. **Deliberation Throughput & Defense Progressions:**

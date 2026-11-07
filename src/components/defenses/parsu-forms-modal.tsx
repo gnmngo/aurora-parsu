@@ -192,6 +192,22 @@ export function ParsuFormsModal({
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {meta.isBsit && activeTab === "tab-03" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                >
+                  <a
+                    href="/forms/BSIT_Application_for_Oral_Defense.docx"
+                    download="DCS-CF-01_Application_for_Oral_Defense.docx"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-primary" />
+                    Download Official .docx
+                  </a>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -223,241 +239,328 @@ export function ParsuFormsModal({
           </TabsList>
 
           {/* =========================================================================
-              FORM 03: APPLICATION FOR ORAL DEFENSE
+              FORM 01 / 03: APPLICATION FOR ORAL DEFENSE
               ========================================================================= */}
           <TabsContent value="tab-03" className="mt-0">
-            <div className="bg-white text-black p-6 sm:p-8 rounded-xl border border-border/80 shadow-sm print:shadow-none print:border-none print:p-4 text-xs font-serif leading-relaxed">
-              {/* Official Header */}
-              <div className="text-center pb-3 border-b-2 border-black space-y-0.5">
-                <p className="text-[10px] tracking-wider uppercase">Republic of the Philippines</p>
-                <h1 className="text-sm sm:text-base font-bold uppercase tracking-wide">
-                  Partido State University
-                </h1>
-                <p className="text-[11px] font-medium">San Jose Campus • Goa, Camarines Sur</p>
-                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider pt-1">
-                  {departmentTitle}
+            {meta.isBsit ? (
+              /* EXACT OFFICIAL BSIT DOCUMENT (DCS-CF-01) */
+              <div
+                className="bg-white text-black p-6 sm:p-10 rounded-xl border border-border/80 shadow-sm print:shadow-none print:border-none print:p-4 text-[12.5px] leading-relaxed"
+                style={{ fontFamily: '"Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif' }}
+              >
+                {/* Official ParSU CECS DCS Header Banner + DCS-CF-01 */}
+                <div className="relative mb-5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/forms/bsit_header_banner.png"
+                    alt="Partido State University - Department of Computational Sciences Header"
+                    className="w-full h-auto object-contain"
+                  />
+                  <div
+                    className="absolute right-2 bottom-[24%] font-bold text-xs tracking-wide text-black bg-white/90 px-1"
+                    style={{ fontFamily: '"Courier New", Courier, monospace' }}
+                  >
+                    DCS-CF-01
+                  </div>
+                </div>
+
+                {/* Centered Title */}
+                <h2 className="text-center font-bold text-sm sm:text-base uppercase tracking-wide my-5 text-black">
+                  APPLICATION FOR ORAL DEFENSE
                 </h2>
-                <div className="pt-2">
-                  <span className="inline-block px-3 py-1 font-bold text-xs uppercase tracking-widest border border-black bg-slate-100 print:bg-transparent">
-                    APPLICATION FOR ORAL DEFENSE ({defenseData?.stageName?.toUpperCase() || "PROGRESS REPORT"})
-                  </span>
-                </div>
-                <div className="flex justify-between text-[10px] font-sans text-slate-600 print:text-black pt-1 px-1">
-                  <span>Document Code: <strong>{formCodeApp}</strong></span>
-                  <span>Revision: <strong>00</strong></span>
-                  <span>Program: <strong>{programTitle}</strong></span>
-                </div>
-              </div>
 
-              {/* Date & Addressee */}
-              <div className="pt-4 pb-2 space-y-3 font-serif">
-                <div className="flex justify-between text-xs">
-                  <span></span>
-                  <div>
-                    <strong>Date: </strong>
-                    <span className="underline underline-offset-4">
-                      {application?.application_date
-                        ? new Date(application.application_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : new Date().toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                    </span>
-                  </div>
-                </div>
+                {/* Top Table: Date Today, Name of Members, Capstone Working Titles (Concept 1, 2, 3) */}
+                <table className="w-full border-collapse text-xs sm:text-[13px] mb-6">
+                  <tbody>
+                    <tr>
+                      <td className="font-bold py-1.5 pr-3 w-36 whitespace-nowrap align-bottom text-black">
+                        Date Today
+                      </td>
+                      <td colSpan={2} className="border-b border-black py-1 px-1 w-64 align-bottom text-black">
+                        {application?.requirements_checklist?.date_today ||
+                          (application?.application_date
+                            ? new Date(application.application_date).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            : new Date().toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }))}
+                      </td>
+                      <td className="w-1/3"></td>
+                    </tr>
 
-                <div className="space-y-0.5 text-xs">
-                  <p className="font-bold">{addresseeTitle}</p>
-                  <p>{departmentTitle}</p>
-                  <p>{collegeTitle}</p>
-                  <p>Partido State University</p>
-                </div>
+                    <tr>
+                      <td className="font-bold py-1.5 pr-3 whitespace-nowrap align-bottom text-black">
+                        Name of Members
+                      </td>
+                      <td colSpan={3} className="border-b border-black py-1 px-1 align-bottom text-black">
+                        {application?.requirements_checklist?.members_line_1 ??
+                          projectData.proponents
+                            .slice(0, 3)
+                            .map((p) => p.name)
+                            .join(", ")}
+                      </td>
+                    </tr>
 
-                <p className="text-xs pt-1">
-                  Sir / Madam:
-                </p>
+                    <tr>
+                      <td className="py-2 pr-3"></td>
+                      <td colSpan={3} className="border-b border-black py-1 px-1 align-bottom text-black min-h-[22px]">
+                        {application?.requirements_checklist?.members_line_2 ??
+                          projectData.proponents
+                            .slice(3)
+                            .map((p) => p.name)
+                            .join(", ")}
+                      </td>
+                    </tr>
 
-                <p className="text-xs indent-6 leading-relaxed">
-                  We respectfully request permission to undergo our <strong>Progress Report Oral Defense</strong> for the academic research project described below:
-                </p>
-              </div>
+                    <tr>
+                      <td colSpan={4} className="font-bold pt-4 pb-1 text-black">
+                        Capstone Working Titles
+                      </td>
+                    </tr>
 
-              {/* Study Details */}
-              <div className="space-y-2 py-2 text-xs font-serif">
-                <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
-                  <span className="font-bold col-span-1">Research Title:</span>
-                  <span className="col-span-3 font-semibold uppercase">{projectData.title}</span>
-                </div>
+                    <tr>
+                      <td className="py-1.5 pr-3 align-bottom text-black">Concept 1</td>
+                      <td colSpan={3} className="border-b border-black py-1 px-1 align-bottom font-semibold text-black">
+                        {application?.requirements_checklist?.concept_1 ?? projectData.title}
+                      </td>
+                    </tr>
 
-                <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
-                  <span className="font-bold col-span-1">Degree Program:</span>
-                  <span className="col-span-3">
-                    {projectData.program || "Bachelor of Science in Information Technology (BSIT)"}
-                  </span>
-                </div>
+                    <tr>
+                      <td className="py-1.5 pr-3 align-bottom text-black">Concept 2</td>
+                      <td colSpan={3} className="border-b border-black py-1 px-1 align-bottom text-black">
+                        {application?.requirements_checklist?.concept_2 || "\u00A0"}
+                      </td>
+                    </tr>
 
-                <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
-                  <span className="font-bold col-span-1">Research Proponents:</span>
-                  <div className="col-span-3 space-y-0.5">
-                    {projectData.proponents.map((p, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span>{idx + 1}.</span>
-                        <span className="font-semibold uppercase">{p.name}</span>
-                        {p.isLeader && <span className="text-[10px] italic">(Lead Proponent)</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                    <tr>
+                      <td className="py-1.5 pr-3 align-bottom text-black">Concept 3</td>
+                      <td colSpan={3} className="border-b border-black py-1 px-1 align-bottom text-black">
+                        {application?.requirements_checklist?.concept_3 || "\u00A0"}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
 
-                <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
-                  <span className="font-bold col-span-1">Target Schedule:</span>
-                  <span className="col-span-3">
-                    {formattedDate} {defenseData?.scheduledTime ? `at ${defenseData.scheduledTime}` : ""} (Venue: {defenseData?.roomOrVenue || "DCS Multimedia Hall / Room 201"})
-                  </span>
-                </div>
-              </div>
-
-              {/* Requirements Checklist */}
-              <div className="pt-3 space-y-2">
-                <p className="font-bold text-xs uppercase tracking-wide border-b border-black pb-0.5">
-                  I. Checklist of Defense Requirements
-                </p>
-                <div className="space-y-1.5 pl-4 font-sans text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold">
-                      {application?.requirements_checklist?.accomplishment_report ? "[ ✓ ]" : "[   ]"}
-                    </span>
-                    <span>Accomplishment Report / Progress Log</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold">
-                      {application?.requirements_checklist?.documentation_chapters ? "[ ✓ ]" : "[   ]"}
-                    </span>
-                    <span>
-                      Complete Manuscript Documentation (Chapters 1 to 4)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold">
-                      {application?.requirements_checklist?.presentation_files ? "[ ✓ ]" : "[   ]"}
-                    </span>
-                    <span>Audio-Visual Defense Presentation Slides (PowerPoint / PDF)</span>
-                  </div>
-                  {application?.requirements_checklist?.custom_items?.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold">
-                        {item.completed ? "[ ✓ ]" : "[   ]"}
+                {/* REQUIREMENTS */}
+                <div className="mb-6">
+                  <p className="font-bold uppercase text-xs sm:text-[13px] mb-1.5 text-black">
+                    REQUIREMENTS
+                  </p>
+                  <div className="space-y-1 pl-4 text-xs sm:text-[13px] text-black">
+                    <div className="flex items-center gap-2.5">
+                      <span className="inline-block w-3.5 h-3.5 border border-black text-center leading-[12px] text-[10px] font-bold">
+                        {(application?.requirements_checklist?.fully_accomplished_form ??
+                          application?.requirements_checklist?.accomplishment_report ??
+                          true)
+                          ? "✓"
+                          : "\u00A0"}
                       </span>
-                      <span>{item.label}</span>
+                      <span>Fully Accomplished Application Form</span>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Certification of Adviser */}
-              <div className="pt-4 space-y-2">
-                <p className="font-bold text-xs uppercase tracking-wide border-b border-black pb-0.5">
-                  II. Certification of the Research Adviser
-                </p>
-                <p className="text-xs italic leading-relaxed pl-2 font-serif">
-                  &ldquo;I hereby certify that I have read and reviewed the manuscript of the proponents, and found it technically sound, formatted per university standards, and ready for oral defense presentation before the defense committee.&rdquo;
-                </p>
-                <div className="pt-4 flex justify-end">
-                  <div className="text-center w-64 space-y-1">
-                    <div className="border-b border-black pb-1">
-                      {application?.adviser_certification?.signature_url ? (
-                        <div className="font-serif italic font-bold text-sm">
-                          [Digital Signature Verified]
-                        </div>
-                      ) : (
-                        <div className="h-6"></div>
-                      )}
-                      <p className="font-bold text-xs uppercase">
-                        {application?.adviser_certification?.adviser_name ||
-                          projectData.adviser?.name ||
-                          "RESEARCH ADVISER"}
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="inline-block w-3.5 h-3.5 border border-black text-center leading-[12px] text-[10px] font-bold">
+                          {(application?.requirements_checklist?.documentation_3_copies ??
+                            application?.requirements_checklist?.documentation_chapters ??
+                            true)
+                            ? "✓"
+                            : "\u00A0"}
+                        </span>
+                        <span>Documentation (Printed, three [3] copies)</span>
+                      </div>
+                      <ul className="list-disc pl-11 space-y-0.5 mt-0.5">
+                        <li>Chapter 1-3 of Concept 1</li>
+                        <li>Concept Paper (2 &amp; 3)</li>
+                      </ul>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <span className="inline-block w-3.5 h-3.5 border border-black text-center leading-[12px] text-[10px] font-bold">
+                        {(application?.requirements_checklist?.presentation_files ?? true)
+                          ? "✓"
+                          : "\u00A0"}
+                      </span>
+                      <span>Presentation Files</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CERTIFICATION OF THE ADVISER */}
+                <div className="mb-6">
+                  <h3 className="text-center font-bold uppercase text-xs sm:text-[13px] mb-2 text-black">
+                    CERTIFICATION OF THE ADVISER
+                  </h3>
+                  <p className="text-justify indent-8 text-xs sm:text-[13px] leading-relaxed text-black mb-7">
+                    This is to certify that I have thoroughly evaluated the project for Title Defense
+                    requirements in accordance with the prescribed requirements and have reviewed and
+                    verified the completeness and accuracy of the documents submitted with this
+                    application. Based on this evaluation, I hereby recommend that the above name of
+                    students be permitted to proceed with the progress report defense.
+                  </p>
+
+                  <div className="flex justify-end mt-4">
+                    <div className="w-72 text-center">
+                      <div className="border-b border-black pb-0.5 min-h-[24px] flex flex-col items-center justify-end">
+                        <span className="font-bold uppercase text-xs text-black">
+                          {application?.adviser_certification?.adviser_name ||
+                            projectData.adviser?.name ||
+                            ""}
+                        </span>
+                      </div>
+                      <p className="text-xs text-black pt-0.5">
+                        Signature of Adviser over Printed Name
                       </p>
                     </div>
-                    <p className="text-[10px] text-slate-700">Research Adviser</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Manifestation of Agreement of Defense Committee */}
-              <div className="pt-4 space-y-2">
-                <p className="font-bold text-xs uppercase tracking-wide border-b border-black pb-0.5">
-                  III. Manifestation of Agreement of the Defense Committee
-                </p>
-                <p className="text-xs leading-relaxed pl-2 font-serif">
-                  We hereby agree to the schedule indicated above for the conduct of the Oral Defense:
-                </p>
+                {/* Evaluation Committee Members */}
+                <div className="mb-6">
+                  <p className="text-xs sm:text-[13px] text-black mb-1">
+                    Evaluation Committee Members:
+                  </p>
+                  <p className="indent-8 italic text-xs sm:text-[13px] text-black mb-7">
+                    Affixed below is my name and signature as manifestation that I agree to the above
+                    schedule.
+                  </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-center">
-                  <div className="space-y-1">
-                    <div className="border-b border-black pb-1">
-                      <p className="font-bold text-xs uppercase">{chair?.name || "PANEL CHAIRPERSON"}</p>
+                  <div className="grid grid-cols-2 gap-12 mb-7 mt-4">
+                    <div className="text-center">
+                      <div className="border-b border-black pb-0.5 min-h-[22px] font-bold uppercase text-xs text-black">
+                        {members[0]?.name || ""}
+                      </div>
+                      <p className="text-xs uppercase text-black pt-0.5">MEMBER</p>
                     </div>
-                    <p className="text-[10px] text-slate-700">Committee Chairman</p>
+                    <div className="text-center">
+                      <div className="border-b border-black pb-0.5 min-h-[22px] font-bold uppercase text-xs text-black">
+                        {members[1]?.name || ""}
+                      </div>
+                      <p className="text-xs uppercase text-black pt-0.5">MEMBER</p>
+                    </div>
                   </div>
 
-                  {members && members.length > 0 ? (
-                    members.map((m, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="border-b border-black pb-1">
-                          <p className="font-bold text-xs uppercase">{m.name}</p>
-                        </div>
-                        <p className="text-[10px] text-slate-700">Committee Member</p>
+                  <div className="flex justify-center">
+                    <div className="w-72 text-center">
+                      <div className="border-b border-black pb-0.5 min-h-[22px] font-bold uppercase text-xs text-black">
+                        {chair?.name || ""}
                       </div>
-                    ))
-                  ) : (
-                    <>
-                      <div className="space-y-1">
-                        <div className="border-b border-black pb-1">
-                          <p className="font-bold text-xs uppercase">PANEL MEMBER 1</p>
-                        </div>
-                        <p className="text-[10px] text-slate-700">Committee Member</p>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="border-b border-black pb-1">
-                          <p className="font-bold text-xs uppercase">PANEL MEMBER 2</p>
-                        </div>
-                        <p className="text-[10px] text-slate-700">Committee Member</p>
-                      </div>
-                    </>
-                  )}
+                      <p className="text-xs uppercase text-black pt-0.5">CHAIRMAN</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Approved By: KENNEDY C. CUYA, DIT / DEPARTMENT CHAIR */}
+                <div className="mt-6 mb-4">
+                  <p className="text-xs sm:text-[13px] text-black mb-6">Approved By:</p>
+                  <p className="font-bold uppercase text-xs sm:text-[13px] text-black">
+                    KENNEDY C. CUYA, DIT
+                  </p>
+                  <p className="uppercase text-xs text-black">DEPARTMENT CHAIR</p>
+                </div>
+
+                {/* Official ParSU CECS DCS Footer Banner */}
+                <div className="mt-8 pt-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/forms/bsit_footer_banner.png"
+                    alt="Partido State University - Department of Computational Sciences Footer"
+                    className="w-full h-auto object-contain"
+                  />
                 </div>
               </div>
-
-              {/* Action of Department Chairperson */}
-              <div className="pt-5 space-y-2 border-t-2 border-black mt-4">
-                <div className="flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-bold">ACTION TAKEN: </span>
-                    <span className="ml-2 font-mono font-bold">
-                      {application?.status === "approved_by_chair" || application?.chair_approval
-                        ? "[ ✓ ] APPROVED     [   ] DISAPPROVED"
-                        : "[   ] APPROVED     [   ] DISAPPROVED"}
+            ) : (
+              /* STANDARD UNIVERSITY FORM FOR NON-BSIT PROGRAMS (U-CF-03) */
+              <div className="bg-white text-black p-6 sm:p-8 rounded-xl border border-border/80 shadow-sm print:shadow-none print:border-none print:p-4 text-xs font-serif leading-relaxed">
+                {/* Official Header */}
+                <div className="text-center pb-3 border-b-2 border-black space-y-0.5">
+                  <p className="text-[10px] tracking-wider uppercase">Republic of the Philippines</p>
+                  <h1 className="text-sm sm:text-base font-bold uppercase tracking-wide">
+                    Partido State University
+                  </h1>
+                  <p className="text-[11px] font-medium">Goa Campus • Goa, Camarines Sur</p>
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider pt-1">
+                    {departmentTitle}
+                  </h2>
+                  <div className="pt-2">
+                    <span className="inline-block px-3 py-1 font-bold text-xs uppercase tracking-widest border border-black bg-slate-100 print:bg-transparent">
+                      APPLICATION FOR ORAL DEFENSE ({defenseData?.stageName?.toUpperCase() || "ORAL DEFENSE"})
                     </span>
                   </div>
+                  <div className="flex justify-between text-[10px] font-sans text-slate-600 print:text-black pt-1 px-1">
+                    <span>Document Code: <strong>{formCodeApp}</strong></span>
+                    <span>Revision: <strong>00</strong></span>
+                    <span>Program: <strong>{programTitle}</strong></span>
+                  </div>
                 </div>
 
-                <div className="pt-4 flex justify-end">
-                  <div className="text-center w-64 space-y-1">
-                    <div className="border-b border-black pb-1">
-                      <p className="font-bold text-xs uppercase">{meta.chairpersonName}</p>
+                {/* Date & Addressee */}
+                <div className="pt-4 pb-2 space-y-3 font-serif">
+                  <div className="flex justify-between text-xs">
+                    <span></span>
+                    <div>
+                      <strong>Date: </strong>
+                      <span className="underline underline-offset-4">
+                        {application?.application_date
+                          ? new Date(application.application_date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : new Date().toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                      </span>
                     </div>
-                    <p className="text-[10px] text-slate-700">
-                      {meta.isBsit ? "Department Chairperson, DCS" : "Department Chairperson / Dean"}
-                    </p>
+                  </div>
+
+                  <div className="space-y-0.5 text-xs">
+                    <p className="font-bold">{addresseeTitle}</p>
+                    <p>{departmentTitle}</p>
+                    <p>{collegeTitle}</p>
+                    <p>Partido State University</p>
+                  </div>
+
+                  <p className="text-xs pt-1">Sir / Madam:</p>
+
+                  <p className="text-xs indent-6 leading-relaxed">
+                    We respectfully request permission to undergo our <strong>Oral Defense</strong> for the academic research project described below:
+                  </p>
+                </div>
+
+                {/* Study Details */}
+                <div className="space-y-2 py-2 text-xs font-serif">
+                  <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
+                    <span className="font-bold col-span-1">Research Title:</span>
+                    <span className="col-span-3 font-semibold uppercase">{projectData.title}</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
+                    <span className="font-bold col-span-1">Degree Program:</span>
+                    <span className="col-span-3">{projectData.program || programTitle}</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2 py-1 border-b border-slate-300">
+                    <span className="font-bold col-span-1">Research Proponents:</span>
+                    <div className="col-span-3 space-y-0.5">
+                      {projectData.proponents.map((p, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span>{idx + 1}.</span>
+                          <span className="font-semibold uppercase">{p.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </TabsContent>
 
           {/* =========================================================================
