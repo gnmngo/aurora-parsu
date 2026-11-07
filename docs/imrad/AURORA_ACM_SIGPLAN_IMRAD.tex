@@ -2,10 +2,9 @@
 %% AURORA — ACM SIGPLAN Proceedings IMRAD Paper (Overleaf Ready)
 %% Template: Association for Computing Machinery (ACM) - SIGPLAN Proceedings
 %% Overleaf Project Link: https://www.overleaf.com/project/6aeaa2e64e1d2f7cf505e2cb
-%% Instructions:
-%%   1. Paste this entire file into `main.tex` (or `sample-sigplan.tex`) in Overleaf.
-%%   2. Paste `references.bib` into your Overleaf bibliography file.
-%%   3. Click "Recompile" in Overleaf to generate the official 2-column ACM PDF.
+%% Official Working Paper Title:
+%%   AURORA: Paperless Academic Defense Workflow System for Research,
+%%   Capstone, Thesis & Dissertation Papers at Partido State University
 %% ============================================================================
 \documentclass[sigplan,screen,nonacm]{acmart}
 
@@ -23,12 +22,12 @@
 \begin{document}
 
 %% ============================================================================
-%% TITLE & AUTHORS
+%% TITLE & AUTHORS (PARALLEL TO OFFICIAL WORKING PAPER)
 %% ============================================================================
-\title[AURORA: Paperless Academic Defense Workflow & QA Platform]{AURORA: An Academic Unified Review, Observation, Rating, and Assessment Platform for Paperless Capstone Defense Workflows}
-\subtitle{Department of Computational Sciences, College of Engineering and Computational Sciences, Partido State University}
+\title[AURORA: Paperless Academic Defense Workflow System at ParSU]{AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis \& Dissertation Papers at Partido State University}
+\subtitle{Department of Computational Sciences, College of Engineering and Computational Sciences, Partido State University -- Goa Campus}
 
-\author{Gene Vincent Ma\~{n}ago}
+\author{Gene Vincent D. Ma\~{n}ago}
 \affiliation{%
   \institution{Partido State University}
   \department{Dept. of Computational Sciences}
@@ -37,7 +36,7 @@
 }
 \email{gmanago@parsu.edu.ph}
 
-\author{Carol Ann Castillo}
+\author{Carol Ann B. Castillo}
 \affiliation{%
   \institution{Partido State University}
   \department{Dept. of Computational Sciences}
@@ -46,7 +45,7 @@
 }
 \email{ccastillo@parsu.edu.ph}
 
-\author{Rona Mae Buenafe}
+\author{Rona Mae S. Buenafe}
 \affiliation{%
   \institution{Partido State University}
   \department{Dept. of Computational Sciences}
@@ -55,7 +54,7 @@
 }
 \email{rbuenafe@parsu.edu.ph}
 
-\author{Lara Mae Encinas}
+\author{Lara Mae B. Encinas}
 \affiliation{%
   \institution{Partido State University}
   \department{Dept. of Computational Sciences}
@@ -64,8 +63,17 @@
 }
 \email{lencinas@parsu.edu.ph}
 
+\author{Leomer Bares}
+\affiliation{%
+  \institution{Partido State University}
+  \department{Dept. of Computational Sciences}
+  \city{Goa, Camarines Sur}
+  \country{Philippines}
+}
+\email{lbares@parsu.edu.ph}
+
 \author{Froiland B. Pe\~{n}alosa}
-\authornote{Research Adviser, Department of Computational Sciences, Partido State University.}
+\authornote{Capstone Project Adviser and Research Coordinator, Department of Computational Sciences, Partido State University.}
 \affiliation{%
   \institution{Partido State University}
   \department{Dept. of Computational Sciences}
@@ -74,16 +82,16 @@
 }
 \email{fpenalosa@parsu.edu.ph}
 
-\renewcommand{\shortauthors}{Ma\~{n}ago, Castillo, Buenafe, Encinas, and Pe\~{n}alosa}
+\renewcommand{\shortauthors}{Ma\~{n}ago, Castillo, Buenafe, Encinas, Bares, and Pe\~{n}alosa}
 
 %% ============================================================================
 %% ABSTRACT (IMRAD SUMMARY)
 %% ============================================================================
 \begin{abstract}
-Traditional undergraduate capstone and thesis defense workflows in Philippine state universities rely heavily on physical manuscript printing, manual adviser endorsement routing, ad-hoc room scheduling, and hand-computed paper score sheets. These fragmented processes result in prolonged review turnaround times, scheduling collisions, high financial printing costs for students, and the absence of cryptographic auditability. This paper presents \textbf{AURORA} (\textit{Academic Unified Review, Observation, Rating, and Assessment}), a cloud-native, paperless academic defense management and quality assurance platform engineered for the College of Engineering and Computational Sciences (CECS) at Partido State University. Built using Next.js 16 (App Router), React 19, TypeScript, and Supabase (PostgreSQL 15 with Row-Level Security), AURORA unifies four core architectural innovations: (1) a resolution-independent, dual-pane \texttt{PDF.js} manuscript review workspace with real-time WebSocket coordinate annotations and FIPS 180-4 SHA-256 document version fingerprinting; (2) an automated defense scheduler with venue clash detection and an academic Conflict-of-Interest Firewall that prevents research advisers from sitting as voting panelists for their own advisees; (3) a dynamic weighted rubric engine (Form DCS-CF-04) integrated with Republic Act No. 8792 step-up password re-authentication and tamper-evident digital signature serialization (\texttt{AURORA-YYYY-NNNNNN}); and (4) an administrative self-healing maintenance and 3-2-1 disaster recovery console. Empirical evaluation with $N = 27$ institutional stakeholders (students, advisers, panelists, capstone coordinator, and college dean) using a validated 10-item System Usability Scale (SUS) and 27-item Unified Theory of Acceptance and Use of Technology (UTAUT) instrument ($\alpha = 0.946$) yielded a composite SUS score of \textbf{91.8 / 100 (Grade A --- Excellent)} and a grand UTAUT mean of \textbf{4.86 / 5.00 (Highly Acceptable)}, while reducing manuscript endorsement turnaround time by \textbf{85.9\%} (from 18.4 days to 2.6 days).
+The academic defense process is a cornerstone of higher education quality assurance, validating student competencies in research, capstone projects, theses, and dissertations. However, at Partido State University -- Goa Campus, existing defense workflows across its five constituent colleges remain predominantly paper-based and manually coordinated. Students print multiple bulky manuscript drafts per stage; advisers and panelists record handwritten comments across separate copies; coordinators manually verify schedules; and evaluators compute rubric scores on physical sheets, inducing cognitive split-attention \cite{sweller1988cognitive}, prolonged turnaround times, high printing costs \cite{isaeva2016paperless, tatli2024sustainable}, and fragmented revision tracking. This paper presents \textbf{AURORA} (\textit{Paperless Academic Defense Workflow System for Research, Capstone, Thesis \& Dissertation Papers at Partido State University}), a cloud-native web platform engineered to digitize and unify the end-to-end academic defense lifecycle. Guided by the Agile Software Development Life Cycle (SDLC) and Design Science Research \cite{hevner2004design}, AURORA implements a three-tier architecture built with Next.js (App Router), React, TypeScript, Tailwind CSS, and Supabase (PostgreSQL with Row-Level Security). The platform integrates nine core functional modules: (1) multi-role authentication and Role-Based Access Control (RBAC) \cite{ferraiolo1992role}; (2) multi-college configurable defense workflows; (3) SHA-256 versioned PDF manuscript submission and repository; (4) an interactive split-screen \texttt{PDF.js} annotation workspace with normalized coordinate pinning; (5) automated weighted rubric evaluation and real-time score consolidation \cite{spady1994outcome, erradi2012automated}; (6) unified revision tracking and approval verification; (7) conflict-free defense scheduling with an adviser conflict-of-interest guard; (8) real-time notifications and audit trails \cite{iso27001}; and (9) a 3-2-1 Disaster Recovery and Self-Healing Maintenance Console. Empirical evaluation with $N = 27$ institutional stakeholders using a validated 10-item System Usability Scale (SUS) \cite{brooke1996sus} and 27-item UTAUT acceptance survey \cite{venkatesh2003user} ($\alpha = 0.946$) yielded a composite SUS score of \textbf{91.8 / 100 (Grade A --- Excellent)} \cite{bangor2009determining} and a grand UTAUT mean of \textbf{4.86 / 5.00 (Highly Acceptable)}, while reducing manuscript endorsement turnaround time by \textbf{85.9\%} (from 18.4 days to 2.6 days).
 \end{abstract}
 
-\keywords{Paperless Academic Workflow, Capstone Defense Management, Coordinate PDF Annotation, Republic Act No. 8792 Digital Signatures, Row-Level Security, System Usability Scale (SUS), UTAUT}
+\keywords{Academic Defense Workflow, Capstone, Digital Rubric, Higher Education, Manuscript Management, Paperless System, Partido State University, PDF Annotation, Role-Based Access Control, System Usability Scale, Thesis, UTAUT, Web-Based Platform}
 
 \maketitle
 
@@ -92,149 +100,129 @@ Traditional undergraduate capstone and thesis defense workflows in Philippine st
 %% ============================================================================
 \section{Introduction}
 
-Undergraduate capstone research is a cornerstone requirement for computing degrees under Commission on Higher Education (CHED) Memorandum Order No. 25, Series of 2015 \cite{ched2015cmo25}. At Partido State University (ParSU), students enrolled in the Bachelor of Science in Information Technology (BSIT) program under the College of Engineering and Computational Sciences (CECS) progress through a rigorous multi-stage oral defense lifecycle encompassing Concept Paper Defense, Title Defense, Proposal Defense, and Final Oral Defense.
+The academic defense process serves as a foundational quality assurance mechanism in higher education institutions, validating student competencies across undergraduate research, capstone projects, master's theses, and doctoral dissertations \cite{ched2015cmo25, erradi2012automated}. Through sequential oral defense gates---typically encompassing Title Defense, Proposal Defense, Pre-Oral Defense, and Final Defense---academic panels evaluate the scholarly rigor, methodological soundness, and technical execution of student research outputs.
 
-Despite the digital nature of computing education, the operational administration of capstone defenses has historically remained bound to physical paper workflows. Student teams print multiple copies of 80-to-150-page manuscripts for every defense iteration; research advisers annotate drafts manually with ink; defense coordinators cross-reference faculty schedules on spreadsheets to book deliberation rooms; and panel evaluators compute weighted grades manually on printed Form DCS-CF-04 sheets. Key informant interviews conducted at ParSU CECS revealed four systemic bottlenecks in this traditional paradigm:
+Despite global advances in educational digital transformation \cite{benavides2020digital}, requirements-gathering interviews conducted with Research Coordinators across all five constituent colleges of \textbf{Partido State University (ParSU) -- Goa Campus}---namely the College of Engineering and Computational Sciences (CECS), College of Education (COE), College of Arts and Humanities (CAH), College of Science (COS), and College of Business and Management (CBM)---revealed that institutional defense workflows remain heavily reliant on physical paper routing and fragmented digital tools:
 \begin{enumerate}
-  \item \textbf{Prolonged Review Turnaround:} Physical routing of manuscripts and Form DCS-CF-03 endorsement slips requires an average of 18.4 calendar days per cycle.
-  \item \textbf{Scheduling & Impartiality Risks:} Manual scheduling is prone to double-booked venues, overlapping panelist timeslots, and inadvertent conflict-of-interest assignments.
-  \item \textbf{Grading & Archival Fragility:} Hand-computed rubric sheets are susceptible to arithmetic errors, misplaced physical forms, and unauthorized post-deliberation alterations.
-  \item \textbf{Operational & Disaster Vulnerability:} Decentralized paper and spreadsheet records lack automated integrity verification, self-healing maintenance, and institutional disaster recovery backups.
+  \item \textbf{High Printing Costs \& Ecological Burden:} Student groups print 3 to 5 copies of 80-to-200-page manuscripts for every defense stage, incurring substantial financial costs and paper waste \cite{isaeva2016paperless, tatli2024sustainable}.
+  \item \textbf{Split-Attention \& Fragmented Annotations:} Evaluators write marginalia across separate physical printouts or detached chat messages, forcing students to reconcile conflicting feedback across multiple sources and inducing high extraneous cognitive load \cite{sweller1988cognitive}.
+  \item \textbf{Manual Rubric Computation \& Delays:} Panelists score printed evaluation forms manually, while coordinators transcribe and average grades on spreadsheets, risking arithmetic errors and delaying verdict release \cite{erradi2012automated, chio2022thesist}.
+  \item \textbf{Unverified Revisions \& Archival Fragility:} Advisers and panelists lack a side-by-side mechanism to verify whether specific panel corrections were resolved in revised uploads \cite{babatunde2025digital}, and decentralized paper records lack disaster recovery protection.
 \end{enumerate}
 
-\subsection{Research Objectives}
-To address these institutional challenges, this study designed, implemented, and evaluated the \textbf{AURORA} platform in accordance with four specific objectives:
+\subsection{Objectives of the Study}
+The main objective of this study is to design, develop, and evaluate \textbf{AURORA}, a web-based paperless academic defense workflow system for research, capstone, thesis, and dissertation papers at Partido State University -- Goa Campus. Specifically, the study accomplished four objectives:
 \begin{itemize}
-  \item \textbf{Objective 1 (Workflow Digitization \& Gating):} Automate the multi-stage capstone defense lifecycle---including college-customizable defense stages, SHA-256 manuscript version control, and Form DCS-CF-03 adviser endorsement gating.
-  \item \textbf{Objective 2 (Real-Time Collaborative Review \& Conflict-Free Scheduling):} Engineer a split-screen interactive PDF annotation workspace synchronized via WebSockets alongside an automated defense scheduler with room-clash and adviser conflict-of-interest guards.
-  \item \textbf{Objective 3 (Cryptographic Rubric Deliberation \& Maintainability):} Implement a dynamic weighted rubric engine (Form DCS-CF-04) secured by Republic Act No. 8792 step-up digital signatures, public certificate verification, and a 3-2-1 Disaster Recovery and Self-Healing Maintenance Console.
-  \item \textbf{Objective 4 (Usability \& Technology Acceptance Evaluation):} Quantitatively evaluate the system's usability and acceptability among institutional stakeholders using the System Usability Scale (SUS) \cite{brooke1996sus} and the Unified Theory of Acceptance and Use of Technology (UTAUT) \cite{venkatesh2003user}.
+  \item \textbf{Objective 1 (Requirements Gathering):} Gather requirements by identifying functional and non-functional needs for paperless defense workflows across research, capstone, and dissertation papers across the five constituent colleges of ParSU -- Goa Campus;
+  \item \textbf{Objective 2 (System \& Architectural Design):} Design the system architecture, 26-table relational database schema, user interface, and workflows that support manuscript submission, annotation, rubric-based evaluation, and revision tracking;
+  \item \textbf{Objective 3 (System Development \& Integration):} Develop the academic defense workflow system by integrating role-based access control (RBAC), an interactive PDF annotation workspace, rubric-based assessment, automated scoring modules, Republic Act No. 8792 digital signatures \cite{ra8792}, and a self-healing disaster recovery console; and
+  \item \textbf{Objective 4 (Usability, Efficiency \& Acceptance Evaluation):} Evaluate the system's usability, efficiency, and acceptance using standardized instruments, specifically the System Usability Scale (SUS) \cite{brooke1996sus} and UTAUT-based acceptance surveys \cite{venkatesh2003user}.
 \end{itemize}
 
 %% ============================================================================
-%% 2. RELATED WORK
+%% 2. RELATED WORK AND THEORETICAL FRAMEWORK
 %% ============================================================================
-\section{Related Work}
+\section{Related Work and Theoretical Framework}
 
-\subsection{Academic Manuscript & Defense Management Systems}
-Learning Management Systems (LMS) such as Moodle and Google Classroom facilitate generic file submissions but lack specialized academic governance primitives required for oral defenses: multi-stage prerequisite gating, panel committee composition rules, weighted multi-evaluator rubric consensus, and verifiable clearance serials. Prior university repository systems focus primarily on post-graduation archival rather than active, iterative pre-defense review and live deliberation scoring.
-
-\subsection{Viewport-Independent PDF Annotation}
-Conventional document review tools require downloading files locally, breaking version continuity. Browser-native vector rendering via \texttt{PDF.js} enables zero-install inspection; however, pixel-based annotation coordinates drift when viewed across varying monitor resolutions or zoom levels. Storing bounding boxes as normalized floating-point percentages $(x\%, y\%, w\%, h\%) \in [0, 100]$ ensures mathematical invariance across desktop, laptop, and tablet viewports.
-
-\subsection{Electronic Signatures & Legal Non-Repudiation}
-Under Philippine Republic Act No. 8792 (\textit{Electronic Commerce Act of 2000}) \cite{ra8792}, an electronic signature possesses legal admissibility only when a reliable procedure authenticates the signer's identity and prevents subsequent alteration of the signed payload. Combining step-up credential re-authentication with FIPS 180-4 SHA-256 cryptographic hashing \cite{nist2015fips180} and PostgreSQL Row-Level Security (RLS) immutability policies satisfies statutory non-repudiation requirements.
+The design of AURORA synthesizes five foundational theoretical and computing frameworks:
+\begin{enumerate}
+  \item \textbf{Cognitive Load Theory \& Split-Attention Effect \cite{sweller1988cognitive}:} When learners and evaluators must mentally integrate feedback separated spatially across physical manuscript pages, rubric sheets, and revision matrices, extraneous cognitive load increases. AURORA eliminates split-attention via a unified 60/40 dual-pane workspace that anchors annotations and rubric criteria directly alongside the rendered PDF viewport.
+  \item \textbf{Role-Based Access Control (RBAC) \cite{ferraiolo1992role}:} Institutional defense governance requires strict privilege separation across Students, Research Advisers, Defense Panelists, Research/Capstone Coordinators, College Deans, and System Administrators, enforced both at the application middleware layer and via PostgreSQL Row-Level Security (RLS).
+  \item \textbf{Outcome-Based Education (OBE) \& Digital Rubric Assessment \cite{spady1994outcome, erradi2012automated, chio2022thesist}:} Standardized weighted rubrics ensure objective, criterion-referenced grading across multi-member panels while automating real-time score aggregation.
+  \item \textbf{Design Science Research (DSR) \& Information Security \cite{hevner2004design, iso27001, ra8792}:} DSR guides the iterative construction and evaluation of the software artifact, while ISO/IEC 27001:2022 and Republic Act No. 8792 govern immutable audit trails, SHA-256 document fingerprinting, and step-up electronic signature authentication.
+  \item \textbf{Usability (SUS) \& Technology Acceptance (UTAUT) \cite{brooke1996sus, venkatesh2003user}:} SUS provides a standardized 0--100 composite usability benchmark \cite{bangor2009determining}, while UTAUT evaluates Performance Expectancy, Effort Expectancy, Social Influence, Facilitating Conditions, Behavioral Intention, and Use Behavior.
+\end{enumerate}
 
 %% ============================================================================
-%% 3. METHODOLOGY (MATERIALS AND METHODS)
+%% 3. METHODOLOGY
 %% ============================================================================
 \section{Methodology}
 
-\subsection{Software Development Life Cycle (Agile Scrum)}
-The development of AURORA followed the \textbf{Agile Scrum Software Development Life Cycle (SDLC)} across a 14-month academic timeline spanning Academic Year 2025--2026 (1st Semester, 2nd Semester, and Midyear Term) through the 1st Semester of Academic Year 2026--2027 (August 15, 2025 to October 2, 2026). Ten iterative milestones (M-01 to M-10) delivered incremental, testable software modules validated continuously with the Research Adviser and Capstone Coordinator.
+\subsection{Agile SDLC & Multi-College Requirements Analysis}
+AURORA was engineered using the \textbf{Agile Software Development Life Cycle (SDLC)} across Academic Year 2025--2026 through the 1st Semester of Academic Year 2026--2027 (August 2025 to November 2026). During the Requirements Gathering phase (Objective 1), structured interviews were conducted with seven Research Coordinators representing all five colleges at ParSU -- Goa Campus (CECS, COE, CAH, COS, and CBM). System bottlenecks were analyzed using the \textbf{PIECES Framework} (\textit{Performance, Information, Economics, Control/Security, Efficiency, and Service}), establishing the functional requirements for configurable 3-stage and 4-stage college defense pipelines.
 
-\subsection{Four-Tier Cloud System Architecture}
-AURORA is architected as a decoupled four-tier cloud-native web application (Table~\ref{tab:architecture}):
+\subsection{Three-Tier System Architecture & 26-Table Schema}
+To fulfill Objective 2 and Objective 3, AURORA was designed around a decoupled \textbf{Three-Tier Cloud Architecture} (Table~\ref{tab:architecture}) backed by a normalized \textbf{26-table PostgreSQL database schema}:
 \begin{enumerate}
-  \item \textbf{Client Presentation Tier:} Built with React 19 and Tailwind CSS v4, featuring a 60/40 dual-pane review workspace (\texttt{PDF.js} vector canvas + rubric drawer) and an HTML5 Canvas electronic signature pad.
-  \item \textbf{Edge \& Server Action Tier:} Hosted on the Vercel Global Edge Network using Next.js 16 (App Router). Privileged mutations execute exclusively within type-safe Server Actions protected by Edge Middleware RBAC route guards.
-  \item \textbf{Backend Service Tier:} Powered by Supabase Cloud (AWS \texttt{ap-southeast-1} Singapore), providing GoTrue HTTP-only JWT authentication, private S3 storage buckets (\texttt{/manuscripts}, \texttt{/signatures}), and Realtime WebSocket channels.
-  \item \textbf{Data Persistence Tier:} Managed PostgreSQL 15 relational database comprising 20 normalized tables protected by kernel-level Row-Level Security (RLS) policies and append-only audit logs.
+  \item \textbf{Presentation Tier (Client Layer):} Responsive web interface built with Next.js (React 19, TypeScript, Tailwind CSS) and \texttt{PDF.js} (\texttt{react-pdf}) for zero-install vector PDF rendering and interactive coordinate highlighting.
+  \item \textbf{Application / Logic Tier (Serverless Edge \& Actions):} Hosted on Vercel, comprising nine functional modules: Authentication \& RBAC, Workflow Configuration, Manuscript Versioning, PDF Annotation Engine, Rubric Evaluation \& Auto-Scoring, Revision Tracking, Conflict-Free Defense Scheduler, Real-Time Notification \& Audit Logger, and the Maintenance \& Disaster Recovery Console.
+  \item \textbf{Data Persistence Tier:} Managed Supabase PostgreSQL database (26 tables including \texttt{campuses}, \texttt{colleges}, \texttt{departments}, \texttt{programs}, \texttt{profiles}, \texttt{user\_roles}, \texttt{workflow\_templates}, \texttt{defense\_stages}, \texttt{projects}, \texttt{documents}, \texttt{document\_versions}, \texttt{annotations}, \texttt{rubric\_templates}, \texttt{evaluations}, \texttt{defense\_schedules}, and \texttt{audit\_logs}) with Row-Level Security (RLS) and S3 object storage.
 \end{enumerate}
 
 \begin{table}[htbp]
-  \caption{AURORA Four-Tier Cloud Architecture Stack}
+  \caption{AURORA Three-Tier Architecture & Functional Modules}
   \label{tab:architecture}
   \centering
   \footnotesize
-  \begin{tabular}{p{2.1cm}p{2.4cm}p{3.1cm}}
+  \begin{tabular}{p{2.0cm}p{2.3cm}p{3.3cm}}
     \toprule
-    \textbf{System Tier} & \textbf{Core Stack} & \textbf{Security \& Governance Role} \\
+    \textbf{Architectural Tier} & \textbf{Technology Stack} & \textbf{Core Modules \& Security Controls} \\
     \midrule
-    1. Client UI & React 19, Tailwind v4, \texttt{PDF.js} & Normalized coordinate pinning; SHA-256 backup verifier \\
-    2. Edge / API & Next.js 16, Server Actions & RBAC middleware; RA 8792 step-up auth; conflict guard \\
-    3. BaaS Services & Supabase Auth, S3, WSS & Signed private URLs; live WAL WebSocket sync \\
-    4. Persistence & PostgreSQL 15, RLS, WAL & 20-table RLS isolation; atomic serial RPC; PITR backups \\
+    1. Presentation & React 19, Tailwind CSS, \texttt{PDF.js} & Dual-pane PDF/Rubric workspace; coordinate highlights; SHA-256 backup verifier \\
+    2. Application / Logic & Next.js App Router, TypeScript & 9 functional modules; RBAC middleware; RA 8792 step-up auth; conflict guard \\
+    3. Data Tier & Supabase PostgreSQL, RLS, S3 & 26 normalized tables; kernel RLS policies; atomic serial RPC; 3-2-1 PITR backups \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{Core Algorithmic & Security Mechanisms}
+\subsection{Core Algorithmic Mechanisms}
 
-\subsubsection{Normalized Coordinate PDF Annotation}
-When an adviser or panelist highlights a manuscript passage on page $p$, the client transforms screen pixel offsets $(X_{\text{px}}, Y_{\text{px}}, W_{\text{px}}, H_{\text{px}})$ relative to the rendered page canvas dimensions $(C_W, C_H)$ into resolution-independent percentages:
+\subsubsection{Viewport-Independent Coordinate PDF Annotation}
+When an adviser or panelist highlights a passage on manuscript page $p$, pixel coordinates $(X_{\text{px}}, Y_{\text{px}}, W_{\text{px}}, H_{\text{px}})$ relative to canvas dimensions $(C_W, C_H)$ are stored as normalized floating-point percentages:
 \begin{equation}
   x\% = \frac{X_{\text{px}}}{C_W} \times 100, \quad
   y\% = \frac{Y_{\text{px}}}{C_H} \times 100
 \end{equation}
-This guarantees zero positional drift across zoom levels ($75\%$--$200\%$).
+ensuring exact visual alignment across any screen resolution or zoom factor ($75\%$--$200\%$).
 
-\subsubsection{Weighted Rubric Engine & RA 8792 Digital Locking}
-For a rubric template containing $n$ criteria with normalized weights $\sum_{i=1}^{n} w_i = 100\%$, the evaluator's composite weighted score $S_{\text{weighted}}$ is computed as:
+\subsubsection{Automated Rubric Consolidation & RA 8792 Locking}
+For a rubric template with $n$ criteria and normalized weights $\sum_{i=1}^{n} w_i = 100\%$, each evaluator's weighted score $S_{\text{weighted}}$ and the panel's consolidated mean score $\bar{S}_{\text{panel}}$ across $m$ panelists are computed automatically:
 \begin{equation}
-  S_{\text{weighted}} = \sum_{i=1}^{n} \frac{r_i \cdot w_i}{100}
+  S_{\text{weighted}} = \sum_{i=1}^{n} \frac{r_i \cdot w_i}{100}, \quad
+  \bar{S}_{\text{panel}} = \frac{1}{m}\sum_{j=1}^{m} S_{\text{weighted}, j}
 \end{equation}
-where $r_i \in [0, 100]$ is the raw criterion score. Upon clicking \textit{Sign \& Finalize}, the server re-authenticates the panelist's password, invokes the atomic PostgreSQL sequence \texttt{generate\_certificate\_serial()} to issue serial $\mathcal{S} = \texttt{AURORA-YYYY-NNNNNN}$, and computes a deterministic SHA-256 digest:
-\begin{equation}
-  H_{\text{cert}} = \text{SHA-256}\big(\text{evalId} \;\|\; \text{verdict} \;\|\; \mathcal{S} \;\|\; t_{\text{signed}}\big)
-\end{equation}
-Once committed with $\text{status} = \texttt{submitted}$, a PostgreSQL RLS policy blocks any subsequent \texttt{UPDATE} or \texttt{DELETE} operations on the record.
+Upon clicking \textit{Sign \& Finalize}, the system enforces Republic Act No. 8792 step-up password re-authentication, generates an atomic certificate serial $\mathcal{S} = \texttt{AURORA-YYYY-NNNNNN}$, and binds a deterministic SHA-256 signature digest to the immutable evaluation record.
 
-\subsection{Instrument Validation & Empirical Evaluation Setup}
-To evaluate Objective 4, a structured survey instrument combining the 10-item \textbf{System Usability Scale (SUS)} \cite{brooke1996sus} and the \textbf{Unified Theory of Acceptance and Use of Technology (UTAUT)} \cite{venkatesh2003user} was subjected to expert content validation by three institutional validators using the Good and Scates (1972) criteria, achieving a validity rating of \textbf{4.89 / 5.00 (Very Highly Valid)}. Following expert refinement, two redundant items (original \texttt{PE2} and \texttt{UB2}) were excluded and subsequent items were renumbered across six UTAUT constructs: Performance Expectancy (\texttt{PE1--PE3}), Effort Expectancy (\texttt{EE1--EE4}), Social Influence (\texttt{SI1--SI4}), Facilitating Conditions (\texttt{FC1--FC4}), Behavioral Intention (\texttt{BI1--BI3}), and Use Behavior (\texttt{UB1--UB9}).
-
-Internal consistency reliability across all 37 items (10 SUS + 27 UTAUT) was verified using Cronbach's Alpha across $N = 27$ respondents (15 BSIT senior students, 5 research advisers, 5 defense panelists, 1 capstone coordinator, and 1 college dean):
-\begin{equation}
-  \alpha = \frac{K}{K - 1}\left(1 - \frac{\sum_{i=1}^{K} \sigma_i^2}{\sigma_X^2}\right) = \mathbf{0.946}
-\end{equation}
-confirming excellent psychometric reliability ($\alpha > 0.70$).
+\subsection{Psychometric Validation & Evaluation Setup}
+To evaluate Objective 4, a structured questionnaire combining the 10-item \textbf{System Usability Scale (SUS)} \cite{brooke1996sus} and a 27-item \textbf{UTAUT-based acceptance survey} \cite{venkatesh2003user} (following expert validation where redundant items \texttt{PE2} and \texttt{UB2} were excluded and subsequent items renumbered) was validated by institutional experts using the Good and Scates (1972) criteria, achieving a content validity mean of \textbf{4.89 / 5.00 (Very Highly Valid)}. Internal consistency across all 37 items yielded a Cronbach's Alpha of $\alpha = \mathbf{0.946}$ across $N = 27$ respondents (15 student proponents, 5 research advisers, 5 defense panelists, 1 research/capstone coordinator, and 1 college dean).
 
 %% ============================================================================
 %% 4. RESULTS AND DISCUSSION
 %% ============================================================================
 \section{Results and Discussion}
 
-\subsection{Workflow Efficiency & Turnaround Time Reduction}
-Deployment of AURORA across simulated and live capstone defense workflows demonstrated substantial operational improvements over the legacy paper-based process (Table~\ref{tab:efficiency}). By replacing physical manuscript printing and manual routing with SHA-256 versioned uploads and instant Form DCS-CF-03 digital endorsement, average adviser review turnaround time decreased from \textbf{18.4 days to 2.6 days}---an \textbf{85.9\% reduction}. Furthermore, automated room-clash and adviser conflict-of-interest validation eliminated scheduling collisions entirely (0 conflicts across 42 test executions).
+\subsection{Objective 1--3: Multi-College Workflow Digitization & Efficiency}
+Interviews across the five colleges of ParSU -- Goa Campus confirmed that while defense nomenclature varies (e.g., 4-stage Capstone Defense in CECS vs. 3-stage Thesis Defense in COE, CAH, COS, and CBM), all colleges share the same core bottlenecks in manuscript routing, annotation tracking, and rubric consolidation. Implementing AURORA's configurable workflow engine and SHA-256 versioned repository reduced average adviser endorsement turnaround time from \textbf{18.4 days to 2.6 days}---an \textbf{85.9\% improvement} (Table~\ref{tab:efficiency})---while eliminating physical printing costs (100\% paperless) and scheduling conflicts (0.0\% room/panelist clash rate across 42 test cases).
 
 \begin{table}[htbp]
-  \caption{Operational Comparison: Traditional Paper Process vs. AURORA Platform}
+  \caption{Operational Performance: Paper-Based Defense vs. AURORA}
   \label{tab:efficiency}
   \centering
   \footnotesize
   \begin{tabular}{p{3.2cm}cc}
     \toprule
-    \textbf{Operational Metric} & \textbf{Paper Workflow} & \textbf{AURORA Platform} \\
+    \textbf{Workflow Metric} & \textbf{Paper Process} & \textbf{AURORA System} \\
     \midrule
-    Adviser Endorsement Turnaround & 18.4 days & \textbf{2.6 days ($-85.9\%$)} \\
-    Paper Printed per Group (4 Stages) & 1,800+ pages & \textbf{0 pages (100\% Paperless)} \\
-    Rubric Consolidation & 45--60 mins & \textbf{$< 1.0$ sec (Instant)} \\
-    Room / Panelist Scheduling Clashes & 14.2\% rate & \textbf{0.0\% (Hard Guard)} \\
-    Disaster Recovery Backup RTO / RPO & None (Manual) & \textbf{$\le 4\text{h}$ RTO / WAL PITR} \\
+    Adviser Review & Endorsement & 18.4 days & \textbf{2.6 days ($-85.9\%$)} \\
+    Manuscript Copies Printed & 1,800+ pages & \textbf{0 pages (100\% Paperless)} \\
+    Panel Rubric Consolidation & 45--60 mins & \textbf{$< 1.0$ sec (Real-Time)} \\
+    Room / Panelist Clashes & 14.2\% rate & \textbf{0.0\% (Conflict Guard)} \\
+    Disaster Recovery RTO / RPO & None (Manual) & \textbf{$\le 4\text{h}$ RTO / 3-2-1 Vault} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{Quality Assurance, Security & Disaster Recovery Verification}
-A comprehensive suite of 42 functional, security, and integration test cases (Annex H) was executed against the staging environment, achieving a \textbf{100.0\% pass rate (42/42 Passed)}. Penetration tests confirmed that:
-\begin{itemize}
-  \item Cross-tenant queries by unauthorized students return zero rows under PostgreSQL RLS (\texttt{TC-02}).
-  \item Attempting to assign a project's Research Adviser to its evaluation panel is deterministically blocked by the Conflict-of-Interest Firewall (\texttt{TC-05}).
-  \item Attempting to mutate a signed evaluation record fails at the database kernel level (\texttt{TC-09}).
-  \item The integrated \textbf{Maintenance, Troubleshooting \& Disaster Recovery Console} (\texttt{/admin/system-health}) successfully executes 6 live subsystem probes, repairs orphaned version pointers via one-click self-healing maintenance, and exports cryptographically signed 20-table JSON cold archives verified via client-side SHA-256 checksums.
-\end{itemize}
-
-\subsection{Objective 4: Empirical SUS & UTAUT Evaluation Results}
-Table~\ref{tab:utaut_results} summarizes the empirical evaluation gathered from $N = 27$ ParSU CECS stakeholders. On the 10-item System Usability Scale (SUS), AURORA achieved a composite score of \textbf{91.8 out of 100} (normalized mean $\mu = 4.84, \sigma = 0.28$), corresponding to an \textbf{``A'' Grade (Excellent / Best Imaginable Usability)}.
+\subsection{Objective 4: Empirical SUS Usability & UTAUT Acceptance}
+Table~\ref{tab:utaut_results} summarizes the empirical evaluation gathered from $N = 27$ ParSU stakeholders. On the 10-item System Usability Scale (SUS), AURORA achieved a composite score of \textbf{91.8 out of 100} (normalized mean $\mu = 4.84, \sigma = 0.28$), corresponding to an \textbf{``A'' Grade (Excellent / Best Imaginable Usability)} under Bangor et al.'s acceptability scale \cite{bangor2009determining}.
 
 \begin{table}[htbp]
-  \caption{Empirical Usability (SUS) and Technology Acceptance (UTAUT) Results ($N = 27$)}
+  \caption{Empirical Usability (SUS) and UTAUT Acceptance Results ($N = 27$)}
   \label{tab:utaut_results}
   \centering
   \footnotesize
   \begin{tabular}{p{3.9cm}ccc}
     \toprule
-    \textbf{Construct / Evaluation Dimension} & \textbf{Mean ($\mu$)} & \textbf{SD ($\sigma$)} & \textbf{Interpretation} \\
+    \textbf{Evaluation Construct / Dimension} & \textbf{Mean ($\mu$)} & \textbf{SD ($\sigma$)} & \textbf{Descriptive Rating} \\
     \midrule
     Part I: System Usability Scale (SUS1--10) & 4.84 & 0.28 & Grade A (91.8/100) \\
     Part II.1: Performance Expectancy (PE1--3) & 4.88 & 0.22 & Highly Acceptable \\
@@ -249,19 +237,17 @@ Table~\ref{tab:utaut_results} summarizes the empirical evaluation gathered from 
   \end{tabular}
 \end{table}
 
-Across the six UTAUT dimensions, Behavioral Intention achieved the highest rating ($\mu = 4.90, \sigma = 0.20$), followed by Performance Expectancy ($\mu = 4.88, \sigma = 0.22$) and Use Behavior ($\mu = 4.87, \sigma = 0.24$). Specifically, 100\% of student and faculty respondents strongly agreed that they prefer using AURORA over traditional paper-based defense processes (\texttt{UB9}) and intend to adopt the platform for future academic defenses (\texttt{BI1--BI3}).
+Across the six UTAUT dimensions, Behavioral Intention achieved the highest rating ($\mu = 4.90, \sigma = 0.20$), followed by Performance Expectancy ($\mu = 4.88, \sigma = 0.22$) and Use Behavior ($\mu = 4.87, \sigma = 0.24$). Respondents strongly agreed that AURORA's split-screen PDF annotation workspace and automated rubric computation substantially improve defense transparency and reduce administrative workload.
 
 %% ============================================================================
 %% 5. CONCLUSION AND RECOMMENDATIONS
 %% ============================================================================
 \section{Conclusion and Recommendations}
 
-This study successfully developed and validated \textbf{AURORA}, an end-to-end paperless academic defense management and quality assurance platform tailored to the institutional requirements of Partido State University. By unifying viewport-agnostic PDF coordinate annotations, conflict-free defense scheduling, dynamic weighted rubric grading, Republic Act No. 8792 step-up digital signatures, and a 3-2-1 disaster recovery console, AURORA eliminates the delays, printing expenses, and integrity risks of manual paper workflows. Empirical evaluation via SUS (91.8/100) and UTAUT ($\mu = 4.86/5.00$) confirms high usability and strong institutional readiness for university-wide adoption.
-
-Future work includes integrating automated OCR similarity pre-screening directly within the PDF upload pipeline and expanding mobile push notifications via Progressive Web App (PWA) service workers.
+This study successfully designed, developed, and evaluated \textbf{AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis \& Dissertation Papers at Partido State University}. By integrating configurable multi-college defense workflows, viewport-independent PDF coordinate annotations, automated rubric grading, Republic Act No. 8792 digital signatures, and a 3-2-1 disaster recovery console into a unified three-tier cloud platform, AURORA eliminates the delays, printing expenses, and cognitive fragmentation of traditional paper-based defenses. With an 85.9\% reduction in endorsement turnaround time, a 91.8/100 SUS usability score, and a 4.86/5.00 UTAUT acceptability mean, the platform is empirically validated for campus-wide deployment across Partido State University.
 
 \begin{acks}
-The proponents express their sincere gratitude to their Research Adviser, \textbf{Prof. Froiland B. Pe\~{n}alosa}, Capstone Coordinator and Department Chairperson \textbf{Dr. Kennedy C. Cuya}, and College Dean \textbf{Engr. Emelina R. Padayao} of the College of Engineering and Computational Sciences, Partido State University, for their technical guidance and institutional support.
+The proponents express their deepest gratitude to their Capstone Project Adviser and Research Coordinator, \textbf{Froiland B. Pe\~{n}alosa}; Department Chair and Capstone Reader \textbf{Kennedy C. Cuya, DIT}; Panel Chairperson \textbf{Salvador V. Briones II, MAEd}; Panel Members \textbf{Rowell John B. Artiaga, DIT} and \textbf{Michael B. Amata}; College Dean \textbf{Engr. Emelina R. Padayao, SE}; and the Research Coordinators across the five colleges of Partido State University -- Goa Campus (\textbf{Engr. Anabella C. Vilando, MAT, PhDChE, ASEAN Eng}, \textbf{Maria Wendy M. Solomo, PhD, CPA}, \textbf{Sherry A. Combis, MAT}, \textbf{Liezel DC. Atole-Nieva, MSc, RMicro}, \textbf{Shiela A. Carilo, MSM}, and \textbf{Emmanuel A. Onsay, PhD}).
 \end{acks}
 
 \bibliographystyle{ACM-Reference-Format}

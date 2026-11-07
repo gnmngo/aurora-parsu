@@ -7,7 +7,7 @@
 ---
 
 # ANNEX F: TECHNICAL DOCUMENTATION & SPECIFICATIONS
-## Project: AURORA (Academic Unified Review, Observation, Rating, and Assessment System)
+## Project: AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 ---
 
@@ -99,7 +99,7 @@ While AURORA leverages type-safe Next.js Server Actions for internal mutations, 
 {
   "success": true,
   "certificateSerial": "AURORA-2026-000001",
-  "projectTitle": "AURORA: Paperless Academic Defense Workflow Platform",
+  "projectTitle": "AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University",
   "stage": "Final Oral Defense",
   "academicYear": "2026-2027",
   "verdict": "approved",

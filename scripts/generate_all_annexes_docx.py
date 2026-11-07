@@ -362,7 +362,7 @@ def build_master_annexes_docx(output_paths):
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_sub.paragraph_format.space_after = Pt(14)
     r_sub = p_sub.add_run(
-        "AURORA: Academic Unified Review, Observation, Rating, and Assessment System\nA Paperless Academic Defense Workflow & Quality Assurance Platform"
+        "AURORA: Paperless Academic Defense Workflow System for Research,\nCapstone, Thesis & Dissertation Papers at Partido State University"
     )
     r_sub.font.name = "Times New Roman"
     r_sub.font.size = Pt(11)
@@ -403,22 +403,27 @@ def build_master_annexes_docx(output_paths):
 
     add_meta_line(
         mp,
-        "Project Platform",
-        "AURORA (Paperless Capstone Defense Management Platform)",
+        "Official Capstone Title",
+        "AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University",
     )
     add_meta_line(
         mp,
-        "Project Proponents",
-        "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae",
+        "Project Proponents (BSIT 4C)",
+        "Mañago, Gene Vincent D. | Castillo, Carol Ann B. | Buenafe, Rona Mae S. | Encinas, Lara Mae B. | Bares, Leomer",
     )
-    add_meta_line(mp, "Research Adviser", "Froiland B. Peñalosa")
-    add_meta_line(mp, "Capstone Coordinator", "Dr. Kennedy C. Cuya")
+    add_meta_line(mp, "Research Adviser & Capstone Coordinator", "Froiland B. Peñalosa")
+    add_meta_line(mp, "Department Chair & Capstone Reader", "Kennedy C. Cuya, DIT")
     add_meta_line(
         mp,
-        "Academic Department",
-        "Department of Computational Sciences (DCS), CECS",
+        "Panel of Examiners",
+        "Salvador V. Briones II, MAEd (Chair) | Rowell John B. Artiaga, DIT | Michael B. Amata | Froiland B. Peñalosa | Kennedy C. Cuya, DIT",
     )
-    add_meta_line(mp, "Host Institution", "Partido State University (Goa Campus)")
+    add_meta_line(
+        mp,
+        "College Dean",
+        "Engr. Emelina R. Padayao, SE (College of Engineering and Computational Sciences)",
+    )
+    add_meta_line(mp, "Host Institution", "Partido State University – Goa Campus (November 2026)")
 
     p_space = doc.add_paragraph()
     p_space.paragraph_format.space_before = Pt(10)

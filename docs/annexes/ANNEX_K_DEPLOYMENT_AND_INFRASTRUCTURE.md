@@ -7,7 +7,7 @@
 ---
 
 # ANNEX K: DEPLOYMENT & INFRASTRUCTURE
-## Project: AURORA (Academic Unified Review, Observation, Rating, and Assessment System)
+## Project: AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 ---
 

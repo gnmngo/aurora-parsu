@@ -7,7 +7,7 @@
 ---
 
 # ANNEX G: SOURCE CODE & REPOSITORY
-## Project: AURORA (Academic Unified Review, Observation, Rating, and Assessment System)
+## Project: AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 - **Git Repository URL:** `https://github.com/gnmngo/aurora-parsu`
 - **Production Branch:** `main` (Active Cloud Deployment on Vercel)

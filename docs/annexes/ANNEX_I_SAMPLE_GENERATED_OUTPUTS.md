@@ -7,7 +7,7 @@
 ---
 
 # ANNEX I: SAMPLE GENERATED OUTPUTS
-## Project: AURORA (Academic Unified Review, Observation, Rating, and Assessment System)
+## Project: AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 ---
 
@@ -20,15 +20,15 @@ The AURORA platform generates standardized, printable departmental reports that 
 | Field / Section | Official Generated Institutional Record (Form DCS-CF-03, Rev. 2026) |
 | :--- | :--- |
 | **Institution & Department** | Partido State University — College of Engineering and Computational Sciences (Department of Computational Sciences) |
-| **Project Title** | *AURORA: Academic Unified Review, Observation, Rating, and Assessment — A Paperless Academic Defense Workflow & Quality Assurance Platform* |
-| **Student Proponents** | Mañago, Gene Vincent • Castillo, Carol Ann • Buenafe, Rona Mae • Encinas, Lara Mae |
+| **Project Title** | *AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University* |
+| **Student Proponents** | Mañago, Gene Vincent D. • Castillo, Carol Ann B. • Buenafe, Rona Mae S. • Encinas, Lara Mae B. • Bares, Leomer |
 | **Degree Program & Stage** | Bachelor of Science in Information Technology (BSIT) — **Final Oral Defense** |
 | **Prerequisite 1: Turnitin Check** | **VERIFIED** — Overall Similarity Index: **11.0%** (Compliant with $\le 20.0\%$ Departmental Threshold) |
 | **Prerequisite 2: Manuscript & Code** | **VERIFIED** — Complete Manuscript (`v3`, SHA-256: `8f9a2b...c3d4`) and Working Cloud Prototype Uploaded |
 | **Prerequisite 3: Panel Revisions** | **VERIFIED** — All Prior Critical and Major Annotations Addressed and Closed ($14 / 14$) |
 | **Adviser Certification Statement** | *"I hereby certify that I have reviewed the final draft of the manuscript and examined the working software prototype. I recommend the proponents for Final Oral Defense Deliberation."* |
 | **Digitally Certified By** | **FROILAND B. PEÑALOSA** (Research Adviser, Department of Computational Sciences) |
-| **Date & Status** | October 2, 2026 — **ENDORSED & CLEARED FOR SCHEDULING** (Noted by **Dr. Kennedy C. Cuya**, Capstone Coordinator) |
+| **Date & Status** | November 2026 — **ENDORSED & CLEARED FOR SCHEDULING** (Noted by **Dr. Kennedy C. Cuya**, Capstone Coordinator) |
 
 ---
 
@@ -54,10 +54,10 @@ AURORA generates a tamper-evident digital verification receipt for every legally
 | :--- | :--- |
 | **Receipt Reference Number** | `REC-2026-10-02-001` |
 | **Certificate Serial Number** | `AURORA-2026-000001` |
-| **Deliberation Timestamp** | October 2, 2026 • 10:14:22 AM PHT (UTC+8) |
+| **Deliberation Timestamp** | November 2026 • 10:14:22 AM PHT (UTC+8) |
 | **Deliberation Venue** | CECS Conference Room & AURORA Split-Screen Workspace |
 | **Project Title** | *AURORA: Academic Unified Review, Observation, Rating, and Assessment System* |
-| **Proponents** | Mañago, Gene Vincent; Castillo, Carol Ann; Buenafe, Rona Mae; Encinas, Lara Mae |
+| **Proponents** | Mañago, Gene Vincent D.; Castillo, Carol Ann B.; Buenafe, Rona Mae S.; Encinas, Lara Mae B.; Bares, Leomer |
 | **Research Adviser** | **Froiland B. Peñalosa** (Department of Computational Sciences) |
 | **Signing Evaluator & Role** | **Dr. Kennedy C. Cuya** — Panel Committee Chairperson |
 | **Composite Score & Verdict** | **94.50% — APPROVED (PASSED WITH DISTINCTION)** |

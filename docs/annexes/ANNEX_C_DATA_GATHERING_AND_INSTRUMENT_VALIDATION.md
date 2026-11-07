@@ -7,7 +7,7 @@
 ---
 
 # ANNEX C: DATA GATHERING & INSTRUMENT VALIDATION
-## Project: AURORA (Academic Unified Review, Observation, Rating, and Assessment System)
+## Project: AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University
 
 ---
 
@@ -40,7 +40,7 @@ The survey instrument adopted for evaluating the **AURORA System** under **Resea
    - *Expertise:* Software Engineering, Educational Technology, Database Systems, Academic Workflow Architecture
    - *Role:* Lead Content & Institutional Alignment Validator
 
-2. **Engr. Emelina R. Padayao, M.Eng.**
+2. **Engr. Emelina R. Padayao, SE**
    - *Designation:* Dean, College of Engineering and Computational Sciences, Partido State University
    - *Expertise:* Systems Optimization, Engineering Management, Quality Assurance, ISO 9001:2015 Systems
    - *Role:* Institutional Governance & Operations Validator
