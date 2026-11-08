@@ -352,7 +352,7 @@ def build_master_annexes_docx(output_paths):
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_title.paragraph_format.space_before = Pt(6)
     p_title.paragraph_format.space_after = Pt(4)
-    r_title = p_title.add_run("COMPLETE CAPSTONE ANNEXES\nANNEX A THROUGH ANNEX L")
+    r_title = p_title.add_run("COMPLETE CAPSTONE ANNEXES\nANNEXES B THROUGH L")
     r_title.font.name = "Times New Roman"
     r_title.font.size = Pt(16)
     r_title.font.bold = True
@@ -444,7 +444,7 @@ def build_master_annexes_docx(output_paths):
         (
             "Annex A",
             "Academic Integrity & Ethics",
-            "1. Plagiarism Certification / Originality Report\n2. AI Disclosure (Code, Image/Figure, Grammar, other usage)",
+            "[PENDING FINAL CAMERA-READY COMPLIANCE]\n1. Plagiarism Certification / Originality Report\n2. AI Disclosure (Code, Image/Figure, Grammar, other usage)",
         ),
         (
             "Annex B",
@@ -561,9 +561,8 @@ def build_master_annexes_docx(output_paths):
 
     doc.add_page_break()
 
-    # Sequential List of Annex Markdown Files
+    # Sequential List of Annex Markdown Files (Annex A excluded per user instruction until final originality scan)
     annex_files = [
-        "ANNEX_A_ACADEMIC_INTEGRITY_AND_ETHICS.md",
         "ANNEX_B_COMMUNICATIONS_AND_APPROVALS.md",
         "ANNEX_C_DATA_GATHERING_AND_INSTRUMENT_VALIDATION.md",
         "ANNEX_D_PROJECT_MANAGEMENT_AND_GOVERNANCE.md",
@@ -813,10 +812,11 @@ def build_master_annexes_docx(output_paths):
 
 if __name__ == "__main__":
     targets = [
+        r"c:\Users\Acer\Projects\aurora-parsu\AURORA_Complete_Annexes_B_to_L.docx",
         r"c:\Users\Acer\Projects\aurora-parsu\AURORA_Complete_Annexes_A_to_L.docx",
+        r"c:\Users\Acer\Projects\aurora-parsu\docs\AURORA_Complete_Annexes_B_to_L.docx",
         r"c:\Users\Acer\Projects\aurora-parsu\docs\AURORA_Complete_Annexes_A_to_L.docx",
-        r"C:\Users\Acer\Desktop\AURORA_Complete_Annexes_A_to_L.docx",
-        r"C:\Users\Acer\Downloads\AURORA_Complete_Annexes_A_to_L.docx",
+        r"C:\Users\Acer\.gemini\antigravity\brain\07706289-cf4e-46a0-833f-db9c83dd1784\AURORA_Complete_Annexes_B_to_L.docx",
         r"C:\Users\Acer\.gemini\antigravity\brain\07706289-cf4e-46a0-833f-db9c83dd1784\AURORA_Complete_Annexes_A_to_L.docx",
     ]
     build_master_annexes_docx(targets)
