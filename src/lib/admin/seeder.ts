@@ -187,7 +187,7 @@ export async function runDemoSeeder() {
 
   // Seeding Advisers
   for (let i = 1; i <= 10; i++) {
-    const user = await createUser(`adviser${i}@parsu.edu.ph`, "adviser", "Dr. Adviser", `Professor ${i}`);
+    const user = await createUser(`adviser${i}@parsu.edu.ph`, "adviser", "Adviser", i === 1 ? "Demo" : `Demo ${i}`);
     advisers.push(user);
   }
 
