@@ -16,7 +16,7 @@
 The AURORA platform is architected with a modern, dual-purpose design paradigm: an information-dense, distraction-free productivity environment for faculty reviewers (Advisers, Panelists, Coordinators, and College Deans), paired with an accessible, guided milestone portal for student proponents.
 
 ### Figure E.1: Student Proponent Capstone Hub & Stage Progression Interface
-The Proponent Capstone Hub consolidates the 4-stage CEC defense progression pipeline (*Concept Paper*, *Title Defense*, *Proposal Defense*, and *Final Oral Defense*), the interactive **Form DCS-CF-03** Oral Defense Application prerequisite checklist, SHA-256 manuscript version tracking, and direct access to the **Objective 4 (SUS & UTAUT)** evaluation survey.
+The Proponent Capstone Hub consolidates the 5-stage BSIT defense progression pipeline (*Concept Defense*, *Title Defense*, *Progress Report 1*, *Progress Report 2*, and *Final Defense*), the interactive **Form DCS-CF-01** Application for Oral Defense prerequisite checklist (endorsing proponents to proceed with Progress Report defense), SHA-256 manuscript version tracking, and direct access to the **Objective 4 (SUS & UTAUT)** evaluation survey.
 
 ![Figure E.1: Proponent Capstone Hub & Defense Stage Progression Interface](public/diagrams/aurora_mockup_student_hub.png)
 
@@ -24,8 +24,8 @@ The Proponent Capstone Hub consolidates the 4-stage CEC defense progression pipe
 | :--- | :--- | :--- |
 | **Left Navigation Sidebar** | Role-scoped navigation menu driven by PostgreSQL RBAC claims (`student`). | Dashboard, My Project, Submissions, Inline Annotations, Defenses, Grades, SUS & UTAUT Survey. |
 | **Project Header Banner** | Displays active capstone project metadata and assigned faculty supervision. | Project Title, Code (`BSIT-2026-001`), Research Adviser (**Prof. Froiland B. Peñalosa**), and Stage Badge. |
-| **4-Stage Progression Stepper** | Dynamic milestone tracker reflecting college-specific workflow templates. | Stage completion status (`Completed`, `Active`), weighted defense scores, and schedule timestamps. |
-| **Form DCS-CF-03 Gating Card** | Real-time prerequisite checklist gating eligibility for oral defense scheduling. | Turnitin similarity index ($11\% \le 20\%$), resolved annotations ($14/14$), and Adviser digital endorsement. |
+| **5-Stage Progression Stepper** | Dynamic milestone tracker reflecting the BSIT 5-stage pipeline (*Concept*, *Title*, *Progress 1*, *Progress 2*, *Final*). | Stage completion status (`Completed`, `Active`), weighted defense scores, and schedule timestamps. |
+| **Form DCS-CF-01 Gating Card** | Real-time prerequisite checklist gating eligibility for oral defense scheduling. | Turnitin similarity index ($11\% \le 20\%$), resolved annotations ($14/14$), and Adviser digital endorsement. |
 | **Manuscript SHA-256 Card** | Cryptographic version control panel verifying binary integrity of uploaded PDFs. | Active version pointer (`v3`, `is_current = true`), file size, and 64-character FIPS 180-4 SHA-256 digest. |
 
 ---

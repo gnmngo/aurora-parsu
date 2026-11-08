@@ -21,11 +21,11 @@ The development of the AURORA platform followed an **Agile Scrum Software Develo
 
 | Phase / Sprint Deliverable | Aug–Sep 2025 | Oct–Dec 2025 | Jan–Feb 2026 | Mar–May 2026 | Jun–Jul 2026 | Aug–Nov 2026 | Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. Inception & Title Proposal (M-01)** | `[ACTIVE]` | — | — | — | — | — | **100% Done** |
+| **1. Inception & Concept Defense (M-01)** | `[ACTIVE]` | — | — | — | — | — | **100% Done** |
 | **2. Systems Analysis & SRS (M-02)** | — | `[ACTIVE]` | — | — | — | — | **100% Done** |
 | **3. UI/UX & ParSU Design Kit (M-03)** | — | `[ACTIVE]` | — | — | — | — | **100% Done** |
 | **4. Sprint 1: Auth, RBAC & RLS (M-04)** | — | — | `[ACTIVE]` | — | — | — | **100% Done** |
-| **5. Proposal Defense Gate (M-05)** | — | — | `[ACTIVE]` | — | — | — | **100% Done** |
+| **5. Title Defense & Progress Gate (M-05)** | — | — | `[ACTIVE]` | — | — | — | **100% Done** |
 | **6. Sprint 2–3: PDF & Annotations (M-06)** | — | — | — | `[ACTIVE]` | — | — | **100% Done** |
 | **7. Sprint 4: Defense Scheduler (M-07)** | — | — | — | `[ACTIVE]` | — | — | **100% Done** |
 | **8. Sprint 5: Rubric & RA 8792 Sign (M-08)** | — | — | — | — | `[ACTIVE]` | — | **100% Done** |
@@ -36,11 +36,11 @@ The development of the AURORA platform followed an **Agile Scrum Software Develo
 
 | Milestone Code | Milestone Title | Start Date | Completion Date | Lead Proponent | Key Institutional Deliverable |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M-01** | Project Inception & Research Proposal | Aug 15, 2025 | Sep 30, 2025 | G. V. D. Mañago | Concept & Title Proposal Defense Approval |
+| **M-01** | Project Inception & Research Proposal | Aug 15, 2025 | Sep 30, 2025 | G. V. D. Mañago | Concept Defense Approval |
 | **M-02** | Systems Analysis & SRS Formulation | Oct 01, 2025 | Nov 15, 2025 | C. A. B. Castillo | Software Requirements Matrix & PIECES Analysis |
 | **M-03** | UI/UX Wireframing & Design System | Nov 16, 2025 | Dec 20, 2025 | L. M. B. Encinas | High-Fidelity Mockups & ParSU Design Kit |
 | **M-04** | Core Architecture & Database Setup | Jan 05, 2026 | Feb 15, 2026 | G. V. D. Mañago & L. Bares | 26-Table Supabase DDL, RLS Hardening & Auth Engine |
-| **M-05** | Multi-College Requirements Interviews & Proposal | Feb 20, 2026 | Feb 28, 2026 | Team Proponents | 5-College Coordinator Interviews & Proposal Clearance |
+| **M-05** | Title Defense & Progress Gate Clearance | Feb 20, 2026 | Feb 28, 2026 | Team Proponents | Form DCS-CF-01 Endorsement & Title Approval |
 | **M-06** | Interactive Annotation Engine | Mar 01, 2026 | Apr 15, 2026 | G. V. D. Mañago | Dual-Pane Viewport & PDF Coordinate Bounding |
 | **M-07** | Scheduler & Conflict Firewall | Apr 16, 2026 | May 30, 2026 | C. A. B. Castillo | Room Collision & Panelist Overlap Logic |
 | **M-08** | Digital Signature & RA 8792 Module | Jun 01, 2026 | Jul 15, 2026 | G. V. D. Mañago | Step-Up Re-Auth & SHA-256 Serial Generator |
@@ -72,11 +72,11 @@ This matrix records all substantive comments, criticisms, and required enhanceme
 | Item No. | Defense Stage | Panel Examiner / Reviewer | Panel Recommendation / Comment | Concrete Technical Action Implemented | Manuscript / Code Reference | Verification Status |
 | :---: | :--- | :--- | :--- | :--- | :--- | :---: |
 | **01** | Title Defense | Kennedy C. Cuya, DIT (Panel Member & Reader) | *"Clarify how electronic signatures comply with Philippine laws to avoid legal challenge."* | Integrated Republic Act No. 8792 compliance using step-up password re-authentication, IP/User-Agent logging, SHA-256 payload hashing, and irreversible locking. | Annex G.1 (`evaluations/actions.ts`) & Chapter 3 | **VERIFIED & RESOLVED** |
-| **02** | Title Defense | Froiland B. Peñalosa (Adviser & Panel Member) | *"Advisers must have a dedicated endorsement gate so unready papers are not defended."* | Implemented Form DCS-CF-03 workflow with automated status transition: papers cannot be scheduled until the adviser signs the digital certification. | Annex G.1 (`application-actions.ts`) & Chapter 4 | **VERIFIED & RESOLVED** |
-| **03** | Proposal | Salvador V. Briones II, MAEd (Panel Chairperson) | *"Prevent advisers from sitting as voting panelists for their own advisees to ensure impartiality."* | Engineered automated Conflict-of-Interest Guard in the scheduling server action; system blocks schedule creation if an adviser UUID is placed in the voting panel committee. | Annex G.1 (`scheduler/actions.ts`) & Chapter 3 | **VERIFIED & RESOLVED** |
-| **04** | Proposal | Rowell John B. Artiaga, DIT (Panel Member) | *"PDF annotations must retain exact page location regardless of screen zoom level."* | Replaced pixel offsets with normalized percentage-based coordinates (`left`, `top`, `width`, `height` as float percentages 0–100%). | Annex G.1 (`annotations/actions.ts`) & Chapter 4 | **VERIFIED & RESOLVED** |
-| **05** | Progress 1 | Michael B. Amata (Panel Member) | *"Add an automated certificate serial number sequence to prevent duplicate evaluation records."* | Created atomic PostgreSQL stored procedure `generate_certificate_serial()` generating unique `AURORA-YYYY-NNNNNN` serials. | Annex G.2 (`schema_ddl.sql`) & Chapter 4 | **VERIFIED & RESOLVED** |
-| **06** | Progress 2 | Rowell John B. Artiaga, DIT (Panel Member) | *"Include a complete Maintenance & Troubleshooting Guide and Disaster Recovery & Data Backup Plan."* | Built the 3-tab Maintenance, Troubleshooting & DR Console (`/admin/system-health`) with 6 live probes, self-healing repair, and SHA-256 signed JSON backups. | Annex J.3 & J.4 (`admin/system-health`) | **VERIFIED & RESOLVED** |
-| **07** | Pre-Oral | Salvador V. Briones II, MAEd (Panel Chairperson) | *"Align the Objective 4 evaluation with the validated SUS and UTAUT questionnaire (excluding PE2 and UB2)."* | Updated the in-app Evaluation Dialog and Research Objectives Dashboard to the exact 10-item SUS + 27-item UTAUT instrument (Grand Mean = 4.86 / 5.00). | Annex C.3 & H.4 (`iso25010.ts`) | **VERIFIED & RESOLVED** |
+| **02** | Title Defense | Froiland B. Peñalosa (Adviser & Panel Member) | *"Advisers must have a dedicated endorsement gate so unready papers are not defended."* | Implemented Form DCS-CF-01 / DCS-CF-03 workflow with automated status transition: papers cannot be scheduled until the adviser signs the digital certification. | Annex G.1 (`application-actions.ts`) & Chapter 4 | **VERIFIED & RESOLVED** |
+| **03** | Progress Report 1 | Salvador V. Briones II, MAEd (Panel Chairperson) | *"Prevent advisers from sitting as voting panelists for their own advisees to ensure impartiality."* | Engineered automated Conflict-of-Interest Guard in the scheduling server action; system blocks schedule creation if an adviser UUID is placed in the voting panel committee. | Annex G.1 (`scheduler/actions.ts`) & Chapter 3 | **VERIFIED & RESOLVED** |
+| **04** | Progress Report 1 | Rowell John B. Artiaga, DIT (Panel Member) | *"PDF annotations must retain exact page location regardless of screen zoom level."* | Replaced pixel offsets with normalized percentage-based coordinates (`left`, `top`, `width`, `height` as float percentages 0–100%). | Annex G.1 (`annotations/actions.ts`) & Chapter 4 | **VERIFIED & RESOLVED** |
+| **05** | Progress Report 1 | Michael B. Amata (Panel Member) | *"Add an automated certificate serial number sequence to prevent duplicate evaluation records."* | Created atomic PostgreSQL stored procedure `generate_certificate_serial()` generating unique `AURORA-YYYY-NNNNNN` serials. | Annex G.2 (`schema_ddl.sql`) & Chapter 4 | **VERIFIED & RESOLVED** |
+| **06** | Progress Report 2 | Rowell John B. Artiaga, DIT (Panel Member) | *"Include a complete Maintenance & Troubleshooting Guide and Disaster Recovery & Data Backup Plan."* | Built the 3-tab Maintenance, Troubleshooting & DR Console (`/admin/system-health`) with 6 live probes, self-healing repair, and SHA-256 signed JSON backups. | Annex J.3 & J.4 (`admin/system-health`) | **VERIFIED & RESOLVED** |
+| **07** | Progress Report 2 | Salvador V. Briones II, MAEd (Panel Chairperson) | *"Align the Objective 4 evaluation with the validated SUS and UTAUT questionnaire (excluding PE2 and UB2)."* | Updated the in-app Evaluation Dialog and Research Objectives Dashboard to the exact 10-item SUS + 27-item UTAUT instrument (Grand Mean = 4.86 / 5.00). | Annex C.3 & H.4 (`iso25010.ts`) | **VERIFIED & RESOLVED** |
 
 *Attested by:* **Froiland B. Peñalosa** (Capstone Project Adviser & Research Coordinator) and **Kennedy C. Cuya, DIT** (Department Chair, Department of Computational Sciences & Capstone Reader).

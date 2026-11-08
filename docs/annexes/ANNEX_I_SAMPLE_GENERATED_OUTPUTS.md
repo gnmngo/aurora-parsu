@@ -75,7 +75,7 @@ The platform features an executive reporting dashboard (`/dashboard/analytics`) 
 
 ### Key Executive Analytics Views:
 1. **Deliberation Throughput & Defense Progressions:**
-   - Visual progress bars tracking the percentage of capstone teams that have completed Concept Defense ($100\%$), Title Defense ($100\%$), Proposal Defense ($92\%$), and Final Oral Defense ($85\%$).
+   - Visual progress bars tracking the percentage of capstone teams that have completed Concept Defense ($100\%$), Title Defense ($100\%$), Progress Report 1 ($96\%$), Progress Report 2 ($91\%$), and Final Defense ($85\%$) for BSIT (alongside 3-stage progress metrics for other colleges).
 2. **Institutional Verdict Breakdown:**
    - Dynamic distribution charts categorizing defense outcomes across the college: *Approved* ($68\%$), *Approved with Minor Revisions* ($24\%$), *Major Revisions / Re-Defense* ($8\%$), and *Failed* ($0\%$).
 3. **Objective 4 (SUS & UTAUT) Live Acceptability Telemetry:**

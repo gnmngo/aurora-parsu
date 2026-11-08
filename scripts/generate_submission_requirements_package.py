@@ -392,7 +392,7 @@ def build_imrad_acm_sigplan_docx(output_docx_path):
     add_acm_h1("3  Methodology")
     add_acm_h2("3.1  Agile SDLC & Multi-College PIECES Analysis")
     add_acm_body(
-        "AURORA was developed using the Agile Software Development Life Cycle (SDLC) from August 2025 to November 2026. Structured interviews with seven Research Coordinators across all five colleges at ParSU – Goa Campus were analyzed using the PIECES Framework (Performance, Information, Economics, Control/Security, Efficiency, and Service), establishing support for both 4-stage Capstone Defenses (CECS) and 3-stage Thesis/Research Defenses (COE, CAH, COS, CBM).",
+        "AURORA was developed using the Agile Software Development Life Cycle (SDLC) from August 2025 to November 2026. Structured interviews with seven Research Coordinators across all five colleges at ParSU – Goa Campus were analyzed using the PIECES Framework (Performance, Information, Economics, Control/Security, Efficiency, and Service), establishing support for both 5-stage Capstone Defenses (BSIT) and 3-stage Thesis/Research Defenses (COE, CAH, COS, CBM).",
         indent=False,
     )
 
@@ -594,7 +594,7 @@ def append_official_capstone_abstract_content(doc):
     # Findings (Aligned 1-to-1 with Objectives 1 to 4)
     add_abs_section_heading("Findings")
     findings = [
-        "1. Requirements Gathering (Objective 1): Multi-college interviews with seven (7) Research Coordinators across CECS, COE, CAH, COS, and CBM revealed four shared PIECES bottlenecks in manual defenses: prolonged 18.4-day physical routing turnaround, split-attention cognitive overload from disconnected paper marginalia, manual rubric calculation delays, and variable stage structures (4-stage Capstone workflow in CECS vs. 3-stage Thesis/Research workflows in other colleges).",
+        "1. Requirements Gathering (Objective 1): Multi-college interviews with seven (7) Research Coordinators across CECS, COE, CAH, COS, and CBM revealed four shared PIECES bottlenecks in manual defenses: prolonged 18.4-day physical routing turnaround, split-attention cognitive overload from disconnected paper marginalia, manual rubric calculation delays, and variable stage structures (5-stage Capstone workflow in BSIT vs. 3-stage Thesis/Research workflows in other colleges).",
         "2. System Architecture & Database Design (Objective 2): A decoupled Three-Tier Cloud Architecture and a normalized 26-table PostgreSQL relational schema with Row-Level Security (RLS) were designed to model multi-college hierarchy, dynamic workflow templates, SHA-256 versioned PDF manuscripts, normalized percentage-based coordinate annotations, weighted rubrics, and revision tracking.",
         "3. System Development & Workflow Integration (Objective 3): AURORA was successfully developed with nine (9) integrated functional modules, reducing manuscript review and Form DCS-CF-03 endorsement turnaround time by 85.9% (from 18.4 days to 2.6 days), eliminating room and panelist scheduling collisions (0.0% conflict rate), enforcing Republic Act No. 8792 step-up digital signatures (AURORA-YYYY-NNNNNN), and providing a 3-2-1 Disaster Recovery & Self-Healing Maintenance Console (100% pass rate across 42 QA test cases).",
         "4. Usability, Efficiency & Acceptance Evaluation (Objective 4): Empirical evaluation by N = 27 stakeholders yielded a Composite SUS Score of 91.8 / 100 (Grade A — Excellent Usability) and a Composite UTAUT Grand Mean of 4.86 / 5.00 (Highly Acceptable) across Performance Expectancy (4.88), Effort Expectancy (4.86), Social Influence (4.81), Facilitating Conditions (4.85), Behavioral Intention (4.90), and Use Behavior (4.87).",
@@ -1026,7 +1026,7 @@ def build_flyer_and_booklet_docx(flyer_docx_path, booklet_docx_path, qr_imrad_pa
         ),
         (
             "2. Multi-College Workflows & Conflict Firewall",
-            "Supports customizable 4-stage (CECS Capstone) and 3-stage (COE, CAH, COS, CBM Thesis) pipelines with automatic room-clash and adviser conflict-of-interest isolation.",
+            "Supports customizable 5-stage (BSIT Capstone) and 3-stage (COE, CAH, COS, CBM Thesis) pipelines with automatic room-clash and adviser conflict-of-interest isolation.",
         ),
         (
             "3. Automated Rubric & RA 8792 Digital Signatures",
@@ -1176,7 +1176,7 @@ def build_flyer_and_booklet_docx(flyer_docx_path, booklet_docx_path, qr_imrad_pa
             "Module 4: Research/Capstone Coordinator, College Dean & System Admin Guide",
             [
                 "1. Conflict-Free Scheduling (/dashboard/defenses/schedule): Schedule single or batch defenses with automatic room-clash detection and Adviser Conflict-of-Interest isolation.",
-                "2. Multi-College Workflows & Rubrics (/admin/stages & /admin/rubrics): Configure 4-stage (CECS) or 3-stage (COE, CAH, COS, CBM) pipelines and dynamic 100%-weighted rubrics.",
+                "2. Multi-College Workflows & Rubrics (/admin/stages & /admin/rubrics): Configure 5-stage (BSIT) or 3-stage (COE, CAH, COS, CBM) pipelines and dynamic 100%-weighted rubrics.",
                 "3. Executive Analytics & Objective 4 Survey (/dashboard/analytics): Monitor pass rates, turnaround KPIs, and live SUS (91.8/100) & UTAUT (4.86/5.00) acceptability metrics.",
                 "4. Maintenance, Troubleshooting & DR Console (/admin/system-health): Run 6 live diagnostic probes, trigger One-Click Self-Healing Maintenance, and export/verify SHA-256 JSON backups.",
             ],

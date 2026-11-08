@@ -796,10 +796,19 @@ def build_master_annexes_docx(output_paths):
         try:
             doc.save(p)
             print(f"Master Annexes DOCX generated at: {p}")
-        except PermissionError:
-            alt_p = p.replace(".docx", "_Updated.docx")
-            doc.save(alt_p)
-            print(f"File locked in Word ({p}); saved updated copy to: {alt_p}")
+        except Exception as e:
+            saved = False
+            for attempt in range(1, 10):
+                alt_p = p.replace(".docx", f"_v{attempt}.docx")
+                try:
+                    doc.save(alt_p)
+                    print(f"File locked in Word ({p}); saved updated copy to: {alt_p}")
+                    saved = True
+                    break
+                except Exception:
+                    continue
+            if not saved:
+                print(f"Could not save {p} due to lock: {e}")
 
 
 if __name__ == "__main__":

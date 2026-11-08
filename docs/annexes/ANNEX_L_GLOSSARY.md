@@ -24,13 +24,13 @@ This glossary defines the core software engineering, cryptographic, statistical,
 | **bcrypt** | Adaptive Cryptographic Password Hashing Function | Salted key-derivation algorithm used by the authentication engine to store user credentials and verify step-up password re-authentication. |
 | **BI** | Behavioral Intention (UTAUT Construct) | UTAUT dimension measuring stakeholders' intention, prediction, and plan to continue using AURORA for future academic defenses ($\mu = 4.90$). |
 | **BSIT** | Bachelor of Science in Information Technology | Undergraduate degree program under the Department of Computational Sciences for which this capstone study was conducted. |
-| **CECS / CEC** | College of Engineering and Computational Sciences | The host academic college at Partido State University overseeing the 4-stage capstone defense workflow (*Concept*, *Title*, *Proposal*, and *Final Oral Defense*). |
+| **CECS / CEC** | College of Engineering and Computational Sciences | The host academic college at Partido State University overseeing the 5-stage BSIT capstone defense workflow (*Concept Defense*, *Title Defense*, *Progress Report 1*, *Progress Report 2*, and *Final Defense*) and engineering programs. |
 | **CHED** | Commission on Higher Education | Philippine national regulatory agency issuing Policies, Standards, and Guidelines (CMO No. 25, s. 2015) for Information Technology education. |
 | **CI/CD** | Continuous Integration / Continuous Deployment | Automated DevOps pipeline (GitHub Actions to Vercel) that runs TypeScript checks, linting, and security tests on every `git push`. |
 | **Cronbach’s Alpha ($\alpha$)** | Coefficient of Internal Consistency Reliability | Psychometric statistic confirming high internal reliability across the 37-item SUS and UTAUT evaluation instrument ($\alpha = 0.946$). |
 | **CSP** | Content Security Policy | HTTP response security header mitigating Cross-Site Scripting (XSS) and unauthorized frame embedding. |
 | **DCS** | Department of Computational Sciences | Academic department within ParSU CECS administering the BSIT and BSIS degree programs. |
-| **DCS-CF-03** | Department Form: Application for Oral Defense | Official institutional form certifying prerequisite completion and Research Adviser endorsement prior to defense scheduling. |
+| **DCS-CF-01** | Department Form: Application for Oral Defense | Official BSIT institutional form certifying prerequisite completion, project concepts, and Research Adviser endorsement permitting proponents to proceed with Progress Report defense. |
 | **DCS-CF-04** | Department Form: Oral Defense Evaluation Sheet | Official weighted grading rubric used by panel evaluators to score manuscript quality (30%), prototype demo (35%), presentation (25%), and Q&A (10%). |
 | **DCS-CF-05** | Department Form: Certificate of Defense Clearance | Verifiable institutional certificate issued upon stage completion bearing a unique `AURORA-YYYY-NNNNNN` serial and SHA-256 hash. |
 | **DDL** | Data Definition Language | SQL syntax (`CREATE TABLE`, `ALTER TABLE`, `CREATE POLICY`) defining AURORA’s 20 relational PostgreSQL tables and constraints. |

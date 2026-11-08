@@ -18,8 +18,8 @@ AURORA provides dedicated operational guides for each institutional stakeholder 
 ### J.1.1 Student Proponent Guide
 1. **Accessing the Portal:** Visit `https://aurora-parsu.vercel.app/login` and log in using your institutional email.
 2. **Team Formation:** The lead proponent clicks **Create Project**, inputs the approved title, and shares the generated 8-character **Join Code** with teammates.
-3. **Manuscript Submission:** Navigate to **Submissions** or **My Project**, drag-and-drop your latest PDF manuscript, and select the target defense stage from your college's customized workflow (4 stages for CEC; 3 customizable stages for other colleges). The system computes its FIPS 180-4 SHA-256 fingerprint and sets status to `under_review` (`pending` adviser endorsement).
-4. **Filing Defense Application (DCS-CF-03):** Fill in the requirements checklist (Turnitin score, adviser clearance, preferred defense dates).
+3. **Manuscript Submission:** Navigate to **Submissions** or **My Project**, drag-and-drop your latest PDF manuscript, and select the target defense stage from your college's customized workflow (5 stages for BSIT: Concept Defense, Title Defense, Progress Report 1, Progress Report 2, Final Defense; 3 customizable stages for other colleges). The system computes its FIPS 180-4 SHA-256 fingerprint and sets status to `under_review` (`pending` adviser endorsement).
+4. **Filing Defense Application (Form DCS-CF-01 for BSIT / U-CF-03 for Other Colleges):** Fill in the requirements checklist (Turnitin score, adviser clearance, preferred defense dates). For BSIT Title Defense, complete the official Application for Oral Defense (`DCS-CF-01`) listing the three proposed project concepts, which upon adviser recommendation endorses the group to proceed to the Progress Report defense stages.
 5. **Viewing Feedback & Remarks:** Open the **Annotations** view or **Review Workspace** to view adviser and panelist comments. Click on any annotation to jump to the highlighted page segment and reply to notes.
 6. **Accessing Defense Outcomes:** Check the **Grades** tab to review composite panel evaluations, download Form DCS-CF-04, and view your verifiable clearance certificate serial number (`AURORA-YYYY-XXXX`).
 
@@ -44,7 +44,7 @@ AURORA provides dedicated operational guides for each institutional stakeholder 
    - **Single Schedule:** Select room, start time, duration, and panel committee. The system automatically blocks room collisions, panelist time clashes, or adviser conflict-of-interest violations.
    - **Batch Auto-Scheduler:** Automatically distribute multiple eligible projects across conflict-free time windows and rooms.
 3. **Customizable Defense Stages (`/admin/stages`) & Rubrics (`/admin/rubrics`):**
-   - CEC utilizes the 4-stage progression (*Concept Paper*, *Title Defense*, *Proposal Defense*, *Final Oral Defense*), while other colleges default to the 3 main defense stages (*Title Defense*, *Proposal Defense*, *Final Oral Defense*) with full stage and rubric customization.
+   - BSIT in the Department of Computational Sciences (CECS) utilizes the dedicated 5-stage progression (*Concept Defense*, *Title Defense*, *Progress Report 1*, *Progress Report 2*, and *Final Defense*), while other academic colleges default to the 3 main defense stages (*Title Defense*, *Proposal Defense*, and *Final Oral Defense*) with full administrative stage and rubric customization.
 
 ### J.2.2 College Dean & System Administrator Operations
 1. **Executive Analytics (`/dashboard/analytics`):** Monitor college-wide throughput, pass/fail ratios, Objective 2 latency benchmarks, and Objective 4 (SUS & UTAUT) acceptability survey statistics.
