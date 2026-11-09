@@ -17,6 +17,7 @@ import {
   Plus,
   Shield,
   Layers,
+  ClipboardList,
   AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
@@ -203,6 +204,12 @@ export function CoordinatorDashboard() {
             <Button size="sm" variant="outline" className="gap-1.5 font-bold border-border">
               <Layers className="h-4 w-4 text-primary" />
               Defense Stages
+            </Button>
+          </Link>
+          <Link href="/admin/rubrics">
+            <Button size="sm" variant="outline" className="gap-1.5 font-bold border-border">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              Rubrics Manager
             </Button>
           </Link>
         </div>
