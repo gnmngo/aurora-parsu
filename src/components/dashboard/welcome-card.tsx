@@ -124,8 +124,8 @@ export function WelcomeCard() {
     );
   }
 
-  const collegeName = affiliation.collegeName || (profile as any).colleges?.name || "CEC - College of Engineering and Computational Sciences";
-  const departmentName = affiliation.departmentName || (profile as any).departments?.name || "Department of Computational Sciences";
+  const collegeName = affiliation.collegeName || (profile as any).colleges?.name;
+  const departmentName = affiliation.departmentName || (profile as any).departments?.name;
   const roleName =
     effectiveRole === "college_dean"
       ? "College Dean"
@@ -155,14 +155,18 @@ export function WelcomeCard() {
                   <Shield className="mr-1 h-3 w-3" />
                   {roleName}
                 </Badge>
-                <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
-                  <Building2 className="mr-1 h-3 w-3" />
-                  {collegeName}
-                </Badge>
-                <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
-                  <GraduationCap className="mr-1 h-3 w-3" />
-                  {departmentName}
-                </Badge>
+                {collegeName && (
+                  <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
+                    <Building2 className="mr-1 h-3 w-3" />
+                    {collegeName}
+                  </Badge>
+                )}
+                {departmentName && (
+                  <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
+                    <GraduationCap className="mr-1 h-3 w-3" />
+                    {departmentName}
+                  </Badge>
+                )}
                 <IsoEvaluationDialog
                   triggerButton={
                     <button
