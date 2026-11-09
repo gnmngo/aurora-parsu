@@ -190,7 +190,7 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
     if (!trimmedEmail || !trimmedPassword) {
       toast.error("Please enter email and password");

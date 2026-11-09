@@ -8,19 +8,19 @@ interface DemoCredentials {
 const DEMO_ACCOUNTS: Record<string, DemoCredentials> = {
   student: {
     email: process.env.DEMO_STUDENT_EMAIL || "student1@aurora.test",
-    password: process.env.DEMO_STUDENT_PASSWORD || "Panel123!",
+    password: process.env.DEMO_STUDENT_PASSWORD || "Password123!",
   },
   adviser: {
-    email: process.env.DEMO_ADVISER_EMAIL || "panelist1@aurora.test",
-    password: process.env.DEMO_ADVISER_PASSWORD || "Panel123!",
+    email: process.env.DEMO_ADVISER_EMAIL || "adviser1@aurora.test",
+    password: process.env.DEMO_ADVISER_PASSWORD || "Password123!",
   },
   panelist: {
-    email: process.env.DEMO_PANELIST_EMAIL || "panelist2@aurora.test",
-    password: process.env.DEMO_PANELIST_PASSWORD || "Panel123!",
+    email: process.env.DEMO_PANELIST_EMAIL || "panelist1@aurora.test",
+    password: process.env.DEMO_PANELIST_PASSWORD || "Password123!",
   },
   coordinator: {
     email: process.env.DEMO_COORDINATOR_EMAIL || "coord@aurora.test",
-    password: process.env.DEMO_COORDINATOR_PASSWORD || "Panel123!",
+    password: process.env.DEMO_COORDINATOR_PASSWORD || "Password123!",
   },
   dean: {
     email: process.env.DEMO_DEAN_EMAIL || "erpadayao@parsu.edu.ph",
@@ -28,7 +28,7 @@ const DEMO_ACCOUNTS: Record<string, DemoCredentials> = {
   },
   admin: {
     email: process.env.DEMO_ADMIN_EMAIL || "admin@aurora.test",
-    password: process.env.DEMO_ADMIN_PASSWORD || "Panel123!",
+    password: process.env.DEMO_ADMIN_PASSWORD || "Password123!",
   },
 };
 
