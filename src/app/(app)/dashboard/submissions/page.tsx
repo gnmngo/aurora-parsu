@@ -45,7 +45,7 @@ export default function SubmissionsPage() {
         userId: user?.id,
         roles: [effectiveRole],
       });
-      setSubmissionsList(rows);
+      setSubmissionsList(Array.isArray(rows) ? rows : []);
     } catch (err: unknown) {
       logSupabaseError("Submissions.loadSubmissions", err);
       const msg = err instanceof Error ? err.message : "Failed to load submissions from database.";
@@ -63,7 +63,7 @@ export default function SubmissionsPage() {
     loadSubmissions();
   }, [isReady, loadSubmissions]);
 
-  const filteredSubmissions = submissionsList.filter(
+  const filteredSubmissions = (Array.isArray(submissionsList) ? submissionsList : []).filter(
     (sub) =>
       sub.title.toLowerCase().includes(filterText.toLowerCase()) ||
       sub.studentName.toLowerCase().includes(filterText.toLowerCase()) ||

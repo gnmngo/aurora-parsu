@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PARSU_BSIT_ORAL_DEFENSE_CRITERIA } from "@/lib/rubrics/actions";
+import { PARSU_BSIT_ORAL_DEFENSE_CRITERIA } from "@/constants/rubrics";
 
 export interface ResolvedWorkflow {
   id: string;

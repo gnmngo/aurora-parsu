@@ -149,7 +149,7 @@ export function CreateProjectDialog({
     }
   };
 
-  const filteredPrograms = programs.filter(p => p.department_id === selectedDept);
+  const filteredPrograms = (Array.isArray(programs) ? programs : []).filter(p => p.department_id === selectedDept);
 
   const lookupsReady =
     students.length > 0 && faculty.length > 0 && departments.length > 0 && programs.length > 0;
@@ -191,7 +191,7 @@ export function CreateProjectDialog({
               {students.length === 0 ? (
                 <option value="">No students available</option>
               ) : (
-                students.map((s) => {
+                (Array.isArray(students) ? students : []).map((s) => {
                   const name = s.profiles
                     ? `${s.profiles.first_name} ${s.profiles.last_name}`
                     : "Unknown Student";
@@ -223,7 +223,7 @@ export function CreateProjectDialog({
               {faculty.length === 0 ? (
                 <option value="">No faculty available</option>
               ) : (
-                faculty.map((f) => {
+                (Array.isArray(faculty) ? faculty : []).map((f) => {
                   const name = f.profiles
                     ? `${f.profiles.first_name} ${f.profiles.last_name}`
                     : "Unknown Faculty";
@@ -259,7 +259,7 @@ export function CreateProjectDialog({
               {departments.length === 0 ? (
                 <option value="">No departments available</option>
               ) : (
-                departments.map((d) => (
+                (Array.isArray(departments) ? departments : []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
                   </option>
@@ -281,7 +281,7 @@ export function CreateProjectDialog({
               {filteredPrograms.length === 0 ? (
                 <option value="">No programs available for this department</option>
               ) : (
-                filteredPrograms.map((p) => (
+                (Array.isArray(filteredPrograms) ? filteredPrograms : []).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>

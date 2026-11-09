@@ -438,7 +438,7 @@ export function PdfUploader({
                 className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               >
-                {stages.map((s) => (
+                {(Array.isArray(stages) ? stages : []).map((s) => (
                   <option key={s.id} value={s.id}>
                     Stage {s.sequence_order}: {s.name}
                   </option>

@@ -19,8 +19,9 @@ import { toast } from "sonner";
 import {
   createRubricAction,
   updateRubricAction,
-  PARSU_BSIT_ORAL_DEFENSE_CRITERIA,
+
 } from "@/lib/rubrics/actions";
+import { PARSU_BSIT_ORAL_DEFENSE_CRITERIA } from "@/constants/rubrics";
 
 export interface RubricCriterionItem {
   id: string;
@@ -117,7 +118,7 @@ export function RubricEditorDialog({
       if (projectId) setSelectedProject(projectId);
       setTitle("ParSU BSIT Progress Report Defense Rubric (DCS-CF-04/05)");
       setCriteria(
-        PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c, idx) => ({
+        (Array.isArray(PARSU_BSIT_ORAL_DEFENSE_CRITERIA) ? PARSU_BSIT_ORAL_DEFENSE_CRITERIA : []).map((c, idx) => ({
           id: c.id || `crit_${idx}`,
           name: c.name,
           weight: c.weight,
@@ -137,7 +138,7 @@ export function RubricEditorDialog({
   const handleLoadParsuPreset = () => {
     setTitle("ParSU BSIT Progress Report Defense Rubric (DCS-CF-04/05)");
     setCriteria(
-      PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c, idx) => ({
+      (Array.isArray(PARSU_BSIT_ORAL_DEFENSE_CRITERIA) ? PARSU_BSIT_ORAL_DEFENSE_CRITERIA : []).map((c, idx) => ({
         id: c.id || `crit_${idx}`,
         name: c.name,
         weight: c.weight,

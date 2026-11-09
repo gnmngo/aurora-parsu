@@ -64,9 +64,9 @@ import {
   createAnnotationReplyAction,
   deleteAnnotationAction 
 } from "@/lib/annotations/actions";
+import { PARSU_BSIT_ORAL_DEFENSE_CRITERIA } from "@/constants/rubrics";
 import {
   updateDefenseChairmanRubricAction,
-  PARSU_BSIT_ORAL_DEFENSE_CRITERIA,
 } from "@/lib/rubrics/actions";
 import { resolveRubricTemplate } from "@/lib/workflow/template-resolver";
 import { ParsuFormsModal } from "@/components/defenses/parsu-forms-modal";
@@ -2904,7 +2904,7 @@ export function GradingPanel({
                   size="sm"
                   onClick={() => {
                     setCustomCriteria(
-                      PARSU_BSIT_ORAL_DEFENSE_CRITERIA.map((c) => ({
+                      (Array.isArray(PARSU_BSIT_ORAL_DEFENSE_CRITERIA) ? PARSU_BSIT_ORAL_DEFENSE_CRITERIA : []).map((c) => ({
                         id: c.id,
                         name: c.name,
                         category: c.category,

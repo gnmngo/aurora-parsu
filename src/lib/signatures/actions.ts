@@ -27,7 +27,7 @@ import { emitNotification } from "@/lib/notifications/emit";
 import { emitAuditLog } from "@/lib/audit/log";
 
 /** Hash algorithm used for all cryptographic operations in AURORA */
-export const HASH_ALGORITHM = "SHA-256" as const;
+const HASH_ALGORITHM = "SHA-256" as const;
 
 /** Supported storage bucket for signature images */
 const SIGNATURES_BUCKET = "signatures" as const;
