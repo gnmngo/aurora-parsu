@@ -23,10 +23,12 @@ AURORA provides dedicated operational guides for each institutional stakeholder 
 5. **Viewing Feedback & Remarks:** Open the **Annotations** view or **Review Workspace** to view adviser and panelist comments. Click on any annotation to jump to the highlighted page segment and reply to notes.
 6. **Accessing Defense Outcomes:** Check the **Grades** tab to review composite panel evaluations, download Form DCS-CF-04, and view your verifiable clearance certificate serial number (`AURORA-YYYY-XXXX`).
 
-### J.1.2 Research Adviser Guide (e.g., Prof. Froiland B. Peñalosa)
-1. **Advisee Directory:** Click **Dashboard** or **Submissions** to view all capstone groups under your supervision.
-2. **Dual-Pane Annotation:** Open the project in the **Review Workspace** (`/workspace`). Select text or draw freehand / bounding-box annotations directly on the manuscript PDF. Categorize comments by severity (*Critical*, *Major*, *Minor*) and tag rubric criteria.
-3. **Endorsing for Defense:** When satisfied with revisions, click **Approve & Endorse for Defense** (or **Request Revisions**) on the manuscript card. Endorsement automatically unlocks the project for defense scheduling by the Coordinator.
+### J.1.2 Research Adviser Guide (e.g., Froiland B. Peñalosa)
+1. **Advisee Directory & Review Queue:** Navigate to the **Adviser Dashboard** featuring high-contrast tabs (**Guidance Directory**, **Paperless Review Queue**, and **Activity Trails**) to monitor advisee progress.
+2. **Dual-Pane Annotation Workspace:** Open the project in the **Review Workspace** (`/workspace/[projectId]/[stageId]`). Select text directly on the PDF manuscript, assign severity tags (*Critical*, *Major*, *Minor*), and provide constructive consultation feedback.
+3. **Action 1 — Manuscript Defense Endorsement Gate:** On the manuscript card under **Paperless Review Queue** (or inside the workspace right panel), click **Endorse for Defense** (or **Request Revisions**). Endorsement transitions manuscript status to `approved`, clearing the prerequisite scheduling gate for the Defense Coordinator.
+4. **Action 2 — Signing the Official Adviser Certification (Form DCS-CF-01 / DCS-CF-03):** When students submit their defense application, open the **Application for Oral Defense** dialog. Review the proponent documentation checklist and the official **CERTIFICATION OF THE ADVISER** clause. Click **Sign Certification of the Adviser** to record an electronic timestamp and update the application to `certified_by_adviser`, advancing the application to the Department Chair for formal sign-off.
+5. **Adviser Non-Grading Firewall:** To uphold academic non-repudiation, research advisers are strictly prohibited from scoring the defense rubric for their own advisees.
 
 ### J.1.3 Faculty Panel Evaluator Guide
 1. **Defense Calendar:** View your assigned deliberation schedule under **Defenses**.

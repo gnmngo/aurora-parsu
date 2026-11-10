@@ -149,7 +149,7 @@ def create_appendix_h_docx(output_paths):
         r_val.font.color.rgb = RGBColor(51, 65, 85)
 
     add_meta_line(mp, "System Target", "AURORA Paperless Capstone Management Architecture")
-    add_meta_line(mp, "System Proponents", "Mañago, Gene Vincent | Castillo, Carol Ann | Buenafe, Rona Mae | Encinas, Lara Mae")
+    add_meta_line(mp, "System Proponents", "Mañago, Gene Vincent D. | Castillo, Carol Ann B. | Buenafe, Rona Mae S. | Encinas, Lara Mae B. | Bares, Leomer")
     add_meta_line(mp, "Research Supervision", "Froiland B. Peñalosa (Research Adviser) | Dr. Kennedy C. Cuya (Defense Coordinator)")
     add_meta_line(mp, "Academic Department", "Department of Computational Sciences (DCS), CECS")
     add_meta_line(mp, "Institutional Host", "Partido State University (Goa Campus)")
@@ -337,6 +337,8 @@ if __name__ == "__main__":
     targets = [
         r"c:\Users\Acer\Projects\aurora-parsu\docs\Appendix_H_System_Manual.docx",
         r"c:\Users\Acer\Projects\aurora-parsu\Appendix_H_System_Manual.docx",
+        r"C:\Users\Acer\.gemini\antigravity\brain\07706289-cf4e-46a0-833f-db9c83dd1784\AURORA_Operational_Manual.docx",
+        r"C:\Users\Acer\.gemini\antigravity\brain\07706289-cf4e-46a0-833f-db9c83dd1784\Appendix_H_System_Manual.docx",
         r"C:\Users\Acer\Desktop\Appendix_H_System_Manual.docx",
         r"C:\Users\Acer\Downloads\Appendix_H_System_Manual.docx"
     ]
