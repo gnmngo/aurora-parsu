@@ -192,6 +192,12 @@ function LoginForm() {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
+    const EMAIL_ALIASES: Record<string, string> = {
+      'acvillando@parsu.edu.ph': 'anabella.vilando@parsu.edu.ph',
+      'mwmsolomo@parsu.edu.ph': 'mariawendy.solomo@parsu.edu.ph',
+      'mwmsolomon@parsu.edu.ph': 'mariawendy.solomo@parsu.edu.ph',
+    };
+    const resolvedEmail = EMAIL_ALIASES[trimmedEmail] || trimmedEmail;
     if (!trimmedEmail || !trimmedPassword) {
       toast.error("Please enter email and password");
       return;
@@ -204,7 +210,7 @@ function LoginForm() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
+        email: resolvedEmail,
         password: trimmedPassword,
       });
 

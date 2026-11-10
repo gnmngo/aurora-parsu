@@ -15,6 +15,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendEmailNotification } from "@/lib/notifications/email";
 
 // ─── Notification Event Types ─────────────────────────────────────────────────
 
@@ -153,7 +154,48 @@ export async function emitNotification(input: EmitNotificationInput): Promise<vo
         title,
       });
     }
-    // Future: await sendEmailNotification(...) or await sendPushNotification(...)
+    // Dispatch direct institutional email notification alert
+    try {
+      const { data: recipientProfile } = await client
+        .from("profiles")
+        .select("email, first_name, last_name")
+        .eq("id", recipientProfileId)
+        .maybeSingle();
+
+      if (recipientProfile?.email) {
+        let targetEmail = recipientProfile.email;
+        let isEnabled = true;
+
+        try {
+          const { data: authUser } = await client.auth.admin.getUserById(recipientProfileId);
+          if (authUser?.user?.user_metadata) {
+            const meta = authUser.user.user_metadata;
+            if (meta.email_notifications_enabled === false) {
+              isEnabled = false;
+            }
+            if (meta.notification_email) {
+              targetEmail = meta.notification_email;
+            }
+          }
+        } catch {
+          // If auth user fetch fails, proceed with profile email
+        }
+
+        if (isEnabled && targetEmail) {
+          const fullName = `${recipientProfile.first_name || ""} ${recipientProfile.last_name || ""}`.trim();
+          await sendEmailNotification(client, {
+            to: targetEmail,
+            recipientName: fullName || undefined,
+            title,
+            message,
+            link: targetLink,
+            eventType,
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.warn("[Notifications] Email delivery attempt logged:", emailErr);
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[Notifications] Unexpected error:", msg);

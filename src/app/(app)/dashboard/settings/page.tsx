@@ -27,6 +27,12 @@ import {
   Database,
 } from "lucide-react";
 import { getSignatureProfileAction, saveSignatureProfileAction } from "@/lib/signatures/actions";
+import {
+  getNotificationPreferencesAction,
+  saveNotificationPreferencesAction,
+  sendTestNotificationEmailAction,
+} from "@/lib/notifications/actions";
+import { Mail, Bell, Send, Check } from "lucide-react";
 
 export default function SettingsPage() {
   const { profile, roles, signOut, isLoading: authLoading } = useAuth();
@@ -57,6 +63,16 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Email Notifications State
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [notifyDefenseSchedule, setNotifyDefenseSchedule] = useState(true);
+  const [notifySubmissions, setNotifySubmissions] = useState(true);
+  const [notifyEvaluations, setNotifyEvaluations] = useState(true);
+  const [notifyComments, setNotifyComments] = useState(true);
+  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] = useState(false);
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
   const isFacultyOrStaff = roles.some((r) =>
@@ -132,6 +148,23 @@ export default function SettingsPage() {
       }
     }
     loadProfileAndDepartments();
+
+    async function loadNotificationPreferences() {
+      try {
+        const prefs = await getNotificationPreferencesAction();
+        setEmailNotificationsEnabled(prefs.emailNotificationsEnabled);
+        setNotificationEmail(prefs.notificationEmail || profile?.email || "");
+        setNotifyDefenseSchedule(prefs.notifyDefenseSchedule);
+        setNotifySubmissions(prefs.notifySubmissions);
+        setNotifyEvaluations(prefs.notifyEvaluations);
+        setNotifyComments(prefs.notifyComments);
+      } catch (err) {
+        if (profile?.email) setNotificationEmail(profile.email);
+      }
+    }
+    if (profile) {
+      loadNotificationPreferences();
+    }
   }, [profile, supabase]);
 
   useEffect(() => {
@@ -377,6 +410,39 @@ export default function SettingsPage() {
       toast.error(err?.message || "Failed to update password.");
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+    const handleSaveNotificationPreferences = async () => {
+    setIsSavingNotificationPrefs(true);
+    try {
+      await saveNotificationPreferencesAction({
+        emailNotificationsEnabled,
+        notificationEmail,
+        notifyDefenseSchedule,
+        notifySubmissions,
+        notifyEvaluations,
+        notifyComments,
+      });
+      toast.success("Email notification preferences saved successfully!");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save notification preferences";
+      toast.error(msg);
+    } finally {
+      setIsSavingNotificationPrefs(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setIsSendingTestEmail(true);
+    try {
+      const res = await sendTestNotificationEmailAction(notificationEmail);
+      toast.success(res.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to dispatch test notification";
+      toast.error(msg);
+    } finally {
+      setIsSendingTestEmail(false);
     }
   };
 
@@ -793,21 +859,159 @@ export default function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Notifications</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Institutional Email Notifications & Alerts
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Configure whether AURORA dispatches automated real-time notification alerts directly to your official Partido State University inbox.
+            </p>
+          </div>
+          <Badge variant={emailNotificationsEnabled ? "success" : "secondary"}>
+            {emailNotificationsEnabled ? "Email Alerts Active" : "In-App Only"}
+          </Badge>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            "New comments on manuscripts",
-            "Defense schedule updates",
-            "Grade releases",
-            "Revision requests",
-          ].map((item) => (
-            <div key={item} className="flex items-center justify-between">
-              <span className="text-sm">{item}</span>
-              <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
+        <CardContent className="space-y-5 pt-3">
+          {/* Main Direct Email Toggle */}
+          <div className="flex items-start justify-between p-3.5 rounded-xl border border-primary/20 bg-primary/5">
+            <div className="space-y-0.5">
+              <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <Bell className="h-4 w-4 text-primary" />
+                Direct Email Notifications
+              </span>
+              <p className="text-xs text-muted-foreground">
+                Receive instant email alerts whenever key research or defense activities require your attention.
+              </p>
             </div>
-          ))}
+            <input
+              type="checkbox"
+              checked={emailNotificationsEnabled}
+              onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer mt-0.5"
+            />
+          </div>
+
+          {/* Email Address Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Institutional Delivery Email Address
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                type="email"
+                placeholder="e.g. anabella.vilando@parsu.edu.ph"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+                disabled={!emailNotificationsEnabled}
+                className="flex-1 text-sm font-mono"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSendTestEmail}
+                disabled={isSendingTestEmail || !emailNotificationsEnabled || !notificationEmail}
+                className="gap-1.5 text-xs whitespace-nowrap"
+              >
+                {isSendingTestEmail ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5 text-primary" />
+                )}
+                Send Test Alert
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              All automated alerts for manuscript endorsements, schedules, and panel rubrics will be routed to this verified inbox.
+            </p>
+          </div>
+
+          {/* Event Category Toggles */}
+          <div className="space-y-2.5 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Notification Event Triggers
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <span className="font-medium text-foreground">Defense Scheduling & Rescheduling</span>
+                  <p className="text-xs text-muted-foreground">Alert when defense sessions, rooms, or panel appointments are published</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifyDefenseSchedule}
+                  onChange={(e) => setNotifyDefenseSchedule(e.target.checked)}
+                  disabled={!emailNotificationsEnabled}
+                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <span className="font-medium text-foreground">Manuscript Submissions & Advising Endorsements</span>
+                  <p className="text-xs text-muted-foreground">Alert when advisees upload new PDF revisions or when endorsements are granted</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifySubmissions}
+                  onChange={(e) => setNotifySubmissions(e.target.checked)}
+                  disabled={!emailNotificationsEnabled}
+                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <span className="font-medium text-foreground">Panel Rubric Evaluations & Final Verdicts</span>
+                  <p className="text-xs text-muted-foreground">Alert when defense criteria scores, ratings summaries (DCS-CF-05), and certificates are issued</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifyEvaluations}
+                  onChange={(e) => setNotifyEvaluations(e.target.checked)}
+                  disabled={!emailNotificationsEnabled}
+                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <span className="font-medium text-foreground">Manuscript Canvas Annotations & Remarks</span>
+                  <p className="text-xs text-muted-foreground">Alert when panel members or advisers leave pinned comments on manuscript chapters</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notifyComments}
+                  onChange={(e) => setNotifyComments(e.target.checked)}
+                  disabled={!emailNotificationsEnabled}
+                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <Button
+              type="button"
+              onClick={handleSaveNotificationPreferences}
+              disabled={isSavingNotificationPrefs}
+              className="gap-1.5"
+            >
+              {isSavingNotificationPrefs ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving Preferences...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Save Notification Preferences
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
