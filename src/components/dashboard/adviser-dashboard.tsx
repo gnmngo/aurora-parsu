@@ -31,6 +31,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { adviserApproveDocumentAction } from "@/lib/workflow/actions";
+import { cn } from "@/lib/utils";
 
 interface AdviserDashboardProps {
   userId: string;
@@ -264,22 +265,48 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
         <button
+          type="button"
           onClick={() => setActiveTab("advisees")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "advisees" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            activeTab === "advisees"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
           Guidance Directory
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("queue")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "queue" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            activeTab === "queue"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
-          Paperless Review Queue ({pendingManuscripts.length})
+          <span>Paperless Review Queue</span>
+          {pendingManuscripts.length > 0 && (
+            <span className={cn(
+              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+              activeTab === "queue" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+            )}>
+              {pendingManuscripts.length}
+            </span>
+          )}
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("activity")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "activity" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            activeTab === "activity"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
           Activity Trails
         </button>

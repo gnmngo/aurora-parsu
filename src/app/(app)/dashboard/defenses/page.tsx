@@ -702,43 +702,54 @@ export default function DefensesPage() {
         </div>
 
         {/* Tab Switcher (3-Way: Scheduled Defenses | Defense Stages | Calendar) */}
-        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
           <button
+            type="button"
             onClick={() => setActiveTab("scheduled")}
             className={cn(
-              "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+              "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
               activeTab === "scheduled"
-                ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
+                ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
             )}
           >
-            <Clock className="h-3.5 w-3.5" />
-            <span>Oral Defenses ({programSchedules.filter((s) => s.status !== "cancelled").length})</span>
+            <Clock className={cn("h-4 w-4 shrink-0", activeTab === "scheduled" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
+            <span>Oral Defenses</span>
+            <span className={cn(
+              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+              activeTab === "scheduled"
+                ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+                : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+            )}>
+              {programSchedules.length}
+            </span>
           </button>
           {!isStudent && (
             <button
+              type="button"
               onClick={() => setActiveTab("stages")}
               className={cn(
-                "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
                 activeTab === "stages"
-                  ? "bg-card text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
               )}
             >
-              <Layers className="h-3.5 w-3.5" />
+              <Layers className={cn("h-4 w-4 shrink-0", activeTab === "stages" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
               <span>Defense Stages</span>
             </button>
           )}
           <button
+            type="button"
             onClick={() => setActiveTab("calendar")}
             className={cn(
-              "text-[10px] font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+              "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
               activeTab === "calendar"
-                ? "bg-card text-primary shadow-sm"
-                : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"
+                ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
             )}
           >
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className={cn("h-4 w-4 shrink-0", activeTab === "calendar" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
             <span>Calendar View</span>
           </button>
         </div>

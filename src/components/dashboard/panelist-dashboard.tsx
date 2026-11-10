@@ -19,6 +19,7 @@ import {
   Activity
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface PanelistDashboardProps {
   userId: string;
@@ -183,24 +184,62 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
         <button
+          type="button"
           onClick={() => setActiveTab("defenses")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "defenses" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            activeTab === "defenses"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
-          Research Manuscripts ({activeProjects.length})
+          <span>Research Manuscripts</span>
+          <span className={cn(
+            "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+            activeTab === "defenses" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+          )}>
+            {activeProjects.length}
+          </span>
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("pending")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "pending" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            activeTab === "pending"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
-          Pending Drafts ({draftEvals.length})
+          <span>Pending Drafts</span>
+          {draftEvals.length > 0 && (
+            <span className={cn(
+              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+              activeTab === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+            )}>
+              {draftEvals.length}
+            </span>
+          )}
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("completed")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "completed" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            activeTab === "completed"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
-          Signature History ({signedEvals.length})
+          <span>Signature History</span>
+          <span className={cn(
+            "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+            activeTab === "completed" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+          )}>
+            {signedEvals.length}
+          </span>
         </button>
       </div>
 

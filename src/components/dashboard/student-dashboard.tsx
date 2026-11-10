@@ -727,22 +727,48 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       ) : null}
 
       {/* Tabs list menu */}
-      <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
+      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
         <button
+          type="button"
           onClick={() => setActiveTab("submissions")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "submissions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            activeTab === "submissions"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
           Uploaded Manuscripts
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("revisions")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "revisions" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            activeTab === "revisions"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
-          Revisions Notes {annotationsCount.unresolved > 0 ? `(${annotationsCount.unresolved})` : ""}
+          <span>Revisions Notes</span>
+          {annotationsCount.unresolved > 0 && (
+            <span className={cn(
+              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
+              activeTab === "revisions" ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+            )}>
+              {annotationsCount.unresolved}
+            </span>
+          )}
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("evaluations")}
-          className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${activeTab === "evaluations" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-slate-800 dark:hover:text-slate-200"}`}
+          className={cn(
+            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            activeTab === "evaluations"
+              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+          )}
         >
           Panel Consensus Grades
         </button>
