@@ -222,8 +222,8 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
           <h1 className="text-2xl sm:text-3xl font-black text-white print:text-slate-900">
             Partido State University
           </h1>
-          <p className="text-xs sm:text-sm text-white/60 print:text-slate-600 mt-1">
-            Academic Defense Workflow System — Document Authenticity Portal
+          <p className="text-xs sm:text-sm text-white/70 print:text-slate-600 mt-1 font-medium">
+            AURORA (Academic Unified Review, Observation, Rating, and Assessment System) &bull; Document Authenticity Portal
           </p>
         </div>
 

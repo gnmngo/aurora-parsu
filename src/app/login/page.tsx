@@ -393,11 +393,14 @@ function LoginForm() {
           <CardContent className="p-6 sm:p-7">
             <div className="text-center mb-6 flex flex-col items-center">
               <AuroraLogo size="xl" className="mb-3" />
-              <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">AURORA</h1>
-              <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+              <h1 className="text-2xl font-black tracking-tight mb-0.5 text-foreground">AURORA</h1>
+              <p className="text-xs font-bold text-primary tracking-wide mb-1">
+                Academic Unified Review, Observation, Rating, and Assessment System
+              </p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                 Partido State University
               </p>
-              <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              <p className="text-[11px] text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
                 Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers
               </p>
             </div>

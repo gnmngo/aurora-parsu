@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_ACRONYM_MEANING } from "@/constants/app";
 
 interface AuroraLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | number;
@@ -11,6 +12,7 @@ interface AuroraLogoProps {
   showText?: boolean;
   textColor?: string;
   subtext?: string;
+  title?: string;
 }
 
 const SIZE_MAP = {
@@ -26,14 +28,19 @@ export function AuroraLogo({
   showText = false,
   textColor = "text-white",
   subtext,
+  title,
 }: AuroraLogoProps) {
   const [imageError, setImageError] = useState(false);
 
   const dimension = typeof size === "number" ? size : SIZE_MAP[size].px;
   const iconClass = typeof size === "number" ? "h-5 w-5" : SIZE_MAP[size].iconSize;
+  const tooltipText = title ?? `AURORA — ${APP_ACRONYM_MEANING}`;
 
   return (
-    <div className={cn("inline-flex items-center gap-2.5", className)}>
+    <div
+      title={tooltipText}
+      className={cn("inline-flex items-center gap-2.5 select-none", className)}
+    >
       <div
         style={{ width: dimension, height: dimension }}
         className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-sm transition-all"

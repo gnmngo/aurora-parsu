@@ -21,7 +21,7 @@ import {
   FileCheck,
   ChevronDown
 } from "lucide-react";
-import { APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
+import { APP_ACRONYM_MEANING, APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
 import { useTheme } from "@/providers/theme-provider";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
 
@@ -190,9 +190,11 @@ export default function HomePage() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 shadow-sm"
+          className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 shadow-sm flex flex-wrap items-center justify-center gap-1.5"
         >
-          {INSTITUTION}
+          <span>{INSTITUTION}</span>
+          <span className="opacity-40">•</span>
+          <span>AURORA: {APP_ACRONYM_MEANING}</span>
         </motion.div>
         
         <motion.h1 

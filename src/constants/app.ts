@@ -1,4 +1,14 @@
 export const APP_NAME = "AURORA";
+export const APP_ACRONYM_MEANING =
+  "Academic Unified Review, Observation, Rating, and Assessment System";
+export const APP_ACRONYM_BREAKDOWN = [
+  { letter: "A", word: "Academic" },
+  { letter: "U", word: "Unified" },
+  { letter: "R", word: "Review" },
+  { letter: "O", word: "Observation" },
+  { letter: "R", word: "Rating, and" },
+  { letter: "A", word: "Assessment System" },
+] as const;
 export const APP_FULL_NAME =
   "Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers";
 export const APP_OFFICIAL_TITLE =

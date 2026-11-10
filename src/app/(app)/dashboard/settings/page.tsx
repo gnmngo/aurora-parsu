@@ -33,6 +33,8 @@ import {
   sendTestNotificationEmailAction,
 } from "@/lib/notifications/actions";
 import { Mail, Bell, Send, Check } from "lucide-react";
+import { AuroraLogo } from "@/components/ui/aurora-logo";
+import { APP_ACRONYM_BREAKDOWN, APP_ACRONYM_MEANING } from "@/constants/app";
 
 export default function SettingsPage() {
   const { profile, roles, signOut, isLoading: authLoading } = useAuth();
@@ -1011,6 +1013,68 @@ export default function SettingsPage() {
                 </>
               )}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── ABOUT AURORA & INSTITUTIONAL SPECIFICATION ──────────────────── */}
+      <Card className="border-border/80 shadow-xs overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-transparent pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <AuroraLogo size="lg" className="shrink-0" />
+              <div>
+                <CardTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+                  <span>AURORA</span>
+                  <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary">
+                    v1.0.0 Production
+                  </Badge>
+                </CardTitle>
+                <p className="text-xs font-bold text-primary mt-0.5">
+                  Academic Unified Review, Observation, Rating, and Assessment System
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            AURORA is the official paperless academic defense workflow and digital manuscript review platform of <strong>Partido State University</strong>, engineered for undergraduate capstone, thesis, and graduate dissertations across all campuses and departments.
+          </p>
+
+          {/* Acronym Breakdown Grid */}
+          <div className="rounded-xl border border-border/80 bg-muted/40 p-3.5 space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              Institutional Acronym Specification
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {APP_ACRONYM_BREAKDOWN.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border/60">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-white text-xs font-black">
+                    {item.letter}
+                  </span>
+                  <span className="text-xs font-bold text-foreground truncate">
+                    {item.word}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Institutional Compliance Badges */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted-foreground">
+            <Badge variant="outline" className="text-[10px] font-semibold border-border">
+              Partido State University &bull; Goa Campus
+            </Badge>
+            <Badge variant="outline" className="text-[10px] font-semibold border-border">
+              RA 8792 E-Commerce Act Compliant
+            </Badge>
+            <Badge variant="outline" className="text-[10px] font-semibold border-border">
+              ISO/IEC 25010 Quality Standard
+            </Badge>
+            <Badge variant="outline" className="text-[10px] font-semibold border-border">
+              ParSU DCS-CF Forms 01-05
+            </Badge>
           </div>
         </CardContent>
       </Card>

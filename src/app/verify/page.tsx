@@ -195,7 +195,7 @@ export default function VerifyPortalPage() {
             Verify Defense Certificates
           </h1>
           <p className="text-sm sm:text-base text-white/60 mt-2 max-w-xl mx-auto leading-relaxed">
-            Verify the authenticity of undergraduate thesis, capstone, and graduate defense certificates issued by Partido State University.
+            Verify the authenticity of undergraduate thesis, capstone, and graduate defense certificates issued by AURORA (Academic Unified Review, Observation, Rating, and Assessment System) at Partido State University.
           </p>
         </div>
 
