@@ -20,10 +20,12 @@ import {
   ChevronRight
 } from "lucide-react";
 import Link from "next/link";
+import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 
 interface Step {
   title: string;
   role: string;
+  roleKey?: string;
   email: string;
   description: string;
   targetPath: string;
@@ -40,7 +42,8 @@ export default function DemoGuidedFlow() {
     {
       title: "1. Student Project Creation & Submission",
       role: "Student",
-      email: "student1@parsu.edu.ph",
+      roleKey: "student",
+      email: "student1@aurora.test",
       description: "Log in as student to set up research topics, view the defense stages progression stepper, upload the jsPDF manuscript draft, and track comments.",
       targetPath: "/dashboard",
       icon: UserCheck,
@@ -49,7 +52,8 @@ export default function DemoGuidedFlow() {
     {
       title: "2. Coordinator Defense Scheduling",
       role: "Coordinator",
-      email: "coordinator1@parsu.edu.ph",
+      roleKey: "coordinator",
+      email: "coord@aurora.test",
       description: "Log in as Coordinator to publish evaluation rubrics, schedule defense rooms and timeslots on the interactive calendar grid, and resolve panel conflicts.",
       targetPath: "/dashboard/defenses/schedule",
       icon: Play,
@@ -58,8 +62,9 @@ export default function DemoGuidedFlow() {
     {
       title: "3. Adviser Annotation Workspace",
       role: "Adviser",
-      email: "adviser1@parsu.edu.ph",
-      description: "Log in as Guidance Adviser. Open the split-screen PDF annotation panel to mark text concerns, reply to reviews, and track progress.",
+      roleKey: "adviser",
+      email: "panelist1@aurora.test",
+      description: "Log in as Guidance Adviser (Froiland B. Peñalosa). Open the split-screen PDF annotation panel to mark text concerns, reply to reviews, and track progress.",
       targetPath: "/dashboard",
       icon: Eye,
       badge: "Adviser Role"
@@ -67,8 +72,9 @@ export default function DemoGuidedFlow() {
     {
       title: "4. Panelist Evaluation & E-Signature",
       role: "Panelist",
-      email: "panelist1@parsu.edu.ph",
-      description: "Log in as Defense Panelist. View assigned defenses, score significance criteria on the active rubric template, and sign with an immutable certificate serial.",
+      roleKey: "panelist",
+      email: "panelist2@aurora.test",
+      description: "Log in as Defense Panelist (Dr. Aris Thorne). View assigned defenses, score significance criteria on the active rubric template, and sign with an immutable certificate serial.",
       targetPath: "/dashboard",
       icon: Award,
       badge: "Panelist Role"
@@ -85,7 +91,8 @@ export default function DemoGuidedFlow() {
     {
       title: "6. SysAdmin Monitoring & Reset",
       role: "System Administrator",
-      email: "admin1@parsu.edu.ph",
+      roleKey: "admin",
+      email: "admin@aurora.test",
       description: "Log in as SysAdmin to check diagnostic health parameters (database online indicators, storage usage) and trigger a full demonstration reset back to clean seeded states.",
       targetPath: "/admin/system-health",
       icon: ShieldAlert,
@@ -94,24 +101,44 @@ export default function DemoGuidedFlow() {
   ];
 
   const handleQuickLogin = async (step: Step) => {
-    if (!step.email) {
-      // Direct navigate if guest
+    if (!step.roleKey || !step.email) {
       window.location.href = step.targetPath;
       return;
     }
 
     setLoggingIn(true);
     try {
-      // Sign out first to clean session
       await supabase.auth.signOut();
-      
+
+      const targetRole =
+        step.roleKey === "dean"
+          ? "college_dean"
+          : step.roleKey === "admin"
+          ? "sys_admin"
+          : step.roleKey;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
+      }
+
+      const creds = await getDemoCredentialsAction(step.roleKey);
+      if (!creds.success || !creds.email || !creds.password) {
+        throw new Error(creds.error || "Demo credentials unavailable.");
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: step.email,
-        password: "password123"
+        email: creds.email,
+        password: creds.password,
       });
 
       if (error) throw error;
-      
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
+      }
+
       toast.success(`Logged in successfully as ${step.role}!`);
       setTimeout(() => {
         window.location.href = step.targetPath;
