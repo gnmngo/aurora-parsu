@@ -45,8 +45,12 @@ export function WelcomeCard() {
           if (c) cName = c.code ? `${c.code} - ${c.name}` : c.name;
         }
         if (departmentId) {
-          const { data: d } = await supabase.from("departments").select("code, name").eq("id", departmentId).maybeSingle();
-          if (d) dName = d.name;
+          const { data: d } = await supabase.from("departments").select("code, name, college_id").eq("id", departmentId).maybeSingle();
+          // Department of Computational Sciences (DCS) and other departments are exclusive to their parent college (e.g. CEC).
+          // Only show department affiliation if it strictly matches the user's assigned college.
+          if (d && (!collegeId || d.college_id === collegeId)) {
+            dName = d.name;
+          }
         }
         if (!dName && isStudent) {
           const { data: std } = await supabase

@@ -1268,7 +1268,7 @@ export default function SchedulePage() {
                                   ? "bg-rose-500/10 border-l-4 border-l-rose-500"
                                   : isSelected
                                   ? "bg-primary/[0.02]"
-                                  : "opacity-60 bg-muted/5"
+                                  : "hover:bg-muted/40 text-foreground"
                               }`}
                             >
                               <td className="p-3 text-center">

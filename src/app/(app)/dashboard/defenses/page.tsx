@@ -702,113 +702,132 @@ export default function DefensesPage() {
         </div>
 
         {/* Tab Switcher (3-Way: Scheduled Defenses | Defense Stages | Calendar) */}
-        <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
-          <button
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
             type="button"
+            size="sm"
+            variant={activeTab === "scheduled" ? "default" : "outline"}
             onClick={() => setActiveTab("scheduled")}
             className={cn(
-              "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
+              "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
               activeTab === "scheduled"
-                ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+                : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
             )}
           >
-            <Clock className={cn("h-4 w-4 shrink-0", activeTab === "scheduled" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
+            <Clock className={cn("h-4 w-4 shrink-0", activeTab === "scheduled" ? "text-white" : "text-primary")} />
             <span>Oral Defenses</span>
-            <span className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-              activeTab === "scheduled"
-                ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
-                : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-            )}>
-              {programSchedules.length}
-            </span>
-          </button>
-          {!isStudent && (
-            <button
-              type="button"
-              onClick={() => setActiveTab("stages")}
+            <Badge
+              variant={activeTab === "scheduled" ? "secondary" : "outline"}
               className={cn(
-                "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
-                activeTab === "stages"
-                  ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+                "px-1.5 py-0 text-[10px] font-black rounded-full leading-none",
+                activeTab === "scheduled"
+                  ? "bg-white/20 text-white border-transparent"
+                  : "bg-muted text-foreground border-border"
               )}
             >
-              <Layers className={cn("h-4 w-4 shrink-0", activeTab === "stages" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
+              {programSchedules.length}
+            </Badge>
+          </Button>
+
+          {!isStudent && (
+            <Button
+              type="button"
+              size="sm"
+              variant={activeTab === "stages" ? "default" : "outline"}
+              onClick={() => setActiveTab("stages")}
+              className={cn(
+                "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
+                activeTab === "stages"
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+                  : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Layers className={cn("h-4 w-4 shrink-0", activeTab === "stages" ? "text-white" : "text-primary")} />
               <span>Defense Stages</span>
-            </button>
+            </Button>
           )}
-          <button
+
+          <Button
             type="button"
+            size="sm"
+            variant={activeTab === "calendar" ? "default" : "outline"}
             onClick={() => setActiveTab("calendar")}
             className={cn(
-              "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 select-none shadow-2xs",
+              "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
               activeTab === "calendar"
-                ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+                : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
             )}
           >
-            <Calendar className={cn("h-4 w-4 shrink-0", activeTab === "calendar" ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
+            <Calendar className={cn("h-4 w-4 shrink-0", activeTab === "calendar" ? "text-white" : "text-primary")} />
             <span>Calendar View</span>
-          </button>
+          </Button>
         </div>
 
         {/* ── TAB 1: DEFENSES MANAGEMENT & EVALUATION UPDATES ─────────────── */}
         {activeTab === "scheduled" && (
           <div className="space-y-4">
             {/* Quick Status Sub-Filters */}
-            <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-              <span className="text-[11px] font-bold text-muted-foreground mr-1">Filter Status:</span>
-              <button
+            <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2.5">
+              <span className="text-xs font-bold text-foreground mr-1">Filter Status:</span>
+              <Button
                 type="button"
+                size="sm"
+                variant={statusFilter === "all" ? "default" : "outline"}
                 onClick={() => setStatusFilter("all")}
                 className={cn(
-                  "px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
+                  "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                   statusFilter === "all"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                 )}
               >
                 All Defenses ({programSchedules.length})
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant={statusFilter === "upcoming" ? "default" : "outline"}
                 onClick={() => setStatusFilter("upcoming")}
                 className={cn(
-                  "px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
+                  "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                   statusFilter === "upcoming"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                 )}
               >
                 Upcoming &amp; Live ({upcomingCount})
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant={statusFilter === "concluded" ? "default" : "outline"}
                 onClick={() => setStatusFilter("concluded")}
                 className={cn(
-                  "px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
+                  "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                   statusFilter === "concluded"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                 )}
               >
                 Concluded &amp; Evaluated ({concludedCount})
-              </button>
+              </Button>
               {cancelledCount > 0 && (
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant={statusFilter === "cancelled" ? "default" : "outline"}
                   onClick={() => setStatusFilter("cancelled")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
+                    "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                     statusFilter === "cancelled"
-                      ? "bg-rose-600 text-white"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "bg-rose-600 text-white hover:bg-rose-700"
+                      : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                   )}
                 >
                   Cancelled ({cancelledCount})
-                </button>
+                </Button>
               )}
             </div>
 
@@ -860,7 +879,7 @@ export default function DefensesPage() {
                       className={cn(
                         "border rounded-xl transition-all shadow-2xs hover:shadow-xs",
                         isCancelled
-                          ? "opacity-60 bg-muted/20 border-border"
+                          ? "border-border/80 bg-card hover:border-border"
                           : statusInfo.isLive
                           ? "border-blue-500/60 bg-blue-500/5 dark:bg-blue-950/15 ring-1 ring-blue-500/30"
                           : statusInfo.isConcluded

@@ -1984,44 +1984,50 @@ export default function MyProjectPage() {
                 <p className="text-xs text-muted-foreground mt-0.5">Your scheduled and past defense sessions</p>
               </div>
 
-              {/* Schedule Filter Buttons */}
-              <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 w-fit">
-                <button
+              {/* Schedule Filter Buttons - High-Contrast Solid Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
                   type="button"
+                  size="sm"
+                  variant={scheduleFilter === "all" ? "default" : "outline"}
                   onClick={() => setScheduleFilter("all")}
                   className={cn(
-                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                     scheduleFilter === "all"
-                      ? "bg-card text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                   )}
                 >
                   All Defenses ({schedules.length})
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant={scheduleFilter === "upcoming" ? "default" : "outline"}
                   onClick={() => setScheduleFilter("upcoming")}
                   className={cn(
-                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                     scheduleFilter === "upcoming"
-                      ? "bg-card text-primary shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                   )}
                 >
                   Upcoming &amp; Live ({upcomingSchedules.length})
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant={scheduleFilter === "past" ? "default" : "outline"}
                   onClick={() => setScheduleFilter("past")}
                   className={cn(
-                    "text-[11px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer",
+                    "h-7 text-xs font-bold px-3 rounded-lg transition-colors cursor-pointer",
                     scheduleFilter === "past"
-                      ? "bg-card text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
                   )}
                 >
                   Past Defenses ({pastSchedules.length})
-                </button>
+                </Button>
               </div>
             </div>
 

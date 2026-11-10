@@ -264,52 +264,68 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
         </Card>
       </div>
 
-      {/* Tabs Menu */}
-      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
-        <button
+      {/* Tabs Menu - High-Contrast Solid Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "advisees" ? "default" : "outline"}
           onClick={() => setActiveTab("advisees")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "advisees"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
-          Guidance Directory
-        </button>
-        <button
+          <Users className={cn("h-4 w-4 shrink-0", activeTab === "advisees" ? "text-white" : "text-primary")} />
+          <span>Guidance Directory</span>
+        </Button>
+
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "queue" ? "default" : "outline"}
           onClick={() => setActiveTab("queue")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "queue"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <Inbox className={cn("h-4 w-4 shrink-0", activeTab === "queue" ? "text-white" : "text-amber-500")} />
           <span>Paperless Review Queue</span>
           {pendingManuscripts.length > 0 && (
-            <span className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-              activeTab === "queue" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-            )}>
+            <Badge
+              variant="outline"
+              className={cn(
+                "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
+                activeTab === "queue"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+              )}
+            >
               {pendingManuscripts.length}
-            </span>
+            </Badge>
           )}
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "activity" ? "default" : "outline"}
           onClick={() => setActiveTab("activity")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "activity"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
-          Activity Trails
-        </button>
+          <Activity className={cn("h-4 w-4 shrink-0", activeTab === "activity" ? "text-white" : "text-indigo-500")} />
+          <span>Activity Trails</span>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

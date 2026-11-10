@@ -183,64 +183,90 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
         </Card>
       </div>
 
-      {/* Tabs Menu */}
-      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
-        <button
+      {/* Tabs Menu - High-Contrast Solid Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "defenses" ? "default" : "outline"}
           onClick={() => setActiveTab("defenses")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "defenses"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <FileText className={cn("h-4 w-4 shrink-0", activeTab === "defenses" ? "text-white" : "text-primary")} />
           <span>Research Manuscripts</span>
-          <span className={cn(
-            "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-            activeTab === "defenses" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-          )}>
+          <Badge
+            variant="outline"
+            className={cn(
+              "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
+              activeTab === "defenses"
+                ? "bg-white/20 text-white"
+                : "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+            )}
+          >
             {activeProjects.length}
-          </span>
-        </button>
-        <button
+          </Badge>
+        </Button>
+
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "pending" ? "default" : "outline"}
           onClick={() => setActiveTab("pending")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "pending"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <Clock className={cn("h-4 w-4 shrink-0", activeTab === "pending" ? "text-white" : "text-amber-500")} />
           <span>Pending Drafts</span>
           {draftEvals.length > 0 && (
-            <span className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-              activeTab === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-            )}>
+            <Badge
+              variant="outline"
+              className={cn(
+                "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
+                activeTab === "pending"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+              )}
+            >
               {draftEvals.length}
-            </span>
+            </Badge>
           )}
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "completed" ? "default" : "outline"}
           onClick={() => setActiveTab("completed")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "completed"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <History className={cn("h-4 w-4 shrink-0", activeTab === "completed" ? "text-white" : "text-emerald-500")} />
           <span>Signature History</span>
-          <span className={cn(
-            "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-            activeTab === "completed" ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-          )}>
+          <Badge
+            variant="outline"
+            className={cn(
+              "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
+              activeTab === "completed"
+                ? "bg-white/20 text-white"
+                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+            )}
+          >
             {signedEvals.length}
-          </span>
-        </button>
+          </Badge>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

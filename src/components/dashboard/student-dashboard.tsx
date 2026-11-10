@@ -727,51 +727,60 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       ) : null}
 
       {/* Tabs list menu */}
-      <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs w-fit">
-        <button
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "submissions" ? "default" : "outline"}
           onClick={() => setActiveTab("submissions")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            "font-bold text-xs gap-1.5 shadow-xs cursor-pointer",
             activeTab === "submissions"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <FileText className="h-3.5 w-3.5" />
           Uploaded Manuscripts
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "revisions" ? "default" : "outline"}
           onClick={() => setActiveTab("revisions")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1.5",
+            "font-bold text-xs gap-1.5 shadow-xs cursor-pointer",
             activeTab === "revisions"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <MessageSquare className="h-3.5 w-3.5" />
           <span>Revisions Notes</span>
           {annotationsCount.unresolved > 0 && (
-            <span className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-              activeTab === "revisions" ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-            )}>
+            <Badge
+              variant={activeTab === "revisions" ? "secondary" : "outline"}
+              className="px-1.5 py-0 text-[10px] font-black rounded-full leading-none"
+            >
               {annotationsCount.unresolved}
-            </span>
+            </Badge>
           )}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          size="sm"
+          variant={activeTab === "evaluations" ? "default" : "outline"}
           onClick={() => setActiveTab("evaluations")}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-2xs",
+            "font-bold text-xs gap-1.5 shadow-xs cursor-pointer",
             activeTab === "evaluations"
-              ? "bg-white dark:bg-slate-900 text-primary border border-slate-200 dark:border-slate-700 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
+          <Award className="h-3.5 w-3.5" />
           Panel Consensus Grades
-        </button>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
