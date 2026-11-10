@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let initialRole = roleCodes[0];
         try {
           if (typeof window !== "undefined") {
-            const savedRole = sessionStorage.getItem("aurora_active_role");
+            const savedRole = sessionStorage.getItem("aurora_active_role") || localStorage.getItem("aurora_active_role");
             if (savedRole && roleCodes.includes(savedRole)) {
               initialRole = savedRole;
             }

@@ -38,6 +38,18 @@ export default function PresentationModePage() {
     try {
       await supabase.auth.signOut();
       
+      const targetRole =
+        roleKey === "dean"
+          ? "college_dean"
+          : roleKey === "admin"
+          ? "sys_admin"
+          : roleKey;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
+      }
+
       const creds = await getDemoCredentialsAction(roleKey);
       if (!creds.success || !creds.email || !creds.password) {
         throw new Error(creds.error || "Demo credentials unavailable.");
@@ -49,6 +61,12 @@ export default function PresentationModePage() {
       });
 
       if (error) throw error;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
+      }
+
       toast.success(`Presentation bypass successful: ${roleName}`);
       setTimeout(() => {
         window.location.href = "/dashboard";

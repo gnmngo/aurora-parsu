@@ -334,6 +334,18 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      const targetRole =
+        roleType === "dean"
+          ? "college_dean"
+          : roleType === "admin"
+          ? "sys_admin"
+          : roleType;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
+      }
+
       const creds = await getDemoCredentialsAction(roleType);
       if (!creds.success || !creds.email || !creds.password) {
         toast.error(creds.error || `Demo credentials for ${roleType} unavailable.`);
@@ -348,6 +360,11 @@ function LoginForm() {
       if (error) {
         toast.error(error.message || `Failed to login as ${roleType}`);
         return;
+      }
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", targetRole);
+        localStorage.setItem("aurora_active_role", targetRole);
       }
 
       toast.success(`Logged in as ${roleType}`);
