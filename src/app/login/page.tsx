@@ -160,12 +160,17 @@ function LoginForm() {
     });
   }, [regProgramId, supabase]);
 
-  // If already logged in, redirect to dashboard smoothly
+  // If already logged in, redirect to dashboard or redirect target
   useEffect(() => {
     if (session && profile && !authLoading) {
-      router.replace("/dashboard");
+      const redirectParam = searchParams.get("redirect");
+      const targetUrl =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : "/dashboard";
+      window.location.assign(targetUrl);
     }
-  }, [session, profile, authLoading, router]);
+  }, [session, profile, authLoading, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,9 +190,6 @@ function LoginForm() {
     startLoading("Verifying institutional credentials & decrypting docket...");
 
     try {
-      if (session) {
-        await supabase.auth.signOut();
-      }
       if (typeof window !== "undefined") {
         sessionStorage.removeItem("aurora_active_role");
         localStorage.removeItem("aurora_active_role");
@@ -217,8 +219,18 @@ function LoginForm() {
         return;
       }
 
-      stopLoading();
+      const redirectParam = searchParams.get("redirect");
+      const targetUrl =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : "/dashboard";
+
       toast.success("Login successful! Entering AURORA Portal...");
+      startLoading("Entering AURORA Portal...");
+
+      setTimeout(() => {
+        window.location.assign(targetUrl);
+      }, 150);
     } catch (err: any) {
       stopLoading();
       console.error(err);
@@ -308,7 +320,11 @@ function LoginForm() {
         setActiveTab("signin");
         toast.info("Account created. Please sign in with your credentials.");
       } else {
-        stopLoading();
+        toast.success("Account created! Entering AURORA Portal...");
+        startLoading("Entering AURORA Portal...");
+        setTimeout(() => {
+          window.location.assign("/dashboard");
+        }, 150);
       }
     } catch (err: unknown) {
       stopLoading();
@@ -354,9 +370,11 @@ function LoginForm() {
       });
 
       if (!signInError && data.session) {
-        stopLoading();
         toast.success("Signed in with your new password!");
-        router.replace("/dashboard");
+        startLoading("Entering AURORA Portal...");
+        setTimeout(() => {
+          window.location.assign("/dashboard");
+        }, 150);
       } else {
         stopLoading();
         setTimeout(() => {
@@ -386,10 +404,6 @@ function LoginForm() {
           ? "sys_admin"
           : roleType;
 
-      if (session) {
-        await supabase.auth.signOut();
-      }
-
       if (typeof window !== "undefined") {
         sessionStorage.setItem("aurora_active_role", targetRole);
         localStorage.setItem("aurora_active_role", targetRole);
@@ -418,8 +432,12 @@ function LoginForm() {
         localStorage.setItem("aurora_active_role", targetRole);
       }
 
-      stopLoading();
       toast.success(`Logged in as ${roleType}`);
+      startLoading(`Entering AURORA as ${roleType.toUpperCase()}...`);
+
+      setTimeout(() => {
+        window.location.assign("/dashboard");
+      }, 150);
     } catch (err: any) {
       stopLoading();
       toast.error(err?.message || "Unexpected login error");
