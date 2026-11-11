@@ -72,16 +72,14 @@ export function ProjectTimelineAndHistory({ userId }: ProjectTimelineAndHistoryP
           .single();
 
         // Fetch defense stages filtered by workflow template
-        let stagesQuery = supabase
+        const effectiveTemplateId =
+          projDetails?.workflow_template_id || "70000000-0000-0000-0000-000000000001";
+
+        const { data: stages } = await supabase
           .from("defense_stages")
           .select("*")
-          .order("sequence_order");
-
-        if (projDetails?.workflow_template_id) {
-          stagesQuery = stagesQuery.eq("workflow_template_id", projDetails.workflow_template_id);
-        }
-
-        const { data: stages } = await stagesQuery;
+          .eq("workflow_template_id", effectiveTemplateId)
+          .order("sequence_order", { ascending: true });
 
         // 2. Fetch documents
         const { data: docs } = await supabase

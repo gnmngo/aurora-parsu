@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { GraduationCap, Building2, Shield, BookOpen, Layers, Sparkles, Award } from "lucide-react";
 import Link from "next/link";
@@ -143,31 +144,43 @@ export function WelcomeCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Card className="overflow-hidden border-0 bg-primary text-primary-foreground shadow-md">
-        <CardContent className="relative p-6">
-          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-          <div className="absolute -bottom-4 right-20 h-24 w-24 rounded-full bg-white/5" />
+      <Card className="relative overflow-hidden border border-border bg-card text-card-foreground shadow-xs">
+        {/* Subtle geometric A watermark motif */}
+        <div className="pointer-events-none absolute -right-6 -bottom-10 h-44 w-44 opacity-[0.03] dark:opacity-[0.06] select-none">
+          <Image
+            src="/aurora-symbol-transparent.png"
+            alt=""
+            width={176}
+            height={176}
+            className="h-full w-full object-contain dark:invert-0 invert"
+          />
+        </div>
 
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-white/70">Welcome back,</p>
-              <h2 className="text-2xl font-bold tracking-tight">
-                {profile.first_name} {profile.last_name}
-              </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge className="bg-white/15 text-white hover:bg-white/20 capitalize font-bold">
-                  <Shield className="mr-1 h-3 w-3" />
+        <CardContent className="relative p-6 sm:p-7">
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Welcome back,
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                  {profile.first_name} {profile.last_name}
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="bg-muted/70 text-foreground border-border/80 hover:bg-muted capitalize font-bold text-xs gap-1.5 py-1 px-3 shadow-2xs">
+                  <Shield className="h-3.5 w-3.5 text-primary" />
                   {roleName}
                 </Badge>
                 {collegeName && (
-                  <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
-                    <Building2 className="mr-1 h-3 w-3" />
+                  <Badge variant="outline" className="bg-muted/40 text-muted-foreground border-border/60 font-medium text-xs gap-1.5 py-1 px-3">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                     {collegeName}
                   </Badge>
                 )}
                 {departmentName && (
-                  <Badge className="bg-white/15 text-white hover:bg-white/20 font-medium">
-                    <GraduationCap className="mr-1 h-3 w-3" />
+                  <Badge variant="outline" className="bg-muted/40 text-muted-foreground border-border/60 font-medium text-xs gap-1.5 py-1 px-3">
+                    <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                     {departmentName}
                   </Badge>
                 )}
@@ -175,9 +188,9 @@ export function WelcomeCard() {
                   triggerButton={
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/25 hover:bg-amber-400/35 border border-amber-300/40 px-2.5 py-0.5 text-xs font-bold text-amber-100 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 transition-colors cursor-pointer"
                     >
-                      <Award className="h-3 w-3 text-amber-300" />
+                      <Award className="h-3.5 w-3.5 text-amber-500" />
                       Take Survey (SUS &amp; UTAUT)
                     </button>
                   }
@@ -188,67 +201,67 @@ export function WelcomeCard() {
             {effectiveRole === "student" && projectInfo ? (
               <Link
                 href="/dashboard/my-project"
-                className="flex flex-col gap-2 sm:items-end group cursor-pointer no-underline focus:outline-none focus:ring-2 focus:ring-white/40 rounded-xl p-2 hover:bg-white/10 transition-all"
+                className="group flex flex-col gap-1.5 rounded-xl border border-border/70 bg-muted/30 p-3 sm:items-end hover:bg-muted/60 hover:border-primary/40 transition-all no-underline"
               >
                 <div className="sm:text-right">
-                  <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider flex items-center sm:justify-end gap-1 group-hover:text-white transition-colors">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center sm:justify-end gap-1 group-hover:text-primary transition-colors">
                     Active Stage &rarr;
                   </p>
-                  <p className="text-base font-black flex items-center gap-1.5 sm:justify-end text-white group-hover:underline">
-                    <Layers className="h-4 w-4" />
+                  <p className="text-base font-black flex items-center gap-1.5 sm:justify-end text-foreground group-hover:text-primary transition-colors">
+                    <Layers className="h-4 w-4 text-primary" />
                     {projectInfo.stageName}
                   </p>
                 </div>
                 <div>
-                  <Badge variant="warning" className="bg-white/20 text-white font-bold capitalize border border-white/20">
+                  <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold capitalize text-xs px-2.5 py-0.5">
                     {projectInfo.status}
                   </Badge>
                 </div>
               </Link>
             ) : effectiveRole === "college_dean" ? (
               <div className="flex flex-col gap-2 sm:items-end">
-                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Executive Navigation</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Executive Navigation</p>
                 <Link
                   href="/dashboard/defenses"
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                  className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-xl border border-border transition-all shadow-xs no-underline hover:border-primary/40"
                 >
-                  <Shield className="h-3.5 w-3.5" /> College Defense Oversight &rarr;
+                  <Shield className="h-3.5 w-3.5 text-primary" /> College Defense Oversight &rarr;
                 </Link>
               </div>
             ) : effectiveRole === "adviser" ? (
               <div className="flex flex-col gap-2 sm:items-end">
-                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Fast Navigation</p>
                 <Link
                   href="/dashboard/submissions"
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                  className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-xl border border-border transition-all shadow-xs no-underline hover:border-primary/40"
                 >
-                  <BookOpen className="h-3.5 w-3.5" /> Advisee Review Queue &rarr;
+                  <BookOpen className="h-3.5 w-3.5 text-primary" /> Advisee Review Queue &rarr;
                 </Link>
               </div>
             ) : effectiveRole === "panelist" ? (
               <div className="flex flex-col gap-2 sm:items-end">
-                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Fast Navigation</p>
                 <Link
                   href="/workspace"
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                  className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-xl border border-border transition-all shadow-xs no-underline hover:border-primary/40"
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> Open Evaluation Workspace &rarr;
+                  <Sparkles className="h-3.5 w-3.5 text-primary" /> Open Evaluation Workspace &rarr;
                 </Link>
               </div>
             ) : effectiveRole === "coordinator" || effectiveRole === "sys_admin" ? (
               <div className="flex flex-col gap-2 sm:items-end">
-                <p className="text-[11px] text-white/70 uppercase font-bold tracking-wider">Fast Navigation</p>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Fast Navigation</p>
                 <Link
                   href="/dashboard/defenses/schedule"
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition-all shadow-xs no-underline"
+                  className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-xl border border-border transition-all shadow-xs no-underline hover:border-primary/40"
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> Schedule Defense &rarr;
+                  <Sparkles className="h-3.5 w-3.5 text-primary" /> Schedule Defense &rarr;
                 </Link>
               </div>
             ) : (
               <div className="flex flex-col gap-1 sm:items-end">
-                <p className="text-[11px] text-white/60 uppercase font-bold tracking-wider">System Status</p>
-                <Badge className="bg-emerald-500/30 text-white font-bold border border-emerald-400/30">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">System Status</p>
+                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20 text-xs px-2.5 py-0.5">
                   AURORA Online
                 </Badge>
               </div>

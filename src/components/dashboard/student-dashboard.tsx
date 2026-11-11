@@ -111,7 +111,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
       let projQuery = supabase
         .from("projects")
-        .select("*, defense_stages ( id, name )")
+        .select("*, defense_stages ( id, name, workflow_template_id )")
         .is("archived_at", null);
 
       if (memberProjId) {
@@ -128,18 +128,27 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       if (proj) {
         setProject(proj);
 
-        // Fetch workflow stages dynamically for this project
-        let stagesQuery = supabase
+        // Fetch workflow stages dynamically for this project (strictly constrained to this project's workflow template)
+        const targetTemplateId =
+          proj.workflow_template_id ||
+          proj.defense_stages?.workflow_template_id ||
+          "70000000-0000-0000-0000-000000000001";
+
+        const { data: dbStages } = await supabase
           .from("defense_stages")
           .select("*")
-          .order("sequence_order");
+          .eq("workflow_template_id", targetTemplateId)
+          .order("sequence_order", { ascending: true });
 
-        if (proj.workflow_template_id) {
-          stagesQuery = stagesQuery.eq("workflow_template_id", proj.workflow_template_id);
-        }
-        const { data: dbStages } = await stagesQuery;
-        if (dbStages) {
-          setStagesList(dbStages);
+        if (dbStages && dbStages.length > 0) {
+          // Deduplicate by sequence_order to guarantee clean 1-through-N progression
+          const seen = new Set<number>();
+          const uniqueStages = dbStages.filter((s) => {
+            if (seen.has(s.sequence_order)) return false;
+            seen.add(s.sequence_order);
+            return true;
+          });
+          setStagesList(uniqueStages);
         }
 
         // 2. Fetch adviser and all team members
@@ -485,8 +494,8 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
       {/* 1. SCHEDULED DEFENSE CONFIRMED & ACTIONABLE HERO CARD */}
       {isPrimaryUpcoming ? (
-        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-card to-primary/10 shadow-md overflow-hidden">
-          <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+        <Card className="border border-border/80 bg-card shadow-xs overflow-hidden">
+          <div className="bg-muted/40 border-b border-border/60 px-5 py-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
               <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5">
@@ -659,14 +668,14 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         </Card>
       ) : isPrimaryPast ? (
         /* 2. RECENT CONCLUDED DEFENSE SESSION NOTICE */
-        <div className="rounded-xl border border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
               <Award className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-100">
+                <p className="text-xs font-black uppercase tracking-wider text-foreground">
                   {schedule?.defense_stages?.name || "Defense Stage"} Defense Concluded
                 </p>
                 <Badge variant="secondary" className="text-[9px] font-bold">
