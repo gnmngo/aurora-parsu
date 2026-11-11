@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/providers/theme-provider";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   title?: string;
@@ -20,11 +21,22 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
   const router = useRouter();
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, activeRole, setActiveRole, signOut } = useAuth();
   const { resolvedTheme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();
+
+  const effectiveRole = activeRole || roles[0] || "student";
+  const roleLabels: Record<string, string> = {
+    college_dean: "College Dean",
+    sys_admin: "System Admin",
+    coordinator: "Coordinator",
+    panelist: "Defense Panelist",
+    adviser: "Research Adviser",
+    student: "Student Proponent",
+  };
+  const roleDisplayName = roleLabels[effectiveRole] || effectiveRole.replace(/_/g, " ");
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,15 +166,42 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
       <div className="flex items-center gap-3">
         {profile && (
           <div className="hidden text-right md:block">
-            <p className="text-sm font-medium">
+            <p className="text-xs font-bold text-foreground">
               {profile.first_name} {profile.last_name}
             </p>
-            <Badge variant="secondary" className="text-[10px] capitalize">
-              {roles[0]?.replace("_", " ") || "Guest"}
-            </Badge>
+            {roles && roles.length > 1 ? (
+              <div className="mt-0.5 flex items-center justify-end gap-1">
+                {roles.map((r) => {
+                  const isActive = effectiveRole === r;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => {
+                        setActiveRole(r);
+                        toast.success(`Switched role to ${roleLabels[r] || r}`);
+                      }}
+                      title={`Active role: ${roleLabels[r] || r}. Click to switch.`}
+                      className={cn(
+                        "text-[9px] font-bold px-1.5 py-0.5 rounded-md transition-all cursor-pointer border",
+                        isActive
+                          ? "bg-primary/10 text-primary border-primary/30 shadow-2xs font-black"
+                          : "bg-muted/50 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      {roleLabels[r] || r}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <Badge variant="outline" className="text-[10px] font-bold bg-muted/60 text-muted-foreground border-border/80 px-2 py-0.5">
+                {roleDisplayName}
+              </Badge>
+            )}
           </div>
         )}
-        <Avatar className="h-9 w-9 ring-2 ring-border">
+        <Avatar className="h-9 w-9 ring-2 ring-border" title={`${profile?.first_name} ${profile?.last_name} (${roleDisplayName})`}>
           <AvatarFallback className="bg-primary text-xs text-primary-foreground font-semibold">
             {initials}
           </AvatarFallback>

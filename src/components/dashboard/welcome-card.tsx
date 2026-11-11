@@ -131,12 +131,15 @@ export function WelcomeCard() {
 
   const collegeName = affiliation.collegeName || (profile as any).colleges?.name;
   const departmentName = affiliation.departmentName || (profile as any).departments?.name;
-  const roleName =
-    effectiveRole === "college_dean"
-      ? "College Dean"
-      : effectiveRole === "sys_admin"
-      ? "System Administrator"
-      : effectiveRole.replace(/_/g, " ");
+  const roleNameMap: Record<string, string> = {
+    college_dean: "College Dean",
+    sys_admin: "System Administrator",
+    coordinator: "Research Coordinator",
+    panelist: "Defense Panelist",
+    adviser: "Research Adviser",
+    student: "Student Proponent",
+  };
+  const roleName = roleNameMap[effectiveRole] || effectiveRole.replace(/_/g, " ");
 
   return (
     <motion.div
