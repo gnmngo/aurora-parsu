@@ -30,6 +30,7 @@ import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { registerUserAction } from "@/lib/auth/register-action";
 import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 import { prepareLoginAction, resetPasswordDirectAction } from "@/lib/auth/login-actions";
+import { useGlobalLoading } from "@/providers/loading-provider";
 
 const DEMO_ROLES = [
   { id: "student", label: "Student", icon: GraduationCap, color: "text-blue-600 dark:text-blue-400" },
@@ -45,6 +46,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
   const { session, profile, isLoading: authLoading } = useAuth();
+  const { startLoading, stopLoading } = useGlobalLoading();
 
   const [activeTab, setActiveTab] = useState<"signin" | "register" | "forgot">("signin");
   
@@ -205,6 +207,7 @@ function LoginForm() {
       return;
     }
     setLoading(true);
+    startLoading("Verifying institutional credentials & decrypting docket...");
 
     try {
       if (session) {
@@ -217,6 +220,7 @@ function LoginForm() {
 
       const prep = await prepareLoginAction(trimmedEmail, password);
       if (!prep.success || !prep.email || !prep.password) {
+        stopLoading();
         toast.error(prep.error || "Invalid credentials");
         return;
       }
@@ -227,17 +231,20 @@ function LoginForm() {
       });
 
       if (error) {
+        stopLoading();
         toast.error(error.message || "Invalid credentials");
         return;
       }
 
       if (!data.session) {
+        stopLoading();
         toast.error("Login failed: no session returned");
         return;
       }
 
-      toast.success("Login successful");
+      toast.success("Login successful! Entering AURORA Portal...");
     } catch (err: any) {
+      stopLoading();
       console.error(err);
       toast.error(err?.message || "Unexpected login error");
     } finally {
@@ -275,6 +282,7 @@ function LoginForm() {
     }
     
     setLoading(true);
+    startLoading("Registering student record & provisioning college permissions...");
 
     try {
       if (session) {
@@ -305,6 +313,7 @@ function LoginForm() {
       });
 
       if (!result.success) {
+        stopLoading();
         toast.error(result.error || "Registration failed");
         return;
       }
@@ -318,6 +327,7 @@ function LoginForm() {
       });
 
       if (signInError) {
+        stopLoading();
         // Fallback: populate credentials and switch to sign in tab
         setEmail(cleanRegEmail);
         setPassword(cleanRegPassword);
@@ -325,6 +335,7 @@ function LoginForm() {
         toast.info("Account created. Please sign in with your credentials.");
       }
     } catch (err: unknown) {
+      stopLoading();
       const message = err instanceof Error ? err.message : "Unexpected registration error";
       toast.error(message);
     } finally {
@@ -369,6 +380,7 @@ function LoginForm() {
 
   const handleDemoLogin = async (roleType: "student" | "adviser" | "panelist" | "coordinator" | "dean" | "admin") => {
     setLoading(true);
+    startLoading(`Authenticating as ${roleType.toUpperCase()} & configuring permissions...`);
 
     try {
       const targetRole =
@@ -390,6 +402,7 @@ function LoginForm() {
 
       const creds = await getDemoCredentialsAction(roleType);
       if (!creds.success || !creds.email || !creds.password) {
+        stopLoading();
         toast.error(creds.error || `Demo credentials for ${roleType} unavailable.`);
         return;
       }
@@ -400,6 +413,7 @@ function LoginForm() {
       });
 
       if (error) {
+        stopLoading();
         toast.error(error.message || `Failed to login as ${roleType}`);
         return;
       }
@@ -411,6 +425,7 @@ function LoginForm() {
 
       toast.success(`Logged in as ${roleType}`);
     } catch (err: any) {
+      stopLoading();
       toast.error(err?.message || "Unexpected login error");
     } finally {
       setLoading(false);

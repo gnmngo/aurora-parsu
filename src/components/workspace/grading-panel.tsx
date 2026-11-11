@@ -71,6 +71,7 @@ import {
 import { resolveRubricTemplate } from "@/lib/workflow/template-resolver";
 import { ParsuFormsModal } from "@/components/defenses/parsu-forms-modal";
 import { useAuth } from "@/hooks/use-auth";
+import { useGlobalLoading } from "@/providers/loading-provider";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 
 function CollapsibleSection({
@@ -292,6 +293,7 @@ export function GradingPanel({
   annotationRefreshKey = 0,
 }: GradingPanelProps) {
   const { user, roles, isLoading: authLoading } = useAuth();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const isStudent = roles.includes("student") && !roles.some((r) => ["panelist", "adviser", "coordinator", "sys_admin", "college_dean"].includes(r));
 
   // Role detection state for this project
@@ -1072,6 +1074,7 @@ export function GradingPanel({
 
     try {
       setEndorsing(true);
+      startLoading(status === "approved" ? "Endorsing manuscript & unlocking oral defense gate..." : "Logging revision directives for research proponent...");
       const effectiveRemarks = adviserRemarks || (status === "approved" ? "Endorsed for defense by research adviser." : "Revisions required.");
       let actionSuccess = false;
       let actionErrorMsg: string | undefined;
@@ -1155,6 +1158,7 @@ export function GradingPanel({
       console.error("Error submitting adviser endorsement:", err);
       toast.error(err?.message || "Failed to submit adviser endorsement.");
     } finally {
+      stopLoading();
       setEndorsing(false);
     }
   };
@@ -1302,6 +1306,7 @@ export function GradingPanel({
     }
 
     try {
+      startLoading("Cryptographically sealing evaluation under RA 8792...");
       toast.loading("Verifying credentials & securing signature under RA 8792...");
       let updated: any = null;
 
@@ -1422,12 +1427,14 @@ export function GradingPanel({
       }
 
       toast.dismiss();
+      stopLoading();
       toast.success("Verified electronic signature applied successfully!");
       setEvalStatus(updated.status);
       setEvaluationData(updated);
       setEvalVersion(updated.version);
     } catch (err: any) {
       toast.dismiss();
+      stopLoading();
       console.error("[grading-panel] handleSignComplete error:", err);
       throw err;
     }

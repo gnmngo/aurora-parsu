@@ -114,10 +114,10 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
-    // Smooth splash entrance on landing page
+    // Showcase the AURORA entrance animation for 2.2 seconds on landing
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 1400);
+    }, 2200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -125,7 +125,7 @@ export default function HomePage() {
     setShowSplash(true);
     setTimeout(() => {
       setShowSplash(false);
-    }, 2400);
+    }, 2800);
   };
 
   const headerBg = useTransform(
@@ -286,6 +286,16 @@ export default function HomePage() {
               Verify Certificates
             </motion.div>
           </Link>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={triggerLoaderPreview}
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-6 py-4 text-sm font-bold transition-all duration-200 cursor-pointer shadow-xs"
+            title="Experience the AURORA Loading Animation"
+          >
+            <Sparkles className="h-4 w-4 text-emerald-500" />
+            AURORA Loading Screen
+          </motion.button>
         </motion.div>
 
         <motion.div

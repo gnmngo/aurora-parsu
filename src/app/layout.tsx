@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { GlobalLoadingProvider } from "@/providers/loading-provider";
 import { APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
 import "./globals.css";
 
@@ -51,8 +52,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <AuthProvider>
-              {children}
-              <Toaster position="top-right" richColors closeButton />
+              <GlobalLoadingProvider>
+                {children}
+                <Toaster position="top-right" richColors closeButton />
+              </GlobalLoadingProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
