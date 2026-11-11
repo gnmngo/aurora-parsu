@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { registerUserAction } from "@/lib/auth/register-action";
 import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
+import { prepareLoginAction, resetPasswordDirectAction } from "@/lib/auth/login-actions";
 
 const DEMO_ROLES = [
   { id: "student", label: "Student", icon: GraduationCap, color: "text-blue-600 dark:text-blue-400" },
@@ -58,6 +59,7 @@ function LoginForm() {
   const [regLastName, setRegLastName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRole, setRegRole] = useState("student"); // student, adviser, panelist
   const [regNumber, setRegNumber] = useState(""); // student/employee number
   
@@ -78,6 +80,8 @@ function LoginForm() {
 
   // Forgot Password States
   const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
   const hasFetchedCampuses = useRef(false);
@@ -192,12 +196,6 @@ function LoginForm() {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
-    const EMAIL_ALIASES: Record<string, string> = {
-      'acvillando@parsu.edu.ph': 'anabella.vilando@parsu.edu.ph',
-      'mwmsolomo@parsu.edu.ph': 'mariawendy.solomo@parsu.edu.ph',
-      'mwmsolomon@parsu.edu.ph': 'mariawendy.solomo@parsu.edu.ph',
-    };
-    const resolvedEmail = EMAIL_ALIASES[trimmedEmail] || trimmedEmail;
     if (!trimmedEmail || !trimmedPassword) {
       toast.error("Please enter email and password");
       return;
@@ -209,9 +207,23 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      if (session) {
+        await supabase.auth.signOut();
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("aurora_active_role");
+        localStorage.removeItem("aurora_active_role");
+      }
+
+      const prep = await prepareLoginAction(trimmedEmail, password);
+      if (!prep.success || !prep.email || !prep.password) {
+        toast.error(prep.error || "Invalid credentials");
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: resolvedEmail,
-        password: trimmedPassword,
+        email: prep.email,
+        password: prep.password,
       });
 
       if (error) {
@@ -237,16 +249,19 @@ function LoginForm() {
     e.preventDefault();
     if (loading) return;
 
-    if (!regEmail || !regPassword || !regFirstName || !regLastName) {
+    const cleanRegEmail = regEmail.trim().toLowerCase();
+    const cleanRegPassword = regPassword.trim();
+
+    if (!cleanRegEmail || !cleanRegPassword || !regFirstName || !regLastName) {
       toast.error("Please fill in your name, email, and password");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(regEmail.trim())) {
+    if (!emailRegex.test(cleanRegEmail)) {
       toast.error("Please enter a valid institutional email address");
       return;
     }
-    if (regPassword.length < 8) {
+    if (cleanRegPassword.length < 8) {
       toast.error("Password must be at least 8 characters long");
       return;
     }
@@ -262,12 +277,20 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      if (session) {
+        await supabase.auth.signOut();
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("aurora_active_role", "student");
+        localStorage.setItem("aurora_active_role", "student");
+      }
+
       const selectedProg = programs.find((p) => p.id === regProgramId);
       const departmentId = regDepartmentId || (selectedProg as { department_id?: string | null })?.department_id || null;
 
       const result = await registerUserAction({
-        email: regEmail.trim(),
-        password: regPassword,
+        email: cleanRegEmail,
+        password: cleanRegPassword,
         firstName: regFirstName.trim(),
         lastName: regLastName.trim(),
         role: "student",
@@ -290,14 +313,14 @@ function LoginForm() {
       
       // Immediate auto-login to transition directly to dashboard
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: regEmail.trim(),
-        password: regPassword,
+        email: cleanRegEmail,
+        password: cleanRegPassword,
       });
 
       if (signInError) {
         // Fallback: populate credentials and switch to sign in tab
-        setEmail(regEmail.trim());
-        setPassword(regPassword);
+        setEmail(cleanRegEmail);
+        setPassword(cleanRegPassword);
         setActiveTab("signin");
         toast.info("Account created. Please sign in with your credentials.");
       }
@@ -311,20 +334,34 @@ function LoginForm() {
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail) {
-      toast.error("Please enter your email");
+    if (!forgotEmail.trim()) {
+      toast.error("Please enter your email or Student ID");
+      return;
+    }
+    if (forgotNewPassword.trim().length < 8) {
+      toast.error("New password must be at least 8 characters long");
       return;
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`
-      });
-      if (error) throw error;
+      const res = await resetPasswordDirectAction(forgotEmail.trim(), forgotNewPassword.trim());
+      if (!res.success || !res.email) {
+        toast.error(res.error || "Failed to reset password.");
+        return;
+      }
       setForgotSent(true);
-      toast.success("Reset link dispatched! Please check your email inbox.");
+      toast.success("Password updated successfully! Signing in...");
+      const { error: loginErr } = await supabase.auth.signInWithPassword({
+        email: res.email,
+        password: forgotNewPassword.trim(),
+      });
+      if (loginErr) {
+        setEmail(res.email);
+        setPassword(forgotNewPassword.trim());
+        setActiveTab("signin");
+      }
     } catch (err: any) {
-      toast.error(err.message || "Failed to trigger reset flow.");
+      toast.error(err.message || "Failed to reset password.");
     } finally {
       setLoading(false);
     }
@@ -444,11 +481,12 @@ function LoginForm() {
               )}
 
               <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="email">Email Address</label>
+                <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="email">Email Address or Student ID</label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="name@parsu.edu.ph"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="name@parsu.edu.ph or Student ID"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isFormDisabled}
@@ -576,16 +614,26 @@ function LoginForm() {
 
               <div className="space-y-1">
                 <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regPassword">Password</label>
-                <Input
-                  id="regPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  disabled={isFormDisabled}
-                  required
-                  minLength={8}
-                />
+                <div className="relative">
+                  <Input
+                    id="regPassword"
+                    type={showRegPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    disabled={isFormDisabled}
+                    className="pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -739,46 +787,74 @@ function LoginForm() {
 
           {activeTab === "forgot" && (
             <form onSubmit={handleForgot} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="text-center mb-6">
-                <h3 className="text-sm font-semibold mb-1">Reset Password</h3>
-                <p className="text-xs text-muted-foreground">Enter your email address and we'll send you a link to reset your password.</p>
+              <div className="text-center mb-4">
+                <h3 className="text-sm font-semibold mb-1">Reset Account Password</h3>
+                <p className="text-xs text-muted-foreground">Enter your registered institutional email (or Student ID) and set a new password.</p>
               </div>
 
               {forgotSent ? (
                 <div className="bg-primary/10 text-primary p-4 rounded-xl flex items-start gap-3 border border-primary/20">
                   <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                  <p className="text-sm">If an account exists for <strong>{forgotEmail}</strong>, a password reset link has been sent.</p>
+                  <p className="text-sm">Password for <strong>{forgotEmail}</strong> has been updated. Redirecting...</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="forgotEmail">Email Address</label>
-                  <Input
-                    id="forgotEmail"
-                    type="email"
-                    placeholder="name@parsu.edu.ph"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    disabled={isFormDisabled}
-                    className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20"
-                    required
-                  />
-                </div>
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="forgotEmail">Institutional Email or Student ID</label>
+                    <Input
+                      id="forgotEmail"
+                      type="text"
+                      placeholder="name.pbox@parsu.edu.ph"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      disabled={isFormDisabled}
+                      className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="forgotNewPassword">New Password</label>
+                    <div className="relative">
+                      <Input
+                        id="forgotNewPassword"
+                        type={showForgotPassword ? "text" : "password"}
+                        placeholder="At least 8 characters"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        disabled={isFormDisabled}
+                        className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20 pr-10"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(!showForgotPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showForgotPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
 
               <Button disabled={isFormDisabled || forgotSent} className="w-full h-10 rounded-xl cursor-pointer" type="submit">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="animate-spin w-4 h-4" />
-                    Sending link...
+                    Updating password...
                   </span>
                 ) : (
-                  "Send Reset Link"
+                  "Update Password & Sign In"
                 )}
               </Button>
               
               <button
                 type="button"
-                onClick={() => setActiveTab("signin")}
+                onClick={() => {
+                  setForgotSent(false);
+                  setActiveTab("signin");
+                }}
                 className="w-full text-xs text-muted-foreground hover:text-foreground mt-4 font-medium"
                 disabled={isFormDisabled}
               >

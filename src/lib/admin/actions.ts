@@ -216,7 +216,7 @@ export async function createFacultyAccountAction(input: CreateFacultyInput) {
 
   const { data, error } = await serviceClient.auth.admin.createUser({
     email: cleanEmail,
-    password: generatedPass,
+    password: generatedPass.trim(),
     email_confirm: true,
     user_metadata: metaData,
   });
@@ -227,6 +227,62 @@ export async function createFacultyAccountAction(input: CreateFacultyInput) {
       throw new Error(`Failed to create user: Email or employee number is already taken.`);
     }
     throw new Error(msg);
+  }
+
+  const newUserId = data.user.id;
+  const resolvedCampusId = input.campusId || "00000000-0000-0000-0000-000000000001";
+
+  // Explicitly upsert profile, role, and faculty record to guarantee consistency
+  await serviceClient.from("profiles").upsert({
+    id: newUserId,
+    email: cleanEmail,
+    first_name: input.firstName.trim(),
+    last_name: input.lastName.trim(),
+    campus_id: resolvedCampusId,
+    college_id: input.collegeId || null,
+    department_id: input.departmentId || null,
+    status: "approved",
+    updated_at: new Date().toISOString(),
+  });
+
+  const { data: roleRow } = await serviceClient
+    .from("roles")
+    .select("id")
+    .eq("code", input.role)
+    .maybeSingle();
+
+  if (roleRow?.id) {
+    const { data: existingRole } = await serviceClient
+      .from("user_roles")
+      .select("id")
+      .eq("profile_id", newUserId)
+      .eq("role_id", roleRow.id)
+      .maybeSingle();
+    if (!existingRole) {
+      await serviceClient.from("user_roles").insert({
+        profile_id: newUserId,
+        role_id: roleRow.id,
+        assigned_by: caller.id,
+      });
+    }
+  }
+
+  const { data: existingFacRow } = await serviceClient
+    .from("faculty")
+    .select("id")
+    .eq("profile_id", newUserId)
+    .maybeSingle();
+
+  if (!existingFacRow) {
+    await serviceClient.from("faculty").insert({
+      profile_id: newUserId,
+      employee_number: resolvedEmpNumber,
+      campus_id: resolvedCampusId,
+      college_id: input.collegeId || null,
+      department_id: input.departmentId || null,
+      specialization: input.specialization?.trim() || "General",
+      academic_rank: input.academicRank || "Assistant Professor",
+    });
   }
 
   // Audit log
