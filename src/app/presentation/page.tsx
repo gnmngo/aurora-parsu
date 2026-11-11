@@ -28,7 +28,7 @@ export default function PresentationModePage() {
     { roleKey: "student", name: "Student", email: "student1@aurora.test", icon: Users, desc: "Submit paper, view timeline stepper, revise and check notes." },
     { roleKey: "adviser", name: "Adviser (Froiland B. Peñalosa)", email: "panelist1@aurora.test", icon: Shield, desc: "Check advisees directory, annotate text issues, write comments." },
     { roleKey: "panelist", name: "Panelist (Michael B. Amata)", email: "michael.amata@parsu.edu.ph", icon: Award, desc: "View scheduling, complete grading rubric, sign evaluation cert." },
-    { roleKey: "coordinator", name: "Coordinator", email: "coord@aurora.test", icon: Calendar, desc: "Create defenses calendar, check conflicts, publish stages." },
+    { roleKey: "coordinator", name: "Coordinator (Dr. Kennedy C. Cuya)", email: "kennedy.cuya@parsu.edu.ph", icon: Calendar, desc: "Create defenses calendar, check conflicts, publish stages." },
     { roleKey: "dean", name: "College Dean", email: "erpadayao@parsu.edu.ph", icon: GraduationCap, desc: "Executive college oversight, throughput analytics, institutional clearance." },
     { roleKey: "admin", name: "System Admin", email: "admin@aurora.test", icon: HardDrive, desc: "View system health, monitor active stats, trigger demo reset." }
   ];

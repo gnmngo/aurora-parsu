@@ -53,8 +53,8 @@ export default function DemoGuidedFlow() {
       title: "2. Coordinator Defense Scheduling",
       role: "Coordinator",
       roleKey: "coordinator",
-      email: "coord@aurora.test",
-      description: "Log in as Coordinator to publish evaluation rubrics, schedule defense rooms and timeslots on the interactive calendar grid, and resolve panel conflicts.",
+      email: "kennedy.cuya@parsu.edu.ph",
+      description: "Log in as Defense Coordinator (Dr. Kennedy C. Cuya) to manage college rubrics, schedule defense rooms and timeslots, and appoint panel committees.",
       targetPath: "/dashboard/defenses/schedule",
       icon: Play,
       badge: "Coordinator Role"
