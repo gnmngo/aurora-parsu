@@ -4,31 +4,31 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #09090b;
   
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #09090b;
   
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --primary-light: #dbeafe;
-  --primary-dark: #1e40af;
+  --primary-light: #eff6ff;
+  --primary-dark: #1d4ed8;
   
-  --secondary: #3b82f6;
-  --secondary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
   
-  --accent: #60a5fa;
-  --accent-foreground: #0f172a;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
   
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --muted-dark: #94a3b8;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --muted-dark: #a1a1aa;
   
-  --border: #e2e8f0;
+  --border: #e4e4e7;
   
-  --sidebar: #0f172a;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-muted: #94a3b8;
+  --sidebar: #050505;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-muted: #929292;
   --sidebar-active: #2563eb;
   
   --success: #16a34a;
@@ -43,35 +43,35 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
 }
 
-/* Dark mode overrides */
+/* Dark mode overrides — aligned with the sleek AURORA monochromatic aesthetic */
 .dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+  --background: #050505;
+  --foreground: #f5f5f5;
   
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
+  --card: #0a0a0a;
+  --card-foreground: #f5f5f5;
   
-  --primary: #3b82f6;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --primary-light: #1e293b;
+  --primary-light: #172554;
   --primary-dark: #1d4ed8;
   
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
+  --secondary: #121212;
+  --secondary-foreground: #f5f5f5;
   
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+  --accent: #172554;
+  --accent-foreground: #f5f5f5;
   
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --muted-dark: #64748b;
+  --muted: #121212;
+  --muted-foreground: #929292;
+  --muted-dark: #71717a;
   
-  --border: #334155;
+  --border: #252525;
   
-  --sidebar: #0b0f19;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-muted: #64748b;
-  --sidebar-active: #3b82f6;
+  --sidebar: #050505;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-muted: #929292;
+  --sidebar-active: #2563eb;
   
   --info: #3b82f6;
 }
@@ -123,13 +123,13 @@ body {
   border-radius: 9999px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #252525;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #383838;
 }
 
 /* PDF viewer canvas styling */
