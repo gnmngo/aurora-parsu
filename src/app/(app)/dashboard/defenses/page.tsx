@@ -68,6 +68,15 @@ export function getDefenseStatus(sched: any) {
     };
   }
 
+  if (sched.status === "pending_schedule" || !sched.scheduled_at) {
+    return {
+      label: "Pending Schedule",
+      badgeVariant: "warning" as const,
+      isConcluded: false,
+      color: "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+    };
+  }
+
   const sDate = new Date(sched.scheduled_at);
   const now = new Date();
   const durationMs = (sched.duration_minutes || 60) * 60 * 1000;
@@ -429,8 +438,65 @@ export default function DefensesPage() {
 
       if (error) throw error;
 
+      // Ensure any assigned project without a formal schedule entry still displays cleanly
+      const scheduledProjectIds = new Set((schedData || []).map((s: any) => s.project_id));
+      const unscheduledProjectIds = (allowedProjectIds || []).filter((pid) => !scheduledProjectIds.has(pid));
+
+      let unscheduledItems: any[] = [];
+      if (unscheduledProjectIds.length > 0) {
+        const { data: unscheduledProjs } = await supabase
+          .from("projects")
+          .select(`
+            id,
+            title,
+            status,
+            program_id,
+            student_id,
+            current_stage_id,
+            workflow_template_id,
+            students (
+              profile_id,
+              program_id,
+              profiles ( first_name, last_name, email )
+            ),
+            defense_stages:current_stage_id (
+              id,
+              name,
+              code,
+              workflow_template_id
+            )
+          `)
+          .in("id", unscheduledProjectIds);
+
+        unscheduledItems = (unscheduledProjs || []).map((p: any) => {
+          const stg = Array.isArray(p.defense_stages) ? p.defense_stages[0] : p.defense_stages;
+          return {
+            id: `pending-${p.id}`,
+            project_id: p.id,
+            stage_id: p.current_stage_id || "10000000-0001-0000-0000-000000000001",
+            scheduled_at: null,
+            end_at: null,
+            duration_minutes: 60,
+            room: "Venue to be assigned by Coordinator",
+            building: "Goa Campus",
+            is_online: false,
+            meeting_url: null,
+            status: "pending_schedule",
+            projects: p,
+            defense_stages: stg || {
+              id: p.current_stage_id || "10000000-0001-0000-0000-000000000001",
+              name: "Title Defense",
+              code: "title",
+              workflow_template_id: p.workflow_template_id || "10000000-0000-0000-0000-000000000000",
+            },
+          };
+        });
+      }
+
+      const allDefenseRecords = [...(schedData || []), ...unscheduledItems];
+
       // Fetch evaluations and panel members filtered by loaded project IDs (BUG-D2)
-      const projectIds = Array.from(new Set((schedData || []).map((s: any) => s.project_id).filter(Boolean)));
+      const projectIds = Array.from(new Set(allDefenseRecords.map((s: any) => s.project_id).filter(Boolean)));
       const [evalsRes, panelsRes] = await Promise.all([
         projectIds.length > 0
           ? supabase
@@ -470,7 +536,7 @@ export default function DefensesPage() {
       const evalsData = evalsRes.data || [];
       const panelsData = panelsRes.data || [];
 
-      const enriched = (schedData || []).map((s: any) => {
+      const enriched = allDefenseRecords.map((s: any) => {
         const matchingEvals = (evalsData || []).filter(
           (e: any) => e.project_id === s.project_id && e.stage_id === s.stage_id
         );
