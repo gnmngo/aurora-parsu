@@ -73,8 +73,8 @@ export default function DemoGuidedFlow() {
       title: "4. Panelist Evaluation & E-Signature",
       role: "Panelist",
       roleKey: "panelist",
-      email: "panelist2@aurora.test",
-      description: "Log in as Defense Panelist (Dr. Aris Thorne). View assigned defenses, score significance criteria on the active rubric template, and sign with an immutable certificate serial.",
+      email: "mbamata@parsu.edu.ph",
+      description: "Log in as Defense Panelist (Michael B. Amata). View assigned defenses, score rubric criteria in the split-screen workspace, and sign with an immutable certificate serial.",
       targetPath: "/dashboard",
       icon: Award,
       badge: "Panelist Role"

@@ -10,11 +10,13 @@ const EMAIL_ALIASES: Record<string, string> = {
   "kcuya@parsu.edu.ph": "kccuya@parsu.edu.ph",
   "jcapucao@parsu.edu.ph": "jncapucao@parsu.edu.ph",
   "fpenalosa@parsu.edu.ph": "fbpenalosa@parsu.edu.ph",
+  "mamata@parsu.edu.ph": "mbamata@parsu.edu.ph",
 };
 
 const DEMO_ACCOUNT_EMAILS = new Set([
   "student1@aurora.test",
   "fbpenalosa@parsu.edu.ph",
+  "mbamata@parsu.edu.ph",
   "jncapucao@parsu.edu.ph",
   "kccuya@parsu.edu.ph",
   "erpadayao@parsu.edu.ph",
