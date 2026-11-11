@@ -9,7 +9,6 @@ import {
   BarChart3,
   Shield,
   ArrowRight,
-  Sparkles,
   Award,
   Calendar,
   Users,
@@ -114,19 +113,12 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true);
-    // Showcase the AURORA entrance animation for 2.2 seconds on landing
+    // Subtle, minimalist Apple/Linear entrance transition on initial load
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 2200);
+    }, 900);
     return () => clearTimeout(timer);
   }, []);
-
-  const triggerLoaderPreview = () => {
-    setShowSplash(true);
-    setTimeout(() => {
-      setShowSplash(false);
-    }, 2800);
-  };
 
   const headerBg = useTransform(
     scrollY,
@@ -189,17 +181,6 @@ export default function HomePage() {
                 <a href="#roles" className="hover:text-primary transition-colors">Roles</a>
                 <a href="#faq" className="hover:text-primary transition-colors">FAQ</a>
               </nav>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={triggerLoaderPreview}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition cursor-pointer"
-                title="Preview the AURORA Loading Animation"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Loading Demo</span>
-              </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.1 }}
@@ -286,16 +267,6 @@ export default function HomePage() {
               Verify Certificates
             </motion.div>
           </Link>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={triggerLoaderPreview}
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-6 py-4 text-sm font-bold transition-all duration-200 cursor-pointer shadow-xs"
-            title="Experience the AURORA Loading Animation"
-          >
-            <Sparkles className="h-4 w-4 text-emerald-500" />
-            AURORA Loading Screen
-          </motion.button>
         </motion.div>
 
         <motion.div
