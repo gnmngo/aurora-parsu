@@ -1,440 +1,1035 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowRight,
+  ChevronRight,
   FileText,
   MessageSquare,
   BarChart3,
-  Shield,
-  ArrowRight,
-  Award,
   Calendar,
+  Layers,
+  History,
+  ShieldCheck,
+  GraduationCap,
   Users,
-  Sun,
-  Moon,
-  CheckCircle,
-  HelpCircle,
-  TrendingUp,
-  FileCheck,
-  ChevronDown
+  Eye,
+  Award,
+  Crown,
+  Settings2,
+  Check,
+  Menu,
+  X,
+  ExternalLink,
+  Sparkles,
 } from "lucide-react";
-import { APP_ACRONYM_MEANING, APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
-import { useTheme } from "@/providers/theme-provider";
-import { AuroraLogo } from "@/components/ui/aurora-logo";
-import { AuroraLoader } from "@/components/ui/aurora-loader";
+import {
+  APP_ACRONYM_MEANING,
+  APP_FULL_NAME,
+  INSTITUTION,
+  INSTITUTION_CAMPUS,
+} from "@/constants/app";
 
-const features = [
+// The Five Colleges of Partido State University – Goa Campus
+const COLLEGES = [
   {
-    icon: FileText,
-    title: "Split-Screen Workspace",
-    description: "Review manuscript PDFs on the left while scoring rubrics on the right in a responsive dual-pane interface with draggable split ratio and toggleable view modes.",
+    code: "CECS",
+    name: "College of Engineering and Computational Sciences",
+    desc: "Computer Science, Information Technology, Engineering, and Computational Research.",
+    programs: ["BS in Information Technology", "BS in Computer Science", "BS in Civil Engineering"],
   },
   {
-    icon: MessageSquare,
-    title: "Google Docs-Style Highlighting",
-    description: "Highlight any text span directly on the PDF to trigger a floating comment pill, leaving persistent yellow overlays with percentage-based coordinates and threaded replies.",
+    code: "CED",
+    name: "College of Education",
+    desc: "Teacher Education, Educational Leadership, Curriculum Design, and Action Research.",
+    programs: ["Bachelor of Secondary Education", "Bachelor of Elementary Education"],
   },
   {
-    icon: FileCheck,
-    title: "Adviser Endorsement Gate",
-    description: "Strict institutional separation of duties: Advisers conduct paperless consultations and hold the defense endorsement gate, strictly isolated from panelist grading.",
+    code: "CBM",
+    name: "College of Business and Management",
+    desc: "Business Administration, Financial Management, Hospitality, and Enterprise Studies.",
+    programs: ["BS in Business Administration", "BS in Hospitality Management"],
   },
   {
-    icon: BarChart3,
-    title: "Weighted Rubric Scoring",
-    description: "Database-driven criterion rubrics (0-100) with custom weights, passing thresholds, consensus mean calculation, and discrepancy alerts (>15 pts).",
+    code: "CAH",
+    name: "College of Arts and Humanities",
+    desc: "Communication, Language Studies, Cultural Heritage, and Public Governance.",
+    programs: ["BA in Communication", "BA in English Language", "BA in Political Science"],
   },
   {
-    icon: Shield,
-    title: "Cryptographic E-Signatures",
-    description: "Multi-mode digital signature canvas (Draw, Type, Upload) sealed with SHA-256 integrity hashes and locked permanently by PostgreSQL immutability triggers.",
+    code: "CS",
+    name: "College of Science",
+    desc: "Applied Mathematics, Environmental Science, Biology, and Empirical Research.",
+    programs: ["BS in Applied Mathematics", "BS in Environmental Science", "BS in Biology"],
+  },
+];
+
+// The Six Stakeholder Roles
+const ECOSYSTEM_ROLES = [
+  {
+    id: "student",
+    title: "Student",
+    subtitle: "Research Proponent & Author",
+    icon: GraduationCap,
+    desc: "Submit manuscripts, receive feedback, track revisions, and monitor academic defense progress.",
+    metrics: "Upload PDF • Review Annotations • Download Certificates",
   },
   {
+    id: "adviser",
+    title: "Adviser",
+    subtitle: "Guidance & Mentorship",
+    icon: Eye,
+    desc: "Guide student researchers, review manuscript progress, and endorse submissions.",
+    metrics: "Paperless Consultations • Endorsement Gate • Non-Grading Boundary",
+  },
+  {
+    id: "panelist",
+    title: "Panelist",
+    subtitle: "Evaluation & Examination",
     icon: Award,
-    title: "Public Verification Portal",
-    description: "Public accreditation portal (/verify) with instant SHA-256 cryptographic replay and scannable QR codes for CHED, ISO, and registrar compliance.",
+    desc: "Review manuscripts, provide digital annotations, and complete rubric-based evaluations.",
+    metrics: "Split-Screen Workspace • 100-Pt Rubrics • Digital E-Signatures",
+  },
+  {
+    id: "coordinator",
+    title: "Research Coordinator",
+    subtitle: "Academic Operations",
+    icon: Calendar,
+    desc: "Manage academic workflows, schedules, panel assignments, and institutional reporting.",
+    metrics: "Defense Calendar • Panel Composition • Conflict Auditing",
+  },
+  {
+    id: "dean",
+    title: "College Dean",
+    subtitle: "Institutional Oversight",
+    icon: Crown,
+    desc: "Oversee college-wide academic defense activities, progress, and reporting.",
+    metrics: "College Throughput • Program Completion • Strategic Clearance",
+  },
+  {
+    id: "admin",
+    title: "System Administrator",
+    subtitle: "Platform Governance",
+    icon: Settings2,
+    desc: "Manage user accounts, access permissions, configurations, and technical operations.",
+    metrics: "RBAC Governance • System Audit Trail • Tamper-Proof Logs",
   },
 ];
 
-const faqs = [
+// The Five Defense Stages
+const DEFENSE_STAGES = [
   {
-    q: "How does the Google Docs-style PDF highlighting work?",
-    a: "Reviewers can highlight any text passage directly inside the manuscript PDF. A floating [+ Add comment] button appears at the selection edge. Saving creates a persistent yellow highlight overlay mapped to relative percentage coordinates, ensuring exact text alignment across all devices and zoom levels.",
+    step: "01",
+    name: "Concept Defense",
+    desc: "Establish the initial research concept and obtain academic feedback.",
+    deliverable: "Concept Note & Scope",
   },
   {
-    q: "What is the Adviser Consultation & Endorsement Gate?",
-    a: "To preserve academic integrity, research advisers mentor students through paperless PDF annotations but are strictly barred from scoring rubrics for their advisees. The defense scheduler is locked until the adviser explicitly endorses the manuscript ('Endorse for Defense' vs 'Request Revisions').",
+    step: "02",
+    name: "Title Defense",
+    desc: "Present and evaluate the proposed research title.",
+    deliverable: "Title Docket & Proponents",
   },
   {
-    q: "How are defense evaluations cryptographically secured?",
-    a: "When a panelist submits their score sheet, they provide a digital e-signature (Draw, Type, or Upload). AURORA generates a deterministic SHA-256 payload hash, mints an official institutional serial (AURORA-YYYY-XXXXXX), and activates a PostgreSQL trigger (tr_evaluations_immutable) preventing any future edits.",
+    step: "03",
+    name: "Progress Report 1",
+    desc: "Monitor research development and initial manuscript progress.",
+    deliverable: "Chapters 1–3 Framework",
   },
   {
-    q: "How do external accreditors (CHED / ISO) verify certificates?",
-    a: "Anyone can navigate to the public verification portal (/verify) or scan the QR code printed on the official defense certificate. The system re-hashes the stored evaluation payload and displays a verifiable cryptographic audit certificate with evaluator signatures and timestamps.",
+    step: "04",
+    name: "Progress Report 2",
+    desc: "Review continued research progress and required improvements.",
+    deliverable: "Preliminary Results & System",
+  },
+  {
+    step: "05",
+    name: "Final Defense",
+    desc: "Complete the final academic evaluation and defense process.",
+    deliverable: "Full Manuscript & Verdict",
   },
 ];
 
-const roles = [
-  { 
-    title: "Student / Author", 
-    desc: "Uploads manuscript PDFs, views live yellow text highlights, submits threaded replies, marks feedback as 'Addressed', and downloads official certificates." 
+// The Seven Core Capabilities
+const CORE_CAPABILITIES = [
+  {
+    num: "01",
+    title: "Manuscript Management",
+    desc: "Centralized digital submission and manuscript version control.",
+    icon: FileText,
+    screenshot: "/screenshots/aurora_workspace_split_screen.jpg",
+    details: "Supports immutable PDF versions, SHA-256 upload checksums, and strict timeline locking.",
   },
-  { 
-    title: "Research Adviser", 
-    desc: "Mentors advisees paperlessly via PDF highlights. Holds the defense scheduling gate ('Endorse' vs 'Request Revisions'), with strict separation from panel grading." 
+  {
+    num: "02",
+    title: "Digital Annotation",
+    desc: "Contextual comments, suggestions, replies, and manuscript review.",
+    icon: MessageSquare,
+    screenshot: "/screenshots/aurora_workspace_split_screen.jpg",
+    details: "Coordinate-based PDF text highlighting with threaded discussions between adviser, panel, and student.",
   },
-  { 
-    title: "Defense Panelist", 
-    desc: "Evaluates manuscripts in the split-screen workspace, scores weighted criteria rubrics, enters panel remarks, and digitally signs the official evaluation." 
+  {
+    num: "03",
+    title: "Rubric-Based Assessment",
+    desc: "Structured evaluation through configurable criteria and weighted scoring.",
+    icon: BarChart3,
+    screenshot: "/screenshots/aurora_workspace_grading.jpg",
+    details: "Institutional rubric templates with weighted percentages, passing standards, and qualitative remarks.",
   },
-  { 
-    title: "Research Coordinator", 
-    desc: "Configures college rubric templates, manages defense calendar schedules, assigns panel chairs and panelists, and audits score consensus deviations." 
+  {
+    num: "04",
+    title: "Automated Scoring",
+    desc: "Automatic computation of evaluation scores based on configured rubrics.",
+    icon: Layers,
+    screenshot: "/screenshots/aurora_workspace_grading.jpg",
+    details: "Real-time weighted score calculation, statistical consensus deviations, and panel consensus tracking.",
   },
-  { 
-    title: "College Dean", 
-    desc: "Monitors cross-departmental defense analytics, completion rates, and institutional compliance reports across all college academic programs." 
+  {
+    num: "05",
+    title: "Revision Tracking",
+    desc: "Organized manuscript versions and revision history.",
+    icon: History,
+    screenshot: "/screenshots/aurora_dashboard.jpg",
+    details: "Side-by-side manuscript version comparisons and 'Addressed' state verification for student revisions.",
   },
-  { 
-    title: "System Administrator", 
-    desc: "Manages user role assignments, institutional security policies, defense stage progression templates, and tamper-proof audit trail logs." 
-  }
+  {
+    num: "06",
+    title: "Defense Scheduling",
+    desc: "Centralized scheduling, panel assignments, and workflow coordination.",
+    icon: Calendar,
+    screenshot: "/screenshots/aurora_scheduler.jpg",
+    details: "Room designation, multi-day calendar batch grids, conflict checks, and persistent session links.",
+  },
+  {
+    num: "07",
+    title: "Analytics and Accountability",
+    desc: "Institutional reporting, activity monitoring, and audit trails.",
+    icon: ShieldCheck,
+    screenshot: "/screenshots/aurora_dashboard.jpg",
+    details: "ISO 25010 operational telemetry, dean-level throughput graphs, and immutable activity audit logs.",
+  },
 ];
 
-export default function HomePage() {
-  const { resolvedTheme, toggleTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const { scrollY } = useScroll();
-  const [mounted, setMounted] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    setMounted(true);
-    // Subtle, minimalist Apple/Linear entrance transition on initial load
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 900);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const headerBg = useTransform(
-    scrollY,
-    [0, 100],
-    ["rgba(var(--background), 0)", "rgba(var(--card), 0.8)"]
-  );
-
-  const headerBorder = useTransform(
-    scrollY,
-    [0, 100],
-    ["rgba(var(--border), 0)", "rgba(var(--border), 1)"]
-  );
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
-  };
-
-  if (!mounted) return null;
+export default function AuroraMasterLandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeWorkspaceView, setActiveWorkspaceView] = useState<"split" | "grading">("split");
 
   return (
-    <>
-      <AnimatePresence>
-        {showSplash && (
-          <motion.div
-            key="aurora-landing-splash"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="fixed inset-0 z-[9999]"
-          >
-            <AuroraLoader fullscreen={true} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-[#050505] text-[#F5F5F5] antialiased selection:bg-blue-600 selection:text-white font-sans overflow-x-hidden">
+      
+      {/* =========================================================================
+          SECTION A — MINIMALIST NAVIGATION BAR
+      ========================================================================= */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-md border-b border-[#252525] transition-colors">
+        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
+          
+          {/* Left: Geometric A Symbol + Wordmark */}
+          <Link href="/" className="flex items-center gap-3.5 group select-none">
+            <div className="relative h-8 w-8 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+              <Image
+                src="/aurora-symbol-transparent.png"
+                alt="AURORA A Symbol"
+                width={32}
+                height={32}
+                priority
+                className="object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-[0.25em] uppercase font-display text-[#F5F5F5]">
+                AURORA
+              </span>
+              <span className="text-[9px] font-medium tracking-wider text-[#929292] uppercase">
+                Partido State University
+              </span>
+            </div>
+          </Link>
 
-      <main className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased font-sans flex flex-col overflow-hidden">
-        {/* Dynamic Header */}
-        <motion.header 
-          style={{ backgroundColor: headerBg, borderColor: headerBorder }}
-          className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-colors duration-200"
-        >
-          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <AuroraLogo size="md" showText={true} textColor="text-foreground" />
+          {/* Center/Right: Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#overview" className="text-xs font-medium text-[#929292] hover:text-[#F5F5F5] transition-colors">
+              Overview
+            </a>
+            <a href="#platform" className="text-xs font-medium text-[#929292] hover:text-[#F5F5F5] transition-colors">
+              Platform
+            </a>
+            <a href="#workflow" className="text-xs font-medium text-[#929292] hover:text-[#F5F5F5] transition-colors">
+              Academic Workflow
+            </a>
+            <a href="#about" className="text-xs font-medium text-[#929292] hover:text-[#F5F5F5] transition-colors">
+              About
+            </a>
+
+            <div className="h-4 w-px bg-[#252525]" />
+
+            <Link
+              href="/verify"
+              className="text-xs font-medium text-[#929292] hover:text-[#F5F5F5] transition-colors"
+            >
+              Verify
             </Link>
 
-            <div className="flex items-center gap-4">
-              <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                <a href="#features" className="hover:text-primary transition-colors">Features</a>
-                <a href="#workflow" className="hover:text-primary transition-colors">Workflow</a>
-                <a href="#roles" className="hover:text-primary transition-colors">Roles</a>
-                <a href="#faq" className="hover:text-primary transition-colors">FAQ</a>
-              </nav>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#F5F5F5] text-[#050505] text-xs font-semibold hover:bg-white transition-all duration-200 shadow-sm"
+            >
+              Sign In
+            </Link>
+          </div>
 
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleTheme}
-                className="p-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
-                aria-label="Toggle Theme"
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg text-[#929292] hover:text-[#F5F5F5] hover:bg-[#0A0A0A] border border-[#252525]"
+            aria-label="Toggle navigation"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+
+        {/* Mobile Dropdown Panel */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden bg-[#0A0A0A] border-b border-[#252525] px-6 py-4 space-y-3"
+            >
+              <a
+                href="#overview"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-medium text-[#929292] hover:text-[#F5F5F5] py-1"
               >
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </motion.button>
-
-              <Link href="/login">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all duration-200"
-                >
-                  Portal Login
-                </motion.div>
+                Overview
+              </a>
+              <a
+                href="#platform"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-medium text-[#929292] hover:text-[#F5F5F5] py-1"
+              >
+                Platform
+              </a>
+              <a
+                href="#workflow"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-medium text-[#929292] hover:text-[#F5F5F5] py-1"
+              >
+                Academic Workflow
+              </a>
+              <a
+                href="#about"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-medium text-[#929292] hover:text-[#F5F5F5] py-1"
+              >
+                About
+              </a>
+              <Link
+                href="/verify"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-medium text-[#929292] hover:text-[#F5F5F5] py-1"
+              >
+                Public Certificate Verification
               </Link>
+              <div className="pt-2 border-t border-[#252525]">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-[#F5F5F5] text-[#050505] text-xs font-semibold"
+                >
+                  Sign In to Portal
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* =========================================================================
+          SECTION B — HERO EXPERIENCE
+          Centerpiece: Large centered A symbol + Editorial Typography + CTAs
+      ========================================================================= */}
+      <section className="relative min-h-[92vh] pt-32 pb-24 px-6 flex flex-col items-center justify-center text-center overflow-hidden border-b border-[#252525]">
+        
+        {/* Subtle architectural ambient background grid */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, #F5F5F5 1px, transparent 0)`,
+            backgroundSize: "32px 32px",
+          }}
+        />
+
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center space-y-8">
+          
+          {/* Restrained Eyebrow */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#252525] bg-[#0A0A0A] text-[11px] font-semibold uppercase tracking-widest text-[#929292]"
+          >
+            <span>{INSTITUTION_CAMPUS}</span>
+          </motion.div>
+
+          {/* THE OFFICIAL GEOMETRIC A SYMBOL — THE CENTERPIECE */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+            className="relative h-28 w-28 sm:h-36 sm:w-36 flex items-center justify-center my-2"
+          >
+            <Image
+              src="/aurora-symbol-transparent.png"
+              alt="Official AURORA Geometric Symbol"
+              width={144}
+              height={144}
+              priority
+              className="object-contain drop-shadow-[0_4px_24px_rgba(255,255,255,0.08)] select-none"
+            />
+          </motion.div>
+
+          {/* AURORA Wordmark */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-1.5"
+          >
+            <h2 className="text-sm font-bold tracking-[0.35em] uppercase font-display text-[#F5F5F5]">
+              AURORA
+            </h2>
+            <p className="text-[11px] font-medium text-[#929292] uppercase tracking-wider">
+              {APP_ACRONYM_MEANING}
+            </p>
+          </motion.div>
+
+          {/* Main Editorial Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-[#F5F5F5] font-display max-w-3xl"
+          >
+            Every Defense.
+            <br />
+            One Unified Experience.
+          </motion.h1>
+
+          {/* Concise Supporting Description */}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-sm sm:text-base text-[#929292] max-w-2xl mx-auto font-normal leading-relaxed"
+          >
+            Bringing research, capstone, thesis, and dissertation defense workflows into one connected digital platform.
+          </motion.p>
+
+          {/* Clear Calls to Action */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center gap-4 pt-2"
+          >
+            <Link
+              href="/login"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#F5F5F5] text-[#050505] text-xs font-bold hover:bg-white transition-all shadow-md group cursor-pointer"
+            >
+              <span>Access AURORA</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <a
+              href="#overview"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-[#252525] bg-[#0A0A0A] hover:bg-[#141414] text-[#929292] hover:text-[#F5F5F5] text-xs font-semibold transition-all cursor-pointer"
+            >
+              Explore the Platform
+            </a>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION C — THE PURPOSE (THE CHALLENGE)
+          Minimalist Editorial Columns
+      ========================================================================= */}
+      <section id="overview" className="py-28 px-6 border-b border-[#252525] bg-[#050505]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="space-y-4 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              The Challenge
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+              Academic excellence shouldn&apos;t be slowed down by paperwork.
+            </h2>
+            <p className="text-sm text-[#929292] leading-relaxed">
+              Academic defenses involve students, advisers, panelists, and administrators working through manuscripts, evaluations, schedules, and revisions. When these processes remain fragmented across physical documents and manual procedures, valuable time and resources are lost.
+            </p>
+          </div>
+
+          {/* Three Minimalist Editorial Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+            
+            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-[#252525] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#929292] font-mono">
+                01 — Problem
+              </span>
+              <h3 className="text-base font-bold text-[#F5F5F5]">
+                Fragmented Processes
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Manuscripts, evaluation forms, schedules, and feedback are handled through disconnected processes across physical folders and emails.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-[#252525] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#929292] font-mono">
+                02 — Problem
+              </span>
+              <h3 className="text-base font-bold text-[#F5F5F5]">
+                Delayed Feedback
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Manual evaluation and scattered revision records make academic progress difficult to monitor, causing administrative latency for students.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-[#252525] space-y-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#929292] font-mono">
+                03 — Problem
+              </span>
+              <h3 className="text-base font-bold text-[#F5F5F5]">
+                Administrative Complexity
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Coordinating panelists, defense schedules, evaluations, and academic records creates unnecessary administrative work for coordinators and deans.
+              </p>
             </div>
           </div>
-        </motion.header>
 
-      {/* Hero Section */}
-      <section className="relative mx-auto max-w-5xl px-6 pt-32 pb-20 text-center flex flex-col items-center space-y-8 min-h-screen justify-center">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
-        
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 shadow-sm flex flex-wrap items-center justify-center gap-1.5"
-        >
-          <span>{INSTITUTION}</span>
-          <span className="opacity-40">•</span>
-          <span>AURORA: {APP_ACRONYM_MEANING}</span>
-        </motion.div>
-        
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground font-display"
-        >
-          Paperless Academic Defense
-          <br />
-          <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Workflow System
-          </span>
-        </motion.h1>
-        
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mx-auto max-w-3xl text-sm sm:text-base text-muted-foreground font-medium leading-relaxed"
-        >
-          A unified paperless workflow platform for <strong>Research, Capstone, Thesis &amp; Dissertation Papers</strong> at <strong>Partido State University</strong>. Streamlining manuscript submissions, adviser approval gates, rubrics-based grading, and cryptographically verified defense certifications.
-        </motion.p>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-wrap justify-center gap-4 pt-4"
-        >
-          <Link href="/login">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-200 group"
-            >
-              Enter Portal Dashboard
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </motion.div>
-          </Link>
-          <Link href="/verify">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-4 text-sm font-bold hover:bg-muted transition-all duration-200"
-            >
-              Verify Certificates
-            </motion.div>
-          </Link>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce"
-        >
-          <ChevronDown className="h-6 w-6 text-muted-foreground" />
-        </motion.div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-muted/30">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center max-w-md mx-auto mb-16 space-y-2">
-            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Platform Features</h2>
-            <p className="text-sm text-muted-foreground font-medium">Advanced software design eliminating paperwork and administrative latency</p>
+          {/* Editorial Transition */}
+          <div className="pt-6 border-t border-[#252525] flex items-center justify-between">
+            <p className="text-xs font-bold text-[#F5F5F5] uppercase tracking-wider">
+              AURORA brings these processes together.
+            </p>
+            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
           </div>
-
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {features.map((feature) => (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                whileHover={{ y: -5, borderColor: "hsl(var(--primary))" }}
-                className="rounded-2xl border border-border bg-card p-6 transition-colors shadow-sm h-full flex flex-col"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-6">
-                  <feature.icon className="h-6 w-6" />
-                </div>
-                <h3 className="font-bold text-foreground text-base tracking-tight mb-3">{feature.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed font-medium mt-auto">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
-      {/* Workflow Timeline */}
-      <section id="workflow" className="py-24 border-y border-border bg-background">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center max-w-md mx-auto mb-16 space-y-2">
-            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Paperless Defense Workflow</h2>
-            <p className="text-sm text-muted-foreground font-medium">Stage-by-stage progression from submission to institutional verification</p>
+      {/* =========================================================================
+          SECTION D — THE AURORA ECOSYSTEM
+          Six Interconnected Stakeholders
+      ========================================================================= */}
+      <section id="platform" className="py-28 px-6 border-b border-[#252525] bg-[#0A0A0A]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="space-y-3 max-w-xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              The Architecture
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+              One platform.
+              <br />
+              Every academic stakeholder.
+            </h2>
+            <p className="text-xs text-[#929292] leading-relaxed">
+              Enforcing academic separation of duties across all six institutional roles in a unified, synchronized docket.
+            </p>
           </div>
 
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid gap-6 md:grid-cols-5 relative"
-          >
-            <div className="absolute top-[28px] left-8 right-8 h-0.5 bg-border hidden md:block -z-10" />
+          {/* 6 Stakeholder Roles Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {ECOSYSTEM_ROLES.map((role) => {
+              const Icon = role.icon;
+              return (
+                <div
+                  key={role.id}
+                  className="p-7 rounded-2xl bg-[#050505] border border-[#252525] flex flex-col justify-between space-y-5 transition-all hover:border-[#383838]"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-9 w-9 rounded-xl bg-[#0A0A0A] border border-[#252525] flex items-center justify-center text-[#F5F5F5]">
+                        <Icon className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <span className="text-[10px] font-mono uppercase text-[#929292]">
+                        {role.subtitle}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-[#F5F5F5]">
+                      {role.title}
+                    </h3>
+
+                    <p className="text-xs text-[#929292] leading-relaxed">
+                      {role.desc}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#1F1F1F]">
+                    <span className="text-[10px] font-mono text-[#929292] block truncate">
+                      {role.metrics}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION E — THE ACADEMIC DEFENSE JOURNEY
+          Five Academic Defense Stages Timeline
+      ========================================================================= */}
+      <section id="workflow" className="py-28 px-6 border-b border-[#252525] bg-[#050505]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="space-y-3 max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+                Defense Lifecycle
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+                From initial proposal to final approval.
+              </h2>
+            </div>
             
+            {/* Visual Anchor: Geometric A Symbol Motif */}
+            <div className="h-10 w-10 flex items-center justify-center opacity-60">
+              <Image
+                src="/aurora-symbol-transparent.png"
+                alt="A Symbol Anchor"
+                width={36}
+                height={36}
+                className="object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Horizontal Timeline (Desktop) & Vertical (Mobile) */}
+          <div className="relative">
+            {/* Connecting subtle progression line */}
+            <div className="hidden lg:block absolute top-7 left-6 right-6 h-px bg-[#252525] -z-0" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 relative z-10">
+              {DEFENSE_STAGES.map((stg) => (
+                <div
+                  key={stg.step}
+                  className="p-6 rounded-2xl bg-[#0A0A0A] border border-[#252525] flex flex-col justify-between space-y-4 hover:border-[#383838] transition-colors"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-7 w-7 rounded-full bg-[#050505] border border-[#252525] flex items-center justify-center text-[10px] font-bold text-blue-500 font-mono">
+                        {stg.step}
+                      </div>
+                      <span className="text-[9px] font-mono text-[#929292] uppercase">
+                        Stage {stg.step}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-[#F5F5F5]">
+                      {stg.name}
+                    </h3>
+
+                    <p className="text-xs text-[#929292] leading-relaxed">
+                      {stg.desc}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#1F1F1F]">
+                    <span className="text-[10px] font-medium text-blue-400 block truncate">
+                      {stg.deliverable}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION F — FLAGSHIP INNOVATION: SPLIT-SCREEN WORKSPACE
+          The Signature Experience (Actual Screenshot Showcase)
+      ========================================================================= */}
+      <section className="py-28 px-6 border-b border-[#252525] bg-[#0A0A0A]">
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          <div className="space-y-4 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              The Signature Experience
+            </p>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-[#F5F5F5] font-display">
+              Review and evaluate.
+              <br />
+              Without switching contexts.
+            </h2>
+            <p className="text-sm text-[#929292] leading-relaxed">
+              AURORA&apos;s split-screen annotation workspace allows panelists to examine manuscripts while simultaneously completing rubric-based evaluations in one integrated interface.
+            </p>
+          </div>
+
+          {/* Interactive Mode Toggle for the Genuine Showcase */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveWorkspaceView("split")}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeWorkspaceView === "split"
+                  ? "bg-[#F5F5F5] text-[#050505]"
+                  : "bg-[#050505] text-[#929292] border border-[#252525] hover:text-[#F5F5F5]"
+              }`}
+            >
+              1. Split-Screen Review & Endorsement
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveWorkspaceView("grading")}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeWorkspaceView === "grading"
+                  ? "bg-[#F5F5F5] text-[#050505]"
+                  : "bg-[#050505] text-[#929292] border border-[#252525] hover:text-[#F5F5F5]"
+              }`}
+            >
+              2. Section IV Rubric Grading Panel
+            </button>
+          </div>
+
+          {/* Genuine Screenshot Display Container */}
+          <div className="relative rounded-2xl border border-[#252525] bg-[#050505] p-2.5 sm:p-4 overflow-hidden shadow-2xl">
+            <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-950 border border-[#1A1A1A]">
+              <Image
+                src={
+                  activeWorkspaceView === "split"
+                    ? "/screenshots/aurora_workspace_split_screen.jpg"
+                    : "/screenshots/aurora_workspace_grading.jpg"
+                }
+                alt="AURORA Split-Screen Review & Grading Workspace"
+                fill
+                priority
+                className="object-cover object-top transition-all duration-300"
+              />
+            </div>
+
+            {/* Showcase Caption */}
+            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-[#929292] px-2 gap-2">
+              <span className="font-mono text-[11px]">
+                {activeWorkspaceView === "split"
+                  ? "Live Interface: Split-screen PDF manuscript review with active adviser endorsement gate"
+                  : "Live Interface: Section IV dynamic weighted rubric scoring with automated score computation"}
+              </span>
+              <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">
+                Production Artifact • Partido State University
+              </span>
+            </div>
+          </div>
+
+          {/* Key Architectural Elements Highlighted */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-4">
             {[
-              { num: "01", step: "Manuscript Submit", desc: "Students upload PDF manuscript; versioning tree tracks iterative drafts." },
-              { num: "02", step: "Adviser Endorsement", desc: "Adviser annotates paperlessly and approves defense gate eligibility." },
-              { num: "03", step: "Defense Scheduling", desc: "Coordinators assign panel chair, panelists, schedule date, time, and venue." },
-              { num: "04", step: "Evaluation & Sign", desc: "Panelists score weighted rubrics, provide digital signature, and submit verdict." },
-              { num: "05", step: "Public Verification", desc: "Postgres trigger locks record; minted serial verified via QR code and /verify." }
-            ].map((s, idx) => (
-              <motion.div 
-                key={idx} 
-                variants={itemVariants}
-                className="bg-card border border-border p-6 rounded-2xl flex flex-col items-center text-center space-y-4 shadow-sm hover:border-primary/50 transition-colors"
+              "Manuscript Viewing",
+              "Inline Digital Annotations",
+              "Contextual Feedback",
+              "Evaluation Rubrics",
+              "Automated Score Computation",
+            ].map((feature, i) => (
+              <div
+                key={feature}
+                className="p-4 rounded-xl bg-[#050505] border border-[#252525] space-y-1 text-center sm:text-left"
               >
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-black text-lg shadow-lg">
-                  {s.num}
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-bold text-sm uppercase text-foreground">{s.step}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
-                </div>
-              </motion.div>
+                <span className="text-[9px] font-mono text-blue-500 font-bold">0{i + 1}</span>
+                <p className="text-xs font-bold text-[#F5F5F5] leading-snug">{feature}</p>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Roles Breakdown */}
-      <section id="roles" className="py-24 bg-muted/30">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-center max-w-md mx-auto mb-16 space-y-2">
-            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Role-Based Access</h2>
-            <p className="text-sm text-muted-foreground font-medium">Six institutional roles enforcing academic separation of duties</p>
+      {/* =========================================================================
+          SECTION G — CORE CAPABILITIES
+          7 Capabilities in Editorial Alternating Format
+      ========================================================================= */}
+      <section className="py-28 px-6 border-b border-[#252525] bg-[#050505]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="space-y-3 max-w-xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              System Capabilities
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+              Everything connected.
+              <br />
+              Nothing scattered.
+            </h2>
           </div>
 
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid gap-4 sm:grid-cols-2"
-          >
-            {roles.map((r, i) => (
-              <motion.div 
-                key={i} 
-                variants={itemVariants}
-                whileHover={{ scale: 1.02 }}
-                className="bg-card border border-border p-6 rounded-2xl shadow-sm flex gap-4 items-start"
-              >
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Users className="h-5 w-5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {CORE_CAPABILITIES.map((cap) => {
+              const Icon = cap.icon;
+              return (
+                <div
+                  key={cap.num}
+                  className="p-7 rounded-2xl bg-[#0A0A0A] border border-[#252525] flex flex-col justify-between space-y-6 hover:border-[#383838] transition-colors"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-blue-500">
+                        {cap.num}
+                      </span>
+                      <Icon className="h-4 w-4 text-[#929292]" />
+                    </div>
+
+                    <h3 className="text-base font-bold text-[#F5F5F5]">
+                      {cap.title}
+                    </h3>
+
+                    <p className="text-xs text-[#F5F5F5]/80 font-medium leading-relaxed">
+                      {cap.desc}
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] text-[#929292] leading-relaxed pt-4 border-t border-[#1F1F1F]">
+                    {cap.details}
+                  </p>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-foreground mb-1">{r.title}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{r.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-24 bg-background border-t border-border">
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="text-center max-w-md mx-auto mb-16 space-y-2">
-            <h2 className="text-3xl font-black text-foreground uppercase tracking-tight font-display">Frequently Asked Questions</h2>
-            <p className="text-sm text-muted-foreground font-medium">Answers regarding database compliance and security parameters</p>
+      {/* =========================================================================
+          SECTION H — PAPERLESS BY DESIGN
+          Responsible Academic Workflow & Sustainability
+      ========================================================================= */}
+      <section className="py-28 px-6 border-b border-[#252525] bg-[#0A0A0A]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="space-y-4 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              A More Responsible Academic Workflow
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+              Less paper. More progress.
+            </h2>
+            <p className="text-sm text-[#929292] leading-relaxed">
+              By digitizing manuscript submissions, evaluations, and academic records, AURORA supports more sustainable and organized academic defense processes aligned with Partido State University&apos;s institutional Green IT goals.
+            </p>
           </div>
 
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="space-y-4"
-          >
-            {faqs.map((faq, idx) => (
-              <motion.div 
-                key={idx} 
-                variants={itemVariants}
-                className="bg-card border border-border p-6 rounded-2xl shadow-sm"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-2xl bg-[#050505] border border-[#252525] space-y-3">
+              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <h3 className="text-sm font-bold text-[#F5F5F5]">
+                Reduced Printed Manuscripts
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Eliminates the logistical burden of printing multiple reams of draft papers per stage for defense panelists and advisers.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-[#050505] border border-[#252525] space-y-3">
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <h3 className="text-sm font-bold text-[#F5F5F5]">
+                Centralized Academic Records
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Retains tamper-evident digital records of evaluation forms, weighted score sheets, and signed verdict certificates in one cloud repository.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-[#050505] border border-[#252525] space-y-3">
+              <div className="h-2 w-2 rounded-full bg-indigo-500" />
+              <h3 className="text-sm font-bold text-[#F5F5F5]">
+                Accessible Digital Feedback
+              </h3>
+              <p className="text-xs text-[#929292] leading-relaxed">
+                Provides researchers instant access to persistent annotations, comments, and directives directly anchored to their manuscript pages.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION I — INSTITUTIONAL COVERAGE
+          The Five Constituent Colleges
+      ========================================================================= */}
+      <section id="about" className="py-28 px-6 border-b border-[#252525] bg-[#050505]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          
+          <div className="space-y-4 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+              Institutional Reach
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F5F5F5] font-display">
+              One university. Five colleges.
+              <br />
+              A connected academic process.
+            </h2>
+            <p className="text-sm text-[#929292] leading-relaxed">
+              Configured specifically for the academic programs of Partido State University – Goa Campus, with isolated college coordination and dean dockets.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {COLLEGES.map((col) => (
+              <div
+                key={col.code}
+                className="p-7 rounded-2xl bg-[#0A0A0A] border border-[#252525] flex flex-col justify-between space-y-5"
               >
-                <h3 className="font-bold text-sm uppercase text-foreground flex items-center gap-3">
-                  <HelpCircle className="h-5 w-5 text-primary shrink-0" />
-                  {faq.q}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-blue-500">
+                      {col.code}
+                    </span>
+                    <span className="text-[10px] uppercase font-mono text-[#929292]">
+                      Goa Campus
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-[#F5F5F5]">
+                    {col.name}
+                  </h3>
+
+                  <p className="text-xs text-[#929292] leading-relaxed">
+                    {col.desc}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-[#1F1F1F] space-y-1">
+                  <p className="text-[10px] font-mono text-[#929292] uppercase">Key Programs</p>
+                  <p className="text-[11px] text-[#F5F5F5] font-medium truncate">
+                    {col.programs.join(" • ")}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* University Summary Box */}
+            <div className="p-7 rounded-2xl bg-[#0A0A0A] border border-blue-500/20 flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <span className="text-xs font-mono font-bold text-blue-400">
+                  PARSU · GOA
+                </span>
+                <h3 className="text-base font-bold text-[#F5F5F5]">
+                  {INSTITUTION}
                 </h3>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed font-medium pl-8">
-                  {faq.a}
+                <p className="text-xs text-[#929292] leading-relaxed">
+                  San Juan Bautista, Goa, Camarines Sur, Philippines 4422. Official research docket and academic defense system.
                 </p>
-              </motion.div>
-            ))}
-          </motion.div>
+              </div>
+
+              <div className="pt-4 border-t border-[#1F1F1F]">
+                <Link
+                  href="/verify"
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1.5"
+                >
+                  <span>Public Accreditation Portal</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card py-12 mt-auto">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground font-bold uppercase tracking-wider">
-          <div className="flex items-center gap-2">
-            <AuroraLogo size="sm" showText={true} textColor="text-foreground" />
+      {/* =========================================================================
+          SECTION J — FINAL CALL TO ACTION & MINIMAL FOOTER
+      ========================================================================= */}
+      <section className="py-28 px-6 bg-[#0A0A0A] border-b border-[#252525]">
+        <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-8">
+          
+          {/* Centered Geometric A Symbol */}
+          <div className="relative h-20 w-20 flex items-center justify-center">
+            <Image
+              src="/aurora-symbol-transparent.png"
+              alt="AURORA A Symbol"
+              width={80}
+              height={80}
+              className="object-contain"
+            />
           </div>
-          <span>© {new Date().getFullYear()} {INSTITUTION}. All rights reserved.</span>
+
+          <div className="space-y-3">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-[#F5F5F5] font-display">
+              Your academic journey.
+              <br />
+              A clearer way forward.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#929292] max-w-lg mx-auto leading-relaxed">
+              From concept defense to final approval, bring every academic defense process into one connected experience.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#F5F5F5] text-[#050505] text-xs font-bold hover:bg-white transition-all shadow-md group cursor-pointer"
+            >
+              <span>Enter AURORA</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <Link
+              href="/verify"
+              className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-[#252525] bg-[#050505] hover:bg-[#141414] text-[#929292] hover:text-[#F5F5F5] text-xs font-semibold transition-all cursor-pointer"
+            >
+              Verify Certificate
+            </Link>
+          </div>
+
+          <p className="text-[11px] font-mono text-[#929292] tracking-wider uppercase pt-4">
+            {INSTITUTION_CAMPUS}
+          </p>
+        </div>
+      </section>
+
+      {/* Minimal Editorial Footer */}
+      <footer className="py-12 px-6 bg-[#050505] text-xs text-[#929292]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          {/* Brand Left */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/aurora-symbol-transparent.png"
+              alt="AURORA Symbol"
+              width={20}
+              height={20}
+              className="object-contain opacity-70"
+            />
+            <span className="text-xs font-bold tracking-widest uppercase text-[#F5F5F5]">
+              AURORA
+            </span>
+            <span className="text-[10px] text-[#929292] font-mono">
+              • {APP_FULL_NAME}
+            </span>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex items-center gap-6 text-[11px]">
+            <a href="#overview" className="hover:text-[#F5F5F5] transition-colors">Overview</a>
+            <a href="#platform" className="hover:text-[#F5F5F5] transition-colors">Platform</a>
+            <a href="#workflow" className="hover:text-[#F5F5F5] transition-colors">Workflow</a>
+            <Link href="/verify" className="hover:text-[#F5F5F5] transition-colors">Verification</Link>
+            <Link href="/login" className="hover:text-[#F5F5F5] transition-colors">Sign In</Link>
+          </div>
+
+          {/* Copyright & Institution */}
+          <div className="text-center md:text-right text-[10px] text-[#929292]">
+            &copy; {new Date().getFullYear()} Partido State University. All rights reserved.
+          </div>
         </div>
       </footer>
-    </main>
-    </>
+    </div>
   );
 }
