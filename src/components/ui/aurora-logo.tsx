@@ -13,7 +13,6 @@ interface AuroraLogoProps {
   textColor?: string;
   subtext?: string;
   title?: string;
-  useHeroImage?: boolean;
 }
 
 const SIZE_MAP = {
@@ -30,15 +29,12 @@ export function AuroraLogo({
   textColor = "text-white",
   subtext,
   title,
-  useHeroImage = true,
 }: AuroraLogoProps) {
   const [imageError, setImageError] = useState(false);
 
   const dimension = typeof size === "number" ? size : SIZE_MAP[size].px;
   const iconClass = typeof size === "number" ? "h-5 w-5" : SIZE_MAP[size].iconSize;
   const tooltipText = title ?? `AURORA — ${APP_ACRONYM_MEANING}`;
-
-  const imageSrc = useHeroImage && !imageError ? "/aurora-hero-logo.jpg" : "/logo.png";
 
   return (
     <div
@@ -47,20 +43,20 @@ export function AuroraLogo({
     >
       <div
         style={{ width: dimension, height: dimension }}
-        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-950 border border-emerald-500/30 shadow-md transition-all hover:border-emerald-400"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-sm transition-all"
       >
         {!imageError ? (
           <Image
-            src={imageSrc}
+            src="/logo.png"
             alt="AURORA Logo"
             width={dimension}
             height={dimension}
-            className="h-full w-full object-cover scale-105"
+            className="h-full w-full object-contain"
             onError={() => setImageError(true)}
             priority
           />
         ) : (
-          <Sparkles className={cn(iconClass, "text-emerald-400")} />
+          <Sparkles className={cn(iconClass, "text-white")} />
         )}
       </div>
 
