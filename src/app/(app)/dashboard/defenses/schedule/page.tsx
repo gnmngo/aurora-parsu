@@ -98,6 +98,7 @@ export default function SchedulePage() {
   const [bufferMinutes, setBufferMinutes] = useState(15);
 
   const [batchPanelists, setBatchPanelists] = useState<string[]>([]);
+  const [batchChairmanId, setBatchChairmanId] = useState<string>("");
   const [candidates, setCandidates] = useState<BatchCandidateProject[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
@@ -609,6 +610,7 @@ export default function SchedulePage() {
         isOnline: batchIsOnline,
         meetingUrl: batchIsOnline ? batchMeetingUrl : undefined,
         panelistIds: batchPanelists,
+        chairmanId: batchChairmanId || batchPanelists[0],
         allocations,
         allowPendingAdviserApproval: true,
       });
@@ -1191,7 +1193,12 @@ export default function SchedulePage() {
                           className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
                         />
                         <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-                          <span className="text-[11px] block">{fac.name}</span>
+                          <span className="text-[11px] block">
+                            {fac.name}
+                            {profile?.id === fac.profile_id && (
+                              <span className="text-primary font-bold ml-1 text-[10px]">(You / Coordinator)</span>
+                            )}
+                          </span>
                           <span className="text-[9px] text-muted-foreground block truncate">
                             {fac.department || fac.email}
                           </span>
@@ -1213,6 +1220,33 @@ export default function SchedulePage() {
                   );
                 })}
               </div>
+
+              {batchPanelists.length > 0 && (
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-foreground block">Appoint Defense Committee Chairman</span>
+                      <span className="text-[10px] text-muted-foreground">The designated Chairman facilitates the deliberation session and is authorized to customize rubric grading criteria.</span>
+                    </div>
+                  </div>
+                  <select
+                    value={batchChairmanId || batchPanelists[0]}
+                    onChange={(e) => setBatchChairmanId(e.target.value)}
+                    className="h-8 rounded-lg border border-amber-500/30 bg-card px-2.5 text-xs font-bold text-amber-700 dark:text-amber-300 focus:ring-1 focus:ring-amber-500"
+                  >
+                    {batchPanelists.map((pid) => {
+                      const fac = facultyList.find((f) => f.profile_id === pid);
+                      const isSelf = profile?.id === pid;
+                      return (
+                        <option key={pid} value={pid}>
+                          👑 {fac?.name || "Faculty Member"} {isSelf ? "(You / Coordinator)" : ""} (Chairman)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1725,7 +1759,12 @@ export default function SchedulePage() {
                         onChange={() => handleSinglePanelistToggle(fac.profile_id)}
                         className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                       />
-                      <span className="text-[11px] font-medium text-foreground">{fac.name}</span>
+                      <span className="text-[11px] font-medium text-foreground">
+                        {fac.name}
+                        {profile?.id === fac.profile_id && (
+                          <span className="text-primary font-bold ml-1 text-[10px]">(You / Coordinator)</span>
+                        )}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -1746,9 +1785,10 @@ export default function SchedulePage() {
                     >
                       {singlePanelists.map((pid) => {
                         const fac = facultyList.find((f) => f.profile_id === pid);
+                        const isSelf = profile?.id === pid;
                         return (
                           <option key={pid} value={pid}>
-                            👑 {fac?.name || "Faculty Member"} (Chairman)
+                            👑 {fac?.name || "Faculty Member"} {isSelf ? "(You / Coordinator)" : ""} (Chairman)
                           </option>
                         );
                       })}

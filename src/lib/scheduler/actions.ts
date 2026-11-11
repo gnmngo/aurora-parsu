@@ -780,6 +780,7 @@ export interface BatchScheduleInput {
   isOnline: boolean;
   meetingUrl?: string;
   panelistIds: string[];
+  chairmanId?: string;
   allocations: BatchScheduleSlotAllocation[];
   allowPendingAdviserApproval?: boolean;
 }
@@ -1123,7 +1124,13 @@ export async function batchScheduleDefensesAction(input: BatchScheduleInput) {
         project_id: alloc.projectId,
         stage_id: alloc.stageId,
         profile_id: pid,
-        panel_role: (idx === 0 ? ("chair" as const) : ("member" as const)),
+        panel_role: input.chairmanId
+          ? pid === input.chairmanId
+            ? ("chair" as const)
+            : ("member" as const)
+          : idx === 0
+          ? ("chair" as const)
+          : ("member" as const),
         assigned_by: user.id,
       }));
 

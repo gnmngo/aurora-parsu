@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { updateDefenseScheduleAction } from "@/lib/scheduler/actions";
 import { getApprovedFacultyListAction, type FacultyOptionItem } from "@/lib/projects/actions";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 interface RescheduleDefenseModalProps {
   open: boolean;
@@ -69,6 +70,7 @@ export function RescheduleDefenseModal({
   schedule,
   onRescheduled,
 }: RescheduleDefenseModalProps) {
+  const { profile } = useAuth();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(60);
@@ -420,7 +422,12 @@ export function RescheduleDefenseModal({
                       onChange={() => handlePanelistToggle(fac.profile_id)}
                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                     />
-                    <span className="font-medium text-foreground truncate">{fac.name}</span>
+                    <span className="font-medium text-foreground truncate">
+                      {fac.name}
+                      {profile?.id === fac.profile_id && (
+                        <span className="text-primary font-bold ml-1 text-[10px]">(You / Coordinator)</span>
+                      )}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -442,9 +449,10 @@ export function RescheduleDefenseModal({
                 >
                   {selectedPanelists.map((pid) => {
                     const fac = facultyList.find((f) => f.profile_id === pid);
+                    const isSelf = profile?.id === pid;
                     return (
                       <option key={pid} value={pid}>
-                        👑 {fac?.name || "Faculty Member"} (Chairman)
+                        👑 {fac?.name || "Faculty Member"} {isSelf ? "(You / Coordinator)" : ""} (Chairman)
                       </option>
                     );
                   })}
