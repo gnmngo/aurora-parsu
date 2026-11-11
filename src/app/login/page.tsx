@@ -177,6 +177,7 @@ function LoginForm() {
   // Safe redirect only after session and profile are fully resolved
   useEffect(() => {
     if (!authLoading && session && profile) {
+      stopLoading();
       const redirectTo = searchParams.get("redirect");
       const safePath =
         redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
@@ -184,7 +185,7 @@ function LoginForm() {
           : "/dashboard";
       router.replace(safePath);
     }
-  }, [session, profile, authLoading, router, searchParams]);
+  }, [session, profile, authLoading, router, searchParams, stopLoading]);
 
   // Handle errors passed in URL
   useEffect(() => {
@@ -242,6 +243,7 @@ function LoginForm() {
         return;
       }
 
+      stopLoading();
       toast.success("Login successful! Entering AURORA Portal...");
     } catch (err: any) {
       stopLoading();
@@ -333,6 +335,8 @@ function LoginForm() {
         setPassword(cleanRegPassword);
         setActiveTab("signin");
         toast.info("Account created. Please sign in with your credentials.");
+      } else {
+        stopLoading();
       }
     } catch (err: unknown) {
       stopLoading();
@@ -423,6 +427,7 @@ function LoginForm() {
         localStorage.setItem("aurora_active_role", targetRole);
       }
 
+      stopLoading();
       toast.success(`Logged in as ${roleType}`);
     } catch (err: any) {
       stopLoading();

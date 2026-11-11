@@ -130,6 +130,7 @@ interface AuroraLoaderProps {
   showBrandText?: boolean;
   className?: string;
   size?: "sm" | "md" | "lg";
+  onDismiss?: () => void;
 }
 
 const DEFAULT_STARTUP_MESSAGES = [
@@ -148,10 +149,20 @@ export function AuroraLoader({
   showBrandText = true,
   className,
   size = "md",
+  onDismiss,
 }: AuroraLoaderProps) {
   const [currentMsgIndex, setCurrentMsgIndex] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [showManualDismiss, setShowManualDismiss] = useState(false);
+
+  // Fallback watchdog: if stuck for > 3.5s, give user a direct bypass button
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowManualDismiss(true);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Monitor network connectivity
   useEffect(() => {
@@ -276,6 +287,25 @@ export function AuroraLoader({
           <RefreshCw className={cn("h-3 w-3", isRetrying && "animate-spin")} />
           <span>{isRetrying ? "Retrying..." : "Retry Connection"}</span>
         </button>
+      )}
+
+      {/* Manual Continue Fallback Button */}
+      {showManualDismiss && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => {
+            if (onDismiss) {
+              onDismiss();
+            } else if (typeof window !== "undefined") {
+              window.location.href = "/dashboard";
+            }
+          }}
+          className="mt-4 px-3 py-1 text-[11px] font-medium rounded-md bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80 transition-all cursor-pointer"
+        >
+          Taking longer than usual? Click to enter &rarr;
+        </motion.button>
       )}
 
       {/* Understated Security Guarantee */}
