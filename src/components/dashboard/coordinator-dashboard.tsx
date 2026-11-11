@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { WorkflowHierarchyBanner } from "@/components/dashboard/workflow-hierarchy-banner";
 
 export function CoordinatorDashboard() {
   const [loading, setLoading] = useState(true);
@@ -214,6 +215,8 @@ export function CoordinatorDashboard() {
           </Link>
         </div>
       </div>
+
+      <WorkflowHierarchyBanner />
 
       {/* KPI stats bar */}
       <div className="grid gap-4 sm:grid-cols-4">

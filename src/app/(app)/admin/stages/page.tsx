@@ -112,18 +112,22 @@ export default function StagesPage() {
         `)
         .order("is_default", { ascending: false });
 
+      const effectiveTemplateId =
+        selectedTemplateId || tmpls?.[0]?.id || "70000000-0000-0000-0000-000000000001";
+
       if (tmpls && tmpls.length > 0) {
         setTemplates(tmpls);
         if (!selectedTemplateId) {
-          setSelectedTemplateId(tmpls[0].id);
+          setSelectedTemplateId(effectiveTemplateId);
         }
       }
 
-      // 2. Load stages
-      let query = supabase.from("defense_stages").select("*").order("sequence_order");
-      if (selectedTemplateId) {
-        query = query.eq("workflow_template_id", selectedTemplateId);
-      }
+      // 2. Load stages strictly for the active workflow template
+      let query = supabase
+        .from("defense_stages")
+        .select("*")
+        .eq("workflow_template_id", effectiveTemplateId)
+        .order("sequence_order");
 
       const { data, error } = await query;
       if (error) throw error;

@@ -32,27 +32,33 @@ import { useAuth } from "@/hooks/use-auth";
 import { ROLE_SIDEBAR_LINKS, type RoleCode } from "@/lib/auth/permissions";
 import { IsoEvaluationDialog } from "@/components/research/iso-evaluation-dialog";
 
-const mainNav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/workspace", label: "Review Workspace", icon: Sparkles },
-  { href: "/dashboard/my-project", label: "My Project", icon: BookOpen },
-  { href: "/dashboard/search", label: "Global Search", icon: Search },
-  { href: "/dashboard/defenses", label: "Defenses", icon: Shield },
-  { href: "/dashboard/submissions", label: "Submissions", icon: FileText },
-  { href: "/dashboard/annotations", label: "Annotations", icon: MessageSquare },
-  { href: "/dashboard/grades", label: "Grades", icon: Award },
+const overviewNav = [
+  { href: "/dashboard", label: "Command Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/search", label: "Global Search", icon: Search },
 ];
 
-const adminNav = [
-  { href: "/admin/users", label: "User Management & Security", icon: Users },
-  { href: "/admin/rubrics", label: "Rubrics", icon: ClipboardList },
-  { href: "/admin/stages", label: "Defense Stages", icon: Layers },
-  { href: "/admin/reports", label: "Reports", icon: FileBarChart },
+const workflowNav = [
+  { href: "/dashboard/my-project", label: "1. My Project & Team", icon: BookOpen },
+  { href: "/dashboard/submissions", label: "1. Manuscript Submissions", icon: FileText },
+  { href: "/workspace", label: "2. Review & Grading Workspace", icon: Sparkles },
+  { href: "/dashboard/defenses", label: "3. Defenses & Scheduling", icon: Shield },
+  { href: "/dashboard/annotations", label: "4. Revisions & Annotations", icon: MessageSquare },
+  { href: "/dashboard/grades", label: "5. Grades & Verdicts", icon: Award },
+];
+
+const governanceNav = [
+  { href: "/admin/stages", label: "Defense Stages & Curriculum", icon: Layers },
+  { href: "/admin/rubrics", label: "Evaluation Rubrics", icon: ClipboardList },
+  { href: "/admin/reports", label: "Official Reports (DCS Forms)", icon: FileBarChart },
+  { href: "/dashboard/analytics", label: "Institutional Analytics", icon: BarChart3 },
+  { href: "/admin/users", label: "User & Faculty Directory", icon: Users },
   { href: "/admin/system-health", label: "Maintenance & DR Backup", icon: Wrench },
-  { href: "/admin/audit", label: "Audit Logs", icon: ScrollText },
+  { href: "/admin/audit", label: "Security Audit Logs", icon: ScrollText },
+];
+
+const accountNav = [
+  { href: "/dashboard/settings", label: "Profile & E-Signature", icon: Settings },
 ];
 
 function NavItem({
@@ -75,14 +81,14 @@ function NavItem({
     <Link
       href={href}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200",
         isActive
           ? "bg-white/15 text-white shadow-sm"
-          : "text-sidebar-foreground/70 hover:bg-white/10 hover:text-white"
+          : "text-sidebar-foreground/75 hover:bg-white/10 hover:text-white"
       )}
     >
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white" />
+        <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-white" />
       )}
       <Icon
         className={cn(
@@ -150,38 +156,57 @@ export function AppSidebar({ className }: { className?: string }) {
     };
   }, [user, supabase]);
 
-  // Strictly scope sidebar navigation to the active role so role switching is seamless
   const effectiveRole = (activeRole || roles[0] || "student") as RoleCode;
   const allowedHrefs =
     ROLE_SIDEBAR_LINKS[effectiveRole] ?? ROLE_SIDEBAR_LINKS.student;
 
-  const filteredMainNav = isLoading
+  const filteredOverview = isLoading
     ? []
-    : mainNav.filter((item) => allowedHrefs.includes(item.href));
+    : overviewNav.filter((item) => allowedHrefs.includes(item.href));
 
-  const filteredAdminNav = adminNav.filter((item) => {
-    if (effectiveRole === "sys_admin") return true;
-    if (effectiveRole === "coordinator") {
-      return [
-        "/admin/users",
-        "/admin/rubrics",
-        "/admin/stages",
-        "/admin/reports",
-        "/admin/system-health",
-      ].includes(item.href);
-    }
-    if (effectiveRole === "college_dean") {
-      return [
-        "/admin/rubrics",
-        "/admin/stages",
-        "/admin/reports",
-        "/admin/system-health",
-      ].includes(item.href);
-    }
-    return false;
-  });
+  const filteredWorkflow = isLoading
+    ? []
+    : workflowNav.filter((item) => {
+        if (!allowedHrefs.includes(item.href)) return false;
+        // For students, show "1. My Project & Team" as primary step 1 and label Submissions as "Manuscript Archive"
+        return true;
+      }).map((item) => {
+        if (effectiveRole === "student" && item.href === "/dashboard/submissions") {
+          return { ...item, label: "Manuscript Archive" };
+        }
+        return item;
+      });
 
-  const showAdminNav = !isLoading && filteredAdminNav.length > 0;
+  const filteredGovernance = isLoading
+    ? []
+    : governanceNav.filter((item) => {
+        if (item.href === "/dashboard/analytics") {
+          return allowedHrefs.includes(item.href);
+        }
+        if (effectiveRole === "sys_admin") return true;
+        if (effectiveRole === "coordinator") {
+          return [
+            "/admin/users",
+            "/admin/rubrics",
+            "/admin/stages",
+            "/admin/reports",
+            "/admin/system-health",
+          ].includes(item.href);
+        }
+        if (effectiveRole === "college_dean") {
+          return [
+            "/admin/rubrics",
+            "/admin/stages",
+            "/admin/reports",
+            "/admin/system-health",
+          ].includes(item.href);
+        }
+        return false;
+      });
+
+  const filteredAccount = isLoading
+    ? []
+    : accountNav.filter((item) => allowedHrefs.includes(item.href));
 
   return (
     <aside
@@ -194,29 +219,73 @@ export function AppSidebar({ className }: { className?: string }) {
         <AuroraLogo size="md" showText={true} textColor="text-white" subtext="ParSU Goa" />
       </div>
 
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="flex flex-col gap-1">
-          {filteredMainNav.map((item) => (
-            <NavItem
-              key={item.href}
-              {...item}
-              badge={item.href === "/dashboard/notifications" ? unreadCount : undefined}
-            />
-          ))}
-        </nav>
-
-        {showAdminNav && (
-          <>
-            <Separator className="my-4 bg-white/10" />
-
-            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/50">
-              {effectiveRole === "college_dean" ? "Academic Governance" : "Administration"}
+      <ScrollArea className="flex-1 px-3 py-3">
+        {/* SECTION 1: OVERVIEW */}
+        {filteredOverview.length > 0 && (
+          <div className="mb-3">
+            <p className="mb-1.5 px-3 text-[10px] font-extrabold uppercase tracking-wider text-sidebar-foreground/50">
+              Overview
             </p>
-            <nav className="flex flex-col gap-1">
-              {filteredAdminNav.map((item) => (
-                <NavItem key={item.href} {...item} />
+            <nav className="flex flex-col gap-0.5">
+              {filteredOverview.map((item) => (
+                <NavItem
+                  key={item.href}
+                  {...item}
+                  badge={item.href === "/dashboard/notifications" ? unreadCount : undefined}
+                />
               ))}
             </nav>
+          </div>
+        )}
+
+        {/* SECTION 2: 5-STEP ACADEMIC DEFENSE WORKFLOW */}
+        {filteredWorkflow.length > 0 && (
+          <>
+            <Separator className="my-2.5 bg-white/10" />
+            <div className="mb-3">
+              <p className="mb-1.5 px-3 text-[10px] font-extrabold uppercase tracking-wider text-sidebar-foreground/50">
+                Defense Workflow Pipeline
+              </p>
+              <nav className="flex flex-col gap-0.5">
+                {filteredWorkflow.map((item) => (
+                  <NavItem key={item.href} {...item} />
+                ))}
+              </nav>
+            </div>
+          </>
+        )}
+
+        {/* SECTION 3: GOVERNANCE & ADMINISTRATION */}
+        {filteredGovernance.length > 0 && (
+          <>
+            <Separator className="my-2.5 bg-white/10" />
+            <div className="mb-3">
+              <p className="mb-1.5 px-3 text-[10px] font-extrabold uppercase tracking-wider text-sidebar-foreground/50">
+                {effectiveRole === "college_dean" ? "Academic Governance" : "Governance & Admin"}
+              </p>
+              <nav className="flex flex-col gap-0.5">
+                {filteredGovernance.map((item) => (
+                  <NavItem key={item.href} {...item} />
+                ))}
+              </nav>
+            </div>
+          </>
+        )}
+
+        {/* SECTION 4: ACCOUNT */}
+        {filteredAccount.length > 0 && (
+          <>
+            <Separator className="my-2.5 bg-white/10" />
+            <div>
+              <p className="mb-1.5 px-3 text-[10px] font-extrabold uppercase tracking-wider text-sidebar-foreground/50">
+                Account
+              </p>
+              <nav className="flex flex-col gap-0.5">
+                {filteredAccount.map((item) => (
+                  <NavItem key={item.href} {...item} />
+                ))}
+              </nav>
+            </div>
           </>
         )}
       </ScrollArea>

@@ -18,6 +18,7 @@ import {
 import { toggleApplicationGateAction } from "@/lib/defenses/application-actions";
 import { getApprovedFacultyListAction, type FacultyOptionItem } from "@/lib/projects/actions";
 import { useAuth } from "@/hooks/use-auth";
+import { WorkflowHierarchyBanner } from "@/components/dashboard/workflow-hierarchy-banner";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -70,6 +71,7 @@ export default function SchedulePage() {
   const [departments, setDepartments] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [stages, setStages] = useState<any[]>([]);
+  const [workflowTemplates, setWorkflowTemplates] = useState<any[]>([]);
   const [facultyList, setFacultyList] = useState<FacultyOptionItem[]>([]);
 
   // -------------------------------------------------------------
@@ -134,6 +136,7 @@ export default function SchedulePage() {
         setDepartments(hierarchy.departments);
         setPrograms(hierarchy.programs);
         setStages(hierarchy.stages);
+        setWorkflowTemplates((hierarchy as any).workflowTemplates || []);
         setFacultyList(faculty);
 
         if (singleProjs.data) {
@@ -184,34 +187,53 @@ export default function SchedulePage() {
     return programs.filter((p) => !p.department_id || collegeDeptIds.includes(p.department_id));
   }, [programs, departments, selectedCollegeId]);
 
-  // Filter stages based on selected program and college
-  // BSIT uses its 5-stage Capstone workflow; all other colleges stick with the 3 main defense stages
+  // Filter stages strictly based on selected program/college workflow template and deduplicate by code
   const filteredStages = useMemo(() => {
-    const isBsit = programs.find((p) => p.id === selectedProgramId)?.code === "BSIT";
-    if (isBsit) {
-      const bsitStages = stages.filter(
-        (s) =>
-          s.workflow_template_id === "70000000-0000-0000-0000-000000000001" ||
-          ["concept", "title", "progress_1", "progress_2", "final"].includes(s.code)
-      );
-      if (bsitStages.length > 0) return bsitStages;
+    const selectedProg = programs.find((p) => p.id === selectedProgramId);
+    const isBsit = selectedProg?.code === "BSIT";
+
+    let targetTemplateId = workflowTemplates.find(
+      (t) => selectedProgramId && t.program_id === selectedProgramId
+    )?.id;
+
+    if (!targetTemplateId && isBsit) {
+      targetTemplateId = "70000000-0000-0000-0000-000000000001";
     }
 
-    // For other colleges/programs: stick with the 3 main defense stages: Title, Proposal, Final
-    const threeMainCodes = ["title", "proposal", "final"];
-    const candidateStages = stages.filter((s) => threeMainCodes.includes(s.code));
+    if (!targetTemplateId && selectedCollegeId) {
+      targetTemplateId = workflowTemplates.find(
+        (t) => t.college_id === selectedCollegeId
+      )?.id;
+    }
 
-    // Deduplicate by code so the scheduler cleanly selects from the 3 main defense stages
+    let candidateStages = targetTemplateId
+      ? stages.filter((s) => s.workflow_template_id === targetTemplateId)
+      : stages.filter((s) =>
+          isBsit
+            ? s.workflow_template_id === "70000000-0000-0000-0000-000000000001"
+            : ["title", "proposal", "final"].includes(s.code)
+        );
+
+    if (candidateStages.length === 0) {
+      candidateStages = stages.filter((s) =>
+        isBsit
+          ? ["concept", "title", "progress_1", "progress_2", "final"].includes(s.code)
+          : ["title", "proposal", "final"].includes(s.code)
+      );
+    }
+
     const seenCodes = new Set<string>();
     const uniqueStages: typeof stages = [];
     for (const s of candidateStages) {
-      if (!seenCodes.has(s.code)) {
-        seenCodes.add(s.code);
+      const codeKey = (s.code || s.name || "").toLowerCase().trim();
+      if (!seenCodes.has(codeKey)) {
+        seenCodes.add(codeKey);
         uniqueStages.push(s);
       }
     }
-    return uniqueStages.length > 0 ? uniqueStages : stages;
-  }, [stages, selectedProgramId, programs]);
+
+    return uniqueStages.sort((a, b) => (a.sequence_order || 0) - (b.sequence_order || 0));
+  }, [stages, selectedProgramId, selectedCollegeId, programs, workflowTemplates]);
 
   useEffect(() => {
     if (filteredStages.length > 0 && !filteredStages.some((s) => s.id === selectedStageId)) {
@@ -831,6 +853,8 @@ export default function SchedulePage() {
         </div>
       </div>
 
+      <WorkflowHierarchyBanner compact />
+
       {/* ============================================================= */}
       {/* BATCH SCHEDULING MODE */}
       {/* ============================================================= */}
@@ -904,9 +928,9 @@ export default function SchedulePage() {
                     required
                   >
                     <option value="">-- Select Defense Stage --</option>
-                    {filteredStages.map((s) => (
+                    {filteredStages.map((s, idx) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} ({s.code.toUpperCase()})
+                        Stage {s.sequence_order || idx + 1}: {s.name} ({s.code.toUpperCase()})
                       </option>
                     ))}
                   </select>
@@ -1505,9 +1529,9 @@ export default function SchedulePage() {
                   required
                 >
                   <option value="">-- Choose Defense Stage --</option>
-                  {filteredStages.map((s) => (
+                  {filteredStages.map((s, idx) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      Stage {s.sequence_order || idx + 1}: {s.name} ({s.code.toUpperCase()})
                     </option>
                   ))}
                 </select>

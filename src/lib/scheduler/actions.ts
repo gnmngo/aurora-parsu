@@ -789,11 +789,18 @@ export interface BatchScheduleInput {
  */
 export async function getAcademicHierarchyAction() {
   const serviceClient = createServiceClient();
-  const [collegesRes, deptsRes, progsRes, stagesRes] = await Promise.all([
+  const [collegesRes, deptsRes, progsRes, stagesRes, templatesRes] = await Promise.all([
     serviceClient.from("colleges").select("id, name, code").order("name"),
     serviceClient.from("departments").select("id, name, code, college_id").order("name"),
     serviceClient.from("programs").select("id, name, code, department_id, college_id").order("name"),
-    serviceClient.from("defense_stages").select("id, name, code, sequence_order, workflow_template_id").order("sequence_order"),
+    serviceClient
+      .from("defense_stages")
+      .select("id, name, code, sequence_order, workflow_template_id, is_enabled")
+      .eq("is_enabled", true)
+      .order("sequence_order"),
+    serviceClient
+      .from("workflow_templates")
+      .select("id, name, program_id, college_id, is_default"),
   ]);
 
   return {
@@ -801,6 +808,7 @@ export async function getAcademicHierarchyAction() {
     departments: deptsRes.data || [],
     programs: progsRes.data || [],
     stages: stagesRes.data || [],
+    workflowTemplates: templatesRes.data || [],
   };
 }
 

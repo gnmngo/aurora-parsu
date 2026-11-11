@@ -189,7 +189,7 @@ export async function createProjectAction(
     // 8. Automatic Section Adviser Assignment for Concept & Title Defense stages
     // In production, the section adviser designated for the student's program/section takes ownership.
     // For demonstration purposes, if no class section adviser is registered, fallback to the demo adviser account (Froiland B. Peñalosa).
-    const DEMO_ADVISER_PROFILE_ID = "ac8ab701-b052-450b-8464-3145196797c5"; // Froiland B. Peñalosa (panelist1@aurora.test)
+    const DEMO_ADVISER_PROFILE_ID = "df9b87bc-4a79-42d6-9d48-e71af3066342"; // Froiland B. Peñalosa (fbpenalosa@parsu.edu.ph)
     let resolvedAdviserId = input.adviserProfileId?.trim() || null;
 
     if (!resolvedAdviserId && student.program_id) {
@@ -451,7 +451,7 @@ export async function notifyAdviserManuscriptUploadedAction(
     if (!adviserMember?.profile_id) {
       // For demo purposes and concept/title defense stages:
       // Default to demo adviser account (Froiland B. Peñalosa) so reviewer can immediately access manuscript
-      const DEMO_ADVISER_PROFILE_ID = "ac8ab701-b052-450b-8464-3145196797c5"; // Froiland B. Peñalosa (panelist1@aurora.test)
+      const DEMO_ADVISER_PROFILE_ID = "df9b87bc-4a79-42d6-9d48-e71af3066342"; // Froiland B. Peñalosa (fbpenalosa@parsu.edu.ph)
       await serviceClient.from("project_members").upsert(
         {
           project_id: projectId,
@@ -502,11 +502,13 @@ export interface FacultyOptionItem {
   name: string;
   email: string;
   department?: string;
+  department_id?: string | null;
 }
 
 /**
- * Returns the list of approved university faculty members for adviser selection.
- * Uses service client to bypass RLS restrictions on un-joined profiles.
+ * Returns the deduplicated list of approved university faculty members for adviser and panel selection.
+ * Uses service client to bypass RLS restrictions and deduplicates by normalized full name
+ * (preferring official @parsu.edu.ph accounts and excluding @aurora.test aliases).
  */
 export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[]> {
   const serviceClient = createServiceClient();
@@ -518,21 +520,47 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
 
     if (error || !data) return [];
 
-    const list: FacultyOptionItem[] = [];
+    const byNormalizedName = new Map<string, FacultyOptionItem>();
+
     for (const item of data) {
       const prof = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
-      if (prof && prof.status === "approved") {
-        const profAny = prof as Record<string, any>;
-        const dept = Array.isArray(profAny?.departments) ? profAny.departments[0]?.name : profAny?.departments?.name;
-        list.push({
-          profile_id: item.profile_id,
-          name: `${prof.first_name} ${prof.last_name}`,
-          email: prof.email,
-          department: dept || item.specialization || undefined,
-        });
+      if (!prof || prof.status !== "approved") continue;
+
+      const email = (prof.email || "").trim().toLowerCase();
+      // Skip system/demo test aliases from appearing as faculty evaluators
+      if (email.endsWith("@aurora.test")) continue;
+
+      const fullName = `${(prof.first_name || "").trim()} ${(prof.last_name || "").trim()}`.trim();
+      if (!fullName) continue;
+
+      const normKey = fullName.toLowerCase().replace(/\s+/g, " ");
+      const profAny = prof as Record<string, any>;
+      const dept = Array.isArray(profAny?.departments)
+        ? profAny.departments[0]?.name
+        : profAny?.departments?.name;
+
+      const candidate: FacultyOptionItem = {
+        profile_id: item.profile_id,
+        name: fullName,
+        email: prof.email,
+        department: dept || item.specialization || undefined,
+        department_id: profAny?.department_id || null,
+      };
+
+      const existing = byNormalizedName.get(normKey);
+      if (!existing) {
+        byNormalizedName.set(normKey, candidate);
+      } else {
+        // Prefer official @parsu.edu.ph email if duplicate exists
+        const existingIsParsu = existing.email.toLowerCase().endsWith("@parsu.edu.ph");
+        const candidateIsParsu = email.endsWith("@parsu.edu.ph");
+        if (!existingIsParsu && candidateIsParsu) {
+          byNormalizedName.set(normKey, candidate);
+        }
       }
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name));
+
+    return Array.from(byNormalizedName.values()).sort((a, b) => a.name.localeCompare(b.name));
   } catch (err) {
     console.error("Failed to load approved faculty list:", err);
     return [];

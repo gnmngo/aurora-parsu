@@ -11,15 +11,15 @@ const DEMO_ACCOUNTS: Record<string, DemoCredentials> = {
     password: process.env.DEMO_STUDENT_PASSWORD || "Password123!",
   },
   adviser: {
-    email: process.env.DEMO_ADVISER_EMAIL || "panelist1@aurora.test",
+    email: process.env.DEMO_ADVISER_EMAIL || "fbpenalosa@parsu.edu.ph",
     password: process.env.DEMO_ADVISER_PASSWORD || "Password123!",
   },
   panelist: {
-    email: process.env.DEMO_PANELIST_EMAIL || "panelist2@aurora.test",
+    email: process.env.DEMO_PANELIST_EMAIL || "jncapucao@parsu.edu.ph",
     password: process.env.DEMO_PANELIST_PASSWORD || "Password123!",
   },
   coordinator: {
-    email: process.env.DEMO_COORDINATOR_EMAIL || "coord@aurora.test",
+    email: process.env.DEMO_COORDINATOR_EMAIL || "kccuya@parsu.edu.ph",
     password: process.env.DEMO_COORDINATOR_PASSWORD || "Password123!",
   },
   dean: {

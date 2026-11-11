@@ -89,7 +89,22 @@ export default function UsersPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      const rawUsers = data || [];
+      const parsuNames = new Set(
+        rawUsers
+          .filter((u: any) => (u.email || "").toLowerCase().endsWith("@parsu.edu.ph"))
+          .map((u: any) => `${(u.first_name || "").trim()} ${(u.last_name || "").trim()}`.trim().toLowerCase())
+          .filter(Boolean)
+      );
+      const dedupedUsers = rawUsers.filter((u: any) => {
+        const email = (u.email || "").toLowerCase();
+        const fullName = `${(u.first_name || "").trim()} ${(u.last_name || "").trim()}`.trim().toLowerCase();
+        if (email.endsWith("@aurora.test") && parsuNames.has(fullName)) {
+          return false;
+        }
+        return true;
+      });
+      setUsers(dedupedUsers);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to fetch profiles registry.");

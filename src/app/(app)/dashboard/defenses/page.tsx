@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { DefensePipeline } from "@/components/dashboard/defense-pipeline";
+import { WorkflowHierarchyBanner } from "@/components/dashboard/workflow-hierarchy-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
@@ -263,7 +264,7 @@ export default function DefensesPage() {
       const activeTemplateId =
         selectedTemplateId && selectedTemplateId !== "all"
           ? selectedTemplateId
-          : templates[0]?.id;
+          : templates[0]?.id || "70000000-0000-0000-0000-000000000001";
 
       if (activeTemplateId) {
         query = query.eq("workflow_template_id", activeTemplateId);
@@ -764,6 +765,8 @@ export default function DefensesPage() {
             <span>Calendar View</span>
           </Button>
         </div>
+
+        <WorkflowHierarchyBanner compact />
 
         {/* ── TAB 1: DEFENSES MANAGEMENT & EVALUATION UPDATES ─────────────── */}
         {activeTab === "scheduled" && (
