@@ -428,24 +428,25 @@ export function PdfUploader({
             </div>
           )}
 
-          {/* Stage selector only if not pre-bound */}
-          {!stageId && (
-            <div className="space-y-1">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">Defense Stage</Label>
-              <select
-                value={selectedStage}
-                onChange={(e) => setSelectedStage(e.target.value)}
-                className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-                required
-              >
-                {(Array.isArray(stages) ? stages : []).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    Stage {s.sequence_order}: {s.name}
-                  </option>
-                ))}
-              </select>
+          {/* Defense Stage Milestone Selector (Always selectable, pre-selected to active project stage) */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Defense Stage Milestone</Label>
+              <span className="text-[10px] font-semibold text-primary">Target Defense</span>
             </div>
-          )}
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              required
+            >
+              {(Array.isArray(stages) && stages.length > 0 ? stages : allStages).map((s) => (
+                <option key={s.id} value={s.id}>
+                  Stage {s.sequence_order}: {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Enhanced PDF Drag & Drop / File Selector with Error Prevention */}
           <div className="space-y-2">
