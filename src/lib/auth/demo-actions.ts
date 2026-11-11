@@ -15,7 +15,7 @@ const DEMO_ACCOUNTS: Record<string, DemoCredentials> = {
     password: process.env.DEMO_ADVISER_PASSWORD || "Password123!",
   },
   panelist: {
-    email: process.env.DEMO_PANELIST_EMAIL || "mbamata@parsu.edu.ph",
+    email: process.env.DEMO_PANELIST_EMAIL || "michael.amata@parsu.edu.ph",
     password: process.env.DEMO_PANELIST_PASSWORD || "Password123!",
   },
   coordinator: {

@@ -73,7 +73,7 @@ export default function DemoGuidedFlow() {
       title: "4. Panelist Evaluation & E-Signature",
       role: "Panelist",
       roleKey: "panelist",
-      email: "mbamata@parsu.edu.ph",
+      email: "michael.amata@parsu.edu.ph",
       description: "Log in as Defense Panelist (Michael B. Amata). View assigned defenses, score rubric criteria in the split-screen workspace, and sign with an immutable certificate serial.",
       targetPath: "/dashboard",
       icon: Award,
