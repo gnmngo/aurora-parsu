@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient, isServiceRoleConfigured } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { recordWorkflowTransition } from "@/lib/workflow/history";
 import { emitNotificationToMany } from "@/lib/notifications/emit";
@@ -17,10 +17,25 @@ export async function adviserApproveDocumentAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
-    const serviceClient = createServiceClient();
-    const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    const userAgent = headersList.get("user-agent") || "unknown";
+    let serviceClient = supabase;
+    try {
+      if (isServiceRoleConfigured()) {
+        serviceClient = createServiceClient();
+      }
+    } catch (svcErr) {
+      console.warn("[adviserApproveDocumentAction] Service client initialization notice:", svcErr);
+      serviceClient = supabase;
+    }
+
+    let ip = "127.0.0.1";
+    let userAgent = "unknown";
+    try {
+      const headersList = await headers();
+      ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+      userAgent = headersList.get("user-agent") || "unknown";
+    } catch {
+      // Non-fatal headers parse
+    }
 
     // 1. Get adviser identity
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
