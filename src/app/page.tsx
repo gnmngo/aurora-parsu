@@ -259,9 +259,14 @@ export default function AuroraMasterLandingPage() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-[0.25em] uppercase font-display text-zinc-900 dark:text-[#F5F5F5]">
-                AURORA
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tracking-[0.25em] uppercase font-display text-zinc-900 dark:text-[#F5F5F5]">
+                  AURORA
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                  Paperless
+                </span>
+              </div>
               <span className="text-[9px] font-medium tracking-wider text-zinc-500 dark:text-[#929292] uppercase">
                 Partido State University
               </span>
@@ -425,6 +430,8 @@ export default function AuroraMasterLandingPage() {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-[#252525] bg-zinc-100/80 dark:bg-[#0A0A0A] text-[11px] font-semibold uppercase tracking-widest text-zinc-600 dark:text-[#929292]"
           >
             <span>{INSTITUTION_CAMPUS}</span>
+            <span className="h-1 w-1 rounded-full bg-blue-600 dark:bg-blue-400" />
+            <span className="text-blue-600 dark:text-blue-400 font-bold">Paperless Defense Ecosystem</span>
           </motion.div>
 
           {/* THE OFFICIAL GEOMETRIC A SYMBOL — THE CENTERPIECE */}
@@ -459,26 +466,33 @@ export default function AuroraMasterLandingPage() {
             </p>
           </motion.div>
 
-          {/* Main Editorial Headline */}
+          {/* Main Editorial Headline with Prominent "Paperless" Highlight */}
           <motion.h1
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-[#F5F5F5] font-display max-w-3xl"
+            className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-[#F5F5F5] font-display max-w-4xl"
           >
-            Every Defense.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-300">
+              Paperless
+            </span>{" "}
+            Academic Defense.
             <br />
             One Unified Experience.
           </motion.h1>
 
-          {/* Concise Supporting Description */}
+          {/* Concise Supporting Description Parallel to the Research Paper */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-sm sm:text-base text-zinc-600 dark:text-[#929292] max-w-2xl mx-auto font-normal leading-relaxed"
           >
-            Bringing research, capstone, thesis, and dissertation defense workflows into one connected digital platform.
+            The dedicated paperless workflow platform for{" "}
+            <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">
+              Research, Capstone, Thesis &amp; Dissertation Papers
+            </strong>{" "}
+            at Partido State University. Eliminating printed drafts, streamlining adviser endorsement gates, and automating rubric evaluations.
           </motion.p>
 
           {/* Clear Calls to Action */}
@@ -1102,13 +1116,15 @@ export default function AuroraMasterLandingPage() {
           
           <div className="space-y-4 max-w-2xl">
             <p className="text-[11px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-500">
-              A More Responsible Academic Workflow
+              The Paperless Transformation · Green IT at ParSU
             </p>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-zinc-900 dark:text-[#F5F5F5] font-display">
-              Less paper. More progress.
+              Zero paper reams.
+              <br />
+              100% academic progress.
             </h2>
             <p className="text-sm text-zinc-600 dark:text-[#929292] leading-relaxed">
-              By digitizing manuscript submissions, evaluations, and academic records, AURORA supports more sustainable and organized academic defense processes aligned with Partido State University&apos;s institutional Green IT goals.
+              By replacing physical paper binders, printed draft manuscripts, and handwritten evaluation sheets with a cryptographically verified digital lifecycle, AURORA supports sustainable, paperless defense operations aligned with Partido State University&apos;s institutional Green IT commitments.
             </p>
           </div>
 
@@ -1248,12 +1264,12 @@ export default function AuroraMasterLandingPage() {
 
           <div className="space-y-3">
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-900 dark:text-[#F5F5F5] font-display">
-              Your academic journey.
+              Step into the paperless defense.
               <br />
               A clearer way forward.
             </h2>
             <p className="text-xs sm:text-sm text-zinc-600 dark:text-[#929292] max-w-lg mx-auto leading-relaxed">
-              From concept defense to final approval, bring every academic defense process into one connected experience.
+              From concept proposal to final clearance, bring research, capstone, thesis, and dissertation papers into one connected paperless ecosystem.
             </p>
           </div>
 
