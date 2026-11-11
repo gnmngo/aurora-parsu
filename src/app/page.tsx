@@ -24,6 +24,7 @@ import {
 import { APP_ACRONYM_MEANING, APP_FULL_NAME, APP_NAME, INSTITUTION } from "@/constants/app";
 import { useTheme } from "@/providers/theme-provider";
 import { AuroraLogo } from "@/components/ui/aurora-logo";
+import { AuroraLoader } from "@/components/ui/aurora-loader";
 
 const features = [
   {
@@ -109,8 +110,23 @@ export default function HomePage() {
   const isDark = resolvedTheme === "dark";
   const { scrollY } = useScroll();
   const [mounted, setMounted] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    // Smooth splash entrance on landing page
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const triggerLoaderPreview = () => {
+    setShowSplash(true);
+    setTimeout(() => {
+      setShowSplash(false);
+    }, 2400);
+  };
 
   const headerBg = useTransform(
     scrollY,
@@ -140,47 +156,73 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased font-sans flex flex-col overflow-hidden">
-      {/* Dynamic Header */}
-      <motion.header 
-        style={{ backgroundColor: headerBg, borderColor: headerBorder }}
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-colors duration-200"
-      >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <AuroraLogo size="md" showText={true} textColor="text-foreground" />
-          </Link>
+    <>
+      <AnimatePresence>
+        {showSplash && (
+          <motion.div
+            key="aurora-landing-splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[9999]"
+          >
+            <AuroraLoader fullscreen={true} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              <a href="#features" className="hover:text-primary transition-colors">Features</a>
-              <a href="#workflow" className="hover:text-primary transition-colors">Workflow</a>
-              <a href="#roles" className="hover:text-primary transition-colors">Roles</a>
-              <a href="#faq" className="hover:text-primary transition-colors">FAQ</a>
-            </nav>
+      <main className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased font-sans flex flex-col overflow-hidden">
+        {/* Dynamic Header */}
+        <motion.header 
+          style={{ backgroundColor: headerBg, borderColor: headerBorder }}
+          className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-colors duration-200"
+        >
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <AuroraLogo size="md" showText={true} textColor="text-foreground" />
+            </Link>
 
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
-              aria-label="Toggle Theme"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </motion.button>
+            <div className="flex items-center gap-4">
+              <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <a href="#features" className="hover:text-primary transition-colors">Features</a>
+                <a href="#workflow" className="hover:text-primary transition-colors">Workflow</a>
+                <a href="#roles" className="hover:text-primary transition-colors">Roles</a>
+                <a href="#faq" className="hover:text-primary transition-colors">FAQ</a>
+              </nav>
 
-            <Link href="/login">
-              <motion.div 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all duration-200"
+                onClick={triggerLoaderPreview}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition cursor-pointer"
+                title="Preview the AURORA Loading Animation"
               >
-                Portal Login
-              </motion.div>
-            </Link>
+                <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                <span>Loading Demo</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleTheme}
+                className="p-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+                aria-label="Toggle Theme"
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </motion.button>
+
+              <Link href="/login">
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all duration-200"
+                >
+                  Portal Login
+                </motion.div>
+              </Link>
+            </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
 
       {/* Hero Section */}
       <section className="relative mx-auto max-w-5xl px-6 pt-32 pb-20 text-center flex flex-col items-center space-y-8 min-h-screen justify-center">
@@ -412,5 +454,6 @@ export default function HomePage() {
         </div>
       </footer>
     </main>
+    </>
   );
 }
