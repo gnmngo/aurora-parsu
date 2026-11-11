@@ -39,12 +39,12 @@ const overviewNav = [
 ];
 
 const workflowNav = [
-  { href: "/dashboard/my-project", label: "1. My Project & Team", icon: BookOpen },
-  { href: "/dashboard/submissions", label: "1. Manuscript Submissions", icon: FileText },
-  { href: "/workspace", label: "2. Review & Grading Workspace", icon: Sparkles },
-  { href: "/dashboard/defenses", label: "3. Defenses & Scheduling", icon: Shield },
-  { href: "/dashboard/annotations", label: "4. Revisions & Annotations", icon: MessageSquare },
-  { href: "/dashboard/grades", label: "5. Grades & Verdicts", icon: Award },
+  { href: "/dashboard/my-project", label: "My Project & Team", icon: BookOpen },
+  { href: "/dashboard/submissions", label: "Manuscript Submissions", icon: FileText },
+  { href: "/workspace", label: "Review & Grading Workspace", icon: Sparkles },
+  { href: "/dashboard/defenses", label: "Defenses & Scheduling", icon: Shield },
+  { href: "/dashboard/annotations", label: "Revisions & Annotations", icon: MessageSquare },
+  { href: "/dashboard/grades", label: "Grades & Verdicts", icon: Award },
 ];
 
 const governanceNav = [
@@ -206,7 +206,14 @@ export function AppSidebar({ className }: { className?: string }) {
 
   const filteredAccount = isLoading
     ? []
-    : accountNav.filter((item) => allowedHrefs.includes(item.href));
+    : accountNav
+        .filter((item) => allowedHrefs.includes(item.href))
+        .map((item) => {
+          if (effectiveRole === "student" && item.href === "/dashboard/settings") {
+            return { ...item, label: "Account Settings" };
+          }
+          return item;
+        });
 
   return (
     <aside

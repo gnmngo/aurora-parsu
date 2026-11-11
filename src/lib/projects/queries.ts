@@ -78,6 +78,7 @@ export function mapProjectsToSubmissions(projects: { id: string; title: string; 
 export interface FetchSubmissionsFilter {
   userId?: string;
   roles?: string[];
+  collegeId?: string | null;
 }
 
 export async function fetchSubmissions(
@@ -87,6 +88,8 @@ export async function fetchSubmissions(
   const isManagement = filter?.roles?.some((r) =>
     ["coordinator", "sys_admin", "college_dean"].includes(r)
   );
+  const isSysAdmin = filter?.roles?.includes("sys_admin");
+  const scopedCollegeId = isManagement && !isSysAdmin ? filter?.collegeId || null : null;
 
   let allowedProjectIds: string[] | null = null;
 
@@ -189,6 +192,8 @@ export async function fetchSubmissions(
 
   if (allowedProjectIds !== null) {
     query = query.in("id", allowedProjectIds);
+  } else if (scopedCollegeId) {
+    query = query.eq("college_id", scopedCollegeId);
   }
 
   const { data, error } = await query.order("created_at", { ascending: false });

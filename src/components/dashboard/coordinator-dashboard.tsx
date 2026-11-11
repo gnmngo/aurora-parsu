@@ -23,10 +23,17 @@ import {
 import Link from "next/link";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { WorkflowHierarchyBanner } from "@/components/dashboard/workflow-hierarchy-banner";
+import { useAuth } from "@/hooks/use-auth";
 
 export function CoordinatorDashboard() {
+  const { profile, activeRole, roles } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "coordinator";
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = !isSysAdmin ? profile?.college_id || null : null;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [collegeName, setCollegeName] = useState<string>("");
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [workloads, setWorkloads] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -39,48 +46,56 @@ export function CoordinatorDashboard() {
     setLoading(true);
     setError(null);
     try {
+      if (scopedCollegeId) {
+        const { data: colRow } = await supabase
+          .from("colleges")
+          .select("name, code")
+          .eq("id", scopedCollegeId)
+          .maybeSingle();
+        if (colRow) {
+          setCollegeName(`${colRow.name} (${colRow.code})`);
+        }
+      } else {
+        setCollegeName("University-Wide Governance");
+      }
+
       // 1. Fetch pending approvals (projects in submitted state)
-      const { data: pending, error: pendingErr } = await supabase
+      let pendingQuery = supabase
         .from("projects")
         .select(`
           id,
           title,
           status,
+          college_id,
           defense_stages ( name, id ),
           students ( profiles ( first_name, last_name ) )
         `)
         .is("archived_at", null)
         .eq("status", "submitted");
 
+      if (scopedCollegeId) {
+        pendingQuery = pendingQuery.eq("college_id", scopedCollegeId);
+      }
+
+      const { data: pending, error: pendingErr } = await pendingQuery;
       if (pendingErr) throw pendingErr;
       if (pending) setPendingApprovals(pending);
 
-      // 2. Fetch defense schedules & exact total count (BUG-C4)
-      const [schedsRes, totalSchedCountRes] = await Promise.all([
-        supabase
-          .from("defense_schedules")
-          .select("*, projects(title, archived_at)")
-          .neq("status", "cancelled")
-          .order("scheduled_at", { ascending: true })
-          .limit(10),
-        supabase
-          .from("defense_schedules")
-          .select("id", { count: "exact", head: true })
-          .neq("status", "cancelled"),
-      ]);
-
-      if (schedsRes.data) {
-        setSchedules(schedsRes.data.filter((s: any) => !s.projects?.archived_at));
-      }
-      setTotalSchedulesCount(totalSchedCountRes.count ?? (schedsRes.data?.length || 0));
-
-      // 3. Fetch all active projects for status stats
-      const { data: allProjs, error: projsErr } = await supabase
+      // 2. Fetch all active projects for status stats (and college project IDs)
+      let projsQuery = supabase
         .from("projects")
-        .select("status")
+        .select("id, status, college_id")
         .is("archived_at", null);
 
+      if (scopedCollegeId) {
+        projsQuery = projsQuery.eq("college_id", scopedCollegeId);
+      }
+
+      const { data: allProjs, error: projsErr } = await projsQuery;
       if (projsErr) throw projsErr;
+
+      const collegeProjectIds = (allProjs || []).map((p: any) => p.id);
+
       if (allProjs) {
         const counts: Record<string, number> = {};
         allProjs.forEach((p: any) => {
@@ -89,7 +104,40 @@ export function CoordinatorDashboard() {
         setStats(counts);
       }
 
-      // 4. Fetch faculty workload (defense panels counts filtered by active schedules)
+      // 3. Fetch defense schedules & exact total count scoped to college projects
+      if (scopedCollegeId && collegeProjectIds.length === 0) {
+        setSchedules([]);
+        setTotalSchedulesCount(0);
+      } else {
+        let schedsQuery = supabase
+          .from("defense_schedules")
+          .select("*, projects(title, archived_at, college_id)")
+          .neq("status", "cancelled")
+          .order("scheduled_at", { ascending: true })
+          .limit(10);
+
+        let totalSchedQuery = supabase
+          .from("defense_schedules")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "cancelled");
+
+        if (scopedCollegeId) {
+          schedsQuery = schedsQuery.in("project_id", collegeProjectIds);
+          totalSchedQuery = totalSchedQuery.in("project_id", collegeProjectIds);
+        }
+
+        const [schedsRes, totalSchedCountRes] = await Promise.all([
+          schedsQuery,
+          totalSchedQuery,
+        ]);
+
+        if (schedsRes.data) {
+          setSchedules(schedsRes.data.filter((s: any) => !s.projects?.archived_at));
+        }
+        setTotalSchedulesCount(totalSchedCountRes.count ?? (schedsRes.data?.length || 0));
+      }
+
+      // 4. Fetch faculty workload (defense panels counts filtered by active schedules and college)
       const [panelsRes, cancelledSchedRes] = await Promise.all([
         supabase
           .from("defense_panels")
@@ -97,7 +145,7 @@ export function CoordinatorDashboard() {
             profile_id, 
             project_id,
             stage_id,
-            profiles:profiles!defense_panels_profile_id_fkey(first_name, last_name)
+            profiles:profiles!defense_panels_profile_id_fkey(first_name, last_name, college_id, department_id, departments:department_id(college_id))
           `),
         supabase
           .from("defense_schedules")
@@ -110,12 +158,18 @@ export function CoordinatorDashboard() {
       const cancelledSet = new Set(
         cancelledSchedRes.data?.map((s) => `${s.project_id}_${s.stage_id}`) || []
       );
+      const allowedProjSet = scopedCollegeId ? new Set(collegeProjectIds) : null;
 
       if (panelsRes.data) {
         const countsMap: Record<string, { name: string; count: number }> = {};
         panelsRes.data.forEach((p: any) => {
           if (cancelledSet.has(`${p.project_id}_${p.stage_id}`)) return;
+          if (allowedProjSet && !allowedProjSet.has(p.project_id)) return;
           const prof = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+          const profDept = Array.isArray(prof?.departments) ? prof?.departments[0] : prof?.departments;
+          const profCollegeId = prof?.college_id || profDept?.college_id || null;
+          if (scopedCollegeId && profCollegeId && profCollegeId !== scopedCollegeId) return;
+
           const name = prof && (prof.first_name || prof.last_name)
             ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim()
             : "Unknown Faculty";
@@ -127,12 +181,17 @@ export function CoordinatorDashboard() {
         setWorkloads(Object.values(countsMap).sort((a, b) => b.count - a.count));
       }
 
-      // 5. Fetch count of pending accounts for security console
-      const { count: pendingCount } = await supabase
+      // 5. Fetch count of pending accounts for security console (scoped by college)
+      let pendingUsersQuery = supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .eq("status", "pending");
 
+      if (scopedCollegeId) {
+        pendingUsersQuery = pendingUsersQuery.eq("college_id", scopedCollegeId);
+      }
+
+      const { count: pendingCount } = await pendingUsersQuery;
       if (pendingCount !== null) {
         setPendingUserCount(pendingCount);
       }
@@ -142,7 +201,7 @@ export function CoordinatorDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, scopedCollegeId]);
 
   useEffect(() => {
     loadCoordinatorData();
@@ -176,11 +235,18 @@ export function CoordinatorDashboard() {
       {/* Coordinator Management Hub & Security Console Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-2xl border border-primary/20">
         <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" /> Coordinator Management Hub
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" /> Coordinator Management Hub
+            </h2>
+            {collegeName && (
+              <Badge variant="outline" className="text-[10px] font-bold bg-primary/10 text-primary border-primary/30">
+                {collegeName}
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Oversee defense milestones, schedule committee panels, and manage departmental faculty evaluators.
+            Oversee defense milestones, schedule committee panels, and manage college faculty evaluators.
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -24,10 +24,16 @@ import {
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { useAuth } from "@/hooks/use-auth";
 import { ParsuFormsModal } from "@/components/defenses/parsu-forms-modal";
 
 export default function ReportsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { profile, roles, activeRole } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "coordinator";
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = !isSysAdmin ? profile?.college_id || null : null;
+
   const [loading, setLoading] = useState(false);
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any[]>([]);
@@ -39,14 +45,20 @@ export default function ReportsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [selectedProject, setSelectedProject] = useState<any>(null);
 
-  // Fetch available projects on mount
+  // Fetch available projects on mount (scoped to Coordinator/Dean's college)
   useEffect(() => {
     async function fetchProjects() {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("projects")
-          .select("id, title, academic_year, status, current_stage_id, created_at")
+          .select("id, title, academic_year, status, college_id, current_stage_id, created_at")
           .order("created_at", { ascending: false });
+
+        if (scopedCollegeId) {
+          query = query.eq("college_id", scopedCollegeId);
+        }
+
+        const { data } = await query;
 
         if (data && data.length > 0) {
           setProjectsList(data);
@@ -58,7 +70,7 @@ export default function ReportsPage() {
       }
     }
     fetchProjects();
-  }, [supabase]);
+  }, [supabase, scopedCollegeId]);
 
   const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pId = e.target.value;
@@ -78,15 +90,19 @@ export default function ReportsPage() {
     try {
       let data: any[] = [];
       if (type === "projects") {
-        const { data: res } = await supabase
-          .from("projects")
-          .select("title, status, academic_year, created_at");
+        let q = supabase.from("projects").select("title, status, academic_year, created_at");
+        if (scopedCollegeId) q = q.eq("college_id", scopedCollegeId);
+        const { data: res } = await q;
         if (res) data = res;
       } else if (type === "schedules") {
-        const { data: res } = await supabase
+        let q = supabase
           .from("defense_schedules")
-          .select("scheduled_at, end_at, room, building, status");
-        if (res) data = res;
+          .select("scheduled_at, end_at, room, building, status, projects!inner(college_id)");
+        if (scopedCollegeId) q = q.eq("projects.college_id", scopedCollegeId);
+        const { data: res } = await q;
+        if (res) {
+          data = res.map(({ projects, ...rest }: any) => rest);
+        }
       } else if (type === "audit") {
         const { data: res } = await supabase
           .from("audit_logs")
@@ -95,10 +111,14 @@ export default function ReportsPage() {
           .limit(100);
         if (res) data = res;
       } else if (type === "grades") {
-        const { data: res } = await supabase
+        let q = supabase
           .from("evaluations")
-          .select("total_score, verdict_code, status, signed_at");
-        if (res) data = res;
+          .select("total_score, verdict_code, status, signed_at, projects!inner(college_id)");
+        if (scopedCollegeId) q = q.eq("projects.college_id", scopedCollegeId);
+        const { data: res } = await q;
+        if (res) {
+          data = res.map(({ projects, ...rest }: any) => rest);
+        }
       }
 
       setReportData(data);

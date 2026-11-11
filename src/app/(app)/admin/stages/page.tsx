@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import {
   toggleStageEnabledAction,
@@ -66,6 +67,11 @@ const COMMON_DOC_TAGS = [
 ];
 
 export default function StagesPage() {
+  const { profile, roles, activeRole } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "coordinator";
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = !isSysAdmin ? profile?.college_id || null : null;
+
   const [stages, setStages] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -107,16 +113,31 @@ export default function StagesPage() {
         .from("workflow_templates")
         .select(`
           id, name, description, is_default, program_id, college_id,
-          programs ( code, name ),
+          programs ( code, name, college_id, departments ( college_id ) ),
           colleges ( code, name )
         `)
         .order("is_default", { ascending: false });
 
-      const effectiveTemplateId =
-        selectedTemplateId || tmpls?.[0]?.id || "70000000-0000-0000-0000-000000000001";
+      const visibleTmpls = scopedCollegeId && tmpls
+        ? tmpls.filter((t: any) => {
+            const prog = Array.isArray(t.programs) ? t.programs[0] : t.programs;
+            const dept = Array.isArray(prog?.departments) ? prog.departments[0] : prog?.departments;
+            const colId = t.college_id || prog?.college_id || dept?.college_id || null;
+            if (colId) return colId === scopedCollegeId;
+            return Boolean(t.is_default);
+          })
+        : tmpls || [];
 
-      if (tmpls && tmpls.length > 0) {
-        setTemplates(tmpls);
+      const finalTmpls = visibleTmpls.length > 0 ? visibleTmpls : tmpls || [];
+      const collegeSpecificTmpl = finalTmpls.find((t: any) => !t.is_default);
+      const effectiveTemplateId =
+        selectedTemplateId ||
+        collegeSpecificTmpl?.id ||
+        finalTmpls[0]?.id ||
+        "70000000-0000-0000-0000-000000000001";
+
+      if (finalTmpls.length > 0) {
+        setTemplates(finalTmpls);
         if (!selectedTemplateId) {
           setSelectedTemplateId(effectiveTemplateId);
         }

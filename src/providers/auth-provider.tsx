@@ -80,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("aurora_active_role", role);
+        localStorage.setItem("aurora_active_role", role);
       }
     } catch {}
   }, []);
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (typeof window !== "undefined") {
         sessionStorage.removeItem("aurora_active_role");
+        localStorage.removeItem("aurora_active_role");
       }
     } catch {}
   }, []);
@@ -115,10 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadingRef.current = userId;
 
     try {
-      // 1. PROFILE
+      // 1. PROFILE (including department's college fallback)
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, departments:department_id(college_id)")
         .eq("id", userId)
         .maybeSingle();
 
@@ -137,6 +139,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         return;
       }
+
+      // Ensure college_id is always resolved even if derived from department
+      const deptObj = Array.isArray((profileData as any).departments)
+        ? (profileData as any).departments[0]
+        : (profileData as any).departments;
+      const resolvedCollegeId = profileData.college_id || deptObj?.college_id || null;
+      profileData.college_id = resolvedCollegeId;
 
       // Allow both 'approved' (standard approval flow) and 'active' (legacy/seeded accounts).
       const allowedStatuses = ["approved", "active"];

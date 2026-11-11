@@ -37,7 +37,7 @@ import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { APP_ACRONYM_BREAKDOWN, APP_ACRONYM_MEANING } from "@/constants/app";
 
 export default function SettingsPage() {
-  const { profile, roles, signOut, isLoading: authLoading } = useAuth();
+  const { profile, roles, activeRole, signOut, isLoading: authLoading } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [departmentId, setDepartmentId] = useState("");
@@ -77,12 +77,17 @@ export default function SettingsPage() {
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
-  const isFacultyOrStaff = roles.some((r) =>
-    ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(r)
-  );
-  const canAccessAdminConsole = roles.some((r) =>
-    ["coordinator", "college_dean", "sys_admin"].includes(r)
-  );
+  const effectiveRole = activeRole || roles[0] || "student";
+  const isFacultyOrStaff =
+    effectiveRole !== "student" &&
+    roles.some((r) =>
+      ["adviser", "panelist", "coordinator", "college_dean", "sys_admin"].includes(r)
+    );
+  const canAccessAdminConsole =
+    effectiveRole !== "student" &&
+    roles.some((r) =>
+      ["coordinator", "college_dean", "sys_admin"].includes(r)
+    );
 
   const initSigCanvas = useCallback(() => {
     const canvas = sigCanvasRef.current;
@@ -451,9 +456,13 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {effectiveRole === "student" ? "Account Settings" : "Settings"}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your profile, electronic signature baseline, security preferences, and troubleshooting guides
+          {effectiveRole === "student"
+            ? "Manage your student profile, notification preferences, and account security"
+            : "Manage your profile, electronic signature baseline, security preferences, and troubleshooting guides"}
         </p>
       </div>
 

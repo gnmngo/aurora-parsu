@@ -341,6 +341,11 @@ function LoginForm() {
           ? "sys_admin"
           : roleType;
 
+      // Sign out any existing session first so SIGNED_OUT doesn't wipe aurora_active_role after we set it
+      if (session) {
+        await supabase.auth.signOut();
+      }
+
       if (typeof window !== "undefined") {
         sessionStorage.setItem("aurora_active_role", targetRole);
         localStorage.setItem("aurora_active_role", targetRole);

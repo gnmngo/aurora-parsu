@@ -43,7 +43,10 @@ import {
 
 export default function SchedulePage() {
   const router = useRouter();
-  const { roles, isLoading: authLoading } = useAuth();
+  const { profile, roles, activeRole, isLoading: authLoading } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "coordinator";
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = !isSysAdmin ? profile?.college_id || null : null;
   const supabase = createClient();
 
   // Mode: "batch" is primary, "single" is fallback
@@ -122,19 +125,38 @@ export default function SchedulePage() {
     async function loadLookups() {
       try {
         setFetching(true);
+        let singleProjQuery = supabase
+          .from("projects")
+          .select("id, title, status, college_id, documents(id, stage_id, adviser_approval_status), project_members(profile_id, member_role, profiles!project_members_profile_id_fkey(first_name, last_name))")
+          .is("archived_at", null)
+          .order("title");
+
+        if (scopedCollegeId) {
+          singleProjQuery = singleProjQuery.eq("college_id", scopedCollegeId);
+        }
+
         const [hierarchy, faculty, singleProjs] = await Promise.all([
           getAcademicHierarchyAction(),
-          getApprovedFacultyListAction(),
-          supabase
-            .from("projects")
-            .select("id, title, status, documents(id, stage_id, adviser_approval_status), project_members(profile_id, member_role, profiles!project_members_profile_id_fkey(first_name, last_name))")
-            .is("archived_at", null)
-            .order("title"),
+          getApprovedFacultyListAction(scopedCollegeId),
+          singleProjQuery,
         ]);
 
-        setColleges(hierarchy.colleges);
-        setDepartments(hierarchy.departments);
-        setPrograms(hierarchy.programs);
+        const visibleColleges = scopedCollegeId
+          ? hierarchy.colleges.filter((c) => c.id === scopedCollegeId)
+          : hierarchy.colleges;
+        const visibleDepartments = scopedCollegeId
+          ? hierarchy.departments.filter((d) => d.college_id === scopedCollegeId)
+          : hierarchy.departments;
+        const visibleDeptIds = visibleDepartments.map((d) => d.id);
+        const visiblePrograms = scopedCollegeId
+          ? hierarchy.programs.filter(
+              (p) => (p as any).college_id === scopedCollegeId || (p.department_id && visibleDeptIds.includes(p.department_id))
+            )
+          : hierarchy.programs;
+
+        setColleges(visibleColleges);
+        setDepartments(visibleDepartments);
+        setPrograms(visiblePrograms);
         setStages(hierarchy.stages);
         setWorkflowTemplates((hierarchy as any).workflowTemplates || []);
         setFacultyList(faculty);
@@ -143,18 +165,18 @@ export default function SchedulePage() {
           setSingleProjects(singleProjs.data);
         }
 
-        // Auto-select CECS college by default if present
-        const cecs = hierarchy.colleges.find(
-          (c) => c.code === "CECS" || c.name.toLowerCase().includes("engineering")
+        // Auto-select Coordinator's college or CECS by default
+        const cecs = visibleColleges.find(
+          (c) => c.code === "CECS" || c.code === "CEC" || c.name.toLowerCase().includes("engineering")
         );
-        const defaultCollegeId = cecs?.id || hierarchy.colleges[0]?.id || "";
+        const defaultCollegeId = scopedCollegeId || cecs?.id || visibleColleges[0]?.id || "";
         setSelectedCollegeId(defaultCollegeId);
 
-        // Auto-select BSIT program if present
-        const bsit = hierarchy.programs.find(
+        // Auto-select BSIT program if in CECS, or first program in college
+        const bsit = visiblePrograms.find(
           (p) => p.code === "BSIT" || p.name.toLowerCase().includes("information technology")
         );
-        const defaultProgId = bsit?.id || hierarchy.programs[0]?.id || "";
+        const defaultProgId = bsit?.id || visiblePrograms[0]?.id || "";
         setSelectedProgramId(defaultProgId);
 
         // Auto-select Progress Report 2 (PR2) or first stage
@@ -175,9 +197,14 @@ export default function SchedulePage() {
     if (!authLoading) {
       loadLookups();
     }
-  }, [authLoading, supabase]);
+  }, [authLoading, supabase, scopedCollegeId]);
 
-  // Filter programs based on selected college
+  // Filter Faculty Pool to selected College
+  const filteredFacultyList = useMemo(() => {
+    const targetColId = scopedCollegeId || selectedCollegeId;
+    if (!targetColId) return facultyList;
+    return facultyList.filter((f) => !f.college_id || f.college_id === targetColId);
+  }, [facultyList, scopedCollegeId, selectedCollegeId]);
   const filteredPrograms = useMemo(() => {
     if (!selectedCollegeId) return programs;
     const collegeDeptIds = departments
@@ -882,7 +909,8 @@ export default function SchedulePage() {
                     id="batch-college"
                     value={selectedCollegeId}
                     onChange={(e) => setSelectedCollegeId(e.target.value)}
-                    className="w-full h-9 rounded-lg border border-border bg-card px-3 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                    disabled={Boolean(scopedCollegeId && colleges.length === 1)}
+                    className="w-full h-9 rounded-lg border border-border bg-card px-3 text-xs focus:ring-1 focus:ring-primary focus:outline-none disabled:opacity-80"
                     required
                   >
                     <option value="">-- Select College --</option>
@@ -1137,7 +1165,7 @@ export default function SchedulePage() {
             </CardHeader>
             <CardContent className="px-6 pb-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-border p-3 rounded-xl bg-muted/10">
-                {facultyList.map((fac) => {
+                {filteredFacultyList.map((fac) => {
                   const isChecked = batchPanelists.includes(fac.profile_id);
                   const advisesSelectedCount = candidates.filter(
                     (c) => selectedCandidateIds.includes(c.id) && c.adviserProfileId === fac.profile_id
@@ -1686,7 +1714,7 @@ export default function SchedulePage() {
                   <Users className="h-4 w-4 text-primary" /> Assign Panel Evaluators
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-border p-3 rounded-xl bg-muted/5">
-                  {facultyList.map((fac) => (
+                  {filteredFacultyList.map((fac) => (
                     <label
                       key={fac.profile_id}
                       className="flex items-center gap-2 p-1.5 hover:bg-muted/10 rounded-lg cursor-pointer select-none"

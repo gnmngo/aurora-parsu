@@ -28,7 +28,7 @@ export default function SubmissionsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
   const { isReady } = useAuthReady();
-  const { user, roles, activeRole } = useAuth();
+  const { user, profile, roles, activeRole } = useAuth();
   const supabase = useMemo(() => createClient(), []);
 
   const effectiveRole = activeRole || roles[0] || "student";
@@ -44,6 +44,7 @@ export default function SubmissionsPage() {
       const rows = await fetchSubmissions(supabase, {
         userId: user?.id,
         roles: [effectiveRole],
+        collegeId: profile?.college_id || null,
       });
       setSubmissionsList(Array.isArray(rows) ? rows : []);
     } catch (err: unknown) {
@@ -54,7 +55,7 @@ export default function SubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, user?.id, effectiveRole]);
+  }, [supabase, user?.id, effectiveRole, profile?.college_id]);
 
   useEffect(() => {
     if (!isReady) {

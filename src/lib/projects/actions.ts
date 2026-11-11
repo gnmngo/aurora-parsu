@@ -503,6 +503,7 @@ export interface FacultyOptionItem {
   email: string;
   department?: string;
   department_id?: string | null;
+  college_id?: string | null;
 }
 
 /**
@@ -510,12 +511,12 @@ export interface FacultyOptionItem {
  * Uses service client to bypass RLS restrictions and deduplicates by normalized full name
  * (preferring official @parsu.edu.ph accounts and excluding @aurora.test aliases).
  */
-export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[]> {
+export async function getApprovedFacultyListAction(collegeId?: string | null): Promise<FacultyOptionItem[]> {
   const serviceClient = createServiceClient();
   try {
     const { data, error } = await serviceClient
       .from("faculty")
-      .select("profile_id, specialization, profiles(first_name, last_name, email, status, department_id, departments(name))")
+      .select("profile_id, specialization, profiles(first_name, last_name, email, status, college_id, department_id, departments(name, college_id))")
       .order("created_at", { ascending: true });
 
     if (error || !data) return [];
@@ -535,9 +536,15 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
 
       const normKey = fullName.toLowerCase().replace(/\s+/g, " ");
       const profAny = prof as Record<string, any>;
-      const dept = Array.isArray(profAny?.departments)
-        ? profAny.departments[0]?.name
-        : profAny?.departments?.name;
+      const deptObj = Array.isArray(profAny?.departments)
+        ? profAny.departments[0]
+        : profAny?.departments;
+      const dept = deptObj?.name;
+      const resolvedCollegeId = profAny?.college_id || deptObj?.college_id || null;
+
+      if (collegeId && resolvedCollegeId && resolvedCollegeId !== collegeId) {
+        continue;
+      }
 
       const candidate: FacultyOptionItem = {
         profile_id: item.profile_id,
@@ -545,6 +552,7 @@ export async function getApprovedFacultyListAction(): Promise<FacultyOptionItem[
         email: prof.email,
         department: dept || item.specialization || undefined,
         department_id: profAny?.department_id || null,
+        college_id: resolvedCollegeId,
       };
 
       const existing = byNormalizedName.get(normKey);

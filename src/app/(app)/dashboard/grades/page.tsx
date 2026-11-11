@@ -81,9 +81,11 @@ export default function GradesPage() {
   const [releasingId, setReleasingId] = useState<string | null>(null);
   const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
-  const { user, roles, activeRole } = useAuth();
+  const { user, profile, roles, activeRole } = useAuth();
   const effectiveRole = activeRole || roles[0] || "student";
   const isCoordinatorOrAdmin = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = isCoordinatorOrAdmin && !isSysAdmin ? profile?.college_id || null : null;
   const canReleaseVerdict = ["coordinator", "sys_admin"].includes(effectiveRole);
 
   const loadGrades = useCallback(async () => {
@@ -112,10 +114,11 @@ export default function GradesPage() {
             id, 
             title, 
             status,
+            college_id,
             student_id, 
             archived_at,
-            programs ( code, name ),
-            students ( student_number, profiles ( first_name, last_name, email ) )
+            programs ( code, name, college_id ),
+            students ( student_number, college_id, profiles ( first_name, last_name, email ) )
           ),
           profiles!panelist_id ( first_name, last_name, email ),
           rubric_templates ( title, criteria, passing_score )
@@ -126,10 +129,21 @@ export default function GradesPage() {
       let loadedEvals: any[] = [];
 
       if (isCoordinatorOrAdmin) {
-        // Full access
+        // Scoped to College for Coordinator / Dean, or University-wide for sys_admin
         const { data, error } = await baseQuery;
         if (error) throw error;
-        loadedEvals = ((data as any[]) || []).filter((e) => e.projects && !e.projects.archived_at);
+        loadedEvals = ((data as any[]) || []).filter((e) => {
+          if (!e.projects || e.projects.archived_at) return false;
+          if (scopedCollegeId) {
+            const pCol =
+              e.projects.college_id ||
+              e.projects.programs?.college_id ||
+              e.projects.students?.college_id ||
+              null;
+            if (pCol && pCol !== scopedCollegeId) return false;
+          }
+          return true;
+        });
 
       } else if (isPanelist) {
         // Find all projects where user is assigned as panel member
@@ -228,7 +242,7 @@ export default function GradesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, effectiveRole, isCoordinatorOrAdmin, supabase]);
+  }, [user, effectiveRole, isCoordinatorOrAdmin, scopedCollegeId, supabase]);
 
   useEffect(() => {
     loadGrades();

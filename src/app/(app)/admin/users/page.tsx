@@ -33,11 +33,18 @@ import {
 import { updateUserRoleAction, updateUserStatusAction, createFacultyAccountAction } from "@/lib/admin/actions";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 export default function UsersPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { profile, roles, activeRole } = useAuth();
+  const effectiveRole = activeRole || roles[0] || "coordinator";
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = !isSysAdmin ? profile?.college_id || null : null;
+
   const [users, setUsers] = useState<any[]>([]);
+  const [collegeLabel, setCollegeLabel] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "faculty" | "students">("all");
@@ -66,6 +73,19 @@ export default function UsersPage() {
   const loadUsersData = async () => {
     setLoading(true);
     try {
+      if (scopedCollegeId) {
+        const { data: colRow } = await supabase
+          .from("colleges")
+          .select("name, code")
+          .eq("id", scopedCollegeId)
+          .maybeSingle();
+        if (colRow) {
+          setCollegeLabel(`${colRow.name} (${colRow.code})`);
+        }
+      } else {
+        setCollegeLabel("University-Wide Directory");
+      }
+
       // Fetch profiles, roles, and faculty records
       const { data, error } = await supabase
         .from("profiles")
@@ -75,6 +95,8 @@ export default function UsersPage() {
           last_name,
           email,
           status,
+          college_id,
+          department_id,
           created_at,
           user_roles!user_roles_profile_id_fkey (
             roles ( code, name )
@@ -84,7 +106,12 @@ export default function UsersPage() {
             specialization,
             rank
           ),
-          departments ( name )
+          students (
+            college_id,
+            department_id,
+            programs ( college_id )
+          ),
+          departments ( name, college_id )
         `)
         .order("created_at", { ascending: false });
 
@@ -102,6 +129,18 @@ export default function UsersPage() {
         if (email.endsWith("@aurora.test") && parsuNames.has(fullName)) {
           return false;
         }
+        if (scopedCollegeId) {
+          const deptObj = Array.isArray(u.departments) ? u.departments[0] : u.departments;
+          const stuObj = Array.isArray(u.students) ? u.students[0] : u.students;
+          const stuProg = Array.isArray(stuObj?.programs) ? stuObj.programs[0] : stuObj?.programs;
+          const resolvedColId =
+            u.college_id ||
+            deptObj?.college_id ||
+            stuObj?.college_id ||
+            stuProg?.college_id ||
+            null;
+          return resolvedColId === scopedCollegeId;
+        }
         return true;
       });
       setUsers(dedupedUsers);
@@ -115,7 +154,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsersData();
-  }, []);
+  }, [scopedCollegeId]);
 
   const handleRoleChange = async (profileId: string, roleCode: string) => {
     setUpdatingId(profileId);
@@ -163,6 +202,9 @@ export default function UsersPage() {
         specialization: inviteForm.specialization,
         academicRank: inviteForm.academicRank,
         password: inviteForm.password || undefined,
+        collegeId: profile?.college_id || null,
+        departmentId: profile?.department_id || null,
+        campusId: profile?.campus_id || null,
       });
 
       if (result.temporaryPassword) {
@@ -212,9 +254,16 @@ export default function UsersPage() {
       <div className="mx-auto max-w-7xl space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management &amp; Security Console</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management &amp; Security Console</h1>
+              {collegeLabel && (
+                <Badge variant="outline" className="text-xs font-bold bg-primary/10 text-primary border-primary/30">
+                  {collegeLabel}
+                </Badge>
+              )}
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Verify faculty registration applications, onboard authorized evaluators, and manage university RBAC permissions.
+              Verify faculty registration applications, onboard authorized evaluators, and manage college RBAC permissions.
             </p>
           </div>
 

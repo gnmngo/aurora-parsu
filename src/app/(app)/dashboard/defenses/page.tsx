@@ -169,6 +169,8 @@ export default function DefensesPage() {
   const effectiveRole = activeRole || roles[0] || "student";
   const isCoordinator = ["coordinator", "sys_admin"].includes(effectiveRole);
   const isManagement = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
+  const isSysAdmin = effectiveRole === "sys_admin";
+  const scopedCollegeId = isManagement && !isSysAdmin ? profile?.college_id || null : null;
   const isStudent = effectiveRole === "student";
 
   // Section Advisers Management State
@@ -188,7 +190,7 @@ export default function DefensesPage() {
     try {
       const [secList, facList] = await Promise.all([
         getProgramSectionsAction(),
-        getApprovedFacultyListAction(),
+        getApprovedFacultyListAction(scopedCollegeId),
       ]);
       setProgramSections(secList);
       setFacultyList(facList);
@@ -234,23 +236,32 @@ export default function DefensesPage() {
     }
   };
 
-  // Fetch workflow templates list
+  // Fetch workflow templates list (scoped to Coordinator/Dean's college)
   useEffect(() => {
     async function fetchTemplates() {
       try {
         const { data } = await supabase
           .from("workflow_templates")
-          .select("id, name, program_id, programs(code, name, departments(name, code))")
+          .select("id, name, is_default, college_id, program_id, programs(code, name, college_id, departments(name, code, college_id))")
           .order("name");
         if (data && data.length > 0) {
-          setTemplates(data);
+          const visible = scopedCollegeId
+            ? data.filter((t: any) => {
+                const prog = Array.isArray(t.programs) ? t.programs[0] : t.programs;
+                const dept = Array.isArray(prog?.departments) ? prog.departments[0] : prog?.departments;
+                const tmplCol = t.college_id || prog?.college_id || dept?.college_id || null;
+                if (tmplCol) return tmplCol === scopedCollegeId;
+                return Boolean(t.is_default);
+              })
+            : data;
+          setTemplates(visible.length > 0 ? visible : data);
         }
       } catch (err) {
         console.error("Error loading workflow templates:", err);
       }
     }
     fetchTemplates();
-  }, [supabase]);
+  }, [supabase, scopedCollegeId]);
 
   // Fetch stages dynamically based on template filter
   const fetchStages = useCallback(async () => {
@@ -357,6 +368,17 @@ export default function DefensesPage() {
         }
 
         allowedProjectIds = Array.from(idSet);
+        if (allowedProjectIds.length === 0) {
+          setSchedules([]);
+          setLoadingSchedules(false);
+          return;
+        }
+      } else if (scopedCollegeId) {
+        const { data: colProjs } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("college_id", scopedCollegeId);
+        allowedProjectIds = (colProjs || []).map((p: { id: string }) => p.id);
         if (allowedProjectIds.length === 0) {
           setSchedules([]);
           setLoadingSchedules(false);
@@ -469,7 +491,7 @@ export default function DefensesPage() {
     } finally {
       setLoadingSchedules(false);
     }
-  }, [supabase, user?.id, effectiveRole, isManagement]);
+  }, [supabase, user?.id, effectiveRole, isManagement, scopedCollegeId]);
 
   useEffect(() => {
     fetchSchedules();

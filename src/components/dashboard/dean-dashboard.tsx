@@ -81,14 +81,17 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
       try {
         setLoading(true);
 
-        // 1. Resolve Dean's College ID
+        // 1. Resolve Dean's College ID & Details
         const { data: prof } = await supabase
           .from("profiles")
-          .select("college_id")
+          .select("college_id, department_id, departments:department_id(college_id)")
           .eq("id", userId)
           .maybeSingle();
 
-        const collegeId = prof?.college_id || "10000000-0000-0000-0000-000000000003";
+        const deptObj = Array.isArray((prof as any)?.departments)
+          ? (prof as any)?.departments[0]
+          : (prof as any)?.departments;
+        const collegeId = prof?.college_id || deptObj?.college_id || "10000000-0000-0000-0000-000000000003";
 
         // 2. Fetch all active projects within this college
         const { data: projsData } = await supabase
@@ -117,24 +120,31 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
           setProjects(projsData as unknown as ProjectItem[]);
         }
 
-        // 3. Fetch evaluations in this college for deliberation overview
-        const { data: evalsData } = await supabase
-          .from("evaluations")
-          .select(`
-            id,
-            project_id,
-            total_score,
-            verdict_code,
-            status,
-            updated_at,
-            projects ( title, departments ( code, name ) ),
-            defense_stages ( name )
-          `)
-          .order("updated_at", { ascending: false })
-          .limit(20);
+        const collegeProjectIds = (projsData || []).map((p: any) => p.id);
 
-        if (evalsData) {
-          setEvaluations(evalsData as unknown as EvaluationItem[]);
+        // 3. Fetch evaluations strictly in this college for deliberation overview
+        if (collegeProjectIds.length > 0) {
+          const { data: evalsData } = await supabase
+            .from("evaluations")
+            .select(`
+              id,
+              project_id,
+              total_score,
+              verdict_code,
+              status,
+              updated_at,
+              projects ( title, departments ( code, name ) ),
+              defense_stages ( name )
+            `)
+            .in("project_id", collegeProjectIds)
+            .order("updated_at", { ascending: false })
+            .limit(20);
+
+          if (evalsData) {
+            setEvaluations(evalsData as unknown as EvaluationItem[]);
+          }
+        } else {
+          setEvaluations([]);
         }
 
         // 4. Fetch personal faculty duties (Dean as Adviser or Panelist)
