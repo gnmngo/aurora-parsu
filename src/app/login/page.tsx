@@ -16,11 +16,15 @@ import {
   BookOpen,
   Users,
   ShieldCheck,
-  Crown
+  Crown,
+  ArrowLeft,
+  Sun,
+  Moon
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/providers/theme-provider";
 import { cn } from "@/lib/utils";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +51,12 @@ function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
   const { session, profile, isLoading: authLoading } = useAuth();
   const { startLoading, stopLoading } = useGlobalLoading();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<"signin" | "register" | "forgot">("signin");
   
@@ -448,7 +458,32 @@ function LoginForm() {
       {/* Top spacer */}
       <div className="w-full h-1 shrink-0" />
 
-      <div className="w-full max-w-[420px] my-auto relative z-10">
+      <div className="w-full max-w-[420px] my-auto relative z-10 space-y-4">
+        {/* Navigation and Theme Switcher Bar */}
+        <div className="flex items-center justify-between px-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            <span>Back to Home</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2 rounded-lg border border-border bg-card/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            aria-label="Toggle theme"
+            title={mounted && resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {mounted && resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+            )}
+          </button>
+        </div>
+
         <Card className="w-full bg-card/80 backdrop-blur-xl border-border shadow-2xl relative overflow-hidden rounded-2xl">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
           
