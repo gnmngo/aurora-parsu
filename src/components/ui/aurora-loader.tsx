@@ -205,25 +205,30 @@ export function AuroraLoader({
 
   const content = (
     <div className="relative flex flex-col items-center justify-center p-6 text-center select-none max-w-sm w-full z-10">
-      {/* Understated Branding: Small 36px original logo squircle */}
+      {/* Understated Branding: Official Geometric A Symbol */}
       {showBrandText && (
         <div className="flex flex-col items-center mb-6 space-y-2">
-          <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-border/80 bg-card shadow-xs p-1 flex items-center justify-center">
+          <div className="relative h-12 w-12 rounded-2xl overflow-hidden border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] shadow-md p-2 flex items-center justify-center">
             <Image
-              src="/logo.png"
-              alt="AURORA"
-              width={32}
-              height={32}
+              src="/aurora-symbol-transparent.png"
+              alt="AURORA A Symbol"
+              width={36}
+              height={36}
               priority
-              className="object-contain"
+              className="object-contain dark:brightness-100 brightness-0 transition-all duration-200"
             />
           </div>
 
-          <div className="space-y-0.5">
-            <h1 className="text-sm font-bold tracking-wider uppercase font-display text-foreground">
-              AURORA
-            </h1>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
+          <div className="space-y-1">
+            <div className="flex items-center justify-center gap-1.5">
+              <h1 className="text-sm font-bold tracking-[0.25em] uppercase font-display text-zinc-900 dark:text-[#F5F5F5]">
+                AURORA
+              </h1>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                Paperless
+              </span>
+            </div>
+            <p className="text-[10px] font-medium text-zinc-500 dark:text-[#929292] uppercase tracking-widest">
               Partido State University
             </p>
           </div>

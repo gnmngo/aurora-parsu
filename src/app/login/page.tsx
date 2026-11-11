@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Loader2, 
@@ -30,19 +31,19 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AuroraLogo } from "@/components/ui/aurora-logo";
 import { registerUserAction } from "@/lib/auth/register-action";
 import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 import { prepareLoginAction, resetPasswordDirectAction } from "@/lib/auth/login-actions";
 import { useGlobalLoading } from "@/providers/loading-provider";
+import { APP_ACRONYM_MEANING, INSTITUTION_CAMPUS } from "@/constants/app";
 
 const DEMO_ROLES = [
-  { id: "student", label: "Student", icon: GraduationCap, color: "text-blue-600 dark:text-blue-400" },
-  { id: "adviser", label: "Adviser", icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400" },
-  { id: "panelist", label: "Panelist", icon: Users, color: "text-violet-600 dark:text-violet-400" },
-  { id: "coordinator", label: "Coordinator", icon: ShieldCheck, color: "text-amber-600 dark:text-amber-400" },
-  { id: "dean", label: "College Dean", icon: Crown, color: "text-rose-600 dark:text-rose-400" },
-  { id: "admin", label: "System Admin", icon: Shield, color: "text-slate-600 dark:text-slate-400" },
+  { id: "student", label: "Student Proponent", icon: GraduationCap },
+  { id: "adviser", label: "Research Adviser", icon: BookOpen },
+  { id: "panelist", label: "Defense Panelist", icon: Users },
+  { id: "coordinator", label: "Research Coordinator", icon: ShieldCheck },
+  { id: "dean", label: "College Dean", icon: Crown },
+  { id: "admin", label: "System Administrator", icon: Shield },
 ] as const;
 
 function LoginForm() {
@@ -72,8 +73,8 @@ function LoginForm() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
-  const [regRole, setRegRole] = useState("student"); // student, adviser, panelist
-  const [regNumber, setRegNumber] = useState(""); // student/employee number
+  const [regRole, setRegRole] = useState("student");
+  const [regNumber, setRegNumber] = useState("");
   
   // Dynamic Academic Structure States
   const [campuses, setCampuses] = useState<any[]>([]);
@@ -113,100 +114,63 @@ function LoginForm() {
 
   // Load colleges based on campus
   useEffect(() => {
-    if (regCampusId) {
-      supabase.from("colleges").select("id, name").eq("campus_id", regCampusId).order("name").then(({ data }) => {
-        const list = data || [];
-        setColleges(list);
-        if (list.length > 0) {
-          setRegCollegeId((prev) => (list.some((c) => c.id === prev) ? prev : list[0].id));
-        } else {
-          setRegCollegeId("");
-        }
-      });
-    } else {
+    if (!regCampusId) {
       setColleges([]);
-      setRegCollegeId("");
-      setRegDepartmentId("");
-      setPrograms([]);
-      setRegProgramId("");
-      setMajors([]);
-      setRegMajorId("");
+      return;
     }
+    supabase.from("colleges").select("id, name, code").eq("campus_id", regCampusId).order("name").then(({ data }) => {
+      if (data) {
+        setColleges(data);
+        if (data.length > 0) setRegCollegeId((prev) => (data.some(c => c.id === prev) ? prev : data[0].id));
+      }
+    });
   }, [regCampusId, supabase]);
 
-  // Load departments based on college
+  // Load departments & programs based on college
   useEffect(() => {
-    if (regCollegeId) {
-      supabase.from("departments").select("id, name").eq("college_id", regCollegeId).order("name").then(({ data }) => {
-        setDepartments(data || []);
-      });
-    } else {
+    if (!regCollegeId) {
       setDepartments([]);
-      setRegDepartmentId("");
-    }
-  }, [regCollegeId, supabase]);
-
-  // Load programs based on college directly (resilient to optional departments)
-  useEffect(() => {
-    if (regCollegeId) {
-      supabase
-        .from("programs")
-        .select("id, name, code, department_id")
-        .eq("college_id", regCollegeId)
-        .order("name")
-        .then(({ data }) => {
-          const list = data || [];
-          setPrograms(list);
-          if (list.length > 0) {
-            setRegProgramId((prev) => (list.some((p) => p.id === prev) ? prev : list[0].id));
-          } else {
-            setRegProgramId("");
-          }
-        });
-    } else {
       setPrograms([]);
-      setRegProgramId("");
+      return;
     }
+    supabase.from("departments").select("id, name, code").eq("college_id", regCollegeId).order("name").then(({ data }) => {
+      if (data) setDepartments(data);
+    });
+
+    supabase.from("programs").select("id, name, code, department_id").eq("college_id", regCollegeId).order("name").then(({ data }) => {
+      if (data) {
+        setPrograms(data);
+        if (data.length > 0) {
+          setRegProgramId((prev) => (data.some(p => p.id === prev) ? prev : data[0].id));
+        } else {
+          setRegProgramId("");
+        }
+      }
+    });
   }, [regCollegeId, supabase]);
 
   // Load majors based on program
   useEffect(() => {
-    if (regProgramId) {
-      supabase.from("majors").select("id, name").eq("program_id", regProgramId).order("name").then(({ data }) => {
-        const list = data || [];
-        setMajors(list);
-        if (list.length > 0) setRegMajorId(list[0].id);
-        else setRegMajorId("");
-      });
-    } else {
+    if (!regProgramId) {
       setMajors([]);
-      setRegMajorId("");
+      return;
     }
+    supabase.from("majors").select("id, name, code").eq("program_id", regProgramId).order("name").then(({ data }) => {
+      if (data) setMajors(data);
+    });
   }, [regProgramId, supabase]);
 
-  // Safe redirect only after session and profile are fully resolved
+  // If already logged in, redirect to dashboard smoothly
   useEffect(() => {
-    if (!authLoading && session && profile) {
-      stopLoading();
-      const redirectTo = searchParams.get("redirect");
-      const safePath =
-        redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-          ? redirectTo
-          : "/dashboard";
-      router.replace(safePath);
+    if (session && profile && !authLoading) {
+      router.replace("/dashboard");
     }
-  }, [session, profile, authLoading, router, searchParams, stopLoading]);
-
-  // Handle errors passed in URL
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err) {
-      toast.error(`Access Denied: Account status is ${err}. Please contact administrator.`);
-    }
-  }, [searchParams]);
+  }, [session, profile, authLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
     if (!trimmedEmail || !trimmedPassword) {
@@ -332,7 +296,6 @@ function LoginForm() {
 
       toast.success("Student account created successfully! Signing in...");
       
-      // Immediate auto-login to transition directly to dashboard
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: cleanRegEmail,
         password: cleanRegPassword,
@@ -340,7 +303,6 @@ function LoginForm() {
 
       if (signInError) {
         stopLoading();
-        // Fallback: populate credentials and switch to sign in tab
         setEmail(cleanRegEmail);
         setPassword(cleanRegPassword);
         setActiveTab("signin");
@@ -359,34 +321,54 @@ function LoginForm() {
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail.trim()) {
+    if (loading) return;
+
+    const trimmed = forgotEmail.trim();
+    if (!trimmed) {
       toast.error("Please enter your email or Student ID");
       return;
     }
-    if (forgotNewPassword.trim().length < 8) {
+    if (!forgotNewPassword.trim() || forgotNewPassword.trim().length < 8) {
       toast.error("New password must be at least 8 characters long");
       return;
     }
+
     setLoading(true);
+    startLoading("Verifying account identity & updating credentials...");
+
     try {
-      const res = await resetPasswordDirectAction(forgotEmail.trim(), forgotNewPassword.trim());
-      if (!res.success || !res.email) {
-        toast.error(res.error || "Failed to reset password.");
+      const result = await resetPasswordDirectAction(trimmed, forgotNewPassword.trim());
+
+      if (!result.success) {
+        stopLoading();
+        toast.error(result.error || "Failed to update password");
         return;
       }
+
       setForgotSent(true);
-      toast.success("Password updated successfully! Signing in...");
-      const { error: loginErr } = await supabase.auth.signInWithPassword({
-        email: res.email,
+      toast.success("Password updated successfully!");
+
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: result.email || trimmed.toLowerCase(),
         password: forgotNewPassword.trim(),
       });
-      if (loginErr) {
-        setEmail(res.email);
-        setPassword(forgotNewPassword.trim());
-        setActiveTab("signin");
+
+      if (!signInError && data.session) {
+        stopLoading();
+        toast.success("Signed in with your new password!");
+        router.replace("/dashboard");
+      } else {
+        stopLoading();
+        setTimeout(() => {
+          setEmail(result.email || trimmed);
+          setPassword(forgotNewPassword.trim());
+          setActiveTab("signin");
+          setForgotSent(false);
+        }, 1200);
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to reset password.");
+      stopLoading();
+      toast.error(err?.message || "Password update failed");
     } finally {
       setLoading(false);
     }
@@ -404,7 +386,6 @@ function LoginForm() {
           ? "sys_admin"
           : roleType;
 
-      // Sign out any existing session first so SIGNED_OUT doesn't wipe aurora_active_role after we set it
       if (session) {
         await supabase.auth.signOut();
       }
@@ -450,489 +431,488 @@ function LoginForm() {
   const isFormDisabled = loading || authLoading;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-between py-6 px-4 relative overflow-y-auto">
-      {/* Dynamic abstract shapes for premium look */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-white text-zinc-900 dark:bg-[#050505] dark:text-[#F5F5F5] antialiased selection:bg-blue-600 selection:text-white font-sans flex flex-col items-center justify-between py-8 px-4 relative overflow-y-auto transition-colors duration-200">
+      
+      {/* Subtle architectural ambient background grid matching Landing Page */}
+      <div 
+        className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-      {/* Top spacer */}
-      <div className="w-full h-1 shrink-0" />
+      {/* Top Navigation & Theme Toggle Bar */}
+      <div className="w-full max-w-[440px] flex items-center justify-between relative z-10 px-1 mb-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-[#929292] hover:text-zinc-900 dark:hover:text-[#F5F5F5] transition-colors group cursor-pointer"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+          <span>Back to Home</span>
+        </Link>
 
-      <div className="w-full max-w-[420px] my-auto relative z-10 space-y-4">
-        {/* Navigation and Theme Switcher Bar */}
-        <div className="flex items-center justify-between px-1">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-            <span>Back to Home</span>
-          </Link>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2 rounded-lg border border-zinc-200 dark:border-[#252525] bg-zinc-100 dark:bg-[#0A0A0A] text-zinc-600 dark:text-[#929292] hover:text-zinc-900 dark:hover:text-[#F5F5F5] transition-colors cursor-pointer"
+          aria-label="Toggle theme"
+          title={mounted && resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {mounted && resolvedTheme === "dark" ? (
+            <Sun className="h-4 w-4 text-amber-400" />
+          ) : (
+            <Moon className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+          )}
+        </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-2 rounded-lg border border-border bg-card/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Toggle theme"
-            title={mounted && resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {mounted && resolvedTheme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
-            )}
-          </button>
-        </div>
-
-        <Card className="w-full bg-card/80 backdrop-blur-xl border-border shadow-2xl relative overflow-hidden rounded-2xl">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
-          
-          <CardContent className="p-6 sm:p-7">
+      {/* Central Login Card */}
+      <div className="w-full max-w-[440px] my-auto relative z-10">
+        <Card className="w-full bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-[#252525] shadow-2xl relative overflow-hidden rounded-2xl transition-colors">
+          <CardContent className="p-7 sm:p-8">
+            
+            {/* Header: Official Geometric A Symbol + Wordmark */}
             <div className="text-center mb-6 flex flex-col items-center">
-              <AuroraLogo size="xl" className="mb-3" />
-              <h1 className="text-2xl font-black tracking-tight mb-0.5 text-foreground">AURORA</h1>
-              <p className="text-xs font-bold text-primary tracking-wide mb-1">
-                Academic Unified Review, Observation, Rating, and Assessment System
-              </p>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
-                Partido State University
-              </p>
-              <p className="text-[11px] text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
+              <div className="relative h-14 w-14 mb-3 flex items-center justify-center">
+                <Image
+                  src="/aurora-symbol-transparent.png"
+                  alt="Official AURORA Geometric Symbol"
+                  width={48}
+                  height={48}
+                  priority
+                  className="object-contain dark:brightness-100 brightness-0 transition-all duration-200 drop-shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_4px_16px_rgba(255,255,255,0.08)] select-none"
+                />
+              </div>
+
+              <div className="space-y-1 mb-2">
+                <div className="flex items-center justify-center gap-2">
+                  <h1 className="text-xl font-black tracking-[0.25em] uppercase font-display text-zinc-900 dark:text-[#F5F5F5]">
+                    AURORA
+                  </h1>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                    Paperless
+                  </span>
+                </div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-[#929292] uppercase tracking-widest">
+                  {INSTITUTION_CAMPUS}
+                </p>
+              </div>
+
+              <p className="text-xs text-zinc-600 dark:text-[#929292] max-w-xs mx-auto leading-relaxed">
                 Paperless Academic Defense Workflow System for Research, Capstone, Thesis &amp; Dissertation Papers
               </p>
             </div>
 
-            <div className="flex bg-muted/50 p-1 rounded-xl mb-5 relative">
-            <button
-              onClick={() => setActiveTab("signin")}
-              className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all duration-300 relative z-10 ${
-                activeTab === "signin" ? "text-primary shadow-sm bg-background" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setActiveTab("register")}
-              className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all duration-300 relative z-10 ${
-                activeTab === "register" ? "text-primary shadow-sm bg-background" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Register
-            </button>
-          </div>
+            {/* Mode Switcher Tabs (Sign In / Register) */}
+            <div className="flex bg-zinc-100 dark:bg-[#121212] p-1 rounded-xl mb-6 border border-zinc-200 dark:border-[#202020]">
+              <button
+                type="button"
+                onClick={() => setActiveTab("signin")}
+                className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                  activeTab === "signin"
+                    ? "bg-white dark:bg-[#050505] text-zinc-900 dark:text-[#F5F5F5] shadow-xs"
+                    : "text-zinc-500 dark:text-[#929292] hover:text-zinc-900 dark:hover:text-[#F5F5F5]"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("register")}
+                className={`flex-1 text-xs font-bold py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                  activeTab === "register"
+                    ? "bg-white dark:bg-[#050505] text-zinc-900 dark:text-[#F5F5F5] shadow-xs"
+                    : "text-zinc-500 dark:text-[#929292] hover:text-zinc-900 dark:hover:text-[#F5F5F5]"
+                }`}
+              >
+                Student Registration
+              </button>
+            </div>
 
-          {activeTab === "signin" && (
-            <form onSubmit={handleLogin} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {searchParams.get("error") === "pending" && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 flex items-start gap-2.5">
-                  <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold">Faculty Account Pending Verification</p>
-                    <p className="text-[11px] text-amber-900/90 mt-0.5 leading-relaxed">
-                      Your faculty registration is awaiting institutional approval by the University Research Coordinator. You will be able to sign in once your credentials have been verified.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="email">Email Address or Student ID</label>
-                <Input
-                  id="email"
-                  type="text"
-                  autoComplete="username"
-                  placeholder="name@parsu.edu.ph or Student ID"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isFormDisabled}
-                  className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1 relative">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="password">Password</label>
-                  <button 
-                    type="button" 
-                    onClick={() => setActiveTab("forgot")}
-                    className="text-[10px] text-primary hover:underline font-medium"
-                    disabled={isFormDisabled}
-                  >
-                    Forgot?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isFormDisabled}
-                    className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl cursor-pointer" type="submit">
-                {loading || authLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="animate-spin w-4 h-4" />
-                    Authenticating...
-                  </span>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-
-              <div className="mt-5">
-                <div className="relative mb-3">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border/70"></span>
-                  </div>
-                  <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
-                    <span className="bg-card px-2.5 text-muted-foreground">Demo Accounts</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  {DEMO_ROLES.map((role) => {
-                    const Icon = role.icon;
-                    return (
-                      <Button
-                        key={role.id}
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        onClick={() => handleDemoLogin(role.id)}
-                        disabled={isFormDisabled}
-                        className="h-8.5 rounded-xl bg-background/60 hover:bg-muted/70 border-border/70 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-2xs hover:shadow-xs cursor-pointer"
-                      >
-                        <Icon className={cn("h-3.5 w-3.5 shrink-0", role.color)} />
-                        <span className="truncate">{role.label}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            </form>
-          )}
-
-          {activeTab === "register" && (
-            <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="firstName">First Name</label>
-                  <Input
-                    id="firstName"
-                    placeholder="John"
-                    value={regFirstName}
-                    onChange={(e) => setRegFirstName(e.target.value)}
-                    disabled={isFormDisabled}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="lastName">Last Name</label>
-                  <Input
-                    id="lastName"
-                    placeholder="Doe"
-                    value={regLastName}
-                    onChange={(e) => setRegLastName(e.target.value)}
-                    disabled={isFormDisabled}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regEmail">Email Address</label>
-                <Input
-                  id="regEmail"
-                  type="email"
-                  placeholder="name@parsu.edu.ph"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  disabled={isFormDisabled}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regPassword">Password</label>
-                <div className="relative">
-                  <Input
-                    id="regPassword"
-                    type={showRegPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    disabled={isFormDisabled}
-                    className="pr-10"
-                    required
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowRegPassword(!showRegPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="regNumber">
-                  Student ID Number
-                </label>
-                <Input
-                  id="regNumber"
-                  type="text"
-                  placeholder="e.g. 2022-10492"
-                  value={regNumber}
-                  onChange={(e) => setRegNumber(e.target.value)}
-                  disabled={isFormDisabled}
-                  required
-                />
-              </div>
-
-              <div className="space-y-3 p-3 bg-muted/30 rounded-xl border border-border">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="campus">Campus</label>
-                  <select
-                    id="campus"
-                    value={regCampusId}
-                    onChange={(e) => setRegCampusId(e.target.value)}
-                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    disabled={campuses.length === 0}
-                  >
-                    {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="college">College</label>
-                  <select
-                    id="college"
-                    value={regCollegeId}
-                    onChange={(e) => setRegCollegeId(e.target.value)}
-                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    disabled={colleges.length === 0}
-                  >
-                    {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-
-                {departments.length > 0 && (
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="department">Department (Optional)</label>
-                    <select
-                      id="department"
-                      value={regDepartmentId}
-                      onChange={(e) => setRegDepartmentId(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    >
-                      <option value="">-- No Department --</option>
-                      {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
+            {/* SIGN IN TAB */}
+            {activeTab === "signin" && (
+              <form onSubmit={handleLogin} className="space-y-4 animate-in fade-in duration-300">
+                {searchParams.get("error") === "pending" && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5">
+                    <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Faculty Account Pending Verification</p>
+                      <p className="text-[11px] text-amber-900/90 dark:text-amber-300/90 mt-0.5 leading-relaxed">
+                        Your faculty registration is awaiting institutional approval by the University Research Coordinator.
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="program">Academic Program</label>
-                  <select
-                    id="program"
-                    value={regProgramId}
-                    onChange={(e) => {
-                      const selId = e.target.value;
-                      setRegProgramId(selId);
-                      const selProg = programs.find((p) => p.id === selId);
-                      if (selProg?.department_id) {
-                        setRegDepartmentId(selProg.department_id);
-                      }
-                    }}
-                    className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    disabled={programs.length === 0}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold tracking-wider" htmlFor="email">
+                    Institutional Email or Student ID
+                  </label>
+                  <Input
+                    id="email"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="name@parsu.edu.ph or Student ID"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isFormDisabled}
+                    className="h-10.5 rounded-xl bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525] text-zinc-900 dark:text-[#F5F5F5] text-xs focus-visible:ring-blue-600/30"
                     required
-                  >
-                    <option value="">{programs.length === 0 ? "-- Loading Programs... --" : "-- Select Program --"}</option>
-                    {programs.map(p => <option key={p.id} value={p.id}>{p.name} {p.code ? `(${p.code})` : ""}</option>)}
-                  </select>
+                  />
                 </div>
 
-                {majors.length > 0 && (
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="major">Major (Optional)</label>
-                    <select
-                      id="major"
-                      value={regMajorId}
-                      onChange={(e) => setRegMajorId(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    >
-                      <option value="">-- No Major --</option>
-                      {majors.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="yearLevel">Year Level</label>
-                    <select
-                      id="yearLevel"
-                      value={regYearLevel}
-                      onChange={(e) => setRegYearLevel(Number(e.target.value))}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    >
-                      <option value={4}>4th Year (Capstone / Thesis)</option>
-                      <option value={3}>3rd Year (Methods of Research)</option>
-                      <option value={2}>2nd Year</option>
-                      <option value={1}>1st Year</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold" htmlFor="section">Class Section</label>
-                    <select
-                      id="section"
-                      value={regSection}
-                      onChange={(e) => setRegSection(e.target.value)}
-                      className="w-full h-9 text-sm rounded-md border border-border bg-background px-2 focus:outline-none"
-                    >
-                      <option value="A">Section A</option>
-                      <option value="B">Section B</option>
-                      <option value="C">Section C</option>
-                      <option value="D">Section D</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
-                <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-foreground">Faculty, Adviser, or Panelist?</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                    Faculty, defense panelist, and coordinator accounts are officially provisioned by the Research Coordinator. Please contact your college coordinator for official access.
-                  </p>
-                </div>
-              </div>
-
-              <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl cursor-pointer font-bold text-xs" type="submit">
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="animate-spin w-4 h-4" />
-                    Creating student account...
-                  </span>
-                ) : (
-                  "Create Student Account"
-                )}
-              </Button>
-            </form>
-          )}
-
-          {activeTab === "forgot" && (
-            <form onSubmit={handleForgot} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="text-center mb-4">
-                <h3 className="text-sm font-semibold mb-1">Reset Account Password</h3>
-                <p className="text-xs text-muted-foreground">Enter your registered institutional email (or Student ID) and set a new password.</p>
-              </div>
-
-              {forgotSent ? (
-                <div className="bg-primary/10 text-primary p-4 rounded-xl flex items-start gap-3 border border-primary/20">
-                  <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                  <p className="text-sm">Password for <strong>{forgotEmail}</strong> has been updated. Redirecting...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="forgotEmail">Institutional Email or Student ID</label>
-                    <Input
-                      id="forgotEmail"
-                      type="text"
-                      placeholder="name.pbox@parsu.edu.ph"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
+                <div className="space-y-1.5 relative">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold tracking-wider" htmlFor="password">
+                      Password
+                    </label>
+                    <button 
+                      type="button" 
+                      onClick={() => setActiveTab("forgot")}
+                      className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
                       disabled={isFormDisabled}
-                      className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20"
+                    >
+                      Forgot?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isFormDisabled}
+                      className="h-10.5 rounded-xl bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525] text-zinc-900 dark:text-[#F5F5F5] text-xs focus-visible:ring-blue-600/30 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button 
+                  disabled={isFormDisabled} 
+                  className="w-full h-10.5 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] dark:hover:bg-white text-xs font-bold transition-all shadow-sm cursor-pointer" 
+                  type="submit"
+                >
+                  {loading || authLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-4 h-4" />
+                      Authenticating...
+                    </span>
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+
+                {/* DEMO ACCOUNTS SECTION (Maintained & Sleekly Styled) */}
+                <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-[#202020]">
+                  <div className="text-center mb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-zinc-500 dark:text-[#929292]">
+                      Instant Demo Role Access
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    {DEMO_ROLES.map((role) => {
+                      const Icon = role.icon;
+                      return (
+                        <button
+                          key={role.id}
+                          type="button"
+                          onClick={() => handleDemoLogin(role.id)}
+                          disabled={isFormDisabled}
+                          className="h-9 rounded-xl bg-zinc-50 dark:bg-[#050505] hover:bg-zinc-100 dark:hover:bg-[#141414] border border-zinc-200 dark:border-[#252525] text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-start px-3 gap-2 transition-all shadow-2xs hover:border-blue-500/40 cursor-pointer group"
+                        >
+                          <Icon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0 transition-transform group-hover:scale-110" />
+                          <span className="truncate">{role.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* REGISTRATION TAB */}
+            {activeTab === "register" && (
+              <form onSubmit={handleRegister} className="space-y-3.5 animate-in fade-in duration-300">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="firstName">First Name</label>
+                    <Input
+                      id="firstName"
+                      placeholder="Juan"
+                      value={regFirstName}
+                      onChange={(e) => setRegFirstName(e.target.value)}
+                      disabled={isFormDisabled}
+                      className="h-9.5 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525]"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider" htmlFor="forgotNewPassword">New Password</label>
-                    <div className="relative">
-                      <Input
-                        id="forgotNewPassword"
-                        type={showForgotPassword ? "text" : "password"}
-                        placeholder="At least 8 characters"
-                        value={forgotNewPassword}
-                        onChange={(e) => setForgotNewPassword(e.target.value)}
-                        disabled={isFormDisabled}
-                        className="h-10 rounded-xl bg-background/50 border-border focus-visible:ring-primary/20 pr-10"
-                        required
-                        minLength={8}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowForgotPassword(!showForgotPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="lastName">Last Name</label>
+                    <Input
+                      id="lastName"
+                      placeholder="Dela Cruz"
+                      value={regLastName}
+                      onChange={(e) => setRegLastName(e.target.value)}
+                      disabled={isFormDisabled}
+                      className="h-9.5 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525]"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="regEmail">Institutional Email</label>
+                  <Input
+                    id="regEmail"
+                    type="email"
+                    placeholder="jdelacruz@parsu.edu.ph"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    disabled={isFormDisabled}
+                    className="h-9.5 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525]"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="regPassword">Password</label>
+                  <div className="relative">
+                    <Input
+                      id="regPassword"
+                      type={showRegPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      disabled={isFormDisabled}
+                      className="h-9.5 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525] pr-10"
+                      required
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                      {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="regNumber">
+                    Student ID Number
+                  </label>
+                  <Input
+                    id="regNumber"
+                    type="text"
+                    placeholder="e.g. 2022-10492"
+                    value={regNumber}
+                    onChange={(e) => setRegNumber(e.target.value)}
+                    disabled={isFormDisabled}
+                    className="h-9.5 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525]"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2.5 p-3 bg-zinc-50 dark:bg-[#050505] rounded-xl border border-zinc-200 dark:border-[#252525]">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="campus">Campus</label>
+                    <select
+                      id="campus"
+                      value={regCampusId}
+                      onChange={(e) => setRegCampusId(e.target.value)}
+                      className="w-full h-8.5 text-xs rounded-lg border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] px-2 text-zinc-900 dark:text-zinc-100"
+                      disabled={campuses.length === 0}
+                    >
+                      {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="college">College</label>
+                    <select
+                      id="college"
+                      value={regCollegeId}
+                      onChange={(e) => setRegCollegeId(e.target.value)}
+                      className="w-full h-8.5 text-xs rounded-lg border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] px-2 text-zinc-900 dark:text-zinc-100"
+                      disabled={colleges.length === 0}
+                    >
+                      {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="program">Academic Program</label>
+                    <select
+                      id="program"
+                      value={regProgramId}
+                      onChange={(e) => {
+                        const selId = e.target.value;
+                        setRegProgramId(selId);
+                        const selProg = programs.find((p) => p.id === selId);
+                        if (selProg?.department_id) {
+                          setRegDepartmentId(selProg.department_id);
+                        }
+                      }}
+                      className="w-full h-8.5 text-xs rounded-lg border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] px-2 text-zinc-900 dark:text-zinc-100"
+                      disabled={programs.length === 0}
+                      required
+                    >
+                      <option value="">{programs.length === 0 ? "-- Loading Programs... --" : "-- Select Program --"}</option>
+                      {programs.map(p => <option key={p.id} value={p.id}>{p.name} {p.code ? `(${p.code})` : ""}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-200 dark:border-[#202020]">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="yearLevel">Year Level</label>
+                      <select
+                        id="yearLevel"
+                        value={regYearLevel}
+                        onChange={(e) => setRegYearLevel(Number(e.target.value))}
+                        className="w-full h-8.5 text-xs rounded-lg border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] px-2 text-zinc-900 dark:text-zinc-100"
                       >
-                        {showForgotPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                        <option value={4}>4th Year (Capstone / Thesis)</option>
+                        <option value={3}>3rd Year (Methods of Research)</option>
+                        <option value={2}>2nd Year</option>
+                        <option value={1}>1st Year</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold" htmlFor="section">Class Section</label>
+                      <select
+                        id="section"
+                        value={regSection}
+                        onChange={(e) => setRegSection(e.target.value)}
+                        className="w-full h-8.5 text-xs rounded-lg border border-zinc-200 dark:border-[#252525] bg-white dark:bg-[#0A0A0A] px-2 text-zinc-900 dark:text-zinc-100"
+                      >
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                      </select>
                     </div>
                   </div>
-                </>
-              )}
+                </div>
 
-              <Button disabled={isFormDisabled || forgotSent} className="w-full h-10 rounded-xl cursor-pointer" type="submit">
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="animate-spin w-4 h-4" />
-                    Updating password...
-                  </span>
+                <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] font-bold text-xs cursor-pointer shadow-sm" type="submit">
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-4 h-4" />
+                      Creating student account...
+                    </span>
+                  ) : (
+                    "Create Student Account"
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {/* FORGOT PASSWORD TAB */}
+            {activeTab === "forgot" && (
+              <form onSubmit={handleForgot} className="space-y-4 animate-in fade-in duration-300">
+                <div className="text-center mb-3">
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">Reset Account Password</h3>
+                  <p className="text-xs text-zinc-500 dark:text-[#929292]">Enter your institutional email and set a new password.</p>
+                </div>
+
+                {forgotSent ? (
+                  <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl flex items-start gap-3 border border-emerald-500/20">
+                    <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <p className="text-xs">Password updated successfully. Signing you in...</p>
+                  </div>
                 ) : (
-                  "Update Password & Sign In"
+                  <>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold tracking-wider" htmlFor="forgotEmail">Email or Student ID</label>
+                      <Input
+                        id="forgotEmail"
+                        type="text"
+                        placeholder="name@parsu.edu.ph"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        disabled={isFormDisabled}
+                        className="h-10 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525]"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-500 dark:text-[#929292] uppercase font-bold tracking-wider" htmlFor="forgotNewPassword">New Password</label>
+                      <div className="relative">
+                        <Input
+                          id="forgotNewPassword"
+                          type={showForgotPassword ? "text" : "password"}
+                          placeholder="At least 8 characters"
+                          value={forgotNewPassword}
+                          onChange={(e) => setForgotNewPassword(e.target.value)}
+                          disabled={isFormDisabled}
+                          className="h-10 text-xs bg-zinc-50 dark:bg-[#050505] border-zinc-200 dark:border-[#252525] pr-10"
+                          required
+                          minLength={8}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(!showForgotPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                        >
+                          {showForgotPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </Button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotSent(false);
-                  setActiveTab("signin");
-                }}
-                className="w-full text-xs text-muted-foreground hover:text-foreground mt-4 font-medium"
-                disabled={isFormDisabled}
-              >
-                Back to Sign In
-              </button>
-            </form>
-          )}
 
-        </CardContent>
-      </Card>
+                <Button disabled={isFormDisabled || forgotSent} className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] font-bold text-xs cursor-pointer shadow-sm" type="submit">
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-4 h-4" />
+                      Updating password...
+                    </span>
+                  ) : (
+                    "Update Password & Sign In"
+                  )}
+                </Button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotSent(false);
+                    setActiveTab("signin");
+                  }}
+                  className="w-full text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium cursor-pointer"
+                  disabled={isFormDisabled}
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            )}
+
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Footer */}
+      <div className="relative z-10 text-center w-full text-[11px] text-zinc-400 dark:text-zinc-600 font-medium shrink-0 pt-4">
+        <p>&copy; {new Date().getFullYear()} Partido State University · San Juan Bautista, Goa, Camarines Sur</p>
+      </div>
     </div>
-      
-    {/* Brand Footer — positioned cleanly in flow, never overlapped */}
-    <div className="relative z-10 mt-6 pb-2 text-center w-full text-xs text-muted-foreground/60 font-medium shrink-0">
-      <p>© 2026 Partido State University</p>
-    </div>
-  </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary w-8 h-8" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#050505]"><Loader2 className="animate-spin text-blue-600 w-8 h-8" /></div>}>
       <LoginForm />
     </Suspense>
   );

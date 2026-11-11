@@ -30,10 +30,7 @@ export function AuroraLogo({
   subtext,
   title,
 }: AuroraLogoProps) {
-  const [imageError, setImageError] = useState(false);
-
   const dimension = typeof size === "number" ? size : SIZE_MAP[size].px;
-  const iconClass = typeof size === "number" ? "h-5 w-5" : SIZE_MAP[size].iconSize;
   const tooltipText = title ?? `AURORA — ${APP_ACRONYM_MEANING}`;
 
   return (
@@ -43,30 +40,30 @@ export function AuroraLogo({
     >
       <div
         style={{ width: dimension, height: dimension }}
-        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-sm transition-all"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-900 dark:bg-black border border-white/10 p-1.5 shadow-sm transition-all"
       >
-        {!imageError ? (
-          <Image
-            src="/logo.png"
-            alt="AURORA Logo"
-            width={dimension}
-            height={dimension}
-            className="h-full w-full object-contain"
-            onError={() => setImageError(true)}
-            priority
-          />
-        ) : (
-          <Sparkles className={cn(iconClass, "text-white")} />
-        )}
+        <Image
+          src="/aurora-symbol-transparent.png"
+          alt="AURORA Geometric Logo"
+          width={dimension}
+          height={dimension}
+          className="h-full w-full object-contain"
+          priority
+        />
       </div>
 
       {showText && (
         <div className="flex flex-col">
-          <span className={cn("text-sm font-black tracking-wider uppercase font-display", textColor)}>
-            AURORA
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn("text-sm font-bold tracking-[0.2em] uppercase font-display", textColor)}>
+              AURORA
+            </span>
+            <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold uppercase tracking-wider">
+              Paperless
+            </span>
+          </div>
           {subtext && (
-            <span className="text-[10px] font-semibold uppercase tracking-widest opacity-60">
+            <span className="text-[9px] font-medium uppercase tracking-widest opacity-60">
               {subtext}
             </span>
           )}
