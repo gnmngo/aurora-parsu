@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 
 export default function SubmissionsPage() {
   const [submissionsList, setSubmissionsList] = useState<SubmissionRow[]>([]);
@@ -56,6 +57,8 @@ export default function SubmissionsPage() {
       setLoading(false);
     }
   }, [supabase, user?.id, effectiveRole, roles, profile?.college_id]);
+
+  useLiveRefresh(loadSubmissions);
 
   useEffect(() => {
     if (!isReady) {

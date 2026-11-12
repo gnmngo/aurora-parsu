@@ -24,8 +24,9 @@ import {
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
   ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck,
-  Download, Layers, Video, Trash2, Lock, UserPlus, Plus
+  Download, Layers, Video, Trash2, Lock, UserPlus, Plus, RotateCw
 } from "lucide-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -495,8 +496,10 @@ export default function MyProjectPage() {
     }
   }, [user]);
 
+  // Global live refresher subscription
+  useLiveRefresh(loadProjectData);
+
   useEffect(() => {
-    loadProjectData();
 
     const handleProjectChanged = () => {
       loadProjectData();

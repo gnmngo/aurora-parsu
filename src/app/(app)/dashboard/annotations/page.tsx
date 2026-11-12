@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import type { Annotation } from "@/types/database";
 
 /**
@@ -47,11 +48,9 @@ export default function AnnotationsPage() {
   const { user, roles, activeRole } = useAuth();
   const effectiveRole = activeRole || roles[0] || "student";
 
-  useEffect(() => {
+  const loadAnnotations = useCallback(async () => {
     if (!user) return;
-
-    async function loadAnnotations() {
-      try {
+    try {
         const isAdviserOrPanelist = ["adviser", "panelist"].includes(effectiveRole) || roles.includes("adviser") || roles.includes("panelist");
         const isCoordinatorOrAdmin = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
 
@@ -205,11 +204,13 @@ export default function AnnotationsPage() {
       } finally {
         setLoading(false);
       }
-    }
+    }, [user, effectiveRole, roles, supabase]);
 
+  useLiveRefresh(loadAnnotations);
+
+  useEffect(() => {
     loadAnnotations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, effectiveRole]);
+  }, [loadAnnotations]);
 
   const openCount = annotations.filter((ann) => ann.status === "open" || ann.status === "in_progress").length;
   const addressedCount = annotations.filter((ann) => ["addressed", "resolved", "verified", "closed"].includes(ann.status)).length;

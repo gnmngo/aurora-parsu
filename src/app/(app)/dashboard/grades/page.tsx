@@ -29,6 +29,7 @@ import { releaseProjectVerdictAction } from "@/lib/workflow/actions";
 import { toast } from "sonner";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 import { cn } from "@/lib/utils";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 
 /**
  * GradesPage — displays submitted evaluation score sheets and dynamic composite average grades.
@@ -235,6 +236,8 @@ export default function GradesPage() {
       setLoading(false);
     }
   }, [user, effectiveRole, isCoordinatorOrAdmin, scopedCollegeId, supabase]);
+
+  useLiveRefresh(loadGrades);
 
   useEffect(() => {
     loadGrades();

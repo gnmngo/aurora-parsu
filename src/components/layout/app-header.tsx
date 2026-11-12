@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Menu, Search, LogOut, Sun, Moon } from "lucide-react";
+import { Bell, Menu, Search, LogOut, Sun, Moon, RotateCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,6 +25,7 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const supabase = createClient();
 
   const effectiveRole = activeRole || roles[0] || "student";
@@ -45,20 +46,64 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
     }
   };
 
-  useEffect(() => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!profile) return;
+    const { count, error } = await supabase
+      .from("notifications_compat")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .eq("is_read", false);
 
-    const fetchUnreadCount = async () => {
-      const { count, error } = await supabase
-        .from("notifications_compat")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id)
-        .eq("is_read", false);
+    if (!error && count !== null) {
+      setUnreadCount(count);
+    }
+  }, [profile, supabase]);
 
-      if (!error && count !== null) {
-        setUnreadCount(count);
+  // Manual Live Refresher Trigger
+  const handleSyncRefresh = () => {
+    setIsRefreshing(true);
+    // 1. Broadcast custom event to all active dashboard views & hooks
+    window.dispatchEvent(new CustomEvent("aurora:refresh"));
+    // 2. Revalidate server-rendered routes
+    router.refresh();
+    // 3. Re-query unread notifications
+    fetchUnreadCount();
+    // 4. Smooth spin completion & user notification
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success("Synchronized with live database", {
+        description: "Latest defenses, projects, and notifications loaded.",
+        duration: 2500,
+      });
+    }, 600);
+  };
+
+  // Smart background tab focus revalidation
+  useEffect(() => {
+    let lastActive = Date.now();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const elapsed = Date.now() - lastActive;
+        // If tab was away for > 25 seconds, silently re-sync data!
+        if (elapsed > 25000) {
+          window.dispatchEvent(new CustomEvent("aurora:refresh"));
+          fetchUnreadCount();
+          router.refresh();
+        }
+        lastActive = Date.now();
+      } else {
+        lastActive = Date.now();
       }
     };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchUnreadCount, router]);
+
+  useEffect(() => {
+    if (!profile) return;
 
     fetchUnreadCount();
 
@@ -148,6 +193,18 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
           )}
         </Button>
       </Link>
+
+      {/* Live Data Refresher / Sync */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleSyncRefresh}
+        disabled={isRefreshing}
+        title="Sync live data with database"
+        className="text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        <RotateCw className={cn("h-4 w-4 transition-all duration-300", isRefreshing && "animate-spin text-primary")} />
+      </Button>
 
       {/* Theme toggle */}
       <Button

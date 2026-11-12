@@ -34,7 +34,9 @@ import {
   Award,
   CheckCheck,
   Download,
+  RotateCw,
 } from "lucide-react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { toast } from "sonner";
@@ -575,6 +577,12 @@ export default function DefensesPage() {
     fetchSchedules();
   }, [fetchSchedules]);
 
+  // Hook up global live sync / refresher
+  useLiveRefresh(() => {
+    fetchSchedules();
+    fetchStages();
+  });
+
   // Filter schedules by selected program/template
   const programSchedules = useMemo(() => {
     if (!selectedTemplateId || selectedTemplateId === "all") return schedules;
@@ -751,6 +759,22 @@ export default function DefensesPage() {
           </div>
 
           <div className="flex gap-2 items-center print:hidden">
+            {/* Quick Live Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                fetchSchedules();
+                fetchStages();
+                toast.success("Defense schedules refreshed");
+              }}
+              className="h-8 gap-1.5 text-xs font-semibold cursor-pointer rounded-lg border-border"
+              title="Refresh defense schedules"
+            >
+              <RotateCw className={cn("h-3.5 w-3.5", loadingSchedules && "animate-spin")} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+
             {/* Academic Program & Workflow Selector (shown to faculty/management) */}
             {!isStudent && (
               <div className="flex items-center gap-1.5 mr-2">
