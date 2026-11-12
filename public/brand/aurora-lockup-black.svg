@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 800" width="100%" height="100%">
+  <defs>
+    <style>
+      .wordmark { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 900; font-size: 154px; letter-spacing: 0.18em; fill: #0A0A0A; }
+      .badge-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; font-weight: 800; font-size: 36px; letter-spacing: 0.22em; fill: #2563EB; text-transform: uppercase; }
+      .subhead { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 700; font-size: 42px; letter-spacing: 0.28em; fill: #71717A; text-transform: uppercase; }
+      .desc { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 500; font-size: 32px; letter-spacing: 0.04em; fill: #71717A; }
+    </style>
+  </defs>
+  <path d="M 360.00,209.50 L 580.00,590.50 L 454.29,590.50 L 360.00,427.58 L 265.71,590.50 L 140.00,590.50 L 234.29,427.58 L 360.00,427.58 L 297.14,318.54 Z" fill="#0A0A0A"/>
+  
+  <g transform="translate(680, 0)">
+    <text x="0" y="340" class="wordmark">AURORA</text>
+    <rect x="920" y="230" width="340" height="72" rx="14" fill="rgba(37, 99, 235, 0.08)" stroke="rgba(37, 99, 235, 0.2)" stroke-width="3"/>
+    <text x="1090" y="278" text-anchor="middle" class="badge-text">PAPERLESS</text>
+    <text x="6" y="435" class="subhead">PARTIDO STATE UNIVERSITY — GOA CAMPUS</text>
+    <text x="6" y="505" class="desc">Paperless Academic Defense Workflow System for Research &amp; Capstone</text>
+  </g>
+</svg>
