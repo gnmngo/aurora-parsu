@@ -1,0 +1,650 @@
+{
+  "info": {
+    "_postman_id": "a9b23f81-5477-4b71-912c-aurora000001",
+    "name": "AURORA API Collection — Partido State University",
+    "description": "Comprehensive Postman API Collection v2.1.0 for AURORA (Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University – Goa Campus).\n\nEncompasses RESTful endpoints, Supabase PostgREST data services, RPC state machines, R.A. 8792 step-up digital signature submission, responsive percentage coordinate annotations, defense conflict-guard scheduling, and public certificate verification at `/api/verify/{serial}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://aurora-parsu.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "supabase_url",
+      "value": "https://ap-southeast-1.supabase.co",
+      "type": "string"
+    },
+    {
+      "key": "supabase_anon_key",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.anon_sample_key_parsu",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "project_id",
+      "value": "e8b2b110-5231-4a11-827b-581335bfb101",
+      "type": "string"
+    },
+    {
+      "key": "document_version_id",
+      "value": "c71a3d92-29b1-419b-a159-869274023188",
+      "type": "string"
+    },
+    {
+      "key": "certificate_serial",
+      "value": "AURORA-2026-000001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Authentication & Session Management",
+      "item": [
+        {
+          "name": "POST Sign In with Institutional Credentials (JWT Exchange)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 (Login Successful)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set(\"auth_token\", jsonData.access_token);",
+                  "    pm.test(\"JWT Access Token captured successfully\", function () {",
+                  "        pm.expect(jsonData.access_token).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_anon_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"froiland.penalosa@parsu.edu.ph\",\n  \"password\": \"Demo1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/auth/v1/token?grant_type=password",
+              "host": ["{{supabase_url}}"],
+              "path": ["auth", "v1", "token"],
+              "query": [
+                {
+                  "key": "grant_type",
+                  "value": "password"
+                }
+              ]
+            },
+            "description": "Authenticates a faculty, student, or administrator using institutional credentials and returns an HTTP JWT bearer token along with user profile metadata."
+          }
+        },
+        {
+          "name": "GET Retrieve Active User Session & Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"User email belongs to ParSU domain\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.email).to.include(\"@parsu.edu.ph\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_anon_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/auth/v1/user",
+              "host": ["{{supabase_url}}"],
+              "path": ["auth", "v1", "user"]
+            },
+            "description": "Retrieves the currently authenticated user's session claims, UUID, email, and user role grants."
+          }
+        },
+        {
+          "name": "POST Sign Out / Revoke Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_anon_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/auth/v1/logout",
+              "host": ["{{supabase_url}}"],
+              "path": ["auth", "v1", "logout"]
+            },
+            "description": "Terminates active session and invalidates refresh token at the GoTrue authentication gateway."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Academic Hierarchy & User Directory",
+      "item": [
+        {
+          "name": "GET List Academic Colleges (ParSU Goa Campus)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/colleges?select=id,name,code,description&order=name.asc",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "colleges"],
+              "query": [
+                { "key": "select", "value": "id,name,code,description" },
+                { "key": "order", "value": "name.asc" }
+              ]
+            },
+            "description": "Returns the 5 academic colleges established at Partido State University – Goa Campus (CEC, COED, CBM, CAH, COS)."
+          }
+        },
+        {
+          "name": "GET List Academic Programs with Majors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/programs?select=id,name,code,college_id,majors(id,name,code)&order=name.asc",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "programs"],
+              "query": [
+                { "key": "select", "value": "id,name,code,college_id,majors(id,name,code)" },
+                { "key": "order", "value": "name.asc" }
+              ]
+            },
+            "description": "Lists undergraduate, graduate, and doctoral academic programs and affiliated major specializations."
+          }
+        },
+        {
+          "name": "GET Query Faculty Directory by Department",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/profiles?department=eq.Department+of+Computational+Sciences&select=id,first_name,last_name,email,user_roles(roles(code,name))",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "profiles"],
+              "query": [
+                { "key": "department", "value": "eq.Department of Computational Sciences" },
+                { "key": "select", "value": "id,first_name,last_name,email,user_roles(roles(code,name))" }
+              ]
+            },
+            "description": "Returns faculty members eligible for appointment as research advisers, defense chairpersons, or panel evaluators."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Research Projects & Manuscript Repository",
+      "item": [
+        {
+          "name": "GET List Research Projects (Filtered by Stage)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/projects?select=id,title,status,join_code,stages(title,sequence_order),project_members(profile_id,member_role)&order=created_at.desc",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "projects"],
+              "query": [
+                { "key": "select", "value": "id,title,status,join_code,stages(title,sequence_order),project_members(profile_id,member_role)" },
+                { "key": "order", "value": "created_at.desc" }
+              ]
+            },
+            "description": "Retrieves capstone/thesis project records with current defense stages, join codes, and assigned research team members."
+          }
+        },
+        {
+          "name": "POST Create New Research Project Docket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"AURORA: Paperless Academic Defense Workflow System for Research, Capstone, Thesis & Dissertation Papers at Partido State University\",\n  \"abstract\": \"A unified paperless defense management platform engineered to automate manuscript versioning, responsive coordinate annotations, conflict-free scheduling, and R.A. 8792 digital signature consensus deliberation at Partido State University.\",\n  \"join_code\": \"AURORA26\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/projects",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "projects"]
+            },
+            "description": "Registers a new research project docket initiated by a student proponent with automated join code generation."
+          }
+        },
+        {
+          "name": "POST Register Document Version & Cryptographic SHA-256 Hash",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_id\": \"b52d9a11-8842-4f32-9c12-3490123847aa\",\n  \"version_number\": 2,\n  \"storage_path\": \"projects/e8b2b110/final_defense_v2.pdf\",\n  \"sha256_hash\": \"c475d252fe5a8d904b7e889417277e382d5e783422da8a9805d76d49b2f6efd9\",\n  \"file_size_bytes\": 4812940,\n  \"is_current\": true\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/document_versions",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "document_versions"]
+            },
+            "description": "Registers a new PDF manuscript version with file byte size and automated SHA-256 cryptographic fingerprint to guarantee tamper evidence."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Responsive Coordinate Annotations & Remarks",
+      "item": [
+        {
+          "name": "GET Fetch Document Annotations with Replies",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/annotations?document_version_id=eq.{{document_version_id}}&select=id,page_number,highlight_coordinates,selected_text,comment,severity,status,profiles(first_name,last_name),annotation_replies(id,reply_text,created_at,profiles(first_name,last_name))&order=page_number.asc,created_at.asc",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "annotations"],
+              "query": [
+                { "key": "document_version_id", "value": "eq.{{document_version_id}}" },
+                { "key": "select", "value": "id,page_number,highlight_coordinates,selected_text,comment,severity,status,profiles(first_name,last_name),annotation_replies(id,reply_text,created_at,profiles(first_name,last_name))" },
+                { "key": "order", "value": "page_number.asc,created_at.asc" }
+              ]
+            },
+            "description": "Retrieves all inline faculty remarks pinned to responsive percentage coordinates $(x\%, y\%, w\%, h\%)$ along with proponent replies."
+          }
+        },
+        {
+          "name": "POST Create Viewport Coordinate Highlight Annotation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_version_id\": \"{{document_version_id}}\",\n  \"page_number\": 14,\n  \"highlight_coordinates\": {\n    \"x\": 18.45,\n    \"y\": 42.10,\n    \"width\": 62.30,\n    \"height\": 4.85\n  },\n  \"selected_text\": \"The system utilizes single-factor authentication for sensitive grade finalization.\",\n  \"comment\": \"Under R.A. 8792 and PSU institutional policy, grade finalization requires step-up digital signature re-authentication. Please revise the architectural narrative.\",\n  \"severity\": \"major\",\n  \"status\": \"open\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/annotations",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "annotations"]
+            },
+            "description": "Creates an inline remark attached to exact relative viewport percentage coordinates, classified by severity (info, minor, major, critical)."
+          }
+        },
+        {
+          "name": "POST Add Proponent Threaded Reply to Remark",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"annotation_id\": \"d398f102-1244-48ac-b492-9840192384cc\",\n  \"reply_text\": \"Addressed in Section 4.3.2. We implemented a dedicated password re-authentication dialog prior to committing digital signatures.\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/annotation_replies",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "annotation_replies"]
+            },
+            "description": "Posts a proponent defense team response directly linked to an evaluator's revision remark."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Defense Scheduling, Committee & Impartiality",
+      "item": [
+        {
+          "name": "POST Check Room & Panelist Defense Schedule Conflict (RPC)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Conflict check completed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('has_conflict');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_room\": \"Deliberation Room 301, CECS Building\",\n  \"p_scheduled_at\": \"2026-11-20T09:00:00+08:00\",\n  \"p_end_at\": \"2026-11-20T10:30:00+08:00\",\n  \"p_panelist_ids\": [\n    \"89bc2100-3321-419b-a019-38291049281a\",\n    \"12fe74eb-5149-421c-9d68-c27fb9966fbd\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/rpc/check_defense_schedule_conflict",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "rpc", "check_defense_schedule_conflict"]
+            },
+            "description": "Kernel-level RPC function that validates physical room availability and ensures no assigned panelist is double-booked across concurrent sessions."
+          }
+        },
+        {
+          "name": "POST Schedule Defense & Appoint Chairman (Coordinator Action)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Prefer", "value": "return=representation" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"project_id\": \"{{project_id}}\",\n  \"stage_id\": \"f1023844-3829-410a-9bc2-3849102938ab\",\n  \"scheduled_at\": \"2026-11-20T09:00:00+08:00\",\n  \"end_at\": \"2026-11-20T10:30:00+08:00\",\n  \"room\": \"Deliberation Room 301, CECS Building\",\n  \"building\": \"College of Engineering and Computational Sciences\",\n  \"is_online\": false,\n  \"duration_minutes\": 90,\n  \"status\": \"scheduled\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/defense_schedules",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "defense_schedules"]
+            },
+            "description": "Creates an authoritative defense calendar booking following prerequisite clearance and adviser endorsement."
+          }
+        },
+        {
+          "name": "POST Designate Defense Panel Members & Committee Chairman",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"project_id\": \"{{project_id}}\",\n    \"stage_id\": \"f1023844-3829-410a-9bc2-3849102938ab\",\n    \"profile_id\": \"89bc2100-3321-419b-a019-38291049281a\",\n    \"panel_role\": \"chair\"\n  },\n  {\n    \"project_id\": \"{{project_id}}\",\n    \"stage_id\": \"f1023844-3829-410a-9bc2-3849102938ab\",\n    \"profile_id\": \"12fe74eb-5149-421c-9d68-c27fb9966fbd\",\n    \"panel_role\": \"member\"\n  },\n  {\n    \"project_id\": \"{{project_id}}\",\n    \"stage_id\": \"f1023844-3829-410a-9bc2-3849102938ab\",\n    \"profile_id\": \"3ee9aa9f-4850-41a4-a097-c4e2a3dd221e\",\n    \"panel_role\": \"member\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/defense_panels",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "defense_panels"]
+            },
+            "description": "Designates the 3-member oral defense panel, appointing one Committee Chair and two Evaluator Members."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Rubrics, Consensus Scoring & Digital Signatures (R.A. 8792)",
+      "item": [
+        {
+          "name": "GET Retrieve Active Defense Rubric Criteria",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/rubric_templates?program=eq.BSIT&is_active=eq.true&select=id,title,criteria,thresholds",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "rubric_templates"],
+              "query": [
+                { "key": "program", "value": "eq.BSIT" },
+                { "key": "is_active", "value": "eq.true" },
+                { "key": "select", "value": "id,title,criteria,thresholds" }
+              ]
+            },
+            "description": "Loads institutional rubric weights (e.g., Technical Quality 30%, System Demo 35%, Oral Defense 25%, Manuscript Adherence 10%)."
+          }
+        },
+        {
+          "name": "POST Submit Scored Evaluation with Step-Up Signature (RPC)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_evaluation_id\": \"a892b110-4491-419b-b912-3849102938cd\",\n  \"p_scores\": {\n    \"technical_soundness\": 92.5,\n    \"software_execution\": 95.0,\n    \"defense_presentation\": 90.0,\n    \"manuscript_compliance\": 94.0\n  },\n  \"p_verdict_code\": \"approved\",\n  \"p_panel_notes\": \"Exceptional engineering execution and thorough adherence to ParSU defense guidelines.\",\n  \"p_recommendations\": \"Proceed with final institutional manuscript binding.\",\n  \"p_signature_image\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\",\n  \"p_password_hash_proof\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/rpc/submit_signed_evaluation",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "rpc", "submit_signed_evaluation"]
+            },
+            "description": "Commits individual panelist scores and affixes legal electronic signature under R.A. 8792 compliance with atomic lock state."
+          }
+        },
+        {
+          "name": "POST Finalize Consensus Deliberation & Issue Serial (RPC)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Consensus computed and Certificate Issued\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('certificate_serial');",
+                  "    pm.collectionVariables.set(\"certificate_serial\", json.certificate_serial);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_project_id\": \"{{project_id}}\",\n  \"p_stage_id\": \"f1023844-3829-410a-9bc2-3849102938ab\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/rpc/finalize_defense_consensus",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "rpc", "finalize_defense_consensus"]
+            },
+            "description": "Calculates weighted aggregate score across all 3 panelists, validates majority/unanimous verdict, locks the stage, and assigns the unique sequence serial."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Public Verification & Institutional Audit",
+      "item": [
+        {
+          "name": "GET Public Certificate Verification JSON API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Certificate is Authentic & Verified\", function () {",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "    pm.expect(json.verificationStatus).to.eql(\"AUTHENTIC_AND_VERIFIED\");",
+                  "});",
+                  "pm.test(\"Institution is Partido State University\", function () {",
+                  "    pm.expect(json.institution).to.include(\"Partido State University\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/verify/{{certificate_serial}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "verify", "{{certificate_serial}}"]
+            },
+            "description": "Public, unauthenticated REST API endpoint for instant third-party validation (accreditors, registrar, employers) of signed defense certificates."
+          }
+        },
+        {
+          "name": "GET Public Web Verification Viewport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 (HTML Web Page)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/verify/{{certificate_serial}}",
+              "host": ["{{base_url}}"],
+              "path": ["verify", "{{certificate_serial}}"]
+            },
+            "description": "Renders the official digital Certificate of Oral Defense Verification portal with print layout and QR verification badge."
+          }
+        },
+        {
+          "name": "GET Query Immutable Audit Trail Logs (Dean / Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/audit_logs?select=id,user_email,user_role,action_type,module,entity_type,description,created_at&order=created_at.desc&limit=25",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "audit_logs"],
+              "query": [
+                { "key": "select", "value": "id,user_email,user_role,action_type,module,entity_type,description,created_at" },
+                { "key": "order", "value": "created_at.desc" },
+                { "key": "limit", "value": "25" }
+              ]
+            },
+            "description": "Fetches append-only chronological security audit events recording all administrative, grading, and scheduling actions."
+          }
+        },
+        {
+          "name": "GET System Integrity & Telemetry Probe",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "apikey", "value": "{{supabase_anon_key}}" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/rpc/system_health_check",
+              "host": ["{{supabase_url}}"],
+              "path": ["rest", "v1", "rpc", "system_health_check"]
+            },
+            "description": "Probes database connectivity, RLS status, storage bucket health, sequence continuity, and latency."
+          }
+        }
+      ]
+    }
+  ]
+}
