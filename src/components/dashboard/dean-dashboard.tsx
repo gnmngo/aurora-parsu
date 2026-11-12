@@ -275,42 +275,42 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
 
       {/* College Executive KPI Overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4 flex items-center gap-4 border-border/80 shadow-xs">
-          <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+        <Card className="p-4 flex items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Layers className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalProjects}</p>
+            <p className="text-2xl font-black text-foreground">{totalProjects}</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CEC Research Groups</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center gap-4 border-border/80 shadow-xs">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+        <Card className="p-4 flex items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{underReviewCount}</p>
+            <p className="text-2xl font-black text-foreground">{underReviewCount}</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Defenses In Pipeline</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center gap-4 border-border/80 shadow-xs">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+        <Card className="p-4 flex items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <CheckCircle2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{completedCount}</p>
+            <p className="text-2xl font-black text-foreground">{completedCount}</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Concluded &amp; Passed</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center gap-4 border-border/80 shadow-xs">
-          <div className="p-3 rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400">
+        <Card className="p-4 flex items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Building2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">
+            <p className="text-2xl font-black text-foreground">
               {dcsProjects.length} / {doeProjects.length}
             </p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">DCS / DOE Breakdown</p>
@@ -507,10 +507,10 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
           <Card className="border-border/80 shadow-xs">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <Badge className="bg-blue-600 text-white font-bold text-[10px]">DCS</Badge>
+                <Badge variant="outline" className="bg-muted text-foreground border-border font-bold text-[10px]">DCS</Badge>
                 <span className="text-xs text-muted-foreground font-semibold">ParSU Main Campus</span>
               </div>
-              <CardTitle className="text-base font-bold mt-1 text-slate-900 dark:text-slate-100">
+              <CardTitle className="text-base font-bold mt-1 text-foreground">
                 Department of Computational Sciences
               </CardTitle>
               <CardDescription className="text-xs">
@@ -520,17 +520,17 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-muted/40 rounded-xl border border-border">
-                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{dcsProjects.length}</p>
+                  <p className="text-xl font-black text-foreground">{dcsProjects.length}</p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Projects</p>
                 </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
-                  <p className="text-xl font-black text-amber-700 dark:text-amber-400">
+                <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-xl font-black text-foreground">
                     {dcsProjects.filter((p) => p.status === "under_review" || p.status === "scheduled").length}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">In Review</p>
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                  <p className="text-xl font-black text-emerald-700 dark:text-emerald-400">
+                <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-xl font-black text-foreground">
                     {dcsProjects.filter((p) => p.status === "completed").length}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Concluded</p>
@@ -555,10 +555,10 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
           <Card className="border-border/80 shadow-xs">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <Badge className="bg-amber-600 text-white font-bold text-[10px]">DOE</Badge>
+                <Badge variant="outline" className="bg-muted text-foreground border-border font-bold text-[10px]">DOE</Badge>
                 <span className="text-xs text-muted-foreground font-semibold">ParSU Main Campus</span>
               </div>
-              <CardTitle className="text-base font-bold mt-1 text-slate-900 dark:text-slate-100">
+              <CardTitle className="text-base font-bold mt-1 text-foreground">
                 Department of Engineering
               </CardTitle>
               <CardDescription className="text-xs">
@@ -568,17 +568,17 @@ export function DeanDashboard({ userId }: DeanDashboardProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-muted/40 rounded-xl border border-border">
-                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{doeProjects.length}</p>
+                  <p className="text-xl font-black text-foreground">{doeProjects.length}</p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Projects</p>
                 </div>
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
-                  <p className="text-xl font-black text-amber-700 dark:text-amber-400">
+                <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-xl font-black text-foreground">
                     {doeProjects.filter((p) => p.status === "under_review" || p.status === "scheduled").length}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">In Review</p>
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                  <p className="text-xl font-black text-emerald-700 dark:text-emerald-400">
+                <div className="p-3 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-xl font-black text-foreground">
                     {doeProjects.filter((p) => p.status === "completed").length}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mt-0.5">Concluded</p>

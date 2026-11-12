@@ -401,9 +401,7 @@ export function KpiCards({ activeRole }: KpiCardsProps = {}) {
               <div>
                 <div className="flex items-start justify-between">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl bg-muted transition-colors group-hover:bg-primary/10 ${
-                      stat.color || ""
-                    }`}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60 transition-colors group-hover:bg-foreground group-hover:text-background"
                   >
                     <Icon className="h-5 w-5" />
                   </div>

@@ -707,17 +707,17 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
         </div>
       ) : latestDoc?.adviser_approval_status === "approved" ? (
         /* 3. ADVISER ENDORSED - AWAITING COORDINATOR SCHEDULING */
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60 shadow-2xs">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-100">
+                <p className="text-xs font-black uppercase tracking-wider text-foreground">
                   Manuscript Endorsed for Defense!
                 </p>
-                <Badge variant="success" className="text-[9px] font-bold">
+                <Badge variant="outline" className="text-[9px] font-bold bg-muted text-foreground border-border">
                   Cleared by Adviser
                 </Badge>
               </div>
@@ -727,7 +727,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
             </div>
           </div>
           <Link href="/dashboard/my-project" className="shrink-0 self-end sm:self-center">
-            <Button size="sm" className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs">
+            <Button size="sm" variant="default" className="h-8 gap-1.5 text-xs font-bold shadow-xs">
               <span>View Defense Roadmap</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
@@ -919,7 +919,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                       className={cn(
                         "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer",
                         revisionFilter === "addressed"
-                          ? "bg-emerald-600 text-white shadow-xs"
+                          ? "bg-foreground text-background shadow-xs font-extrabold"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -1001,10 +1001,10 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                                   variant="outline"
                                   className={cn(
                                     "text-[8px] font-black uppercase",
-                                    rev.severity === "critical" && "border-red-500 text-red-600 bg-red-50 dark:bg-red-950/30",
-                                    rev.severity === "major" && "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30",
-                                    rev.severity === "minor" && "border-yellow-500 text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30",
-                                    rev.severity === "info" && "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                                    rev.severity === "critical" && "border-danger/30 text-danger bg-danger/10",
+                                    rev.severity === "major" && "border-warning/30 text-warning bg-warning/10",
+                                    rev.severity === "minor" && "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10",
+                                    rev.severity === "info" && "border-border text-foreground bg-muted"
                                   )}
                                 >
                                   {rev.severity}
@@ -1109,7 +1109,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                 scheduleFilter === "upcoming" ? (
                   latestDoc?.adviser_approval_status === "approved" ? (
                     <div className="space-y-2 py-2">
-                      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                      <div className="flex items-center gap-2 text-foreground font-bold text-xs">
                         <Clock className="h-4 w-4" />
                         <span>In Coordinator Queue</span>
                       </div>

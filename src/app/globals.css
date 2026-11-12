@@ -9,15 +9,16 @@
   --card: #ffffff;
   --card-foreground: #09090b;
   
-  --primary: #2563eb;
+  /* Modern clean monochrome primary (matching landing page & editorial SaaS) */
+  --primary: #09090b;
   --primary-foreground: #ffffff;
-  --primary-light: #eff6ff;
-  --primary-dark: #1d4ed8;
+  --primary-light: #f4f4f5;
+  --primary-dark: #18181b;
   
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
   
-  --accent: #2563eb;
+  --accent: #18181b;
   --accent-foreground: #ffffff;
   
   --muted: #f4f4f5;
@@ -29,12 +30,13 @@
   --sidebar: #050505;
   --sidebar-foreground: #f5f5f5;
   --sidebar-muted: #929292;
-  --sidebar-active: #2563eb;
+  --sidebar-active: #ffffff;
   
-  --success: #16a34a;
-  --danger: #dc2626;
+  /* Restrained, soft semantic indicators */
+  --success: #10b981;
+  --danger: #ef4444;
   --warning: #f59e0b;
-  --info: #2563eb;
+  --info: #09090b;
   
   --radius-card: 16px;
   --radius-button: 10px;
@@ -43,37 +45,41 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
 }
 
-/* Dark mode overrides — aligned with the sleek AURORA monochromatic aesthetic */
+/* Dark mode overrides — refined, eye-pleasing, calm monochrome dark theme */
 .dark {
-  --background: #050505;
-  --foreground: #f5f5f5;
+  --background: #09090b;
+  --foreground: #f4f4f5;
   
-  --card: #0a0a0a;
-  --card-foreground: #f5f5f5;
+  --card: #111115;
+  --card-foreground: #f4f4f5;
   
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --primary-light: #172554;
-  --primary-dark: #1d4ed8;
+  --primary: #f4f4f5;
+  --primary-foreground: #09090b;
+  --primary-light: #18181c;
+  --primary-dark: #e4e4e7;
   
-  --secondary: #121212;
-  --secondary-foreground: #f5f5f5;
+  --secondary: #18181c;
+  --secondary-foreground: #f4f4f5;
   
-  --accent: #172554;
-  --accent-foreground: #f5f5f5;
+  --accent: #27272a;
+  --accent-foreground: #f4f4f5;
   
-  --muted: #121212;
-  --muted-foreground: #929292;
+  --muted: #18181c;
+  --muted-foreground: #a1a1aa;
   --muted-dark: #71717a;
   
-  --border: #252525;
+  --border: #222226;
   
   --sidebar: #050505;
   --sidebar-foreground: #f5f5f5;
   --sidebar-muted: #929292;
-  --sidebar-active: #2563eb;
+  --sidebar-active: #ffffff;
   
-  --info: #3b82f6;
+  /* Softer, desaturated semantic accents for dark mode */
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --info: #f4f4f5;
 }
 
 @theme inline {

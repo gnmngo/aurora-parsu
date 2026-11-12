@@ -64,7 +64,7 @@ export function getDefenseStatus(sched: any) {
       label: "Cancelled",
       badgeVariant: "danger" as const,
       isConcluded: true,
-      color: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/40",
+      color: "text-danger bg-danger/10 border-danger/20",
     };
   }
 
@@ -73,7 +73,7 @@ export function getDefenseStatus(sched: any) {
       label: "Pending Schedule",
       badgeVariant: "warning" as const,
       isConcluded: false,
-      color: "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+      color: "text-warning bg-warning/10 border-warning/20",
     };
   }
 
@@ -95,7 +95,7 @@ export function getDefenseStatus(sched: any) {
       label: "Concluded & Evaluated",
       badgeVariant: "success" as const,
       isConcluded: true,
-      color: "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800",
+      color: "text-success bg-success/10 border-success/20",
     };
   }
 
@@ -104,7 +104,7 @@ export function getDefenseStatus(sched: any) {
       label: isPast ? "Concluded • Evaluated" : "Evaluated",
       badgeVariant: "success" as const,
       isConcluded: isPast,
-      color: "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800",
+      color: "text-success bg-success/10 border-success/20",
     };
   }
 
@@ -113,7 +113,7 @@ export function getDefenseStatus(sched: any) {
       label: "Concluded (Evaluation Pending)",
       badgeVariant: "warning" as const,
       isConcluded: true,
-      color: "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+      color: "text-warning bg-warning/10 border-warning/20",
     };
   }
 
@@ -123,7 +123,7 @@ export function getDefenseStatus(sched: any) {
       badgeVariant: "warning" as const,
       isLive: true,
       isConcluded: false,
-      color: "text-blue-700 bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800",
+      color: "text-foreground bg-muted border-border font-bold",
     };
   }
 
@@ -133,7 +133,7 @@ export function getDefenseStatus(sched: any) {
       badgeVariant: "warning" as const,
       isLive: false,
       isConcluded: false,
-      color: "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+      color: "text-warning bg-warning/10 border-warning/20",
     };
   }
 
@@ -141,7 +141,7 @@ export function getDefenseStatus(sched: any) {
     label: "Upcoming",
     badgeVariant: "outline" as const,
     isConcluded: false,
-    color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800",
+    color: "text-foreground bg-muted border-border",
   };
 }
 
@@ -972,9 +972,7 @@ export default function DefensesPage() {
                         isCancelled
                           ? "border-border/80 bg-card hover:border-border"
                           : statusInfo.isLive
-                          ? "border-blue-500/60 bg-blue-500/5 dark:bg-blue-950/15 ring-1 ring-blue-500/30"
-                          : statusInfo.isConcluded
-                          ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10"
+                          ? "border-foreground/40 bg-muted/30 ring-1 ring-foreground/20"
                           : "border-border bg-card"
                       )}
                     >
@@ -984,7 +982,7 @@ export default function DefensesPage() {
                           <div className="space-y-1.5 flex-1 min-w-0">
                             {/* Badges Bar */}
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="info" className="text-[9px] font-black uppercase">
+                              <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted text-foreground border-border">
                                 {sched.defense_stages?.name || "Defense Stage"}
                               </Badge>
 
@@ -999,16 +997,16 @@ export default function DefensesPage() {
                               {/* Project Workflow Status Badge */}
                               {sched.projects?.status === "revision_required" && (
                                 <Badge
-                                  variant="warning"
-                                  className="text-[9px] font-bold uppercase bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300"
+                                  variant="outline"
+                                  className="text-[9px] font-bold uppercase bg-warning/10 text-warning border-warning/20"
                                 >
                                   Project: Revisions Required
                                 </Badge>
                               )}
                               {(sched.projects?.status === "passed" || sched.projects?.status === "completed") && (
                                 <Badge
-                                  variant="success"
-                                  className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  variant="outline"
+                                  className="text-[9px] font-bold uppercase bg-success/10 text-success border-success/20"
                                 >
                                   Project: Stage Cleared
                                 </Badge>
@@ -1079,10 +1077,10 @@ export default function DefensesPage() {
                                 variant="outline"
                                 disabled={settingToNowId === sched.id}
                                 onClick={() => handleQuickSetToNow(sched)}
-                                className="h-8 text-xs font-bold gap-1 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                                className="h-8 text-xs font-bold gap-1 cursor-pointer"
                                 title="Instantly shift schedule to right now for live demonstration"
                               >
-                                <Zap className="h-3.5 w-3.5 text-amber-600" />
+                                <Zap className="h-3.5 w-3.5" />
                                 <span>{settingToNowId === sched.id ? "Setting..." : "Set to Now"}</span>
                               </Button>
                             )}
@@ -1095,10 +1093,10 @@ export default function DefensesPage() {
                                 variant="outline"
                                 disabled={concludingScheduleId === sched.id}
                                 onClick={() => handleMarkConcluded(sched)}
-                                className="h-8 text-xs font-bold gap-1 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                                className="h-8 text-xs font-bold gap-1 cursor-pointer"
                                 title="Officially mark this defense as concluded and completed"
                               >
-                                <CheckCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                <CheckCheck className="h-3.5 w-3.5" />
                                 <span>{concludingScheduleId === sched.id ? "Finalizing..." : "Mark Concluded"}</span>
                               </Button>
                             )}
@@ -1174,12 +1172,12 @@ export default function DefensesPage() {
                         {/* Middle Row: Live Evaluation Updates & Current User Evaluation Callout */}
                         {/* 1. If current user (e.g. Froiland B. Peñalosa) submitted an evaluation */}
                         {myEval && myEval.status === "submitted" && (
-                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2 text-[11px] text-foreground">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-foreground shrink-0" />
                               <span>
                                 <strong>Your Evaluation Submitted:</strong> Score{" "}
-                                <strong className="text-emerald-700 dark:text-emerald-300">
+                                <strong className="text-foreground">
                                   {myEval.total_score} / 100
                                 </strong>{" "}
                                 • Verdict:{" "}
@@ -1203,7 +1201,7 @@ export default function DefensesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenCertificate(myEval, sched)}
-                                className="h-7 text-[10px] font-bold gap-1 border-emerald-400 text-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950"
+                                className="h-7 text-[10px] font-bold gap-1 cursor-pointer"
                               >
                                 <Award className="h-3 w-3" />
                                 View Certificate
@@ -1227,7 +1225,7 @@ export default function DefensesPage() {
                                     signedAt: myEval.signed_at || myEval.submitted_at || new Date().toISOString(),
                                   });
                                 }}
-                                className="h-7 text-[10px] font-bold gap-1 border-emerald-400 text-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950"
+                                className="h-7 text-[10px] font-bold gap-1 cursor-pointer"
                               >
                                 <Download className="h-3 w-3" />
                                 PDF
@@ -1238,16 +1236,16 @@ export default function DefensesPage() {
 
                         {/* 2. If current user has a draft evaluation */}
                         {myEval && myEval.status === "draft" && (
-                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-[11px] text-amber-900 dark:text-amber-200">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2 text-[11px] text-foreground">
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                              <Clock className="h-4 w-4 text-foreground shrink-0" />
                               <span>
                                 <strong>Your Evaluation Draft Saved:</strong> Current Score:{" "}
                                 <strong>{myEval.total_score}</strong> — Final digital signature &amp; submission pending.
                               </span>
                             </div>
                             <Link href={`/workspace/${sched.project_id}/${sched.stage_id}`} className="ml-auto">
-                              <Button size="sm" className="h-7 text-[10px] font-bold gap-1 bg-amber-600 hover:bg-amber-700 text-white">
+                              <Button size="sm" variant="default" className="h-7 text-[10px] font-bold gap-1 shadow-xs">
                                 Complete Evaluation
                               </Button>
                             </Link>
@@ -1256,9 +1254,9 @@ export default function DefensesPage() {
 
                         {/* 3. If current user is assigned panelist and hasn't evaluated yet */}
                         {isAssignedPanelist && !myEval && !isCancelled && (
-                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30 px-3 py-2 text-[11px] text-indigo-900 dark:text-indigo-200">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2 text-[11px] text-foreground">
                             <div className="flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4 text-indigo-600 shrink-0" />
+                              <AlertCircle className="h-4 w-4 text-foreground shrink-0" />
                               <span>
                                 <strong>Action Required:</strong> You are an appointed panelist for this defense. Ready to submit your evaluation?
                               </span>
@@ -1285,11 +1283,11 @@ export default function DefensesPage() {
                               return (
                                 <Badge
                                   key={ev.id}
-                                  variant={isSub ? "success" : "outline"}
+                                  variant="outline"
                                   className={cn(
                                     "text-[9px] font-semibold gap-1",
                                     isSub
-                                      ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                      ? "bg-muted text-foreground border-border"
                                       : "text-muted-foreground"
                                   )}
                                 >

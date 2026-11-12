@@ -26,28 +26,28 @@ export function TimelineStepper({ steps }: TimelineStepperProps) {
   const estimatedNext = nextStep ? nextStep.name : "Academic Defense Workflow Completed";
 
   return (
-    <div className="space-y-4 text-xs font-semibold text-slate-800 dark:text-slate-200">
+    <div className="space-y-4 text-xs font-semibold text-foreground">
       {/* Progress header bar */}
       <div className="flex justify-between items-center">
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Workflow Progression</span>
-        <span className="text-sm font-black text-primary">{completionPct}% Completed</span>
+        <span className="text-sm font-black text-foreground">{completionPct}% Completed</span>
       </div>
-      <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${completionPct}%` }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="bg-primary h-full rounded-full"
+          className="bg-foreground h-full rounded-full"
         />
       </div>
 
-      {/* Estimated next activity warning */}
-      <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between gap-2 mt-2">
+      {/* Estimated next activity notification */}
+      <div className="p-3 bg-muted/40 border border-border/80 rounded-xl flex items-center justify-between gap-2 mt-2">
         <div>
           <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">Estimated Next Milestone</p>
-          <p className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-0.5">{estimatedNext}</p>
+          <p className="text-xs font-bold text-foreground mt-0.5">{estimatedNext}</p>
         </div>
-        <ArrowRight className="h-4 w-4 text-primary shrink-0" />
+        <ArrowRight className="h-4 w-4 text-foreground shrink-0" />
       </div>
 
       {/* Stepper nodes list */}
@@ -56,22 +56,22 @@ export function TimelineStepper({ steps }: TimelineStepperProps) {
           <div key={idx} className="relative">
             {/* Dot Indicator */}
             <span className={cn(
-              "absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-card",
-              step.status === "completed" && "border-success bg-success text-white",
-              step.status === "current" && "border-info bg-info text-white animate-pulse",
-              step.status === "pending" && "border-border bg-slate-50 dark:bg-slate-800"
+              "absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-card transition-colors",
+              step.status === "completed" && "border-foreground bg-foreground text-background",
+              step.status === "current" && "border-foreground bg-background text-foreground ring-2 ring-foreground/20 animate-pulse",
+              step.status === "pending" && "border-border bg-muted/50"
             )}>
-              {step.status === "completed" && <Check className="h-2.5 w-2.5 text-white" />}
-              {step.status === "current" && <Clock className="h-2.5 w-2.5 text-white" />}
-              {step.status === "pending" && <Circle className="h-1.5 w-1.5 text-slate-300 dark:text-slate-600" />}
+              {step.status === "completed" && <Check className="h-2.5 w-2.5 text-background" />}
+              {step.status === "current" && <Clock className="h-2.5 w-2.5 text-foreground" />}
+              {step.status === "pending" && <Circle className="h-1.5 w-1.5 text-muted-foreground/40" />}
             </span>
 
             <div>
               <div className="flex items-center gap-2">
                 <h4 className={cn(
                   "text-xs font-bold",
-                  step.status === "completed" && "text-slate-900 dark:text-slate-100",
-                  step.status === "current" && "text-info",
+                  step.status === "completed" && "text-foreground",
+                  step.status === "current" && "text-foreground font-black underline underline-offset-2",
                   step.status === "pending" && "text-muted-foreground"
                 )}>
                   {step.name}

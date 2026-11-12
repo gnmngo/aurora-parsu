@@ -216,7 +216,7 @@ export function WelcomeCard() {
                   </p>
                 </div>
                 <div>
-                  <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold capitalize text-xs px-2.5 py-0.5">
+                  <Badge variant="outline" className="bg-muted/60 text-foreground border-border/80 font-bold capitalize text-xs px-2.5 py-0.5">
                     {projectInfo.status}
                   </Badge>
                 </div>

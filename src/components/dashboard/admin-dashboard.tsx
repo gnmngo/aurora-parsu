@@ -104,22 +104,22 @@ export function AdminDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Database className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.projects}</p>
+            <p className="text-2xl font-black text-foreground">{counts.projects}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">Research Projects</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <CheckCircle className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{counts.evals}</p>
+            <p className="text-2xl font-black text-foreground">{counts.evals}</p>
             <p className="text-[10px] text-muted-foreground font-semibold">Evaluation Sheets</p>
           </div>
         </Card>

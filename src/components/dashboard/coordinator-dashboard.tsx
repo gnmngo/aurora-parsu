@@ -287,49 +287,49 @@ export function CoordinatorDashboard() {
       {/* KPI stats bar */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Link href="/dashboard/defenses" className="block no-underline">
-          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer border border-border/80 hover:border-foreground/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60 group-hover:bg-foreground group-hover:text-background transition-colors">
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{stats.in_progress || 0}</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Active Projects &rarr;</p>
+              <p className="text-2xl font-black text-foreground">{stats.in_progress || 0}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-foreground transition-colors">Active Projects &rarr;</p>
             </div>
           </Card>
         </Link>
 
         <Link href="/dashboard/defenses/schedule" className="block no-underline">
-          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer border border-border/80 hover:border-foreground/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60 group-hover:bg-foreground group-hover:text-background transition-colors">
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{pendingApprovals.length}</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Topic Submissions &rarr;</p>
+              <p className="text-2xl font-black text-foreground">{pendingApprovals.length}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-foreground transition-colors">Topic Submissions &rarr;</p>
             </div>
           </Card>
         </Link>
 
         <Link href="/dashboard/defenses" className="block no-underline">
-          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer border border-border/80 hover:border-foreground/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60 group-hover:bg-foreground group-hover:text-background transition-colors">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalSchedulesCount}</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Scheduled Defenses &rarr;</p>
+              <p className="text-2xl font-black text-foreground">{totalSchedulesCount}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-foreground transition-colors">Scheduled Defenses &rarr;</p>
             </div>
           </Card>
         </Link>
 
         <Link href="/dashboard/grades" className="block no-underline">
-          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
+          <Card className="p-4 flex flex-row items-center gap-4 cursor-pointer border border-border/80 hover:border-foreground/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+            <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60 group-hover:bg-foreground group-hover:text-background transition-colors">
               <BarChart className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{stats.passed || 0}</p>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-primary transition-colors">Completed Papers &rarr;</p>
+              <p className="text-2xl font-black text-foreground">{stats.passed || 0}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase group-hover:text-foreground transition-colors">Completed Papers &rarr;</p>
             </div>
           </Card>
         </Link>

@@ -148,13 +148,13 @@ interface ProjectMemberDisplay {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground",
-  submitted: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  under_review: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  approved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  completed: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  revision_required: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  draft: "bg-muted text-muted-foreground border border-border/70",
+  submitted: "bg-muted text-foreground border border-border font-bold",
+  under_review: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-bold",
+  approved: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-bold",
+  rejected: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 font-bold",
+  completed: "bg-muted text-foreground border border-border font-bold",
+  revision_required: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-bold",
 };
 
 export default function MyProjectPage() {
@@ -636,8 +636,8 @@ export default function MyProjectPage() {
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {project.team_name ? (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                  <Users className="h-3.5 w-3.5" />
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-xs font-bold text-foreground">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>Team: {project.team_name}</span>
                   <button
                     type="button"
@@ -645,7 +645,7 @@ export default function MyProjectPage() {
                       setTeamNameInput(project.team_name || "");
                       setTeamNameModalOpen(true);
                     }}
-                    className="ml-0.5 text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                    className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     title="Edit Team Name"
                   >
                     <Pencil className="h-2.5 w-2.5 inline" />
@@ -658,7 +658,7 @@ export default function MyProjectPage() {
                     setTeamNameInput("");
                     setTeamNameModalOpen(true);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border hover:border-primary/50 bg-background hover:bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border hover:border-foreground/40 bg-background hover:bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <Users className="h-3 w-3" />
                   + Add Team Name
@@ -668,7 +668,7 @@ export default function MyProjectPage() {
                 {project.status.replace(/_/g, " ")}
               </span>
               {project.defense_stages && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground">
                   <Layers className="h-3 w-3" />
                   {(project.defense_stages as any).name}
                 </span>
@@ -704,30 +704,30 @@ export default function MyProjectPage() {
           </div>
         </div>
 
-        {/* Quick stat cards */}
+        {/* Quick stat cards — unified calm monochrome aesthetic */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border border-border/80 shadow-xs">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <User className="h-5 w-5 text-primary" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60">
+                  <User className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Adviser</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Adviser</p>
                   <p className="text-sm font-bold text-foreground truncate">{adviserName}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-border/80 shadow-xs">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
-                  <FileText className="h-5 w-5 text-blue-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Manuscript</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Manuscript</p>
                   <p className="text-sm font-bold text-foreground">
                     {currentVersion ? `Version ${currentVersion.version_number}` : "Not uploaded"}
                   </p>
@@ -736,14 +736,14 @@ export default function MyProjectPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-border/80 shadow-xs">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-                  <MessageSquare className="h-5 w-5 text-amber-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60">
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Open Comments</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Open Comments</p>
                   <p className="text-sm font-bold text-foreground">
                     {annotations.filter(a => a.status === "open").length} unresolved
                   </p>
@@ -752,14 +752,14 @@ export default function MyProjectPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-border/80 shadow-xs">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10">
-                  <Calendar className="h-5 w-5 text-green-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Next Defense</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Defense</p>
                   <p className="text-sm font-bold text-foreground">
                     {upcomingSchedule
                       ? format(new Date(upcomingSchedule.scheduled_at), "MMM d, yyyy")
@@ -772,17 +772,17 @@ export default function MyProjectPage() {
         </div>
 
         {/* ── Official ParSU Oral Defense Application Banner ── */}
-        <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-              <FileCheck className="h-5 w-5" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border/60 shadow-2xs">
+              <FileCheck className="h-5 w-5 text-foreground" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-bold text-foreground">
                   Application for Oral Defense (Form {formMeta.formCodeApplication})
                 </h3>
-                <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary">
+                <Badge variant="outline" className="text-[10px] font-bold border-border/80 bg-muted/60 text-muted-foreground">
                   {formMeta.isBsit ? "Official ParSU DCS" : "Official ParSU Standard"}
                 </Badge>
               </div>
@@ -810,7 +810,7 @@ export default function MyProjectPage() {
               } : undefined}
               onApplicationUpdated={loadProjectData}
               triggerButton={
-                <Button size="sm" className="h-8 gap-1.5 text-xs font-bold shadow-xs cursor-pointer">
+                <Button size="sm" variant="default" className="h-8 gap-1.5 text-xs font-bold shadow-xs cursor-pointer">
                   <FileText className="h-3.5 w-3.5" />
                   Apply / View Form {formMeta.formCodeApplication}
                 </Button>
@@ -821,24 +821,24 @@ export default function MyProjectPage() {
 
         {/* ── Revision Required Alert Banner ─────────────────────── */}
         {documents.some((d) => d.adviser_approval_status === "rejected") && !endorsedDoc && (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-50/90 dark:bg-amber-950/40 p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-2xs">
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-black text-amber-950 dark:text-amber-100 uppercase tracking-wide">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
                     Adviser Revision Required
                   </h3>
-                  <Badge variant="warning" className="text-[9px] font-bold">
+                  <Badge variant="outline" className="text-[9px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                     Action Required
                   </Badge>
                 </div>
                 {documents.filter((d) => d.adviser_approval_status === "rejected").map((d) => (
-                  <div key={d.id} className="text-xs text-amber-900/90 dark:text-amber-200">
-                    <p className="font-semibold">{d.title || "Manuscript"}:</p>
-                    <p className="mt-1 italic font-medium bg-amber-100/70 dark:bg-amber-900/50 p-2.5 rounded-lg border border-amber-300/40">
+                  <div key={d.id} className="text-xs text-muted-foreground">
+                    <p className="font-semibold text-foreground">{d.title || "Manuscript"}:</p>
+                    <p className="mt-1 italic font-medium bg-muted/60 text-foreground p-2.5 rounded-lg border border-border">
                       &ldquo;{d.approval_remarks || "Revisions required. Please address adviser remarks and upload a revised draft."}&rdquo;
                     </p>
                   </div>
@@ -851,7 +851,8 @@ export default function MyProjectPage() {
                 <Button
                   key={d.id}
                   size="sm"
-                  className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs"
+                  variant="default"
+                  className="gap-1.5 font-bold text-xs shadow-xs"
                   asChild
                 >
                   <Link href={`/workspace/${project.id}/${d.stage_id}`}>
@@ -865,7 +866,7 @@ export default function MyProjectPage() {
                 stageId={project.current_stage_id || undefined}
                 buttonText="Upload Revised PDF"
                 buttonVariant="outline"
-                className="font-bold text-xs border-amber-400 dark:border-amber-700"
+                className="font-bold text-xs"
                 onUploadCompleted={loadProjectData}
               />
             </div>
@@ -875,21 +876,21 @@ export default function MyProjectPage() {
         {/* ── Endorsement Success & Next Steps Roadmap Banner ─────────────────────── */}
         {/* ── State 1: Post-Defense Revision Required Roadmap Banner ───────── */}
         {isRevisionRequired && (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-50/90 via-background to-amber-50/30 dark:from-amber-950/40 dark:via-background dark:to-amber-950/20 p-6 shadow-sm space-y-5">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-500/20">
-                  <AlertTriangle className="h-6 w-6" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-2xs">
+                  <AlertTriangle className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base md:text-lg font-black text-amber-950 dark:text-amber-100 tracking-tight">
+                    <h2 className="text-base md:text-lg font-bold text-foreground tracking-tight">
                       {isEvalPassed
                         ? `Oral Defense Passed (${Number(latestEval?.total_score).toFixed(1)}%) — Address Remaining Comments for Final Clearance`
                         : "Oral Defense Evaluated — Revisions Required for Stage Clearance"}
                     </h2>
-                    <Badge variant={isEvalPassed ? "default" : "warning"} className="text-[10px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-xs">
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                       {isEvalPassed ? "Passed • Notes Pending" : "Revisions Required"}
                     </Badge>
                   </div>
@@ -899,7 +900,7 @@ export default function MyProjectPage() {
                         The defense committee evaluated your manuscript with a score of{" "}
                         <strong className="text-foreground">{Number(latestEval.total_score).toFixed(1)} / 100 ({Number(latestEval.total_score) >= 75 ? "Passed Criteria" : "Needs Revision"})</strong>.{" "}
                         However, there {openAnnotationsCount === 1 ? "is" : "are"}{" "}
-                        <span className="font-bold text-amber-700 dark:text-amber-400">{openAnnotationsCount} open panel comment{openAnnotationsCount === 1 ? "" : "s"}</span> that must be addressed before this stage receives final institutional clearance.
+                        <span className="font-bold text-foreground">{openAnnotationsCount} open panel comment{openAnnotationsCount === 1 ? "" : "s"}</span> that must be addressed before this stage receives final institutional clearance.
                       </>
                     ) : (
                       "Panel comments and revisions have been requested. Please address all feedback and upload a revised manuscript draft."
@@ -912,15 +913,16 @@ export default function MyProjectPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 gap-1.5 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/50 text-xs font-bold cursor-pointer"
+                  className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => setActiveTab("evaluations")}
                 >
-                  <Award className="h-3.5 w-3.5" />
+                  <Award className="h-3.5 w-3.5 text-muted-foreground" />
                   View Evaluation ({evaluations.length})
                 </Button>
                 <Button
                   size="sm"
-                  className="h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  variant="default"
+                  className="h-8 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
                   onClick={() => setActiveTab("feedback")}
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
@@ -932,32 +934,32 @@ export default function MyProjectPage() {
             {/* Post-Defense Action Roadmap */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                 AURORA Defense Process Roadmap — 3 Steps to Final Stage Clearance
               </h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {/* Step 1: Review Panelist Rubrics & Recommendations */}
                 <div 
                   onClick={() => setActiveTab("evaluations")}
-                  className="rounded-xl p-4 border border-amber-500/30 bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-amber-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-foreground/30 hover:shadow-xs transition-all duration-200 group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-[11px] font-black text-white shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       1
                     </span>
-                    <Badge variant="outline" className="text-[9px] font-bold text-amber-700 dark:text-amber-300 border-amber-300">
+                    <Badge variant="outline" className="text-[9px] font-bold border-border bg-muted/60 text-muted-foreground">
                       Panel Scores
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h4 className="text-xs font-bold text-foreground group-hover:underline transition-colors">
                       Review Panelist Rubric &amp; Marks
                     </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
                       Examine the detailed criterion scoring, recommendations, and electronic certificate issued by your panel members.
                     </p>
                   </div>
-                  <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline flex items-center gap-1 pt-0.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground flex items-center gap-1 pt-0.5">
                     View evaluation details &rarr;
                   </p>
                 </div>
@@ -965,36 +967,36 @@ export default function MyProjectPage() {
                 {/* Step 2: Address Panel Annotations & Matrix of Revisions */}
                 <div 
                   onClick={() => setActiveTab("feedback")}
-                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-foreground/30 hover:shadow-xs transition-all duration-200 group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       2
                     </span>
-                    <Badge variant="outline" className="text-[9px] font-bold text-primary border-primary/30">
+                    <Badge variant="outline" className="text-[9px] font-bold border-border bg-muted/60 text-muted-foreground">
                       {openAnnotationsCount} Open Comments
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h4 className="text-xs font-bold text-foreground group-hover:underline transition-colors">
                       Prepare Matrix of Revisions
                     </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
                       Review all highlighted manuscript text, methodology questions, and panel suggestions. Update your draft to satisfy each point.
                     </p>
                   </div>
-                  <p className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 pt-0.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground flex items-center gap-1 pt-0.5">
                     Open feedback &amp; annotations &rarr;
                   </p>
                 </div>
 
                 {/* Step 3: Upload Revised PDF Manuscript */}
-                <div className="rounded-xl p-4 border border-emerald-500/40 bg-card shadow-xs space-y-2.5">
+                <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       3
                     </span>
-                    <Badge variant="success" className="text-[9px] font-black">
+                    <Badge variant="outline" className="text-[9px] font-bold border-border bg-muted/60 text-muted-foreground">
                       Ready for v{nextVersionNumber}
                     </Badge>
                   </div>
@@ -1023,18 +1025,18 @@ export default function MyProjectPage() {
 
         {/* ── State 2: Post-Defense Cleared / Passed Banner ──────────────────── */}
         {isPassed && (
-          <div className="rounded-2xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-50/90 via-background to-emerald-50/30 dark:from-emerald-950/40 dark:via-background dark:to-emerald-950/20 p-6 shadow-sm space-y-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
-                  <CheckCircle2 className="h-6 w-6" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-2xs">
+                  <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base md:text-lg font-black text-emerald-950 dark:text-emerald-100 tracking-tight">
-                      🎉 Defense Stage Passed &amp; Officially Cleared!
+                    <h2 className="text-base md:text-lg font-bold text-foreground tracking-tight">
+                      Defense Stage Passed &amp; Officially Cleared
                     </h2>
-                    <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                       Stage Cleared
                     </Badge>
                   </div>
@@ -1048,7 +1050,8 @@ export default function MyProjectPage() {
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  variant="default"
+                  className="h-8 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
                   onClick={() => setActiveTab("evaluations")}
                 >
                   <Award className="h-3.5 w-3.5" />
@@ -1059,29 +1062,29 @@ export default function MyProjectPage() {
 
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                 Stage Clearance Roadmap — Next Steps
               </h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div 
                   onClick={() => setActiveTab("evaluations")}
-                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2 cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group"
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2 cursor-pointer hover:border-foreground/30 hover:shadow-xs transition-all group"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">1</span>
-                  <h4 className="text-xs font-bold text-foreground group-hover:text-primary">Download Official Certificates</h4>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">1</span>
+                  <h4 className="text-xs font-bold text-foreground group-hover:underline">Download Official Certificates</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Download institutional PDF certificates signed electronically by each panel member for your research portfolio.
                   </p>
                 </div>
                 <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">2</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">2</span>
                   <h4 className="text-xs font-bold text-foreground">Verify Cryptographic Signatures</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Every certificate features an immutable SHA-256 hash and verification QR code on the public verification portal.
                   </p>
                 </div>
                 <div className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[11px] font-black text-white shadow-xs">3</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">3</span>
                   <h4 className="text-xs font-bold text-foreground">Advance to Next Academic Milestone</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Your coordinator can advance your team to the next defense stage or final graduation clearance.
@@ -1094,25 +1097,25 @@ export default function MyProjectPage() {
 
         {/* ── State 3: Pre-Defense Scheduled & Endorsed Roadmap Banner ───────── */}
         {!isRevisionRequired && !isPassed && !hasEvaluations && endorsedDoc && (
-          <div className="rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/90 via-background to-emerald-50/30 dark:from-emerald-950/40 dark:via-background dark:to-emerald-950/20 p-6 shadow-sm space-y-5">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-5">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
-                  <ShieldCheck className="h-6 w-6" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-2xs">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base md:text-lg font-black text-emerald-950 dark:text-emerald-100 tracking-tight">
-                      🎉 Manuscript Endorsed for Defense!
+                    <h2 className="text-base md:text-lg font-bold text-foreground tracking-tight">
+                      Manuscript Endorsed for Defense
                     </h2>
-                    <Badge variant="success" className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-600 text-white shadow-xs">
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                       Adviser Cleared
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Your research adviser <strong className="text-foreground">{adviserName}</strong> has reviewed and officially endorsed{" "}
-                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">&ldquo;{endorsedDoc.title || "Manuscript"}&rdquo;</span> for oral defense.
+                    <span className="font-semibold text-foreground">&ldquo;{endorsedDoc.title || "Manuscript"}&rdquo;</span> for oral defense.
                   </p>
                 </div>
               </div>
@@ -1121,15 +1124,16 @@ export default function MyProjectPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 gap-1.5 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-xs font-bold cursor-pointer"
+                  className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => setEndorsementSlipOpen(true)}
                 >
-                  <Printer className="h-3.5 w-3.5" />
+                  <Printer className="h-3.5 w-3.5 text-muted-foreground" />
                   Endorsement Clearance Slip
                 </Button>
                 <Button
                   size="sm"
-                  className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  variant="default"
+                  className="h-8 gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
                   onClick={() => setDefenseGuideOpen(true)}
                 >
                   <Presentation className="h-3.5 w-3.5" />
@@ -1140,49 +1144,49 @@ export default function MyProjectPage() {
 
             {/* Adviser Remarks / Commendation if provided */}
             {endorsedDoc.approval_remarks && (
-              <div className="rounded-xl bg-emerald-100/60 dark:bg-emerald-900/40 border border-emerald-300/40 p-3.5 text-xs text-emerald-950 dark:text-emerald-200">
-                <span className="font-black uppercase tracking-wider text-[10px] text-emerald-800 dark:text-emerald-300 block mb-1">
+              <div className="rounded-xl bg-muted/60 border border-border p-3.5 text-xs text-foreground">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground block mb-1">
                   Adviser Endorsement Remarks
                 </span>
-                <p className="italic font-medium">&ldquo;{endorsedDoc.approval_remarks}&rdquo;</p>
+                <p className="italic font-medium text-foreground">&ldquo;{endorsedDoc.approval_remarks}&rdquo;</p>
               </div>
             )}
 
             {/* 3-Step Next Steps Progression */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                 What Happens Next? — Student Defense Roadmap
               </h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {/* Step 1: Defense Coordination & Scheduling */}
                 <Link
                   href="/dashboard/defenses"
-                  className={cn(
-                    "rounded-xl p-4 border transition-all duration-200 space-y-2.5 block group hover:shadow-md hover:-translate-y-0.5 no-underline",
-                    upcomingSchedule 
-                      ? "border-emerald-500/40 bg-card hover:border-emerald-500 shadow-xs" 
-                      : "border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20 hover:border-blue-500/60"
-                  )}
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 block group hover:border-foreground/30 hover:shadow-xs transition-all duration-200 no-underline"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       1
                     </span>
                     <Badge 
-                      variant={upcomingSchedule ? "success" : "info"} 
-                      className="text-[9px] font-black"
+                      variant="outline"
+                      className={cn(
+                        "text-[9px] font-bold border",
+                        upcomingSchedule
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                          : "bg-muted/60 text-muted-foreground border-border"
+                      )}
                     >
                       {upcomingSchedule ? "Defense Scheduled" : "In Coordinator Queue"}
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h4 className="text-xs font-bold text-foreground group-hover:underline transition-colors">
                       {upcomingSchedule ? "Defense Timeslot Confirmed" : "Defense Scheduling Queue"}
                     </h4>
                     {upcomingSchedule ? (
                       <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
-                        <p className="font-semibold text-emerald-700 dark:text-emerald-300">
+                        <p className="font-semibold text-foreground">
                           📅 {format(new Date(upcomingSchedule.scheduled_at), "MMMM d, yyyy • h:mm a")}
                         </p>
                         <p>
@@ -1195,10 +1199,7 @@ export default function MyProjectPage() {
                       </p>
                     )}
                   </div>
-                  <p className={cn(
-                    "text-[11px] font-bold group-hover:underline flex items-center gap-1 pt-0.5",
-                    upcomingSchedule ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
-                  )}>
+                  <p className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground flex items-center gap-1 pt-0.5">
                     {upcomingSchedule ? "View in Defenses Pipeline" : "Track Defense Pipeline"} &rarr;
                   </p>
                 </Link>
@@ -1206,18 +1207,18 @@ export default function MyProjectPage() {
                 {/* Step 2: Slide Deck & Rubrics Preparation */}
                 <div 
                   onClick={() => setDefenseGuideOpen(true)}
-                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 cursor-pointer hover:border-foreground/30 hover:shadow-xs transition-all duration-200 group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       2
                     </span>
-                    <Badge variant="outline" className="text-[9px] font-bold text-primary border-primary/30">
+                    <Badge variant="outline" className="text-[9px] font-bold border-border bg-muted/60 text-muted-foreground">
                       15-Min Rubric
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h4 className="text-xs font-bold text-foreground group-hover:underline transition-colors">
                       Prepare Presentation Deck
                     </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
@@ -1230,7 +1231,7 @@ export default function MyProjectPage() {
                       e.stopPropagation();
                       setDefenseGuideOpen(true);
                     }}
-                    className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                    className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground flex items-center gap-1 cursor-pointer pt-0.5"
                   >
                     View slide breakdown &rarr;
                   </button>
@@ -1239,25 +1240,25 @@ export default function MyProjectPage() {
                 {/* Step 3: Defense Day & Panel Verdict */}
                 <Link
                   href={`/workspace/${project.id}/${endorsedDoc.stage_id}`}
-                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 block cursor-pointer hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group no-underline"
+                  className="rounded-xl p-4 border border-border bg-card shadow-xs space-y-2.5 block cursor-pointer hover:border-foreground/30 hover:shadow-xs transition-all duration-200 group no-underline"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 dark:bg-slate-300 text-[11px] font-black text-white dark:text-slate-900 shadow-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-black shadow-xs">
                       3
                     </span>
-                    <Badge variant="outline" className="text-[9px] font-bold text-muted-foreground">
+                    <Badge variant="outline" className="text-[9px] font-bold border-border bg-muted/60 text-muted-foreground">
                       Panel Evaluation
                     </Badge>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h4 className="text-xs font-bold text-foreground group-hover:underline transition-colors">
                       Oral Defense &amp; Rubric Scoring
                     </h4>
                     <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
                       Panelists evaluate your research live across criteria weights (100 pts) and submit their consensus verdict and revision notes.
                     </p>
                   </div>
-                  <p className="text-[11px] font-bold text-primary group-hover:underline flex items-center gap-1 pt-0.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground flex items-center gap-1 pt-0.5">
                     Review annotations workspace &rarr;
                   </p>
                 </Link>
@@ -1267,24 +1268,30 @@ export default function MyProjectPage() {
         )}
 
         {/* Tab navigation */}
-        <div className="flex items-center gap-0.5 border-b border-border overflow-x-auto">
+        <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 text-xs font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer",
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
+                  isActive
+                    ? "border-foreground text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {tab.label}
                 {"count" in tab && tab.count > 0 && (
-                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-black text-primary">
+                  <span className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[9px] font-bold border",
+                    isActive
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-muted text-muted-foreground border-border"
+                  )}>
                     {tab.count}
                   </span>
                 )}
@@ -1300,8 +1307,8 @@ export default function MyProjectPage() {
             <div className="lg:col-span-2 space-y-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Defense Workflow Progress</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-base font-bold text-foreground">Defense Workflow Progress</CardTitle>
+                  <CardDescription className="text-xs">
                     Stage {currentStageIndex + 1} of {stages.length} — {progressPct}% complete
                   </CardDescription>
                 </CardHeader>
@@ -1317,20 +1324,20 @@ export default function MyProjectPage() {
                           key={stage.id}
                           className={cn(
                             "flex items-center gap-3 rounded-xl px-4 py-3 transition-colors",
-                            isCurrent && "bg-primary/5 border border-primary/20",
-                            isCompleted && "opacity-70"
+                            isCurrent && "bg-muted/70 border border-border shadow-2xs",
+                            isCompleted && "opacity-75"
                           )}
                         >
                           <div className={cn(
                             "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
-                            isCompleted ? "bg-success text-white" : isCurrent ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                            isCompleted ? "bg-foreground text-background" : isCurrent ? "bg-foreground text-background ring-2 ring-foreground/20" : "bg-muted text-muted-foreground border border-border"
                           )}>
                             {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={cn(
                               "text-sm font-bold",
-                              isCurrent ? "text-primary" : isCompleted ? "text-muted-foreground" : "text-foreground"
+                              isCurrent ? "text-foreground font-black" : isCompleted ? "text-muted-foreground" : "text-foreground"
                             )}>
                               {stage.name}
                             </p>
@@ -1339,10 +1346,10 @@ export default function MyProjectPage() {
                             )}
                           </div>
                           {isCurrent && (
-                            <Badge variant="info" className="text-[9px] shrink-0">Current</Badge>
+                            <Badge variant="outline" className="text-[9px] shrink-0 border-border bg-muted/80 text-foreground font-bold">Current</Badge>
                           )}
                           {isCompleted && (
-                            <CheckCheck className="h-4 w-4 text-success shrink-0" />
+                            <CheckCheck className="h-4 w-4 text-foreground shrink-0" />
                           )}
                           {isPending && (
                             <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -1391,11 +1398,11 @@ export default function MyProjectPage() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-muted-foreground font-semibold">Adviser</p>
                           {isTitleOrConcept ? (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-400 text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300">
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border bg-muted/60 text-muted-foreground font-semibold">
                               Section Adviser
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border bg-muted/60 text-foreground font-semibold">
                               Exclusive Adviser
                             </Badge>
                           )}
@@ -1409,7 +1416,7 @@ export default function MyProjectPage() {
                             Class Section instructor for Concept &amp; Title Defense. Exclusive topic adviser can be chosen after Title Defense.
                           </p>
                         ) : (
-                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5 leading-snug">
+                          <p className="text-[10px] text-muted-foreground font-medium mt-0.5 leading-snug">
                             Exclusive topic adviser for Proposal &amp; Final Defense.
                           </p>
                         )}
@@ -1495,12 +1502,7 @@ export default function MyProjectPage() {
                       return (
                         <div key={m.profile_id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 border border-border/50">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className={cn(
-                              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
-                              isLeader ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" :
-                              isAdviser ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
-                              "bg-primary/10 text-primary"
-                            )}>
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black bg-muted text-foreground border border-border">
                               {name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -1653,13 +1655,13 @@ export default function MyProjectPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-6 text-[10px] gap-1 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 px-2 font-bold cursor-pointer"
+                                className="h-6 text-[10px] gap-1 px-2 font-semibold cursor-pointer"
                                 onClick={() => setEndorsementSlipOpen(true)}
                               >
                                 <Printer className="h-3 w-3" />
                                 Clearance Slip
                               </Button>
-                              <Badge variant="success" className="text-[10px] font-bold">
+                              <Badge variant="outline" className="text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                                 Adviser Endorsed
                               </Badge>
                             </>
@@ -1689,14 +1691,9 @@ export default function MyProjectPage() {
                       </div>
 
                       {doc.approval_remarks && (
-                        <div className={cn(
-                          "px-5 py-2.5 text-xs border-b border-border flex items-start gap-2",
-                          doc.adviser_approval_status === "rejected"
-                            ? "bg-amber-500/10 text-amber-950 dark:text-amber-200"
-                            : "bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
-                        )}>
+                        <div className="px-5 py-2.5 text-xs border-b border-border flex items-start gap-2 bg-muted/40 text-foreground">
                           <span className="font-bold shrink-0">Adviser Remarks:</span>
-                          <span className="font-medium">{doc.approval_remarks}</span>
+                          <span className="font-medium text-muted-foreground">{doc.approval_remarks}</span>
                         </div>
                       )}
 
@@ -1708,12 +1705,12 @@ export default function MyProjectPage() {
                               className={cn(
                                 "flex items-center gap-4 px-5 py-3.5 transition-colors",
                                 vi !== versions.length - 1 && "border-b border-border",
-                                v.is_current && "bg-primary/3"
+                                v.is_current && "bg-muted/30"
                               )}
                             >
                               <div className={cn(
                                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black",
-                                v.is_current ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                                v.is_current ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
                               )}>
                                 v{v.version_number}
                               </div>
@@ -1756,7 +1753,7 @@ export default function MyProjectPage() {
                                     className="flex items-center gap-1 text-[10px] text-muted-foreground/80 px-1 font-semibold"
                                     title="Officially endorsed and locked for academic integrity"
                                   >
-                                    <Lock className="h-3 w-3 text-emerald-600" />
+                                    <Lock className="h-3 w-3 text-muted-foreground" />
                                     <span className="hidden sm:inline">Locked</span>
                                   </div>
                                 )}
@@ -1804,11 +1801,11 @@ export default function MyProjectPage() {
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
                     feedbackStatusFilter === "open"
-                      ? "bg-warning/20 text-warning-foreground border border-warning/40 shadow-xs"
+                      ? "bg-foreground text-background shadow-xs font-bold"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                  <AlertCircle className="h-3.5 w-3.5" />
                   <span>Needs Action ({openAnnotations.length})</span>
                 </button>
 
@@ -1818,11 +1815,11 @@ export default function MyProjectPage() {
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
                     feedbackStatusFilter === "addressed"
-                      ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-xs"
+                      ? "bg-foreground text-background shadow-xs font-bold"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                   <span>Addressed &amp; Resolved ({addressedAnnotations.length})</span>
                 </button>
 
@@ -1860,10 +1857,10 @@ export default function MyProjectPage() {
             {/* Feedback List */}
             {filteredAnnotations.length === 0 ? (
               feedbackStatusFilter === "open" && addressedAnnotations.length > 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 p-12 text-center">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-600 mb-2" />
-                  <h3 className="text-base font-bold text-emerald-950 dark:text-emerald-100">
-                    All Comments Addressed!
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-12 text-center">
+                  <CheckCircle2 className="h-10 w-10 text-foreground mb-2" />
+                  <h3 className="text-base font-bold text-foreground">
+                    All Comments Addressed
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground max-w-sm">
                     You currently have 0 open annotations. Everything has been resolved on this manuscript version.
@@ -1872,7 +1869,7 @@ export default function MyProjectPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => setFeedbackStatusFilter("addressed")}
-                    className="mt-4 text-xs font-bold gap-1.5 border-emerald-400 text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 cursor-pointer"
+                    className="mt-4 text-xs font-semibold gap-1.5 cursor-pointer"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     View Addressed Comments ({addressedAnnotations.length})
@@ -1915,8 +1912,8 @@ export default function MyProjectPage() {
                             className={cn(
                               "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
                               !isAddressed
-                                ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                                : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                                ? "bg-muted text-foreground border border-border"
+                                : "bg-muted/60 text-muted-foreground border border-border/40"
                             )}
                           >
                             {!isAddressed ? (
@@ -2067,10 +2064,10 @@ export default function MyProjectPage() {
                       className={cn(
                         "rounded-2xl border transition-all shadow-2xs hover:shadow-xs",
                         isLive
-                          ? "border-blue-500/50 bg-blue-50/30 dark:bg-blue-950/20 ring-1 ring-blue-500/20"
+                          ? "border-foreground/40 bg-muted/40 ring-1 ring-foreground/20"
                           : isPast
-                          ? "border-border bg-card opacity-90"
-                          : "border-primary/30 bg-primary/3 shadow-xs"
+                          ? "border-border bg-card opacity-80"
+                          : "border-border bg-card shadow-xs"
                       )}
                     >
                       <CardContent className="p-5">
@@ -2114,8 +2111,8 @@ export default function MyProjectPage() {
 
                               {isPast && evaluations.length > 0 && (
                                 <Badge
-                                  variant="success"
-                                  className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  variant="outline"
+                                  className="text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                                 >
                                   Evaluated
                                 </Badge>
@@ -2132,7 +2129,7 @@ export default function MyProjectPage() {
                                 {format(sDate, "h:mm a")} – {format(eDate, "h:mm a")}
                               </span>
                               {sched.is_online ? (
-                                <span className="flex items-center gap-1 text-primary">
+                                <span className="flex items-center gap-1 text-foreground">
                                   <Video className="h-3.5 w-3.5" />
                                   Online Conference
                                 </span>
@@ -2151,9 +2148,9 @@ export default function MyProjectPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => setActiveTab("evaluations")}
-                                className="h-8 text-xs font-bold gap-1 text-emerald-700 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                                className="h-8 text-xs font-semibold gap-1 cursor-pointer"
                               >
-                                <Award className="h-3.5 w-3.5 text-emerald-600" />
+                                <Award className="h-3.5 w-3.5" />
                                 <span>View Results</span>
                               </Button>
                             )}
@@ -2302,7 +2299,7 @@ export default function MyProjectPage() {
                                   setDownloadingCertId(null);
                                 }
                               }}
-                              className="h-7 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-2xs"
+                              className="h-7 text-xs font-bold gap-1 shadow-2xs cursor-pointer"
                             >
                               {downloadingCertId === evalItem.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -2461,7 +2458,7 @@ export default function MyProjectPage() {
             <DialogHeader className="border-b pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground text-background shadow-xs">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
@@ -2486,10 +2483,10 @@ export default function MyProjectPage() {
             </DialogHeader>
 
             {/* Clearance Slip Document Body */}
-            <div className="mt-4 rounded-xl border border-emerald-500/30 bg-card p-6 space-y-6 shadow-xs relative overflow-hidden">
+            <div className="mt-4 rounded-xl border border-border bg-card p-6 space-y-6 shadow-xs relative overflow-hidden">
               {/* Background Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none">
-                <ShieldCheck className="w-96 h-96 text-emerald-900" />
+                <ShieldCheck className="w-96 h-96 text-foreground" />
               </div>
 
               {/* Institutional Letterhead */}
@@ -2503,14 +2500,14 @@ export default function MyProjectPage() {
                 <p className="text-[11px] font-semibold text-muted-foreground">
                   {project.departments?.name || "College of Computing and Information Technology"}
                 </p>
-                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                <p className="text-[10px] font-medium text-muted-foreground">
                   AURORA Paperless Defense &amp; Research Repository Management System
                 </p>
               </div>
 
               {/* Slip Title */}
               <div className="text-center relative z-10">
-                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                <span className="inline-block px-3 py-1 rounded-full bg-muted border border-border text-[10px] font-black uppercase tracking-widest text-foreground">
                   Certificate of Adviser Endorsement
                 </span>
                 <h4 className="mt-2 text-sm font-bold text-foreground">
@@ -2570,8 +2567,8 @@ export default function MyProjectPage() {
 
               {/* Adviser Remarks if any */}
               {endorsedDoc?.approval_remarks && (
-                <div className="relative z-10 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-emerald-950 dark:text-emerald-200">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+                <div className="relative z-10 text-xs bg-muted/40 border border-border rounded-xl p-3 text-foreground">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                     Adviser Endorsement Remarks
                   </p>
                   <p className="italic">&ldquo;{endorsedDoc.approval_remarks}&rdquo;</p>
@@ -2591,14 +2588,14 @@ export default function MyProjectPage() {
                 </div>
 
                 {/* Digital Stamp */}
-                <div className="border-2 border-dashed border-emerald-600 rounded-xl px-4 py-2 text-center bg-emerald-50/50 dark:bg-emerald-950/40">
-                  <div className="flex items-center gap-1.5 justify-center text-emerald-600 dark:text-emerald-400">
+                <div className="border border-dashed border-border rounded-xl px-4 py-2 text-center bg-muted/40">
+                  <div className="flex items-center gap-1.5 justify-center text-foreground">
                     <CheckCircle2 className="h-4 w-4" />
                     <span className="text-[11px] font-black uppercase tracking-wider">
                       ENDORSED FOR DEFENSE
                     </span>
                   </div>
-                  <p className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
+                  <p className="text-[9px] font-bold text-muted-foreground mt-0.5">
                     Certified by {adviserName}
                   </p>
                 </div>
@@ -2612,7 +2609,7 @@ export default function MyProjectPage() {
           <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-6 space-y-5">
             <DialogHeader className="border-b pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground border border-border">
                   <Presentation className="h-5 w-5" />
                 </div>
                 <div>
@@ -2629,18 +2626,18 @@ export default function MyProjectPage() {
             <div className="space-y-5 text-xs">
               {/* 1. Time Allocation Card */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1">
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/80 space-y-1">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" />
+                    <Clock className="h-4 w-4 text-foreground" />
                     <span className="font-bold text-foreground">15-Minute Presentation</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Strict maximum for your oral presentation. Keep slides clear, visual, and concise. Practice timing beforehand.
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 space-y-1">
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/80 space-y-1">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <MessageSquare className="h-4 w-4 text-foreground" />
                     <span className="font-bold text-foreground">15-Minute Q&amp;A Defense</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -2717,7 +2714,7 @@ export default function MyProjectPage() {
               {/* 3. 100-Point Institutional Rubric Breakdown */}
               <div className="space-y-3">
                 <h4 className="font-bold text-foreground uppercase tracking-wider text-[11px] flex items-center gap-2">
-                  <Award className="h-4 w-4 text-emerald-600" />
+                  <Award className="h-4 w-4 text-foreground" />
                   Institutional Evaluation Rubrics (100 Points Total)
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -2760,12 +2757,12 @@ export default function MyProjectPage() {
               </div>
 
               {/* 4. Defense Day Pro Tips */}
-              <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300/40 space-y-2">
-                <h4 className="font-bold text-amber-950 dark:text-amber-200 text-xs flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+              <div className="p-4 rounded-xl bg-muted/40 border border-border/80 space-y-2">
+                <h4 className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-foreground" />
                   Pro Tips for High Scores
                 </h4>
-                <ul className="text-[11px] text-amber-900/90 dark:text-amber-300/90 space-y-1 list-disc list-inside">
+                <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside leading-relaxed">
                   <li><strong>Review all Adviser Annotations:</strong> Panelists can see your manuscript revision history. Be ready to explain how adviser feedback was incorporated.</li>
                   <li><strong>Offline Prototype Readiness:</strong> Have a screen recording or local offline fallback of your system demo in case venue WiFi is unstable.</li>
                   <li><strong>Equitable Participation:</strong> Each group member should present their assigned module so panelists see true teamwork.</li>

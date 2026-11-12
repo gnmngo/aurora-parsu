@@ -41,7 +41,7 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
       href: isStudent ? "/dashboard/my-project" : "/dashboard/submissions",
       matchPaths: ["/dashboard/my-project", "/dashboard/submissions"],
       icon: BookOpen,
-      accent: "from-blue-500/15 to-blue-600/5 border-blue-500/30 text-blue-700 dark:text-blue-300",
+      accent: "",
     },
     {
       step: 2,
@@ -51,7 +51,7 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
       href: "/workspace",
       matchPaths: ["/workspace", "/dashboard/annotations"],
       icon: FileCheck2,
-      accent: "from-emerald-500/15 to-emerald-600/5 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+      accent: "",
     },
     {
       step: 3,
@@ -61,7 +61,7 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
       href: isStaff ? "/dashboard/defenses/schedule" : "/dashboard/defenses",
       matchPaths: ["/dashboard/defenses", "/dashboard/defenses/schedule"],
       icon: CalendarClock,
-      accent: "from-amber-500/15 to-amber-600/5 border-amber-500/30 text-amber-700 dark:text-amber-300",
+      accent: "",
     },
     {
       step: 4,
@@ -71,7 +71,7 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
       href: "/workspace",
       matchPaths: ["/admin/rubrics"],
       icon: ClipboardCheck,
-      accent: "from-violet-500/15 to-violet-600/5 border-violet-500/30 text-violet-700 dark:text-violet-300",
+      accent: "",
     },
     {
       step: 5,
@@ -81,7 +81,7 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
       href: isStaff ? "/admin/reports" : "/dashboard/grades",
       matchPaths: ["/dashboard/grades", "/admin/reports"],
       icon: Award,
-      accent: "from-rose-500/15 to-rose-600/5 border-rose-500/30 text-rose-700 dark:text-rose-300",
+      accent: "",
     },
   ];
 
@@ -113,10 +113,10 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
               key={item.step}
               href={item.href}
               className={cn(
-                "group relative flex flex-col justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm no-underline",
+                "group relative flex flex-col justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xs no-underline",
                 isActive
-                  ? `bg-gradient-to-br ${item.accent} ring-1 ring-primary/30 shadow-xs`
-                  : "border-border/70 bg-muted/20 hover:border-primary/40 hover:bg-muted/40"
+                  ? "border-foreground/40 bg-foreground/5 dark:bg-foreground/10 text-foreground ring-1 ring-foreground/20 shadow-xs"
+                  : "border-border/70 bg-card hover:border-foreground/30 hover:bg-muted/40 text-muted-foreground"
               )}
             >
               <div>
@@ -125,8 +125,8 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
                     className={cn(
                       "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary"
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground group-hover:bg-foreground group-hover:text-background"
                     )}
                   >
                     Step {item.step}
@@ -137,8 +137,8 @@ export function WorkflowHierarchyBanner({ compact = false }: { compact?: boolean
                 </div>
 
                 <div className="mt-2 flex items-center gap-1.5">
-                  <Icon className="h-4 w-4 shrink-0 text-primary" />
-                  <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  <Icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+                  <p className="text-xs font-bold text-foreground transition-colors">
                     {item.title}
                   </p>
                 </div>

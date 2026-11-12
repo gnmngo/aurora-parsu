@@ -223,32 +223,32 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
     <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{advisees.length}</p>
+            <p className="text-2xl font-black text-foreground">{advisees.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Advisees</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{pendingManuscripts.length}</p>
+            <p className="text-2xl font-black text-foreground">{pendingManuscripts.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Paperless Consultations</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <MessageSquare className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{activeComments.length}</p>
+            <p className="text-2xl font-black text-foreground">{activeComments.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Unresolved Comments</p>
           </div>
         </Card>
@@ -302,8 +302,8 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
               className={cn(
                 "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
                 activeTab === "queue"
-                  ? "bg-white/20 text-white"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               {pendingManuscripts.length}
@@ -436,7 +436,7 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                                       });
                                     }}
                                     size="sm" 
-                                    className="h-8 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-0.5"
+                                    className="h-8 text-[10px] rounded-lg flex items-center gap-0.5 shadow-xs"
                                   >
                                     <CheckCircle2 className="h-3 w-3" /> Endorse for Defense
                                   </Button>
@@ -617,7 +617,6 @@ export function AdviserDashboard({ userId }: AdviserDashboardProps) {
                   updatingDocId === approvalModal.docId ||
                   (approvalModal.status === "rejected" && !approvalRemarks.trim())
                 }
-                className={approvalModal.status === "approved" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
                 variant={approvalModal.status === "approved" ? "default" : "danger"}
                 onClick={() => handleApproval(approvalModal.docId, approvalModal.status, approvalRemarks)}
               >

@@ -127,14 +127,14 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
   return (
     <div className="space-y-6 text-xs font-semibold text-slate-800 dark:text-slate-200">
       {/* Quick Workspace Launcher Banner */}
-      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/10 shadow-xs">
+      <Card className="border border-border/80 bg-card shadow-xs">
         <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[9px] font-bold uppercase text-primary border-primary/40">
+              <Badge variant="outline" className="text-[9px] font-bold uppercase text-foreground border-border bg-muted">
                 Core Feature
               </Badge>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-bold text-foreground">
                 Split-Screen Manuscript Review &amp; Rubric Grading Workspace
               </h3>
             </div>
@@ -143,7 +143,7 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
             </p>
           </div>
           <Link href="/workspace">
-            <Button className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-sm shrink-0">
+            <Button className="rounded-xl h-9 text-xs font-bold gap-1.5 shadow-xs shrink-0">
               Open Defense Workspace <ChevronRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -152,32 +152,32 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
 
       {/* Metrics Row */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <Calendar className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{activeProjects.length}</p>
+            <p className="text-2xl font-black text-foreground">{activeProjects.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Assigned Manuscripts</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <FileText className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{draftEvals.length}</p>
+            <p className="text-2xl font-black text-foreground">{draftEvals.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Pending Evaluations</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex flex-row items-center gap-4">
-          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+        <Card className="p-4 flex flex-row items-center gap-4 border border-border/80 shadow-xs">
+          <div className="p-3 rounded-xl bg-muted text-foreground border border-border/60">
             <UserCheck className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{signedEvals.length}</p>
+            <p className="text-2xl font-black text-foreground">{signedEvals.length}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase">Signed Certificates</p>
           </div>
         </Card>
@@ -193,19 +193,19 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           className={cn(
             "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "defenses"
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              ? "bg-foreground text-background shadow-xs hover:bg-foreground/90"
               : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
-          <FileText className={cn("h-4 w-4 shrink-0", activeTab === "defenses" ? "text-white" : "text-primary")} />
+          <FileText className="h-4 w-4 shrink-0" />
           <span>Research Manuscripts</span>
           <Badge
             variant="outline"
             className={cn(
               "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
               activeTab === "defenses"
-                ? "bg-white/20 text-white"
-                : "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+                ? "bg-background/20 text-background"
+                : "bg-muted text-muted-foreground"
             )}
           >
             {activeProjects.length}
@@ -220,11 +220,11 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           className={cn(
             "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "pending"
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              ? "bg-foreground text-background shadow-xs hover:bg-foreground/90"
               : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
-          <Clock className={cn("h-4 w-4 shrink-0", activeTab === "pending" ? "text-white" : "text-amber-500")} />
+          <Clock className="h-4 w-4 shrink-0" />
           <span>Pending Drafts</span>
           {draftEvals.length > 0 && (
             <Badge
@@ -232,8 +232,8 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
               className={cn(
                 "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
                 activeTab === "pending"
-                  ? "bg-white/20 text-white"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                  ? "bg-background/20 text-background"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               {draftEvals.length}
@@ -249,19 +249,19 @@ export function PanelistDashboard({ userId }: PanelistDashboardProps) {
           className={cn(
             "font-bold text-xs gap-2 shadow-xs transition-all cursor-pointer",
             activeTab === "completed"
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+              ? "bg-foreground text-background shadow-xs hover:bg-foreground/90"
               : "bg-card text-foreground border-border hover:bg-muted hover:text-foreground"
           )}
         >
-          <History className={cn("h-4 w-4 shrink-0", activeTab === "completed" ? "text-white" : "text-emerald-500")} />
+          <History className="h-4 w-4 shrink-0" />
           <span>Signature History</span>
           <Badge
             variant="outline"
             className={cn(
               "ml-1 text-[10px] font-black px-1.5 py-0.5 border-0",
               activeTab === "completed"
-                ? "bg-white/20 text-white"
-                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                ? "bg-background/20 text-background"
+                : "bg-muted text-muted-foreground"
             )}
           >
             {signedEvals.length}
