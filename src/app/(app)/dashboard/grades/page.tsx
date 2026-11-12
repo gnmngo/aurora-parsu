@@ -145,16 +145,27 @@ export default function GradesPage() {
           return true;
         });
 
-      } else if (isPanelist) {
-        // Find all projects where user is assigned as panel member
-        const { data: panelAssignments } = await supabase
-          .from("defense_panels")
-          .select("project_id")
-          .eq("profile_id", user.id);
+      } else if (isPanelist || isAdviser || roles.includes("panelist") || roles.includes("adviser")) {
+        // Faculty: query both panelist defense assignments and adviser advisee projects
+        const shouldQueryPanelist = roles.includes("panelist") || isPanelist;
+        const shouldQueryAdviser = roles.includes("adviser") || isAdviser;
 
-        const projectIds = (panelAssignments || []).map((p: any) => p.project_id);
-        if (projectIds.length > 0) {
-          const { data, error } = await baseQuery.in("project_id", projectIds);
+        const [panelAssignments, memberProjects] = await Promise.all([
+          shouldQueryPanelist
+            ? supabase.from("defense_panels").select("project_id").eq("profile_id", user.id)
+            : Promise.resolve({ data: [] }),
+          shouldQueryAdviser
+            ? supabase.from("project_members").select("project_id").eq("profile_id", user.id).eq("member_role", "adviser")
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        const projectIds = new Set<string>();
+        panelAssignments?.data?.forEach((p: any) => projectIds.add(p.project_id));
+        memberProjects?.data?.forEach((m: any) => projectIds.add(m.project_id));
+
+        const targetIds = Array.from(projectIds);
+        if (targetIds.length > 0) {
+          const { data, error } = await baseQuery.in("project_id", targetIds);
           if (error) throw error;
           loadedEvals = (data as any[]) || [];
         } else {
@@ -162,25 +173,6 @@ export default function GradesPage() {
           if (error) throw error;
           loadedEvals = (data as any[]) || [];
         }
-
-      } else if (isAdviser) {
-        // Get projects where user is adviser member
-        const { data: memberProjects } = await supabase
-          .from("project_members")
-          .select("project_id")
-          .eq("profile_id", user.id)
-          .eq("member_role", "adviser");
-
-        const projectIds = (memberProjects || []).map((m: { project_id: string }) => m.project_id);
-        if (projectIds.length === 0) {
-          setEvaluations([]);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await baseQuery.in("project_id", projectIds);
-        if (error) throw error;
-        loadedEvals = (data as any[]) || [];
 
       } else if (isStudent) {
         // Find projects as creator or team member (BUG-G5)

@@ -361,18 +361,30 @@ export default function DefensesPage() {
             ownProjs?.forEach((p: { id: string }) => idSet.add(p.id));
           }
           memberRows?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
-        } else if (effectiveRole === "adviser") {
-          const { data: advRows } = await supabase
-            .from("project_members")
-            .select("project_id")
-            .eq("profile_id", user.id)
-            .eq("member_role", "adviser");
+        } else if (effectiveRole === "adviser" || effectiveRole === "panelist" || roles.includes("adviser") || roles.includes("panelist")) {
+          // A faculty member may serve as a research adviser AND as a defense panelist/chair.
+          // Query both roles so that assigned panel defense schedules and advisee defense schedules
+          // are both visible!
+          const shouldQueryAdviser = roles.includes("adviser") || effectiveRole === "adviser";
+          const shouldQueryPanelist = roles.includes("panelist") || effectiveRole === "panelist";
+
+          const [{ data: advRows }, { data: panRows }] = await Promise.all([
+            shouldQueryAdviser
+              ? supabase
+                  .from("project_members")
+                  .select("project_id")
+                  .eq("profile_id", user.id)
+                  .eq("member_role", "adviser")
+              : Promise.resolve({ data: [] }),
+            shouldQueryPanelist
+              ? supabase
+                  .from("defense_panels")
+                  .select("project_id")
+                  .eq("profile_id", user.id)
+              : Promise.resolve({ data: [] }),
+          ]);
+
           advRows?.forEach((m: { project_id: string }) => idSet.add(m.project_id));
-        } else if (effectiveRole === "panelist") {
-          const { data: panRows } = await supabase
-            .from("defense_panels")
-            .select("project_id")
-            .eq("profile_id", user.id);
           panRows?.forEach((p: { project_id: string }) => idSet.add(p.project_id));
         }
 
@@ -721,6 +733,8 @@ export default function DefensesPage() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {isStudent
                 ? "My Defense Schedule"
+                : roles.includes("panelist") && roles.includes("adviser")
+                ? "Oral Defenses Schedule"
                 : effectiveRole === "adviser"
                 ? "Advisee Oral Defenses"
                 : effectiveRole === "panelist"
@@ -730,6 +744,8 @@ export default function DefensesPage() {
             <p className="mt-1 text-sm text-muted-foreground font-medium">
               {isStudent
                 ? "Track your scheduled oral defenses, committee assignments, and evaluation results."
+                : roles.includes("panelist") && roles.includes("adviser")
+                ? "Manage and attend scheduled oral defenses as an assigned defense panelist and research adviser."
                 : "Manage oral defense schedules, live deliberation panels, and workflow progression."}
             </p>
           </div>
@@ -985,6 +1001,18 @@ export default function DefensesPage() {
                               <Badge variant="outline" className="text-[9px] font-black uppercase bg-muted text-foreground border-border">
                                 {sched.defense_stages?.name || "Defense Stage"}
                               </Badge>
+
+                              {/* Faculty Role on this defense */}
+                              {isAssignedPanelist && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] font-black uppercase bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                                >
+                                  {sched.panels?.find((p: any) => p.profile_id === currentUserId)?.panel_role === "chair"
+                                    ? "Panel Chairperson"
+                                    : "Defense Panelist"}
+                                </Badge>
+                              )}
 
                               {/* Real-time Defense Status Badge */}
                               <Badge

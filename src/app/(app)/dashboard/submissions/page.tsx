@@ -43,7 +43,7 @@ export default function SubmissionsPage() {
     try {
       const rows = await fetchSubmissions(supabase, {
         userId: user?.id,
-        roles: [effectiveRole],
+        roles: roles && roles.length > 0 ? roles : [effectiveRole],
         collegeId: profile?.college_id || null,
       });
       setSubmissionsList(Array.isArray(rows) ? rows : []);
@@ -55,7 +55,7 @@ export default function SubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, user?.id, effectiveRole, profile?.college_id]);
+  }, [supabase, user?.id, effectiveRole, roles, profile?.college_id]);
 
   useEffect(() => {
     if (!isReady) {

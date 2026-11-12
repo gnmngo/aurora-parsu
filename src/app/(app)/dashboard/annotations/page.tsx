@@ -52,7 +52,7 @@ export default function AnnotationsPage() {
 
     async function loadAnnotations() {
       try {
-        const isAdviserOrPanelist = ["adviser", "panelist"].includes(effectiveRole);
+        const isAdviserOrPanelist = ["adviser", "panelist"].includes(effectiveRole) || roles.includes("adviser") || roles.includes("panelist");
         const isCoordinatorOrAdmin = ["coordinator", "sys_admin", "college_dean"].includes(effectiveRole);
 
         // BUG-C1: Use `created_by` (actual FK) not `profile_id` (non-existent column)
@@ -89,16 +89,19 @@ export default function AnnotationsPage() {
           setAnnotations((data as unknown as AnnotationRow[]) || []);
 
         } else if (isAdviserOrPanelist) {
-          // Resolve allowed project IDs strictly for the active role (adviser vs panelist)
+          // Resolve allowed project IDs for faculty (querying both adviser advisees and panelist assignments if applicable)
+          const shouldQueryAdviser = roles.includes("adviser") || effectiveRole === "adviser";
+          const shouldQueryPanelist = roles.includes("panelist") || effectiveRole === "panelist";
+
           const [{ data: memberProjects }, { data: panelProjects }] = await Promise.all([
-            effectiveRole === "adviser"
+            shouldQueryAdviser
               ? supabase
                   .from("project_members")
                   .select("project_id")
                   .eq("profile_id", user!.id)
                   .eq("member_role", "adviser")
               : Promise.resolve({ data: [] }),
-            effectiveRole === "panelist"
+            shouldQueryPanelist
               ? supabase
                   .from("defense_panels")
                   .select("project_id")

@@ -94,15 +94,18 @@ export default function WorkspaceIndexPage() {
               query = query.in("id", studentProjIds);
             } else {
               // Faculty: adviser and/or panelist
+              const shouldQueryAdviser = roles.includes("adviser") || isAdviser;
+              const shouldQueryPanelist = roles.includes("panelist") || isPanelist;
+
               const [{ data: memberProjects }, { data: panelProjects }] = await Promise.all([
-                isAdviser
+                shouldQueryAdviser
                   ? supabase
                       .from("project_members")
                       .select("project_id")
                       .eq("profile_id", user.id)
                       .eq("member_role", "adviser")
                   : Promise.resolve({ data: [] }),
-                isPanelist
+                shouldQueryPanelist
                   ? supabase
                       .from("defense_panels")
                       .select("project_id")
