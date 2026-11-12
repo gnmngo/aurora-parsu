@@ -24,7 +24,7 @@ import {
   Clock, Upload, User, Building2, GraduationCap, AlertCircle, AlertTriangle,
   CheckCheck, ExternalLink, Copy, Check, Users, Crown, Loader2, Pencil,
   ShieldCheck, Sparkles, Printer, Presentation, ArrowRight, CheckSquare, FileCheck,
-  Download, Layers, Video, Trash2, Lock
+  Download, Layers, Video, Trash2, Lock, UserPlus, Plus
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -1837,12 +1837,46 @@ export default function MyProjectPage() {
                     </div>
                   )}
 
-                  {/* Quick Switch / Multi-Project stats */}
-                  <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>Multi-Project Workspace</span>
-                    <span className="font-mono font-bold text-foreground">
-                      {userProjects.length} {userProjects.length === 1 ? "Project" : "Projects"}
-                    </span>
+                  {/* Multi-Project Actions */}
+                  <div className="pt-2 border-t border-border/50 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Multi-Project Workspace</span>
+                      <span className="font-mono font-bold text-foreground">
+                        {userProjects.length} {userProjects.length === 1 ? "Project" : "Projects"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <JoinProjectModal
+                        studentId={student?.id}
+                        onSuccess={loadProjectData}
+                        triggerButton={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-center gap-1.5 text-[11px] font-bold h-8 border-border hover:bg-muted cursor-pointer"
+                          >
+                            <UserPlus className="h-3 w-3" />
+                            Join Team
+                          </Button>
+                        }
+                      />
+                      <CreateProjectModal
+                        student={student}
+                        onSuccess={loadProjectData}
+                        triggerButton={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-center gap-1.5 text-[11px] font-bold h-8 border-border hover:bg-muted cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3" />
+                            New Paper
+                          </Button>
+                        }
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
