@@ -25,6 +25,7 @@ import {
   Wrench,
   BookOpen,
   Database,
+  Info,
 } from "lucide-react";
 import { getSignatureProfileAction, saveSignatureProfileAction } from "@/lib/signatures/actions";
 import {
@@ -580,6 +581,14 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">
               Register or update your official institutional e-signature used when signing rubric evaluations and defense clearance certificates (RA 8792 compliant).
             </p>
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-blue-700 dark:text-blue-300">
+                <Info className="h-4 w-4" /> Institutional Signature Registration (RA 8792)
+              </p>
+              <p className="text-[11px] leading-relaxed text-blue-800/80 dark:text-blue-300/80">
+                This section registers your official baseline. In the defense evaluation workspace, Aurora binds this baseline cryptographically to your authenticated faculty session, password confirmation, and a tamper-proof SHA-256 digest to generate valid academic certificates.
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {sigPreviewUrl && (

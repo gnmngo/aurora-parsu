@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createServiceClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import {
@@ -23,12 +24,10 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  ArrowLeft,
   Award,
   Building2,
 } from "lucide-react";
-import { AuroraLogo } from "@/components/ui/aurora-logo";
-import { PrintButton } from "./print-button";
+import { VerifyHeader } from "./verify-header";
 
 interface VerifyPageProps {
   params: Promise<{ serial: string }>;
@@ -45,15 +44,15 @@ export async function generateMetadata({ params }: VerifyPageProps): Promise<Met
 function formatVerdict(verdictCode: string | null): { label: string; bg: string; text: string } {
   switch (verdictCode) {
     case "passed":
-      return { label: "Passed (Full Approval)", bg: "bg-emerald-500/20 border-emerald-500/30", text: "text-emerald-300" };
+      return { label: "Passed (Full Approval)", bg: "bg-emerald-500/10 border-emerald-500/25", text: "text-emerald-700 dark:text-emerald-300" };
     case "passed_minor":
-      return { label: "Passed with Minor Revisions", bg: "bg-teal-500/20 border-teal-500/30", text: "text-teal-300" };
+      return { label: "Passed with Minor Revisions", bg: "bg-teal-500/10 border-teal-500/25", text: "text-teal-700 dark:text-teal-300" };
     case "passed_major":
-      return { label: "Passed with Major Revisions", bg: "bg-amber-500/20 border-amber-500/30", text: "text-amber-300" };
+      return { label: "Passed with Major Revisions", bg: "bg-amber-500/10 border-amber-500/25", text: "text-amber-700 dark:text-amber-300" };
     case "failed":
-      return { label: "Re-Defense Required (Failed)", bg: "bg-rose-500/20 border-rose-500/30", text: "text-rose-300" };
+      return { label: "Re-Defense Required (Failed)", bg: "bg-rose-500/10 border-rose-500/25", text: "text-rose-700 dark:text-rose-300" };
     default:
-      return { label: "Pending Official Release", bg: "bg-slate-500/20 border-slate-500/30", text: "text-slate-300" };
+      return { label: "Pending Official Release", bg: "bg-zinc-500/10 border-zinc-500/25", text: "text-zinc-600 dark:text-zinc-400" };
   }
 }
 
@@ -100,20 +99,17 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
   // 2. Secondary fallback lookup: evaluations table directly
   let evalRecord: any = null;
   if (!sig) {
-    const { data: directEval } = await supabase
+    const { data: ev } = await supabase
       .from("evaluations")
       .select(`
         id,
         certificate_serial,
         signature_hash,
-        signed_at,
-        status,
-        panelist_id,
         total_score,
         weighted_score,
         verdict_code,
-        panel_notes,
-        recommendations,
+        signed_at,
+        panelist_id,
         profiles!panelist_id ( first_name, last_name, email ),
         project_id,
         projects (
@@ -126,27 +122,24 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
       .eq("status", "submitted")
       .maybeSingle();
 
-    if (directEval) {
-      evalRecord = directEval;
-    }
+    evalRecord = ev;
   }
 
-  const isValid = !!(sig || evalRecord);
+  const isValid = Boolean(sig || evalRecord);
+
+  // Cryptographic Integrity Verification
   let hashMatched = false;
   let activeHash = "";
-  let hashAlgorithm = "SHA-256";
+  const hashAlgorithm = sig?.hash_algorithm || "SHA-256";
 
   if (sig) {
     activeHash = sig.payload_hash || sig.certificate_hash || "";
-    hashAlgorithm = sig.hash_algorithm || "SHA-256";
-
     if (sig.signing_payload && sig.payload_hash) {
       try {
-        const payload = sig.signing_payload as Record<string, unknown>;
-        const payloadJson = JSON.stringify(payload, Object.keys(payload).sort());
-
+        const payloadObj = sig.signing_payload;
+        const sortedJson = JSON.stringify(payloadObj, Object.keys(payloadObj).sort());
         const encoder = new TextEncoder();
-        const data = encoder.encode(payloadJson);
+        const data = encoder.encode(sortedJson);
         const hashBuffer = await crypto.subtle.digest("SHA-256", data);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const recomputedHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -191,87 +184,78 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
   const signedDate = sig?.signed_at || evalRecord?.signed_at || null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-8 print:bg-white print:p-0">
+    <main className="min-h-screen bg-white text-zinc-900 dark:bg-[#050505] dark:text-[#F5F5F5] flex flex-col justify-between p-4 sm:p-8 font-sans antialiased transition-colors duration-200 print:bg-white print:p-0 print:text-zinc-900">
       {/* Top Header Navigation */}
-      <div className="w-full max-w-2xl mx-auto flex items-center justify-between mb-6 print:hidden">
-        <Link
-          href="/"
-          className="hover:opacity-90 transition-opacity"
-        >
-          <AuroraLogo size="sm" showText={true} textColor="text-white" subtext="Partido State University" />
-        </Link>
+      <VerifyHeader isValid={isValid} />
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/verify"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Search Another</span>
-          </Link>
-          {isValid && <PrintButton />}
-        </div>
-      </div>
-
-      <div className="w-full max-w-2xl mx-auto my-auto print:max-w-none print:w-full">
+      <div className="w-full max-w-3xl mx-auto my-auto print:max-w-none print:w-full">
         {/* Institutional Branding */}
-        <div className="text-center mb-6 print:mb-4 flex flex-col items-center">
+        <div className="text-center mb-8 print:mb-4 flex flex-col items-center">
           <Link href="/" className="mb-3 hover:scale-105 transition-transform print:hidden">
-            <AuroraLogo size="lg" showText={false} />
+            <div className="relative h-12 w-12 flex items-center justify-center">
+              <Image
+                src="/aurora-symbol-transparent.png"
+                alt="AURORA Symbol"
+                width={48}
+                height={48}
+                priority
+                className="object-contain dark:brightness-100 brightness-0 transition-all duration-200"
+              />
+            </div>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-white print:text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white print:text-zinc-900 tracking-tight">
             Partido State University
           </h1>
-          <p className="text-xs sm:text-sm text-white/70 print:text-slate-600 mt-1 font-medium">
-            AURORA (Academic Unified Review, Observation, Rating, and Assessment System) &bull; Document Authenticity Portal
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 print:text-zinc-600 mt-1 font-medium">
+            AURORA &bull; Official Document Authenticity Verification Registry
           </p>
         </div>
 
         {/* Verification Result Card */}
         <div
-          className={`rounded-2xl border shadow-2xl overflow-hidden print:border print:shadow-none print:bg-white ${
+          className={`rounded-2xl border shadow-sm overflow-hidden print:border print:shadow-none print:bg-white ${
             !isValid
-              ? "border-red-500/30 bg-red-950/20"
+              ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/10"
               : hashMatched
-              ? "border-emerald-500/30 bg-emerald-950/20"
-              : "border-amber-500/30 bg-amber-950/20"
+              ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10"
+              : "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/10"
           }`}
         >
           {/* Status banner */}
           <div
             className={`px-6 py-5 flex items-center gap-4 print:border-b ${
               !isValid
-                ? "bg-red-600/20 border-b border-red-500/30 print:bg-red-50"
+                ? "bg-rose-500/10 border-b border-rose-500/20 print:bg-rose-50"
                 : hashMatched
-                ? "bg-emerald-600/20 border-b border-emerald-500/30 print:bg-emerald-50"
-                : "bg-amber-600/20 border-b border-amber-500/30 print:bg-amber-50"
+                ? "bg-emerald-500/10 border-b border-emerald-500/20 print:bg-emerald-50"
+                : "bg-amber-500/10 border-b border-amber-500/20 print:bg-amber-50"
             }`}
           >
             <div
-              className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl ${
+              className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${
                 !isValid
-                  ? "bg-red-500/20"
+                  ? "bg-rose-500/15"
                   : hashMatched
-                  ? "bg-emerald-500/20"
-                  : "bg-amber-500/20"
+                  ? "bg-emerald-500/15"
+                  : "bg-amber-500/15"
               }`}
             >
               {!isValid ? (
-                <ShieldX className="h-7 w-7 text-red-400" />
+                <ShieldX className="h-6 w-6 text-rose-600 dark:text-rose-400" />
               ) : hashMatched ? (
-                <ShieldCheck className="h-7 w-7 text-emerald-400" />
+                <ShieldCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <ShieldX className="h-7 w-7 text-amber-400" />
+                <ShieldX className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               )}
             </div>
             <div>
               <h2
-                className={`text-xl font-black ${
+                className={`text-lg sm:text-xl font-black ${
                   !isValid
-                    ? "text-red-300 print:text-red-800"
+                    ? "text-rose-800 dark:text-rose-300 print:text-rose-800"
                     : hashMatched
-                    ? "text-emerald-300 print:text-emerald-800"
-                    : "text-amber-300 print:text-amber-800"
+                    ? "text-emerald-800 dark:text-emerald-300 print:text-emerald-800"
+                    : "text-amber-800 dark:text-amber-300 print:text-amber-800"
                 }`}
               >
                 {!isValid
@@ -281,18 +265,18 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
                   : "Certificate Found — Hash Mismatch"}
               </h2>
               <p
-                className={`text-sm mt-0.5 ${
+                className={`text-xs sm:text-sm mt-0.5 ${
                   !isValid
-                    ? "text-red-400/70 print:text-red-600"
+                    ? "text-rose-700/80 dark:text-rose-400/80 print:text-rose-600"
                     : hashMatched
-                    ? "text-emerald-400/70 print:text-emerald-600"
-                    : "text-amber-400/70 print:text-amber-600"
+                    ? "text-emerald-700/80 dark:text-emerald-400/80 print:text-emerald-600"
+                    : "text-amber-700/80 dark:text-amber-400/80 print:text-amber-600"
                 }`}
               >
                 {!isValid
                   ? "No active certificate exists with this serial number in the institutional registry."
                   : hashMatched
-                  ? "This certificate is authentic, digitally sealed, and verified against PSU records."
+                  ? "This certificate is authentic, digitally sealed, and verified against Partido State University records."
                   : "The certificate serial was found but its cryptographic hash does not match the stored payload."}
               </p>
             </div>
@@ -302,20 +286,20 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
           <div className="p-6 space-y-4 print:p-4">
             {/* Serial number & Verdict */}
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
+              <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                 <div className="flex items-center gap-1.5">
-                  <Hash className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                  <Hash className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                     Certificate Serial
                   </span>
                 </div>
-                <p className="font-mono text-base font-bold text-white print:text-slate-900">{serial}</p>
+                <p className="font-mono text-base font-bold text-zinc-900 dark:text-white print:text-zinc-900">{serial}</p>
               </div>
 
-              <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
+              <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                 <div className="flex items-center gap-1.5">
-                  <Award className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                  <Award className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                     Defense Verdict
                   </span>
                 </div>
@@ -331,24 +315,24 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
               <>
                 {/* Project Title */}
                 {project?.title && (
-                  <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                  <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
+                    <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                       Project / Research Title
                     </span>
-                    <p className="font-bold text-white text-sm leading-snug print:text-slate-900">{project.title}</p>
+                    <p className="font-bold text-zinc-900 dark:text-white text-sm leading-snug print:text-zinc-900">{project.title}</p>
                   </div>
                 )}
 
                 {/* Academic Affiliation */}
                 {(department?.name || campus?.name) && (
-                  <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
+                  <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                     <div className="flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                      <Building2 className="h-3.5 w-3.5 text-zinc-400" />
+                      <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                         Academic Department &amp; Campus
                       </span>
                     </div>
-                    <p className="font-semibold text-white/90 text-xs print:text-slate-800">
+                    <p className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs print:text-zinc-800">
                       {department?.name ?? "Academic Department"} • {campus?.name ?? "Partido State University"}
                     </p>
                   </div>
@@ -356,37 +340,37 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   {/* Signatory */}
-                  <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
+                  <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                     <div className="flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                      <User className="h-3.5 w-3.5 text-zinc-400" />
+                      <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                         Verified Signatory
                       </span>
                     </div>
-                    <p className="font-bold text-white text-sm print:text-slate-900">
+                    <p className="font-bold text-zinc-900 dark:text-white text-sm print:text-zinc-900">
                       {panelistProfile
                         ? `${panelistProfile.first_name} ${panelistProfile.last_name}`
                         : "Faculty Panelist"}
                     </p>
-                    <p className="text-xs text-white/50 print:text-slate-600">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
                       {positionRole || "Defense Committee Member"}
                     </p>
                   </div>
 
                   {/* Signed date */}
-                  <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-1 print:border-slate-300 print:bg-slate-50">
+                  <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-1 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                      <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                      <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                         Date of Digital Signing
                       </span>
                     </div>
-                    <p className="font-bold text-white text-sm print:text-slate-900">
+                    <p className="font-bold text-zinc-900 dark:text-white text-sm print:text-zinc-900">
                       {signedDate
                         ? format(new Date(signedDate as string), "MMMM d, yyyy")
                         : "—"}
                     </p>
-                    <p className="text-xs text-white/50 print:text-slate-600">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 print:text-zinc-600">
                       {signedDate
                         ? format(new Date(signedDate as string), "h:mm a (PHT)")
                         : ""}
@@ -395,53 +379,53 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
                 </div>
 
                 {/* Cryptographic hash verification detail */}
-                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-2 print:border-slate-300 print:bg-slate-50">
+                <div className="rounded-xl bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] p-4 space-y-2 shadow-2xs print:border-zinc-300 print:bg-zinc-50">
                   <div className="flex items-center gap-1.5">
-                    <Hash className="h-3.5 w-3.5 text-white/40 print:text-slate-500" />
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest print:text-slate-600">
+                    <Hash className="h-3.5 w-3.5 text-zinc-400" />
+                    <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                       Cryptographic SHA-256 Integrity Seal
                     </span>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       {hashMatched ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 print:text-emerald-700" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 print:text-emerald-700" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-amber-400 print:text-amber-700" />
+                        <XCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 print:text-amber-700" />
                       )}
-                      <span className="text-xs font-semibold text-white/80 print:text-slate-800">
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 print:text-zinc-800">
                         Payload Hash: {hashMatched ? "Cryptographically Verified" : "Integrity Mismatch"}
                       </span>
                     </div>
                     {activeHash && (
-                      <p className="font-mono text-[10px] text-white/40 break-all bg-black/30 p-2 rounded border border-white/10 print:bg-slate-100 print:text-slate-700 print:border-slate-200">
+                      <p className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 break-all bg-zinc-50 dark:bg-[#18181c] p-2.5 rounded-lg border border-zinc-200 dark:border-[#27272a] print:bg-zinc-100 print:text-zinc-700 print:border-zinc-200">
                         {activeHash}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-white/50 print:text-slate-600 pt-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 print:text-zinc-600 pt-1">
                     <span>Algorithm: {hashAlgorithm}</span>
-                    <span>Status: Active &amp; Sealed</span>
+                    <span>Status: Active &amp; Sealed (RA 8792)</span>
                   </div>
                 </div>
               </>
             )}
 
             {/* Verification timestamp footer */}
-            <div className="flex items-center gap-2 text-[10px] text-white/40 print:text-slate-500 pt-2 border-t border-white/10 print:border-slate-200">
+            <div className="flex items-center gap-2 text-[10px] text-zinc-400 dark:text-zinc-500 print:text-zinc-500 pt-2 border-t border-zinc-100 dark:border-[#1c1c22] print:border-zinc-200">
               <Clock className="h-3 w-3" />
               <span>Lookup logged at: {format(new Date(), "PPpp")}</span>
             </div>
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-white/30 print:text-slate-500 mt-6 leading-relaxed print:mt-4">
+        <p className="text-center text-[10px] text-zinc-400 dark:text-zinc-500 print:text-zinc-500 mt-6 leading-relaxed print:mt-4">
           AURORA — Academic Unified Review, Observation, Rating, and Assessment System<br />
-          Partido State University • Document Authenticity Verification
+          Partido State University &bull; Document Authenticity Verification
         </p>
       </div>
 
-      <div className="max-w-2xl mx-auto w-full text-center py-4 text-white/20 text-xs print:hidden">
+      <div className="max-w-2xl mx-auto w-full text-center py-4 text-zinc-400 dark:text-zinc-600 text-xs print:hidden">
         Official Public Academic Verification Registry
       </div>
     </main>

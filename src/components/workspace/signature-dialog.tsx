@@ -36,18 +36,30 @@ interface SignatureDialogProps {
 
 // Biometric Similarity Estimation between drawn signature canvas and baseline image
 async function calculateCanvasSimilarity(drawnCanvas: HTMLCanvasElement, baselineUrl: string): Promise<number> {
-  return new Promise((resolve) => {
-    try {
+  try {
+    let sourceUrl = baselineUrl;
+    if (baselineUrl.startsWith("http")) {
+      try {
+        const response = await fetch(baselineUrl);
+        if (response.ok) {
+          const blob = await response.blob();
+          sourceUrl = URL.createObjectURL(blob);
+        }
+      } catch {
+        // Fall back to direct url
+      }
+    }
+
+    return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
       img.onload = () => {
         try {
-          const size = 48;
+          const size = 64;
           const offscreen1 = document.createElement("canvas");
           offscreen1.width = size;
           offscreen1.height = size;
           const ctx1 = offscreen1.getContext("2d");
-          if (!ctx1) return resolve(0.5);
+          if (!ctx1) return resolve(0);
 
           ctx1.drawImage(img, 0, 0, size, size);
           const data1 = ctx1.getImageData(0, 0, size, size).data;
@@ -56,7 +68,7 @@ async function calculateCanvasSimilarity(drawnCanvas: HTMLCanvasElement, baselin
           offscreen2.width = size;
           offscreen2.height = size;
           const ctx2 = offscreen2.getContext("2d");
-          if (!ctx2) return resolve(0.5);
+          if (!ctx2) return resolve(0);
 
           ctx2.drawImage(drawnCanvas, 0, 0, size, size);
           const data2 = ctx2.getImageData(0, 0, size, size).data;
@@ -78,15 +90,15 @@ async function calculateCanvasSimilarity(drawnCanvas: HTMLCanvasElement, baselin
           const scaledScore = Math.min(1, rawRatio * 2.5);
           resolve(scaledScore);
         } catch {
-          resolve(0.6);
+          resolve(0);
         }
       };
-      img.onerror = () => resolve(0.6);
-      img.src = baselineUrl;
-    } catch {
-      resolve(0.6);
-    }
-  });
+      img.onerror = () => resolve(0);
+      img.src = sourceUrl;
+    });
+  } catch {
+    return 0;
+  }
 }
 
 export function SignatureDialog({
@@ -556,6 +568,24 @@ export function SignatureDialog({
             {/* TAB 1: DRAW SIGNATURE */}
             <TabsContent value="draw" className="mt-2 space-y-2">
               <div className="relative border border-border rounded-xl overflow-hidden bg-muted/10 h-36">
+                {useSavedSignature && (
+                  <div className="absolute inset-0 z-30 bg-background/85 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center p-4 text-center">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mb-1" />
+                    <p className="text-xs font-bold text-foreground">Official Baseline Active</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 max-w-xs leading-tight">
+                      Your registered institutional signature baseline is selected and will be applied. Manual drawing is bypassed.
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setUseSavedSignature(false)}
+                      className="mt-2 h-6 text-[10px] font-semibold"
+                    >
+                      Draw Custom Signature Instead
+                    </Button>
+                  </div>
+                )}
                 <canvas
                   ref={drawCanvasRef}
                   onMouseDown={startDrawing}

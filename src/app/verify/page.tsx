@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShieldCheck,
   Search,
@@ -11,17 +12,19 @@ import {
   Lock,
   QrCode,
   Upload,
-  FileText,
   Loader2,
   CheckCircle2,
   AlertTriangle,
-  FileJson,
+  Sun,
+  Moon,
 } from "lucide-react";
-import { AuroraLogo } from "@/components/ui/aurora-logo";
+import { useTheme } from "@/providers/theme-provider";
 import { lookupCertificateByHashOrSerialAction, VerificationLookupResult } from "@/lib/certificates/verification-actions";
 
 export default function VerifyPortalPage() {
   const router = useRouter();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [activeMode, setActiveMode] = useState<"serial" | "upload">("serial");
   const [serialInput, setSerialInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,10 @@ export default function VerifyPortalPage() {
   const [uploadMatch, setUploadMatch] = useState<VerificationLookupResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,57 +100,55 @@ export default function VerifyPortalPage() {
 
       // 2. If PDF document
       if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-        // Read buffer to compute SHA-256 and search for embedded text string
         const arrayBuffer = await file.arrayBuffer();
         
         // Compute SHA-256 of file
         const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const fileHashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const sha256Hex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
-        // Check if raw binary contains the ASCII string AURORA-YYYY-XXXXXX
-        const textDecoder = new TextDecoder("latin1");
-        const rawString = textDecoder.decode(arrayBuffer);
-        const serialMatch = rawString.match(/AURORA-\d{4}-\d+/i);
-        const detectedSerial = serialMatch ? serialMatch[0].toUpperCase() : undefined;
+        // Attempt text decoding to extract AURORA serial
+        let extractedSerial: string | null = null;
+        try {
+          const rawText = new TextDecoder("latin1").decode(new Uint8Array(arrayBuffer));
+          const serialMatch = rawText.match(/AURORA-\d{4}-\d+/i);
+          if (serialMatch) {
+            extractedSerial = serialMatch[0].toUpperCase();
+          }
+        } catch {
+          // ignore extraction error
+        }
 
         const res = await lookupCertificateByHashOrSerialAction({
-          serial: detectedSerial,
-          hash: fileHashHex,
+          serial: extractedSerial || undefined,
+          hash: sha256Hex,
         });
 
         if (res.found) {
           setUploadMatch(res);
           return;
         } else {
-          throw new Error(
-            detectedSerial
-              ? `Extracted serial ${detectedSerial}, but no matching active certificate was found in the university registry.`
-              : "Could not detect an authentic AURORA certificate serial or cryptographic signature hash in this PDF."
-          );
+          throw new Error("Could not verify authenticity. The PDF does not match an institutional certificate registered in AURORA.");
         }
       }
 
-      // 3. Image file (.png, .jpg, .jpeg, etc.)
+      // 3. Fallback for image scans
       if (file.type.startsWith("image/")) {
         const arrayBuffer = await file.arrayBuffer();
         const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const fileHashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const sha256Hex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
-        const res = await lookupCertificateByHashOrSerialAction({
-          hash: fileHashHex,
-        });
-
+        const res = await lookupCertificateByHashOrSerialAction({ hash: sha256Hex });
         if (res.found) {
           setUploadMatch(res);
           return;
         } else {
-          throw new Error("No defense certificate in the university registry matches this signature or image file.");
+          throw new Error("No certificate matches the image signature hash. For physical scans, please enter the printed serial number directly.");
         }
       }
 
-      throw new Error("Unsupported file format. Please upload an official Certificate PDF (.pdf), Verification Receipt (.json), or Image (.png, .jpg).");
+      throw new Error("Unsupported file format. Please upload a .pdf, .json, or image certificate.");
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Failed to verify uploaded certificate file.");
     } finally {
@@ -166,42 +171,89 @@ export default function VerifyPortalPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-8">
-      {/* Top Brand Bar */}
-      <header className="max-w-5xl mx-auto w-full flex items-center justify-between py-4 border-b border-white/10">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <AuroraLogo size="md" showText={true} textColor="text-white" subtext="Partido State University" />
-        </Link>
+    <main className="min-h-screen bg-white text-zinc-900 dark:bg-[#050505] dark:text-[#F5F5F5] flex flex-col justify-between font-sans antialiased transition-colors duration-200">
+      {/* Top Brand Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-white/80 dark:bg-[#050505]/80 backdrop-blur-md border-b border-zinc-200 dark:border-[#222226] transition-colors">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Left: Geometric A Symbol + Wordmark */}
+          <Link href="/" className="flex items-center gap-3 group select-none">
+            <div className="relative h-8 w-8 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+              <Image
+                src="/aurora-symbol-transparent.png"
+                alt="AURORA Symbol"
+                width={30}
+                height={30}
+                priority
+                className="object-contain dark:brightness-100 brightness-0 transition-all duration-200"
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tracking-[0.25em] uppercase font-display text-zinc-900 dark:text-[#F5F5F5]">
+                  AURORA
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                  Paperless
+                </span>
+              </div>
+              <span className="text-[9px] font-medium tracking-wider text-zinc-500 dark:text-zinc-400 uppercase">
+                Partido State University
+              </span>
+            </div>
+          </Link>
 
-        <Link
-          href="/login"
-          className="text-xs text-white/70 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
-        >
-          Faculty / Student Login
-        </Link>
-      </header>
+          {/* Right: Actions & Theme Toggle */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="hidden sm:inline-flex text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            >
+              Home
+            </Link>
+
+            <Link
+              href="/login"
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-[#27272a] hover:bg-zinc-100 dark:hover:bg-[#18181c] text-zinc-700 dark:text-zinc-300 transition-colors"
+            >
+              Faculty / Student Login
+            </Link>
+
+            {/* Theme Toggle */}
+            {mounted && (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                className="p-2 rounded-xl border border-zinc-200 dark:border-[#27272a] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-[#18181c] transition-colors cursor-pointer"
+              >
+                {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
 
       {/* Main Container */}
-      <div className="max-w-3xl mx-auto w-full my-auto py-8 sm:py-12">
-        {/* Title & Badge */}
+      <div className="max-w-3xl mx-auto w-full my-auto px-4 py-10 sm:py-14">
+        {/* Title & Institutional Badge */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 mb-4">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <span className="text-xs font-bold text-emerald-300 tracking-wider uppercase">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3.5 py-1 mb-4">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 tracking-wider uppercase">
               Institutional Document Verification Portal
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
             Verify Defense Certificates
           </h1>
-          <p className="text-sm sm:text-base text-white/60 mt-2 max-w-xl mx-auto leading-relaxed">
-            Verify the authenticity of undergraduate thesis, capstone, and graduate defense certificates issued by AURORA (Academic Unified Review, Observation, Rating, and Assessment System) at Partido State University.
+          <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 mt-2 max-w-xl mx-auto leading-relaxed">
+            Verify the authenticity, panel signatures, and cryptographic integrity of thesis, capstone, and oral defense clearance certificates issued by AURORA at Partido State University.
           </p>
         </div>
 
         {/* Mode Selector Tabs */}
-        <div className="flex justify-center mb-4">
-          <div className="inline-flex p-1 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+        <div className="flex justify-center mb-5">
+          <div className="inline-flex p-1 rounded-xl bg-zinc-100 dark:bg-[#111115] border border-zinc-200 dark:border-[#222226]">
             <button
               type="button"
               onClick={() => {
@@ -210,8 +262,8 @@ export default function VerifyPortalPage() {
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeMode === "serial"
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
-                  : "text-white/60 hover:text-white"
+                  ? "bg-white dark:bg-[#1c1c22] text-zinc-900 dark:text-white shadow-xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
               }`}
             >
               <Search className="h-3.5 w-3.5" />
@@ -225,31 +277,31 @@ export default function VerifyPortalPage() {
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeMode === "upload"
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
-                  : "text-white/60 hover:text-white"
+                  ? "bg-white dark:bg-[#1c1c22] text-zinc-900 dark:text-white shadow-xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
               }`}
             >
               <Upload className="h-3.5 w-3.5" />
-              <span>Upload File for Verification</span>
+              <span>Upload Certificate File</span>
             </button>
           </div>
         </div>
 
         {/* Verification Card */}
-        <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div className="bg-white dark:bg-[#111115] border border-zinc-200 dark:border-[#222226] rounded-2xl p-6 sm:p-8 shadow-sm">
           {activeMode === "serial" ? (
             /* Mode 1: Search by Serial */
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label
                   htmlFor="serial-input"
-                  className="block text-xs font-semibold text-white/70 uppercase tracking-wider mb-2"
+                  className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2"
                 >
                   Certificate Serial Number
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-white/40" />
+                    <Search className="h-4 w-4 text-zinc-400" />
                   </div>
                   <input
                     id="serial-input"
@@ -260,24 +312,24 @@ export default function VerifyPortalPage() {
                       setSerialInput(e.target.value);
                       if (error) setError(null);
                     }}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-900/90 border border-white/15 rounded-xl text-white placeholder-white/30 font-mono text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all uppercase"
+                    className="w-full pl-11 pr-4 py-3 bg-zinc-50 dark:bg-[#18181c] border border-zinc-200 dark:border-[#27272a] rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 font-mono text-base focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-600 transition-all uppercase"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="text-[10px] text-white/40 uppercase font-semibold">Try sample:</span>
+                <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-semibold">Try sample:</span>
                   <button
                     type="button"
                     onClick={() => {
                       setSerialInput("AURORA-2026-000063");
                       setError(null);
                     }}
-                    className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded cursor-pointer transition-colors"
+                    className="text-[11px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-2 py-0.5 rounded-lg cursor-pointer transition-colors font-medium"
                   >
                     AURORA-2026-000063
                   </button>
                 </div>
                 {error && (
-                  <p className="text-xs text-rose-400 mt-2 font-medium">
+                  <p className="text-xs text-rose-600 dark:text-rose-400 mt-2 font-medium">
                     {error}
                   </p>
                 )}
@@ -285,7 +337,7 @@ export default function VerifyPortalPage() {
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-900/30 transition-all cursor-pointer text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-[#F5F5F5] dark:hover:bg-white dark:text-zinc-900 font-bold py-3.5 px-6 rounded-xl shadow-xs transition-all cursor-pointer text-sm"
               >
                 <span>Verify Authenticity</span>
                 <ArrowRight className="h-4 w-4" />
@@ -312,36 +364,36 @@ export default function VerifyPortalPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center ${
                   isDragOver
-                    ? "border-emerald-400 bg-emerald-500/10"
-                    : "border-white/20 bg-slate-900/50 hover:border-white/40 hover:bg-slate-900/80"
+                    ? "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20"
+                    : "border-zinc-200 dark:border-[#27272a] bg-zinc-50/50 dark:bg-[#18181c]/50 hover:border-zinc-400 dark:hover:border-zinc-500"
                 }`}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-emerald-400 mb-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-[#222226] text-zinc-700 dark:text-zinc-300 mb-3">
                   {uploading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-zinc-900 dark:text-white" />
                   ) : (
                     <Upload className="h-6 w-6" />
                   )}
                 </div>
 
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                   {uploading ? "Analyzing Certificate Authenticity..." : "Upload Certificate for Verification"}
                 </h3>
-                <p className="text-xs text-white/50 mt-1 max-w-sm">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm">
                   Drag and drop your official Certificate PDF, Verification Receipt (.json), or certificate scan here, or click to browse.
                 </p>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-[10px] text-white/40">
-                  <span className="bg-white/5 px-2 py-0.5 rounded border border-white/10">.PDF Certificates</span>
-                  <span className="bg-white/5 px-2 py-0.5 rounded border border-white/10">.JSON Receipts</span>
-                  <span className="bg-white/5 px-2 py-0.5 rounded border border-white/10">.PNG / .JPG Scans</span>
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-[10px] text-zinc-500 dark:text-zinc-400">
+                  <span className="bg-zinc-100 dark:bg-[#222226] px-2 py-0.5 rounded border border-zinc-200 dark:border-[#27272a]">.PDF Certificates</span>
+                  <span className="bg-zinc-100 dark:bg-[#222226] px-2 py-0.5 rounded border border-zinc-200 dark:border-[#27272a]">.JSON Receipts</span>
+                  <span className="bg-zinc-100 dark:bg-[#222226] px-2 py-0.5 rounded border border-zinc-200 dark:border-[#27272a]">.PNG / .JPG Scans</span>
                 </div>
               </div>
 
               {/* Upload Error */}
               {uploadError && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500 mt-0.5" />
                   <div>
                     <span className="font-bold block">Verification Failed</span>
                     <p className="mt-0.5 opacity-90">{uploadError}</p>
@@ -351,36 +403,36 @@ export default function VerifyPortalPage() {
 
               {/* Upload Match Success Result */}
               {uploadMatch && uploadMatch.serial && (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-black uppercase tracking-wider">
                       Authentic Institutional Certificate Verified!
                     </span>
                   </div>
 
-                  <div className="bg-slate-900/80 rounded-lg p-3 border border-white/10 space-y-1.5 text-xs">
+                  <div className="bg-white dark:bg-[#18181c] rounded-xl p-3 border border-zinc-200 dark:border-[#27272a] space-y-1.5 text-xs">
                     <div className="flex justify-between items-center">
-                      <span className="text-white/60">Certificate Serial:</span>
-                      <span className="font-mono font-bold text-emerald-300">{uploadMatch.serial}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">Certificate Serial:</span>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{uploadMatch.serial}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-white/60">Research Title:</span>
-                      <span className="font-semibold text-white truncate max-w-[240px]">{uploadMatch.projectTitle}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">Research Title:</span>
+                      <span className="font-semibold text-zinc-900 dark:text-white truncate max-w-[240px]">{uploadMatch.projectTitle}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-white/60">Evaluating Panelist:</span>
-                      <span className="font-semibold text-white">{uploadMatch.panelistName}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">Evaluating Panelist:</span>
+                      <span className="font-semibold text-zinc-900 dark:text-white">{uploadMatch.panelistName}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-white/60">Total Score:</span>
-                      <span className="font-black text-emerald-400">{Number(uploadMatch.totalScore || 0).toFixed(1)} / 100</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">Total Score:</span>
+                      <span className="font-black text-emerald-700 dark:text-emerald-400">{Number(uploadMatch.totalScore || 0).toFixed(1)} / 100</span>
                     </div>
                   </div>
 
                   <Link
                     href={`/verify/${encodeURIComponent(uploadMatch.serial)}`}
-                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-md transition-all"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-xs transition-all"
                   >
                     <span>Open Official Public Audit Report</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -391,33 +443,33 @@ export default function VerifyPortalPage() {
           )}
 
           {/* Quick Info / Security Seal */}
-          <div className="mt-8 pt-6 border-t border-white/10 grid sm:grid-cols-3 gap-4 text-center sm:text-left">
+          <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-[#222226] grid sm:grid-cols-3 gap-4 text-center sm:text-left">
             <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
-                <Lock className="h-4 w-4 text-emerald-400" />
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-zinc-900 dark:text-zinc-100">
+                <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold">SHA-256 Integrity</span>
               </div>
-              <p className="text-[11px] text-white/50 leading-relaxed">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 Cryptographically hashed score sheets prevent post-defense modification.
               </p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
-                <QrCode className="h-4 w-4 text-teal-400" />
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-zinc-900 dark:text-zinc-100">
+                <QrCode className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-bold">Instant QR Verification</span>
               </div>
-              <p className="text-[11px] text-white/50 leading-relaxed">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 Direct lookup via scannable QR code embedded on certificates.
               </p>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/80">
-                <FileCheck className="h-4 w-4 text-emerald-400" />
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 text-zinc-900 dark:text-zinc-100">
+                <FileCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold">Immutable Audit Trail</span>
               </div>
-              <p className="text-[11px] text-white/50 leading-relaxed">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 Every defense approval is permanently sealed in the institutional ledger.
               </p>
             </div>
@@ -426,18 +478,18 @@ export default function VerifyPortalPage() {
 
         {/* Verification Guidance */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Having trouble? You can also scan the QR code located at the bottom-right corner of any physical or PDF certificate.
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto w-full py-4 text-center border-t border-white/10 text-white/40 text-xs">
-        <p>
+      <footer className="max-w-5xl mx-auto w-full py-6 text-center border-t border-zinc-200 dark:border-[#222226] text-zinc-500 dark:text-zinc-400 text-xs">
+        <p className="font-medium">
           AURORA — Academic Unified Review, Observation, Rating, and Assessment System
         </p>
-        <p className="mt-1 text-[11px] text-white/30">
+        <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">
           Partido State University • Goa, Camarines Sur, Philippines
         </p>
       </footer>
