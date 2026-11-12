@@ -33,11 +33,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreateProjectModal } from "@/components/workspace/create-project-modal";
 import { JoinProjectModal } from "@/components/workspace/join-project-modal";
+import { ProjectSwitcher } from "@/components/dashboard/project-switcher";
 import {
   assignProjectAdviserAction,
   getApprovedFacultyListAction,
   updateProjectTeamNameAction,
   deleteDocumentVersionAction,
+  deleteProjectAction,
+  leaveProjectAction,
 } from "@/lib/projects/actions";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
 import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
@@ -200,6 +203,14 @@ export default function MyProjectPage() {
   } | null>(null);
   const [isDeletingVersion, setIsDeletingVersion] = useState(false);
 
+  // Multi-project and deletion states
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+  const [deleteProjectModalOpen, setDeleteProjectModalOpen] = useState(false);
+  const [leaveProjectModalOpen, setLeaveProjectModalOpen] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+  const [isLeavingProject, setIsLeavingProject] = useState(false);
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
+
   const formMeta = useMemo(() => {
     return getProgramFormMetadata({
       programCode: project?.programs?.code,
@@ -294,43 +305,90 @@ export default function MyProjectPage() {
       }
       setStudent(studentRecord);
 
-      // 2. Check if user is a member of any project in project_members
+      // 2. Fetch all project IDs from project_members
       const { data: memberRows } = await supabase
         .from("project_members")
-        .select("project_id")
-        .eq("profile_id", user.id)
-        .limit(1);
+        .select("project_id, member_role, is_primary")
+        .eq("profile_id", user.id);
 
-      const memberProjectId = memberRows?.[0]?.project_id;
+      const memberProjectIds = (memberRows || []).map((r) => r.project_id);
 
-      let projectQuery = supabase
+      // 3. Also fetch projects where student_id matches or created_by matches
+      let ownerProjectIds: string[] = [];
+      if (studentRecord?.id) {
+        const { data: ownedRows } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("student_id", studentRecord.id)
+          .is("archived_at", null);
+        ownerProjectIds = (ownedRows || []).map((r) => r.id);
+      }
+
+      const { data: createdRows } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("created_by", user.id)
+        .is("archived_at", null);
+      const createdProjectIds = (createdRows || []).map((r) => r.id);
+
+      const allProjectIds = Array.from(
+        new Set([...memberProjectIds, ...ownerProjectIds, ...createdProjectIds])
+      );
+
+      if (allProjectIds.length === 0) {
+        setUserProjects([]);
+        setProject(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data: allProjects } = await supabase
         .from("projects")
         .select(`
           id, title, team_name, status, academic_year, created_at,
           current_stage_id, workflow_template_id, join_code, student_id,
+          created_by,
           college_id, program_id,
           defense_stages ( id, name, sequence_order ),
           colleges ( id, name, code ),
           programs ( id, name, code ),
           departments ( id, name ),
           students ( id, profiles ( first_name, last_name ) )
-        `);
+        `)
+        .in("id", allProjectIds)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false });
 
-      if (memberProjectId) {
-        projectQuery = projectQuery.eq("id", memberProjectId);
-      } else if (studentRecord?.id) {
-        projectQuery = projectQuery.eq("student_id", studentRecord.id);
-      } else {
+      if (!allProjects || allProjects.length === 0) {
+        setUserProjects([]);
+        setProject(null);
         setLoading(false);
         return;
       }
 
-      const { data: proj } = await projectQuery.maybeSingle();
+      // Merge member role into project items
+      const enrichedProjects = allProjects.map((p) => {
+        const mRow = memberRows?.find((m) => m.project_id === p.id);
+        return {
+          ...p,
+          member_role: mRow?.member_role || (p.created_by === user.id ? "student_leader" : "co_author"),
+        };
+      });
 
-      if (!proj) {
-        setLoading(false);
-        return;
+      setUserProjects(enrichedProjects as any);
+
+      // Resolve active project: check localStorage first, or default to newest
+      const savedActiveId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("aurora_active_project_id")
+          : null;
+      const proj =
+        allProjects.find((p) => p.id === savedActiveId) || allProjects[0];
+
+      if (typeof window !== "undefined" && proj?.id) {
+        localStorage.setItem("aurora_active_project_id", proj.id);
       }
+
       setProject(proj as any);
 
       // 3. Fetch workflow stages for progress timeline (with fallback to default stages)
@@ -439,6 +497,14 @@ export default function MyProjectPage() {
 
   useEffect(() => {
     loadProjectData();
+
+    const handleProjectChanged = () => {
+      loadProjectData();
+    };
+    window.addEventListener("aurora_project_changed", handleProjectChanged);
+    return () => {
+      window.removeEventListener("aurora_project_changed", handleProjectChanged);
+    };
   }, [loadProjectData]);
 
   const handleDeleteVersion = async () => {
@@ -465,6 +531,69 @@ export default function MyProjectPage() {
       toast.error("Failed to delete manuscript version.");
     } finally {
       setIsDeletingVersion(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!project) return;
+    setIsDeletingProject(true);
+    try {
+      const res = await deleteProjectAction({ projectId: project.id });
+      if (!res.success) {
+        toast.error(res.error || "Failed to delete project.");
+        return;
+      }
+
+      if (res.isArchived) {
+        toast.success(`Project "${project.title}" has been archived.`);
+      } else {
+        toast.success(`Project "${project.title}" was deleted successfully.`);
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("aurora_active_project_id");
+        window.dispatchEvent(
+          new CustomEvent("aurora_project_changed", { detail: { projectId: null } })
+        );
+      }
+
+      setDeleteProjectModalOpen(false);
+      setDeleteConfirmTitle("");
+      await loadProjectData();
+    } catch (err: unknown) {
+      console.error("Error deleting project:", err);
+      toast.error("Failed to delete project.");
+    } finally {
+      setIsDeletingProject(false);
+    }
+  };
+
+  const handleLeaveProject = async () => {
+    if (!project) return;
+    setIsLeavingProject(true);
+    try {
+      const res = await leaveProjectAction({ projectId: project.id });
+      if (!res.success) {
+        toast.error(res.error || "Failed to leave project.");
+        return;
+      }
+
+      toast.success(`You have left the project team "${project.title}".`);
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("aurora_active_project_id");
+        window.dispatchEvent(
+          new CustomEvent("aurora_project_changed", { detail: { projectId: null } })
+        );
+      }
+
+      setLeaveProjectModalOpen(false);
+      await loadProjectData();
+    } catch (err: unknown) {
+      console.error("Error leaving project:", err);
+      toast.error("Failed to leave project team.");
+    } finally {
+      setIsLeavingProject(false);
     }
   };
 
@@ -619,6 +748,28 @@ export default function MyProjectPage() {
   );
   const activeStageId = project.current_stage_id || (stages.length > 0 ? stages[0].id : undefined);
 
+  const userMemberRole = allMembers.find((m) => m.profile_id === user?.id)?.member_role;
+  const isProjectLeader = Boolean(
+    isProjectCreator ||
+    (project as any)?.created_by === user?.id ||
+    userMemberRole === "student_leader"
+  );
+  const isCoAuthor = !isProjectLeader && (userMemberRole === "co_author" || userMemberRole === "student");
+
+  const hasScheduledDefenses = schedules.length > 0;
+  const hasSubmittedEvals = evaluations.length > 0;
+  const isManuscriptEndorsed = Boolean(endorsedDoc);
+  const isCompletedOrPassed =
+    project.status === "passed" || project.status === "approved" || project.status === "completed";
+
+  const isLockedForIntegrity =
+    hasScheduledDefenses ||
+    hasSubmittedEvals ||
+    isManuscriptEndorsed ||
+    isCompletedOrPassed;
+
+  const isEligibleForDeletion = isProjectLeader && !isLockedForIntegrity;
+
   return (
     <RoleGuard allowedRoles={["student"]} fallback={<AccessDenied />}>
       <div className="mx-auto max-w-7xl space-y-6">
@@ -676,6 +827,18 @@ export default function MyProjectPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <ProjectSwitcher
+              projects={userProjects}
+              activeProjectId={project.id}
+              student={student}
+              onSelectProject={(newId) => {
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("aurora_active_project_id", newId);
+                }
+                loadProjectData();
+              }}
+              onRefresh={loadProjectData}
+            />
             <DefenseApplicationDialog
               projectId={project.id}
               stageId={activeStageId || ""}
@@ -1597,6 +1760,90 @@ export default function MyProjectPage() {
                       View Manuscript &amp; Feedback
                     </Link>
                   </Button>
+                </CardContent>
+              </Card>
+
+              {/* Project Governance & Lifecycle Card */}
+              <Card className="border border-border/80 shadow-xs">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-foreground" />
+                      Project Governance
+                    </CardTitle>
+                    {isLockedForIntegrity ? (
+                      <Badge variant="outline" className="text-[10px] font-bold border-border bg-muted/60 text-muted-foreground gap-1">
+                        <Lock className="h-2.5 w-2.5" />
+                        Archival Locked
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] font-bold border-border bg-muted/60 text-foreground">
+                        Draft Phase
+                      </Badge>
+                    )}
+                  </div>
+                  <CardDescription className="text-xs text-muted-foreground">
+                    Project team membership &amp; lifecycle controls
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-2 text-xs">
+                  {isEligibleForDeletion ? (
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2.5">
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        As the <span className="font-bold text-foreground">Project Leader</span>, you can delete this project while it is still in draft without official defense records.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setDeleteConfirmTitle("");
+                          setDeleteProjectModalOpen(true);
+                        }}
+                        className="w-full justify-center gap-2 text-xs h-9 font-bold text-destructive hover:bg-destructive/10 hover:border-destructive/30 border-border cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete Draft Project
+                      </Button>
+                    </div>
+                  ) : isLockedForIntegrity ? (
+                    <div className="rounded-xl border border-border/70 bg-muted/20 p-3 space-y-1.5">
+                      <div className="flex items-center gap-1.5 font-bold text-foreground text-xs">
+                        <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        Academic Records Protected
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        This project has scheduled defense sessions, faculty rubrics, or an endorsed manuscript. Institutional policy prohibits student deletion to protect accreditation trails.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {/* Co-author Leave Team Button */}
+                  {isCoAuthor && (
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        You are registered as a co-author on this project. You can leave the research group at any time.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLeaveProjectModalOpen(true)}
+                        className="w-full justify-center gap-2 text-xs h-9 font-semibold hover:bg-muted cursor-pointer"
+                      >
+                        <User className="h-3.5 w-3.5" />
+                        Leave Research Team
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Quick Switch / Multi-Project stats */}
+                  <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>Multi-Project Workspace</span>
+                    <span className="font-mono font-bold text-foreground">
+                      {userProjects.length} {userProjects.length === 1 ? "Project" : "Projects"}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -2831,6 +3078,137 @@ export default function MyProjectPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                     Confirm Delete
                   </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Project Confirmation Dialog */}
+        <Dialog open={deleteProjectModalOpen} onOpenChange={setDeleteProjectModalOpen}>
+          <DialogContent className="sm:max-w-[480px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Delete Research Project?
+              </DialogTitle>
+              <DialogDescription className="pt-2 text-xs leading-relaxed text-muted-foreground">
+                This action will permanently delete <strong className="text-foreground">&ldquo;{project.title}&rdquo;</strong> and its uploaded draft manuscript files.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs space-y-1.5 text-destructive dark:text-destructive-foreground">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4" />
+                Strict Academic Safety Notice
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Deletion is only permitted for pre-defense drafts that have no scheduled defense panels, no submitted faculty rubrics, and no signed adviser endorsements. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <Label className="text-xs font-semibold text-foreground">
+                Type the project title to confirm deletion:
+              </Label>
+              <div className="rounded-md bg-muted px-2.5 py-1.5 text-[11px] font-mono text-muted-foreground select-all">
+                {project.title}
+              </div>
+              <Input
+                value={deleteConfirmTitle}
+                onChange={(e) => setDeleteConfirmTitle(e.target.value)}
+                placeholder="Enter exact project title"
+                className="text-xs h-9"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isDeletingProject}
+                onClick={() => {
+                  setDeleteProjectModalOpen(false);
+                  setDeleteConfirmTitle("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                disabled={
+                  isDeletingProject ||
+                  deleteConfirmTitle.trim().toLowerCase() !== project.title.trim().toLowerCase()
+                }
+                onClick={handleDeleteProject}
+                className="gap-1.5 font-bold cursor-pointer"
+              >
+                {isDeletingProject ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Deleting Project...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete Project
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Leave Project Team Confirmation Dialog */}
+        <Dialog open={leaveProjectModalOpen} onOpenChange={setLeaveProjectModalOpen}>
+          <DialogContent className="sm:max-w-[440px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                Leave Research Team?
+              </DialogTitle>
+              <DialogDescription className="pt-2 text-xs leading-relaxed text-muted-foreground">
+                Are you sure you want to remove yourself from <strong className="text-foreground">&ldquo;{project.title}&rdquo;</strong>?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-xl border border-border bg-muted/30 p-3.5 text-xs space-y-1.5 text-muted-foreground">
+              <p className="font-semibold text-foreground">What happens next?</p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] leading-relaxed">
+                <li>Your membership in this project team will be removed.</li>
+                <li>Your co-authors will keep access to the project and manuscripts.</li>
+                <li>You can rejoin at any time using the team&apos;s Join Code.</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isLeavingProject}
+                onClick={() => setLeaveProjectModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={isLeavingProject}
+                onClick={handleLeaveProject}
+                className="font-bold cursor-pointer"
+              >
+                {isLeavingProject ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Leaving Team...
+                  </>
+                ) : (
+                  "Confirm Leave Team"
                 )}
               </Button>
             </div>

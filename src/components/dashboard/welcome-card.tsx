@@ -68,41 +68,75 @@ export function WelcomeCard() {
         setAffiliation({ collegeName: cName, departmentName: dName });
 
         if (effectiveRole === "student") {
-          // Check project_members first
-          const { data: memberRows } = await supabase
-            .from("project_members")
-            .select("project_id")
-            .eq("profile_id", profile!.id)
-            .limit(1);
+          const activeProjectId =
+            typeof window !== "undefined"
+              ? localStorage.getItem("aurora_active_project_id")
+              : null;
 
-          const memberProjId = memberRows?.[0]?.project_id;
+          let proj: any = null;
 
-          let query = supabase
-            .from("projects")
-            .select(`
-              title, status,
-              defense_stages ( name )
-            `);
+          if (activeProjectId) {
+            const { data: p } = await supabase
+              .from("projects")
+              .select("id, title, status, defense_stages ( name )")
+              .eq("id", activeProjectId)
+              .is("archived_at", null)
+              .maybeSingle();
+            if (p) proj = p;
+          }
 
-          if (memberProjId) {
-            query = query.eq("id", memberProjId);
-          } else {
-            // lookup via students
+          if (!proj) {
+            // Check project_members, owned, created
+            const { data: memberRows } = await supabase
+              .from("project_members")
+              .select("project_id")
+              .eq("profile_id", profile!.id);
+
+            const memberProjIds = (memberRows || []).map((r) => r.project_id);
+
             const { data: std } = await supabase
               .from("students")
               .select("id")
               .eq("profile_id", profile!.id)
               .maybeSingle();
 
+            let ownerProjIds: string[] = [];
             if (std?.id) {
-              query = query.eq("student_id", std.id);
-            } else {
-              setProjectInfo(null);
-              return;
+              const { data: owned } = await supabase
+                .from("projects")
+                .select("id")
+                .eq("student_id", std.id)
+                .is("archived_at", null);
+              ownerProjIds = (owned || []).map((o) => o.id);
+            }
+
+            const { data: created } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("created_by", profile!.id)
+              .is("archived_at", null);
+            const createdProjIds = (created || []).map((c) => c.id);
+
+            const allIds = Array.from(new Set([...memberProjIds, ...ownerProjIds, ...createdProjIds]));
+
+            if (allIds.length > 0) {
+              const { data: pList } = await supabase
+                .from("projects")
+                .select("id, title, status, defense_stages ( name )")
+                .in("id", allIds)
+                .is("archived_at", null)
+                .order("created_at", { ascending: false })
+                .limit(1);
+
+              if (pList && pList[0]) {
+                proj = pList[0];
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("aurora_active_project_id", proj.id);
+                }
+              }
             }
           }
 
-          const { data: proj } = await query.maybeSingle();
           if (proj) {
             setProjectInfo({
               title: proj.title,
@@ -121,6 +155,18 @@ export function WelcomeCard() {
     }
 
     fetchUserContext();
+
+    const handleProjectChanged = () => {
+      fetchUserContext();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("aurora_project_changed", handleProjectChanged);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("aurora_project_changed", handleProjectChanged);
+      }
+    };
   }, [isReady, profile, roles, effectiveRole, supabase]);
 
   if (isLoading || !profile) {

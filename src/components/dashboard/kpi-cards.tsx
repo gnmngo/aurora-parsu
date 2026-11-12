@@ -50,35 +50,68 @@ export function KpiCards({ activeRole }: KpiCardsProps = {}) {
         const primaryRole = activeRole || (roles.includes("college_dean") ? "college_dean" : roles[0] || "student");
 
         if (primaryRole === "student") {
-          // 1. Resolve student project via project_members or students.id
-          let { data: studentRecord } = await supabase
-            .from("students")
-            .select("id")
-            .eq("profile_id", user!.id)
-            .maybeSingle();
+          const activeProjectId =
+            typeof window !== "undefined"
+              ? localStorage.getItem("aurora_active_project_id")
+              : null;
 
-          const { data: memberRows } = await supabase
-            .from("project_members")
-            .select("project_id")
-            .eq("profile_id", user!.id)
-            .limit(1);
+          let resolvedProjectId: string | null = activeProjectId;
 
-          const memberProjId = memberRows?.[0]?.project_id;
+          if (!resolvedProjectId) {
+            let { data: studentRecord } = await supabase
+              .from("students")
+              .select("id")
+              .eq("profile_id", user!.id)
+              .maybeSingle();
 
-          let projQuery = supabase
-            .from("projects")
-            .select(`
-              id, status, current_stage_id,
-              defense_stages ( name, sequence_order ),
-              documents ( id, document_versions ( id, version_number, is_current ) ),
-              defense_schedules ( scheduled_at, status )
-            `);
+            const { data: memberRows } = await supabase
+              .from("project_members")
+              .select("project_id")
+              .eq("profile_id", user!.id);
 
-          if (memberProjId) {
-            projQuery = projQuery.eq("id", memberProjId);
-          } else if (studentRecord?.id) {
-            projQuery = projQuery.eq("student_id", studentRecord.id);
-          } else {
+            const memberProjectIds = (memberRows || []).map((r) => r.project_id);
+
+            let ownerProjectIds: string[] = [];
+            if (studentRecord?.id) {
+              const { data: ownedRows } = await supabase
+                .from("projects")
+                .select("id")
+                .eq("student_id", studentRecord.id)
+                .is("archived_at", null);
+              ownerProjectIds = (ownedRows || []).map((r) => r.id);
+            }
+
+            const { data: createdRows } = await supabase
+              .from("projects")
+              .select("id")
+              .eq("created_by", user!.id)
+              .is("archived_at", null);
+            const createdProjectIds = (createdRows || []).map((r) => r.id);
+
+            const allIds = Array.from(
+              new Set([...memberProjectIds, ...ownerProjectIds, ...createdProjectIds])
+            );
+
+            if (allIds.length > 0) {
+              const { data: pList } = await supabase
+                .from("projects")
+                .select("id")
+                .in("id", allIds)
+                .is("archived_at", null)
+                .order("created_at", { ascending: false })
+                .limit(1);
+
+              if (pList && pList[0]) {
+                const foundId = pList[0].id;
+                resolvedProjectId = foundId;
+                if (typeof window !== "undefined" && foundId) {
+                  localStorage.setItem("aurora_active_project_id", foundId);
+                }
+              }
+            }
+          }
+
+          if (!resolvedProjectId) {
             setStats([
               { label: "Project Status", value: "No Project", icon: BookOpen, href: "/dashboard/my-project", actionText: "Register", description: "Submit thesis proposal" },
               { label: "Manuscript Version", value: "None", icon: FileText, href: "/dashboard/my-project", actionText: "Upload", description: "Register project to upload PDF" },
@@ -88,6 +121,17 @@ export function KpiCards({ activeRole }: KpiCardsProps = {}) {
             setLoading(false);
             return;
           }
+
+          let projQuery = supabase
+            .from("projects")
+            .select(`
+              id, status, current_stage_id,
+              defense_stages ( name, sequence_order ),
+              documents ( id, document_versions ( id, version_number, is_current ) ),
+              defense_schedules ( scheduled_at, status )
+            `)
+            .eq("id", resolvedProjectId)
+            .is("archived_at", null);
 
           const { data: project } = await projQuery.maybeSingle();
 
@@ -373,6 +417,18 @@ export function KpiCards({ activeRole }: KpiCardsProps = {}) {
     }
 
     fetchKpis();
+
+    const handleProjectChanged = () => {
+      fetchKpis();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("aurora_project_changed", handleProjectChanged);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("aurora_project_changed", handleProjectChanged);
+      }
+    };
   }, [isReady, user, roles, activeRole]);
 
   if (loading) {

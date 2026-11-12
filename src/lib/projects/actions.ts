@@ -1152,3 +1152,317 @@ export async function deleteDocumentVersionAction(input: {
   }
 }
 
+/**
+ * ---------------------------------------------------------------------------
+ * Delete / Archive Project Server Action
+ * ---------------------------------------------------------------------------
+ * Enforces strict academic integrity guardrails:
+ * - Only the Project Leader / Creator or Staff (Coordinator / Admin) can delete.
+ * - If the project is in Draft / Unendorsed status and has NO scheduled defenses,
+ *   evaluations, or approved manuscripts, it can be deleted directly.
+ * - If the project has official defense schedules, evaluations, or adviser endorsements,
+ *   hard deletion is locked to protect academic records and audit trails.
+ */
+export interface DeleteProjectActionInput {
+  projectId: string;
+}
+
+export interface DeleteProjectActionResult {
+  success: boolean;
+  error?: string;
+  isArchived?: boolean;
+}
+
+export async function deleteProjectAction(
+  input: DeleteProjectActionInput
+): Promise<DeleteProjectActionResult> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  try {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
+
+    if (!input.projectId) {
+      return { success: false, error: "Project ID is required." };
+    }
+
+    // 1. Fetch project details
+    const { data: project, error: projErr } = await serviceClient
+      .from("projects")
+      .select("id, title, status, student_id, created_by, archived_at")
+      .eq("id", input.projectId)
+      .maybeSingle();
+
+    if (projErr || !project) {
+      return { success: false, error: "Project not found or already deleted." };
+    }
+
+    // 2. Check user roles and permissions
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, email, roles")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const userRoles = profile?.roles || [];
+    const isStaff =
+      userRoles.includes("sys_admin") ||
+      userRoles.includes("coordinator") ||
+      userRoles.includes("college_dean");
+
+    const { data: memberRow } = await serviceClient
+      .from("project_members")
+      .select("member_role")
+      .eq("project_id", input.projectId)
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    const isCreator = project.created_by === user.id;
+    let isStudentOwner = false;
+    if (project.student_id) {
+      const { data: std } = await serviceClient
+        .from("students")
+        .select("id")
+        .eq("profile_id", user.id)
+        .maybeSingle();
+      if (std?.id && std.id === project.student_id) {
+        isStudentOwner = true;
+      }
+    }
+    const isLeader = memberRow?.member_role === "student_leader";
+
+    if (!isStaff && !isCreator && !isLeader && !isStudentOwner) {
+      return {
+        success: false,
+        error:
+          "Only the project leader or creator has permission to delete this project. You can choose 'Leave Team' instead.",
+      };
+    }
+
+    // 3. Academic Integrity Guards: Check defense schedules, evaluations, or adviser endorsement
+    const { data: schedules } = await serviceClient
+      .from("defense_schedules")
+      .select("id, status")
+      .eq("project_id", input.projectId);
+
+    const hasSchedules = Boolean(schedules && schedules.length > 0);
+
+    const { data: evals } = await serviceClient
+      .from("evaluations")
+      .select("id")
+      .eq("project_id", input.projectId);
+
+    const hasEvals = Boolean(evals && evals.length > 0);
+
+    const { data: endorsedDocs } = await serviceClient
+      .from("documents")
+      .select("id")
+      .eq("project_id", input.projectId)
+      .eq("adviser_approval_status", "approved");
+
+    const isEndorsed = Boolean(endorsedDocs && endorsedDocs.length > 0);
+
+    // If project has official schedules, evaluations, or adviser clearance:
+    // HARD DELETION IS PROHIBITED to protect faculty certificates and institutional audit trails!
+    if (
+      hasSchedules ||
+      hasEvals ||
+      isEndorsed ||
+      project.status === "passed" ||
+      project.status === "completed"
+    ) {
+      if (isStaff) {
+        await serviceClient
+          .from("projects")
+          .update({
+            archived_at: new Date().toISOString(),
+            status: "cancelled",
+          })
+          .eq("id", input.projectId);
+
+        await serviceClient.from("audit_logs").insert({
+          profile_id: user.id,
+          user_email: user.email || "unknown",
+          user_role: "coordinator",
+          action_type: "ARCHIVE",
+          module: "projects",
+          entity_type: "projects",
+          entity_id: input.projectId,
+          description: `Archived endorsed/scheduled project "${project.title}" (${input.projectId})`,
+          ip_address: ip,
+          user_agent: userAgent,
+        });
+
+        return { success: true, isArchived: true };
+      }
+
+      return {
+        success: false,
+        error:
+          "This project cannot be deleted because it has already been endorsed or scheduled for oral defense. To remove or withdraw it, please contact your Defense Coordinator to archive it.",
+      };
+    }
+
+    // 4. Project is unendorsed / draft / proposal: Safe to delete
+    // Delete project_members first
+    await serviceClient
+      .from("project_members")
+      .delete()
+      .eq("project_id", input.projectId);
+
+    // Delete documents (cascades versions, annotations)
+    await serviceClient
+      .from("documents")
+      .delete()
+      .eq("project_id", input.projectId);
+
+    // Delete project
+    const { error: delErr } = await serviceClient
+      .from("projects")
+      .delete()
+      .eq("id", input.projectId);
+
+    if (delErr) {
+      // Fallback: soft-delete via archived_at if foreign key constraint prevents hard delete
+      await serviceClient
+        .from("projects")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", input.projectId);
+    }
+
+    // 5. Record Audit Log
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: isStaff ? "coordinator" : "student",
+      action_type: "DELETE",
+      module: "projects",
+      entity_type: "projects",
+      entity_id: input.projectId,
+      description: `Deleted draft research project "${project.title}" (${input.projectId})`,
+      ip_address: ip,
+      user_agent: userAgent,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("deleteProjectAction error:", err);
+    const msg = err instanceof Error ? err.message : "Failed to delete project.";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * ---------------------------------------------------------------------------
+ * Leave Project Team Server Action
+ * ---------------------------------------------------------------------------
+ * Allows regular co-authors/members to safely leave a project.
+ */
+export interface LeaveProjectActionInput {
+  projectId: string;
+}
+
+export interface LeaveProjectActionResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function leaveProjectAction(
+  input: LeaveProjectActionInput
+): Promise<LeaveProjectActionResult> {
+  const supabase = await createClient();
+  const serviceClient = createServiceClient();
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const userAgent = headersList.get("user-agent") || "unknown";
+
+  try {
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return { success: false, error: "Unauthorized. Please log in." };
+    }
+
+    if (!input.projectId) {
+      return { success: false, error: "Project ID is required." };
+    }
+
+    // Check membership
+    const { data: memberRow } = await serviceClient
+      .from("project_members")
+      .select("id, member_role")
+      .eq("project_id", input.projectId)
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    if (!memberRow) {
+      return { success: false, error: "You are not a member of this project." };
+    }
+
+    // Count other members
+    const { data: allMembers } = await serviceClient
+      .from("project_members")
+      .select("id, profile_id, member_role")
+      .eq("project_id", input.projectId);
+
+    const otherMembers = (allMembers || []).filter((m) => m.profile_id !== user.id);
+
+    if (otherMembers.length === 0) {
+      return {
+        success: false,
+        error:
+          "You are the sole member of this project. If you wish to remove it, please delete or discard the project instead.",
+      };
+    }
+
+    // If user was student_leader, transfer leadership to next member
+    if (memberRow.member_role === "student_leader") {
+      const nextLeader = otherMembers[0];
+      await serviceClient
+        .from("project_members")
+        .update({ member_role: "student_leader", is_primary: true })
+        .eq("id", nextLeader.id);
+    }
+
+    // Delete current user's membership
+    await serviceClient
+      .from("project_members")
+      .delete()
+      .eq("project_id", input.projectId)
+      .eq("profile_id", user.id);
+
+    // Audit log
+    await serviceClient.from("audit_logs").insert({
+      profile_id: user.id,
+      user_email: user.email || "unknown",
+      user_role: "student",
+      action_type: "UPDATE",
+      module: "projects",
+      entity_type: "project_members",
+      entity_id: input.projectId,
+      description: `Student left project team (${input.projectId})`,
+      ip_address: ip,
+      user_agent: userAgent,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("leaveProjectAction error:", err);
+    const msg = err instanceof Error ? err.message : "Failed to leave project.";
+    return { success: false, error: msg };
+  }
+}
+

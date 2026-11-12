@@ -49,6 +49,7 @@ import { toast } from "sonner";
 import { TimelineStepper } from "@/components/ui/timeline-stepper";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
 import { PdfUploader } from "@/components/documents/pdf-uploader";
+import { ProjectSwitcher } from "@/components/dashboard/project-switcher";
 import { deleteDocumentVersionAction } from "@/lib/projects/actions";
 
 interface StudentDashboardProps {
@@ -57,6 +58,8 @@ interface StudentDashboardProps {
 
 export function StudentDashboard({ userId }: StudentDashboardProps) {
   const [loading, setLoading] = useState(true);
+  const [student, setStudent] = useState<any>(null);
+  const [userProjects, setUserProjects] = useState<any[]>([]);
   const [project, setProject] = useState<any>(null);
   const [adviser, setAdviser] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -87,51 +90,103 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       // 1. Fetch student profile and associated project
       let { data: stdRecord } = await supabase
         .from("students")
-        .select("id")
+        .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
         .eq("profile_id", userId)
         .maybeSingle();
 
       if (!stdRecord) {
         const { data: newStd } = await supabase
           .from("students")
-          .insert({ profile_id: userId })
-          .select("id")
+          .insert({ profile_id: userId, year_level: 4, section: "A" })
+          .select("id, profile_id, campus_id, college_id, department_id, program_id, major_id, year_level, section")
           .single();
         stdRecord = newStd;
       }
+      setStudent(stdRecord);
 
-      // Check if member of any project
+      // Check all project memberships for this student
       const { data: memberRows } = await supabase
         .from("project_members")
-        .select("project_id")
-        .eq("profile_id", userId)
-        .limit(1);
+        .select("project_id, member_role, is_primary")
+        .eq("profile_id", userId);
 
-      const memberProjId = memberRows?.[0]?.project_id;
+      const memberProjectIds = (memberRows || []).map((r) => r.project_id);
 
-      let projQuery = supabase
+      let ownerProjectIds: string[] = [];
+      if (stdRecord?.id) {
+        const { data: ownedRows } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("student_id", stdRecord.id)
+          .is("archived_at", null);
+        ownerProjectIds = (ownedRows || []).map((r) => r.id);
+      }
+
+      const { data: createdRows } = await supabase
         .from("projects")
-        .select("*, defense_stages ( id, name, workflow_template_id )")
+        .select("id")
+        .eq("created_by", userId)
         .is("archived_at", null);
+      const createdProjectIds = (createdRows || []).map((r) => r.id);
 
-      if (memberProjId) {
-        projQuery = projQuery.eq("id", memberProjId);
-      } else if (stdRecord?.id) {
-        projQuery = projQuery.eq("student_id", stdRecord.id);
-      } else {
+      const allProjectIds = Array.from(
+        new Set([...memberProjectIds, ...ownerProjectIds, ...createdProjectIds])
+      );
+
+      if (allProjectIds.length === 0) {
+        setUserProjects([]);
+        setProject(null);
         setLoading(false);
         return;
       }
 
-      const { data: proj } = await projQuery.maybeSingle();
+      const { data: allProjects } = await supabase
+        .from("projects")
+        .select(`
+          id, title, team_name, status, academic_year, created_at,
+          current_stage_id, workflow_template_id, student_id, created_by,
+          defense_stages ( id, name, workflow_template_id )
+        `)
+        .in("id", allProjectIds)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false });
+
+      if (!allProjects || allProjects.length === 0) {
+        setUserProjects([]);
+        setProject(null);
+        setLoading(false);
+        return;
+      }
+
+      const enrichedProjects = allProjects.map((p) => {
+        const mRow = memberRows?.find((m) => m.project_id === p.id);
+        return {
+          ...p,
+          member_role: mRow?.member_role || (p.created_by === userId ? "student_leader" : "co_author"),
+        };
+      });
+      setUserProjects(enrichedProjects);
+
+      // Resolve active project: check localStorage first, or default to newest
+      const savedActiveId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("aurora_active_project_id")
+          : null;
+      const proj =
+        allProjects.find((p) => p.id === savedActiveId) || allProjects[0];
+
+      if (typeof window !== "undefined" && proj?.id) {
+        localStorage.setItem("aurora_active_project_id", proj.id);
+      }
 
       if (proj) {
         setProject(proj);
 
         // Fetch workflow stages dynamically for this project (strictly constrained to this project's workflow template)
+        const stageObj = Array.isArray(proj.defense_stages) ? proj.defense_stages[0] : proj.defense_stages;
         const targetTemplateId =
           proj.workflow_template_id ||
-          proj.defense_stages?.workflow_template_id ||
+          (stageObj as any)?.workflow_template_id ||
           "70000000-0000-0000-0000-000000000001";
 
         const { data: dbStages } = await supabase
@@ -304,6 +359,14 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
 
   useEffect(() => {
     loadStudentData();
+
+    const handleProjectChanged = () => {
+      loadStudentData();
+    };
+    window.addEventListener("aurora_project_changed", handleProjectChanged);
+    return () => {
+      window.removeEventListener("aurora_project_changed", handleProjectChanged);
+    };
   }, [loadStudentData]);
 
   const handleDeleteVersion = async () => {
@@ -427,7 +490,7 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
       {/* Welcome & Progress Card */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Active Research Details
@@ -436,13 +499,27 @@ export function StudentDashboard({ userId }: StudentDashboardProps) {
                 Current capstone registry mappings
               </CardDescription>
             </div>
-            <PdfUploader
-              projectId={project.id}
-              stageId={project.current_stage_id || undefined}
-              buttonText="Upload Manuscript (PDF)"
-              className="font-bold shadow-sm"
-              onUploadCompleted={loadStudentData}
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <ProjectSwitcher
+                projects={userProjects}
+                activeProjectId={project.id}
+                student={student}
+                onSelectProject={(newId) => {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("aurora_active_project_id", newId);
+                  }
+                  loadStudentData();
+                }}
+                onRefresh={loadStudentData}
+              />
+              <PdfUploader
+                projectId={project.id}
+                stageId={project.current_stage_id || undefined}
+                buttonText="Upload Manuscript (PDF)"
+                className="font-bold shadow-sm"
+                onUploadCompleted={loadStudentData}
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>

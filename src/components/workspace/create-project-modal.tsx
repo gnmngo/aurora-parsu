@@ -36,9 +36,10 @@ interface FacultyOption {
 interface CreateProjectModalProps {
   onSuccess: () => void;
   student: StudentRecord | null;
+  triggerButton?: React.ReactNode;
 }
 
-export function CreateProjectModal({ onSuccess, student }: CreateProjectModalProps) {
+export function CreateProjectModal({ onSuccess, student, triggerButton }: CreateProjectModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [teamName, setTeamName] = useState("");
@@ -101,6 +102,15 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
         join_code: res.project.join_code,
       });
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem("aurora_active_project_id", res.project.id);
+        window.dispatchEvent(
+          new CustomEvent("aurora_project_changed", {
+            detail: { projectId: res.project.id },
+          })
+        );
+      }
+
       toast.success(
         `Project created! Join code: ${res.project.join_code || "Generated"}`
       );
@@ -133,10 +143,12 @@ export function CreateProjectModal({ onSuccess, student }: CreateProjectModalPro
   return (
     <Dialog open={open} onOpenChange={(val) => (val ? setOpen(true) : handleClose())}>
       <DialogTrigger asChild>
-        <Button className="w-full justify-start gap-2 font-bold shadow-sm">
-          <Plus className="w-4 h-4" />
-          Create New Project
-        </Button>
+        {triggerButton || (
+          <Button className="w-full justify-start gap-2 font-bold shadow-sm">
+            <Plus className="w-4 h-4" />
+            Create New Project
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>

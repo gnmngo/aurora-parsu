@@ -11,9 +11,10 @@ import { joinProjectAction } from "@/lib/projects/actions";
 interface JoinProjectModalProps {
   onSuccess: () => void;
   studentId?: string;
+  triggerButton?: React.ReactNode;
 }
 
-export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps) {
+export function JoinProjectModal({ onSuccess, studentId, triggerButton }: JoinProjectModalProps) {
   const [open, setOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,15 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
         return;
       }
 
+      if (res.project?.id && typeof window !== "undefined") {
+        localStorage.setItem("aurora_active_project_id", res.project.id);
+        window.dispatchEvent(
+          new CustomEvent("aurora_project_changed", {
+            detail: { projectId: res.project.id },
+          })
+        );
+      }
+
       if (res.alreadyMember) {
         toast.info(`You are already a member of "${res.project?.title}". Loading your project...`);
       } else {
@@ -56,10 +66,12 @@ export function JoinProjectModal({ onSuccess, studentId }: JoinProjectModalProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full justify-center gap-2 font-bold h-10">
-          <UserPlus className="w-4 h-4 text-primary" />
-          Join Existing Project
-        </Button>
+        {triggerButton || (
+          <Button variant="outline" className="w-full justify-center gap-2 font-bold h-10">
+            <UserPlus className="w-4 h-4 text-primary" />
+            Join Existing Project
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
