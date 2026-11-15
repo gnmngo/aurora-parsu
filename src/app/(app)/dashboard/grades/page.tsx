@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { releaseProjectVerdictAction } from "@/lib/workflow/actions";
 import { toast } from "sonner";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 
@@ -80,6 +81,14 @@ export default function GradesPage() {
   const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [releasingId, setReleasingId] = useState<string | null>(null);
+  const [verdictConfirmModal, setVerdictConfirmModal] = useState<{
+    projectId: string;
+    projectTitle: string;
+    verdict: "passed" | "failed";
+    averageScore: number;
+    passingScore: number;
+    isAlreadyReleased: boolean;
+  } | null>(null);
   const [expandedConsensusId, setExpandedConsensusId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
   const { user, profile, roles, activeRole } = useAuth();
@@ -362,27 +371,15 @@ export default function GradesPage() {
                             variant={thresholdVerdict === "passed" ? "default" : "danger"}
                             className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
                             disabled={releasingId === proj.id}
-                            onClick={async () => {
-                              const verdictLabel = thresholdVerdict === "passed" ? "PASSED" : "FAILED";
-                              const promptMsg = isAlreadyReleased
-                                ? `Release updated threshold-determined verdict "${verdictLabel}" (Score: ${(projGroup?.averageScore ?? 0).toFixed(1)}%) for "${proj.title}"?`
-                                : `Release official threshold-determined verdict "${verdictLabel}" (Score: ${(projGroup?.averageScore ?? 0).toFixed(1)}%) for "${proj.title}"?`;
-                              if (!confirm(promptMsg)) return;
-                              setReleasingId(proj.id);
-                              try {
-                                await releaseProjectVerdictAction(proj.id, thresholdVerdict);
-                                toast.success(`Official verdict released: ${verdictLabel}`);
-                                if (typeof window !== "undefined") {
-                                  window.dispatchEvent(new CustomEvent("aurora:refresh"));
-                                  window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
-                                }
-                                await loadGrades();
-                              } catch (err: unknown) {
-                                const msg = err instanceof Error ? err.message : "Failed";
-                                toast.error(msg);
-                              } finally {
-                                setReleasingId(null);
-                              }
+                            onClick={() => {
+                              setVerdictConfirmModal({
+                                projectId: proj.id,
+                                projectTitle: proj.title,
+                                verdict: thresholdVerdict,
+                                averageScore: projGroup?.averageScore ?? 0,
+                                passingScore: projGroup?.passingScore ?? 75,
+                                isAlreadyReleased,
+                              });
                             }}
                           >
                             {releasingId === proj.id ? (
@@ -689,6 +686,77 @@ export default function GradesPage() {
             })}
           </div>
         )}
+
+        <ConfirmDialog
+          open={Boolean(verdictConfirmModal)}
+          onOpenChange={(open) => {
+            if (!open) setVerdictConfirmModal(null);
+          }}
+          variant={verdictConfirmModal?.verdict === "passed" ? "success" : "danger"}
+          title={
+            verdictConfirmModal?.isAlreadyReleased
+              ? "Release Updated Official Verdict?"
+              : "Release Official Defense Verdict?"
+          }
+          description={
+            verdictConfirmModal ? (
+              <div className="space-y-2.5">
+                <p>
+                  You are about to officially release the threshold-determined panel verdict for{" "}
+                  <strong className="text-foreground">&ldquo;{verdictConfirmModal.projectTitle}&rdquo;</strong>.
+                </p>
+                <div className="rounded-xl border border-border/80 bg-muted/50 p-3 flex items-center justify-between text-xs">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Composite Panel Score</p>
+                    <p className="text-sm font-black text-foreground">
+                      {verdictConfirmModal.averageScore.toFixed(1)}%{" "}
+                      <span className="text-[10px] font-semibold text-muted-foreground">
+                        (Threshold: {verdictConfirmModal.passingScore}%)
+                      </span>
+                    </p>
+                  </div>
+                  <Badge
+                    variant={verdictConfirmModal.verdict === "passed" ? "success" : "danger"}
+                    className="text-[11px] font-black uppercase px-2.5 py-0.5"
+                  >
+                    {verdictConfirmModal.verdict === "passed" ? "PASSED" : "FAILED"}
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Student authors, the research adviser, and committee members will be notified immediately in real time.
+                </p>
+              </div>
+            ) : null
+          }
+          confirmText={
+            verdictConfirmModal?.verdict === "passed"
+              ? "Release Verdict: PASSED"
+              : "Release Verdict: FAILED"
+          }
+          cancelText="Cancel"
+          loading={Boolean(verdictConfirmModal && releasingId === verdictConfirmModal.projectId)}
+          onConfirm={async () => {
+            if (!verdictConfirmModal) return;
+            const { projectId, verdict } = verdictConfirmModal;
+            const verdictLabel = verdict === "passed" ? "PASSED" : "FAILED";
+            setReleasingId(projectId);
+            try {
+              await releaseProjectVerdictAction(projectId, verdict);
+              toast.success(`Official verdict released: ${verdictLabel}`);
+              setVerdictConfirmModal(null);
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("aurora:refresh"));
+                window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
+              }
+              await loadGrades();
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : "Failed";
+              toast.error(msg);
+            } finally {
+              setReleasingId(null);
+            }
+          }}
+        />
       </div>
     </RoleGuard>
   );

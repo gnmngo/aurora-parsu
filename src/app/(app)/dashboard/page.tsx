@@ -6,7 +6,8 @@ import { DefensePipeline } from "@/components/dashboard/defense-pipeline";
 import { ProjectTimelineAndHistory } from "@/components/dashboard/project-timeline-and-history";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Shield } from "lucide-react";
+import { AuroraLoader } from "@/components/ui/aurora-loader";
+import { Shield } from "lucide-react";
 
 // Role-specific dashboards
 import { StudentDashboard } from "@/components/dashboard/student-dashboard";
@@ -20,11 +21,7 @@ export default function DashboardPage() {
   const { roles, activeRole, setActiveRole, user, isLoading: authLoading } = useAuth();
 
   if (authLoading || !activeRole) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <AuroraLoader fullscreen={true} />;
   }
 
   const isManagementRole = ["coordinator", "sys_admin", "college_dean"].includes(activeRole);

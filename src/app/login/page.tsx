@@ -35,6 +35,7 @@ import { registerUserAction } from "@/lib/auth/register-action";
 import { getDemoCredentialsAction } from "@/lib/auth/demo-actions";
 import { prepareLoginAction, resetPasswordDirectAction } from "@/lib/auth/login-actions";
 import { useGlobalLoading } from "@/providers/loading-provider";
+import { AuroraLoader } from "@/components/ui/aurora-loader";
 import { APP_ACRONYM_MEANING, INSTITUTION_CAMPUS } from "@/constants/app";
 
 const DEMO_ROLES = [
@@ -98,6 +99,19 @@ function LoginForm() {
   const [forgotSent, setForgotSent] = useState(false);
 
   const hasFetchedCampuses = useRef(false);
+  const hasRedirectedRef = useRef(false);
+
+  const navigateAfterAuth = (customTarget?: string) => {
+    if (hasRedirectedRef.current) return;
+    hasRedirectedRef.current = true;
+    const redirectParam = searchParams.get("redirect");
+    const targetUrl =
+      customTarget ||
+      (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+        ? redirectParam
+        : "/dashboard");
+    router.replace(targetUrl);
+  };
 
   // Load campuses
   useEffect(() => {
@@ -160,15 +174,10 @@ function LoginForm() {
     });
   }, [regProgramId, supabase]);
 
-  // If already logged in, redirect to dashboard or redirect target
+  // If already logged in (or as soon as AuthProvider finishes hydrating profile after login), redirect once cleanly
   useEffect(() => {
     if (session && profile && !authLoading) {
-      const redirectParam = searchParams.get("redirect");
-      const targetUrl =
-        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
-          ? redirectParam
-          : "/dashboard";
-      window.location.assign(targetUrl);
+      navigateAfterAuth();
     }
   }, [session, profile, authLoading, searchParams]);
 
@@ -186,8 +195,9 @@ function LoginForm() {
       toast.error("Password must be at least 8 characters");
       return;
     }
+    hasRedirectedRef.current = false;
     setLoading(true);
-    startLoading("Verifying institutional credentials & decrypting docket...");
+    startLoading("Signing in to AURORA Portal...");
 
     try {
       if (typeof window !== "undefined") {
@@ -198,6 +208,7 @@ function LoginForm() {
       const prep = await prepareLoginAction(trimmedEmail, password);
       if (!prep.success || !prep.email || !prep.password) {
         stopLoading();
+        setLoading(false);
         toast.error(prep.error || "Invalid credentials");
         return;
       }
@@ -209,34 +220,28 @@ function LoginForm() {
 
       if (error) {
         stopLoading();
+        setLoading(false);
         toast.error(error.message || "Invalid credentials");
         return;
       }
 
       if (!data.session) {
         stopLoading();
+        setLoading(false);
         toast.error("Login failed: no session returned");
         return;
       }
 
-      const redirectParam = searchParams.get("redirect");
-      const targetUrl =
-        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
-          ? redirectParam
-          : "/dashboard";
-
-      toast.success("Login successful! Entering AURORA Portal...");
-      startLoading("Entering AURORA Portal...");
-
+      toast.success("Login successful!");
+      // Fallback redirect if AuthProvider hydration takes longer than 600ms
       setTimeout(() => {
-        window.location.assign(targetUrl);
-      }, 150);
+        navigateAfterAuth();
+      }, 600);
     } catch (err: any) {
       stopLoading();
+      setLoading(false);
       console.error(err);
       toast.error(err?.message || "Unexpected login error");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -269,6 +274,7 @@ function LoginForm() {
       return;
     }
     
+    hasRedirectedRef.current = false;
     setLoading(true);
     startLoading("Registering student record & provisioning college permissions...");
 
@@ -302,12 +308,11 @@ function LoginForm() {
 
       if (!result.success) {
         stopLoading();
+        setLoading(false);
         toast.error(result.error || "Registration failed");
         return;
       }
 
-      toast.success("Student account created successfully! Signing in...");
-      
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: cleanRegEmail,
         password: cleanRegPassword,
@@ -315,23 +320,22 @@ function LoginForm() {
 
       if (signInError) {
         stopLoading();
+        setLoading(false);
         setEmail(cleanRegEmail);
         setPassword(cleanRegPassword);
         setActiveTab("signin");
         toast.info("Account created. Please sign in with your credentials.");
       } else {
-        toast.success("Account created! Entering AURORA Portal...");
-        startLoading("Entering AURORA Portal...");
+        toast.success("Student account created! Entering AURORA Portal...");
         setTimeout(() => {
-          window.location.assign("/dashboard");
-        }, 150);
+          navigateAfterAuth("/dashboard");
+        }, 600);
       }
     } catch (err: unknown) {
       stopLoading();
+      setLoading(false);
       const message = err instanceof Error ? err.message : "Unexpected registration error";
       toast.error(message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -349,6 +353,7 @@ function LoginForm() {
       return;
     }
 
+    hasRedirectedRef.current = false;
     setLoading(true);
     startLoading("Verifying account identity & updating credentials...");
 
@@ -357,6 +362,7 @@ function LoginForm() {
 
       if (!result.success) {
         stopLoading();
+        setLoading(false);
         toast.error(result.error || "Failed to update password");
         return;
       }
@@ -370,13 +376,12 @@ function LoginForm() {
       });
 
       if (!signInError && data.session) {
-        toast.success("Signed in with your new password!");
-        startLoading("Entering AURORA Portal...");
         setTimeout(() => {
-          window.location.assign("/dashboard");
-        }, 150);
+          navigateAfterAuth("/dashboard");
+        }, 600);
       } else {
         stopLoading();
+        setLoading(false);
         setTimeout(() => {
           setEmail(result.email || trimmed);
           setPassword(forgotNewPassword.trim());
@@ -386,15 +391,16 @@ function LoginForm() {
       }
     } catch (err: any) {
       stopLoading();
-      toast.error(err?.message || "Password update failed");
-    } finally {
       setLoading(false);
+      toast.error(err?.message || "Password update failed");
     }
   };
 
   const handleDemoLogin = async (roleType: "student" | "adviser" | "panelist" | "coordinator" | "dean" | "admin") => {
+    if (loading) return;
+    hasRedirectedRef.current = false;
     setLoading(true);
-    startLoading(`Authenticating as ${roleType.toUpperCase()} & configuring permissions...`);
+    startLoading(`Signing in as ${roleType.toUpperCase()}...`);
 
     try {
       const targetRole =
@@ -412,6 +418,7 @@ function LoginForm() {
       const creds = await getDemoCredentialsAction(roleType);
       if (!creds.success || !creds.email || !creds.password) {
         stopLoading();
+        setLoading(false);
         toast.error(creds.error || `Demo credentials for ${roleType} unavailable.`);
         return;
       }
@@ -423,6 +430,7 @@ function LoginForm() {
 
       if (error) {
         stopLoading();
+        setLoading(false);
         toast.error(error.message || `Failed to login as ${roleType}`);
         return;
       }
@@ -433,20 +441,17 @@ function LoginForm() {
       }
 
       toast.success(`Logged in as ${roleType}`);
-      startLoading(`Entering AURORA as ${roleType.toUpperCase()}...`);
-
       setTimeout(() => {
-        window.location.assign("/dashboard");
-      }, 150);
+        navigateAfterAuth("/dashboard");
+      }, 600);
     } catch (err: any) {
       stopLoading();
-      toast.error(err?.message || "Unexpected login error");
-    } finally {
       setLoading(false);
+      toast.error(err?.message || "Unexpected login error");
     }
   };
 
-  const isFormDisabled = loading || authLoading;
+  const isFormDisabled = loading;
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 dark:bg-[#050505] dark:text-[#F5F5F5] antialiased selection:bg-blue-600 selection:text-white font-sans flex flex-col items-center justify-between py-8 px-4 relative overflow-y-auto transition-colors duration-200">
@@ -620,14 +625,7 @@ function LoginForm() {
                   className="w-full h-10.5 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] dark:hover:bg-white text-xs font-bold transition-all shadow-sm cursor-pointer" 
                   type="submit"
                 >
-                  {loading || authLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="animate-spin w-4 h-4" />
-                      Authenticating...
-                    </span>
-                  ) : (
-                    "Sign In"
-                  )}
+                  {loading ? "Signing in..." : "Sign In"}
                 </Button>
 
                 {/* DEMO ACCOUNTS SECTION (Maintained & Sleekly Styled) */}
@@ -825,14 +823,7 @@ function LoginForm() {
                 </div>
 
                 <Button disabled={isFormDisabled} className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] font-bold text-xs cursor-pointer shadow-sm" type="submit">
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="animate-spin w-4 h-4" />
-                      Creating student account...
-                    </span>
-                  ) : (
-                    "Create Student Account"
-                  )}
+                  {loading ? "Creating student account..." : "Create Student Account"}
                 </Button>
               </form>
             )}
@@ -892,14 +883,7 @@ function LoginForm() {
                 )}
 
                 <Button disabled={isFormDisabled || forgotSent} className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-black text-white dark:bg-[#F5F5F5] dark:text-[#050505] font-bold text-xs cursor-pointer shadow-sm" type="submit">
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="animate-spin w-4 h-4" />
-                      Updating password...
-                    </span>
-                  ) : (
-                    "Update Password & Sign In"
-                  )}
+                  {loading ? "Updating password..." : "Update Password & Sign In"}
                 </Button>
                 
                 <button
@@ -930,7 +914,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#050505]"><Loader2 className="animate-spin text-blue-600 w-8 h-8" /></div>}>
+    <Suspense fallback={<AuroraLoader fullscreen={true} />}>
       <LoginForm />
     </Suspense>
   );

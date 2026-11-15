@@ -41,6 +41,7 @@ import {
 } from "@/lib/admin/actions";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface TroubleshootingGuideItem {
   id: string;
@@ -182,6 +183,7 @@ export default function SystemHealthPage() {
 
   // Action states
   const [resetting, setResetting] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [runningDiag, setRunningDiag] = useState(false);
   const [healing, setHealing] = useState(false);
   const [exportingBackup, setExportingBackup] = useState(false);
@@ -408,14 +410,10 @@ export default function SystemHealthPage() {
   };
 
   const handleResetDemoData = async () => {
-    const confirm = window.confirm(
-      "Are you sure you want to RESET all demonstration data? This will clean all annotations, evaluations, documents, and seed the default demo users and projects."
-    );
-    if (!confirm) return;
-
     setResetting(true);
     try {
       await resetDemoDataAction();
+      setResetConfirmOpen(false);
       toast.success("Demonstration reset completed successfully!");
       loadHealthStats();
     } catch (err: any) {
@@ -496,10 +494,10 @@ export default function SystemHealthPage() {
 
             <Button
               size="sm"
-              onClick={handleResetDemoData}
+              onClick={() => setResetConfirmOpen(true)}
               disabled={resetting}
               variant="danger"
-              className="h-9 px-3 rounded-xl gap-1.5 font-bold"
+              className="h-9 px-3 rounded-xl gap-1.5 font-bold cursor-pointer"
             >
               {resetting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1150,6 +1148,29 @@ export default function SystemHealthPage() {
             </TabsContent>
           </Tabs>
         )}
+
+        <ConfirmDialog
+          open={resetConfirmOpen}
+          onOpenChange={setResetConfirmOpen}
+          variant="danger"
+          title="Reset All Demonstration Data?"
+          description={
+            <div className="space-y-2">
+              <p>
+                Are you sure you want to reset all demonstration data? This administrative action will:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-foreground/90 bg-muted/50 rounded-xl p-3 border border-border/60">
+                <li>Clean all active inline annotations, review threads, and rubric evaluations</li>
+                <li>Clear temporary uploaded manuscript versions and defense schedules</li>
+                <li>Restore default Partido State University demo accounts and baseline projects</li>
+              </ul>
+            </div>
+          }
+          confirmText={resetting ? "Resetting Data..." : "Yes, Reset Demo Data"}
+          cancelText="Cancel"
+          loading={resetting}
+          onConfirm={handleResetDemoData}
+        />
       </div>
     </RoleGuard>
   );

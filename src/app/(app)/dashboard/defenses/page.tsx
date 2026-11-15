@@ -39,6 +39,7 @@ import {
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -668,6 +669,8 @@ export default function DefensesPage() {
   };
 
   // Mark Defense as Officially Concluded & Completed
+  const [concludeConfirmSchedule, setConcludeConfirmSchedule] = useState<any | null>(null);
+
   const handleMarkConcluded = async (sched: any) => {
     setConcludingScheduleId(sched.id);
     try {
@@ -678,6 +681,7 @@ export default function DefensesPage() {
         "Marked completed from Defenses Management"
       );
       toast.success(`Defense schedule for "${sched.projects?.title}" officially marked as Concluded & Completed.`);
+      setConcludeConfirmSchedule(null);
       await fetchSchedules();
     } catch (err: any) {
       toast.error(err?.message || "Failed to mark defense as completed.");
@@ -1144,7 +1148,7 @@ export default function DefensesPage() {
                                 size="sm"
                                 variant="outline"
                                 disabled={concludingScheduleId === sched.id}
-                                onClick={() => handleMarkConcluded(sched)}
+                                onClick={() => setConcludeConfirmSchedule(sched)}
                                 className="h-8 text-xs font-bold gap-1 cursor-pointer"
                                 title="Officially mark this defense as concluded and completed"
                               >
@@ -1657,6 +1661,43 @@ export default function DefensesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={Boolean(concludeConfirmSchedule)}
+          onOpenChange={(open) => {
+            if (!open) setConcludeConfirmSchedule(null);
+          }}
+          variant="success"
+          title="Mark Oral Defense as Concluded?"
+          description={
+            concludeConfirmSchedule ? (
+              <div className="space-y-1.5">
+                <p>
+                  Are you sure you want to officially mark the oral defense for{" "}
+                  <strong className="text-foreground">
+                    &ldquo;{concludeConfirmSchedule.projects?.title || "Research Manuscript"}&rdquo;
+                  </strong>{" "}
+                  as Concluded &amp; Completed?
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  This updates the schedule status across the university defense docket and notifies the proponents and committee.
+                </p>
+              </div>
+            ) : null
+          }
+          confirmText={
+            concludingScheduleId ? "Finalizing..." : "Confirm Concluded"
+          }
+          cancelText="Cancel"
+          loading={Boolean(
+            concludeConfirmSchedule && concludingScheduleId === concludeConfirmSchedule.id
+          )}
+          onConfirm={() => {
+            if (concludeConfirmSchedule) {
+              handleMarkConcluded(concludeConfirmSchedule);
+            }
+          }}
+        />
       </div>
     </RoleGuard>
   );

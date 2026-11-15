@@ -590,8 +590,16 @@ export default function UsersPage() {
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
-                              className="h-8 text-xs gap-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleStatusChange(user.id, "approved")}
+                              className="h-8 text-xs gap-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                              onClick={() => {
+                                setConfirmAction({
+                                  type: "status",
+                                  userId: user.id,
+                                  userName: name,
+                                  newValue: "approved",
+                                  label: "Approve and verify faculty account",
+                                });
+                              }}
                             >
                               <Check className="h-3.5 w-3.5" />
                               Approve Faculty

@@ -39,6 +39,7 @@ import {
   deleteAnnotationAction,
 } from "@/lib/annotations/actions";
 import { exportAnnotatedManuscriptPdf } from "@/lib/documents/annotated-pdf-exporter";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // Configure local PDF worker
 if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -800,13 +801,21 @@ export function InteractivePdfViewer({
   };
 
   // 6. Delete Annotation
-  const handleDeleteAnnotation = async (annotationId: string) => {
-    if (!confirm("Are you sure you want to delete this markup/comment?")) return;
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deletingAnnotation, setDeletingAnnotation] = useState(false);
+
+  const handleDeleteAnnotation = (annotationId: string) => {
+    setDeleteTargetId(annotationId);
+  };
+
+  const confirmDeleteAnnotation = async () => {
+    if (!deleteTargetId) return;
+    setDeletingAnnotation(true);
     try {
       let deleted = false;
 
       try {
-        const res = await deleteAnnotationAction(annotationId);
+        const res = await deleteAnnotationAction(deleteTargetId);
         if (res?.success) deleted = true;
       } catch (e) {
         console.warn("[handleDeleteAnnotation] Server action error, trying direct fallback:", e);
@@ -816,12 +825,13 @@ export function InteractivePdfViewer({
         const { error: delErr } = await supabase
           .from("annotations")
           .delete()
-          .eq("id", annotationId);
+          .eq("id", deleteTargetId);
 
         if (delErr) throw new Error(delErr.message || "Failed to delete annotation.");
       }
 
       toast.success("Markup deleted successfully.");
+      setDeleteTargetId(null);
       setActiveAnnotation(null);
       onSelectAnnotation?.(null);
       await fetchAnnotations();
@@ -829,6 +839,8 @@ export function InteractivePdfViewer({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Delete failed";
       toast.error(msg);
+    } finally {
+      setDeletingAnnotation(false);
     }
   };
 
@@ -1616,6 +1628,20 @@ export function InteractivePdfViewer({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteTargetId)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetId(null);
+        }}
+        variant="danger"
+        title="Delete Inline Markup?"
+        description="Are you sure you want to permanently remove this PDF markup and its associated discussion thread?"
+        confirmText={deletingAnnotation ? "Deleting..." : "Delete Markup"}
+        cancelText="Cancel"
+        loading={deletingAnnotation}
+        onConfirm={confirmDeleteAnnotation}
+      />
     </div>
   );
 }

@@ -73,6 +73,7 @@ import { ParsuFormsModal } from "@/components/defenses/parsu-forms-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useGlobalLoading } from "@/providers/loading-provider";
 import { ConsensusDashboard } from "@/components/dashboard/consensus-dashboard";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function CollapsibleSection({
   title,
@@ -339,6 +340,11 @@ export function GradingPanel({
   const [documentData, setDocumentData] = useState<any>(null);
   const [endorsing, setEndorsing] = useState(false);
   const [adviserRemarks, setAdviserRemarks] = useState("");
+  const [adviserConfirmAction, setAdviserConfirmAction] = useState<
+    "endorse" | "request_revisions" | "withdraw" | "override_endorse" | null
+  >(null);
+  const [deleteCommentConfirmId, setDeleteCommentConfirmId] = useState<string | null>(null);
+  const [deletingComment, setDeletingComment] = useState(false);
 
   // Official ParSU Forms Modal state (DCS-CF-03, DCS-CF-04, DCS-CF-05)
   const [parsuFormsOpen, setParsuFormsOpen] = useState(false);
@@ -1735,16 +1741,7 @@ export function GradingPanel({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={async () => {
-                      if (!confirm("Are you sure you want to delete this comment?")) return;
-                      try {
-                        await deleteAnnotationAction(ann.id);
-                        toast.success("Comment deleted");
-                        loadAnnotations();
-                      } catch (err: any) {
-                        toast.error(err?.message || "Failed to delete comment");
-                      }
-                    }}
+                    onClick={() => setDeleteCommentConfirmId(ann.id)}
                     className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
                     title="Delete Comment"
                   >
@@ -1865,6 +1862,33 @@ export function GradingPanel({
             </div>
           </div>
         ))}
+
+        <ConfirmDialog
+          open={Boolean(deleteCommentConfirmId)}
+          onOpenChange={(open) => {
+            if (!open) setDeleteCommentConfirmId(null);
+          }}
+          variant="danger"
+          title="Delete Review Comment?"
+          description="Are you sure you want to permanently remove this manuscript review comment and its discussion thread?"
+          confirmText={deletingComment ? "Deleting..." : "Delete Comment"}
+          cancelText="Cancel"
+          loading={deletingComment}
+          onConfirm={async () => {
+            if (!deleteCommentConfirmId) return;
+            setDeletingComment(true);
+            try {
+              await deleteAnnotationAction(deleteCommentConfirmId);
+              toast.success("Comment deleted");
+              setDeleteCommentConfirmId(null);
+              loadAnnotations();
+            } catch (err: any) {
+              toast.error(err?.message || "Failed to delete comment");
+            } finally {
+              setDeletingComment(false);
+            }
+          }}
+        />
       </div>
     );
   };
@@ -2101,12 +2125,8 @@ export function GradingPanel({
                       variant="outline"
                       size="sm"
                       disabled={endorsing || !documentData?.id}
-                      onClick={() => {
-                        if (confirm("Are you sure you want to withdraw defense endorsement and request revisions on this manuscript?")) {
-                          handleAdviserEndorsement("rejected");
-                        }
-                      }}
-                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                      onClick={() => setAdviserConfirmAction("withdraw")}
+                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20 cursor-pointer"
                     >
                       <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
                       Withdraw Endorsement
@@ -2128,8 +2148,8 @@ export function GradingPanel({
                       variant="outline"
                       size="sm"
                       disabled={endorsing || !documentData?.id}
-                      onClick={() => handleAdviserEndorsement("rejected")}
-                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                      onClick={() => setAdviserConfirmAction("request_revisions")}
+                      className="flex-1 text-xs h-9 rounded-xl border-border text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/20 cursor-pointer"
                     >
                       <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
                       {endorsing ? "Submitting..." : "Request Revisions"}
@@ -2138,8 +2158,8 @@ export function GradingPanel({
                       type="button"
                       size="sm"
                       disabled={endorsing || !documentData?.id}
-                      onClick={() => handleAdviserEndorsement("approved")}
-                      className="flex-1 text-xs h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => setAdviserConfirmAction("endorse")}
+                      className="flex-1 text-xs h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                       {endorsing ? "Endorsing..." : "Endorse for Defense"}
@@ -2152,11 +2172,7 @@ export function GradingPanel({
                 <div className="flex justify-end pt-0.5">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm("Are you sure you want to bypass the revision requirement and endorse this manuscript for defense now?")) {
-                        handleAdviserEndorsement("approved");
-                      }
-                    }}
+                    onClick={() => setAdviserConfirmAction("override_endorse")}
                     className="text-[10px] text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
                   >
                     Override &amp; endorse now anyway
@@ -2187,6 +2203,84 @@ export function GradingPanel({
               {renderAnnotationsList(true)}
             </div>
           </CollapsibleSection>
+
+          <ConfirmDialog
+            open={Boolean(adviserConfirmAction)}
+            onOpenChange={(open) => {
+              if (!open) setAdviserConfirmAction(null);
+            }}
+            variant={
+              adviserConfirmAction === "endorse"
+                ? "success"
+                : "warning"
+            }
+            title={
+              adviserConfirmAction === "endorse"
+                ? "Endorse Manuscript for Oral Defense?"
+                : adviserConfirmAction === "request_revisions"
+                  ? "Request Manuscript Revisions?"
+                  : adviserConfirmAction === "withdraw"
+                    ? "Withdraw Defense Endorsement?"
+                    : "Override Revision Requirement & Endorse?"
+            }
+            description={
+              adviserConfirmAction === "endorse" ? (
+                <div className="space-y-1.5">
+                  <p>
+                    You are about to officially endorse this manuscript version for oral defense.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    This unlocks the defense scheduling gate for the Research Coordinator and notifies the student proponents in real time.
+                  </p>
+                </div>
+              ) : adviserConfirmAction === "request_revisions" ? (
+                <div className="space-y-1.5">
+                  <p>
+                    You are about to mark this manuscript as requiring revisions from the student proponents.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Oral defense endorsement will remain locked until the authors address your feedback and upload an updated manuscript draft.
+                  </p>
+                </div>
+              ) : adviserConfirmAction === "withdraw" ? (
+                <div className="space-y-1.5">
+                  <p>
+                    Are you sure you want to withdraw your defense endorsement and return this manuscript to revision status?
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Student authors and the Research Coordinator will be notified immediately in real time, and defense scheduling will be locked until re-endorsed.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <p>
+                    Are you sure you want to bypass the pending revision requirement and endorse this manuscript version for oral defense now?
+                  </p>
+                </div>
+              )
+            }
+            confirmText={
+              adviserConfirmAction === "endorse"
+                ? "Confirm Endorsement"
+                : adviserConfirmAction === "request_revisions"
+                  ? "Request Revisions"
+                  : adviserConfirmAction === "withdraw"
+                    ? "Withdraw Endorsement"
+                    : "Override & Endorse Now"
+            }
+            cancelText="Cancel"
+            loading={endorsing}
+            onConfirm={async () => {
+              const action = adviserConfirmAction;
+              if (!action) return;
+              const targetStatus =
+                action === "endorse" || action === "override_endorse"
+                  ? "approved"
+                  : "rejected";
+              setAdviserConfirmAction(null);
+              await handleAdviserEndorsement(targetStatus);
+            }}
+          />
         </div>
       </ScrollArea>
     );

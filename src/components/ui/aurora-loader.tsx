@@ -235,18 +235,13 @@ export function AuroraLoader({
         </div>
       )}
 
-      {/* Minimalist Loading Indicator (Apple/Linear/Stripe Style) */}
+      {/* Minimalist Loading Indicator (Single Unified Spinner) */}
       <div className="relative flex items-center justify-center mb-4 min-h-[36px]">
         {variant === "dots" ? (
           <ThreeDotsLoader size={size} />
         ) : (
           <MinimalSpinner size={size === "lg" ? "lg" : size === "sm" ? "sm" : "md"} />
         )}
-      </div>
-
-      {/* Thin Animated Progress Indicator */}
-      <div className="w-40 mb-3">
-        <ThinProgressBar />
       </div>
 
       {/* Status Message with Smooth Fade Transition */}

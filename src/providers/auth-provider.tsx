@@ -324,6 +324,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (loadedUserRef.current !== session.user.id) {
           setIsLoading(true);
           await loadUserProfile(session.user.id);
+        } else {
+          try {
+            if (typeof window !== "undefined") {
+              const savedRole =
+                sessionStorage.getItem("aurora_active_role") ||
+                localStorage.getItem("aurora_active_role");
+              if (savedRole) {
+                setActiveRoleState(savedRole);
+              }
+            }
+          } catch {}
+          setIsLoading(false);
         }
       } else if (event === "TOKEN_REFRESHED") {
         if (!loadedUserRef.current) {

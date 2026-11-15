@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { updateDefenseScheduleAction, cancelDefenseScheduleAction } from "@/lib/scheduler/actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface CalendarViewProps {
   userRole: string;
@@ -42,6 +43,7 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
   const [editDuration, setEditDuration] = useState(60);
   const [saving, setSaving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [scheduleToCancel, setScheduleToCancel] = useState<any | null>(null);
 
   // Load schedules
   const loadSchedules = async () => {
@@ -337,25 +339,7 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
                                 variant="danger"
                                 className="h-8 rounded-lg text-[10px] cursor-pointer"
                                 disabled={cancelling}
-                                onClick={async () => {
-                                  if (!confirm(`Cancel defense for "${s.projects?.title}"? This cannot be undone.`)) return;
-                                  setCancelling(true);
-                                  try {
-                                    await cancelDefenseScheduleAction(
-                                      s.id,
-                                      s.project_id,
-                                      s.stage_id,
-                                      "Cancelled by coordinator"
-                                    );
-                                    toast.success("Defense schedule cancelled.");
-                                    await loadSchedules();
-                                  } catch (err: unknown) {
-                                    const msg = err instanceof Error ? err.message : "Failed to cancel";
-                                    toast.error(msg);
-                                  } finally {
-                                    setCancelling(false);
-                                  }
-                                }}
+                                onClick={() => setScheduleToCancel(s)}
                               >
                                 Cancel Defense
                               </Button>
@@ -472,6 +456,51 @@ export function CalendarView({ userRole, externalSchedules }: CalendarViewProps)
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(scheduleToCancel)}
+        onOpenChange={(open) => {
+          if (!open) setScheduleToCancel(null);
+        }}
+        variant="danger"
+        title="Cancel Scheduled Defense?"
+        description={
+          scheduleToCancel ? (
+            <div className="space-y-1.5">
+              <p>
+                Are you sure you want to cancel the oral defense schedule for{" "}
+                <strong className="text-foreground">&ldquo;{scheduleToCancel.projects?.title}&rdquo;</strong>?
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                This action will remove the calendar reservation and notify the student proponents and assigned panel members.
+              </p>
+            </div>
+          ) : null
+        }
+        confirmText={cancelling ? "Cancelling..." : "Cancel Defense Schedule"}
+        cancelText="Keep Schedule"
+        loading={cancelling}
+        onConfirm={async () => {
+          if (!scheduleToCancel) return;
+          setCancelling(true);
+          try {
+            await cancelDefenseScheduleAction(
+              scheduleToCancel.id,
+              scheduleToCancel.project_id,
+              scheduleToCancel.stage_id,
+              "Cancelled by coordinator"
+            );
+            toast.success("Defense schedule cancelled.");
+            setScheduleToCancel(null);
+            await loadSchedules();
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Failed to cancel";
+            toast.error(msg);
+          } finally {
+            setCancelling(false);
+          }
+        }}
+      />
     </div>
   );
 }
