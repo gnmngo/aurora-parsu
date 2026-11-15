@@ -737,7 +737,15 @@ export function GradingPanel({
           setEvalId(evalData.id);
           setEvalVersion(evalData.version || 1);
           setEvalStatus(evalData.status);
-          setVerdict(evalData.verdict_code || "passed_minor");
+          setVerdict(
+            evalData.verdict_code === "failed"
+              ? "failed"
+              : evalData.verdict_code?.startsWith("passed")
+                ? "passed"
+                : Number(evalData.weighted_score ?? evalData.total_score ?? 75) >= Number(rubricData?.passing_score ?? 75)
+                  ? "passed"
+                  : "failed"
+          );
           setNotes(evalData.panel_notes || "");
           setRecommendations(evalData.recommendations || "");
           setEvaluationData(evalData);
@@ -898,6 +906,17 @@ export function GradingPanel({
   }, [projectId, stageId, documentVersionId]);
 
   useEffect(() => {
+    const handleGlobalRefresh = () => {
+      loadData();
+      loadAnnotations();
+    };
+    window.addEventListener("aurora:refresh", handleGlobalRefresh);
+    return () => {
+      window.removeEventListener("aurora:refresh", handleGlobalRefresh);
+    };
+  }, [projectId, stageId, documentVersionId, annotationScope]);
+
+  useEffect(() => {
     loadAnnotations();
 
     let channel: any = null;
@@ -939,9 +958,25 @@ export function GradingPanel({
             table: "documents",
           },
           (payload: any) => {
-            if (payload.new && (payload.new.id === documentData?.id || payload.new.project_id === projectId)) {
+            if (payload.new && payload.new.project_id === projectId) {
               setDocumentData(payload.new);
+              setAdviserRemarks(payload.new.approval_remarks || "");
               loadAnnotations();
+            } else {
+              loadData();
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "projects",
+          },
+          (payload: any) => {
+            if (payload.new && payload.new.id === projectId) {
+              loadData();
             }
           }
         )
@@ -1001,20 +1036,31 @@ export function GradingPanel({
         }
       }
     };
-  }, [documentVersionId, annotationRefreshKey, annotationScope]);
+  }, [documentVersionId, annotationRefreshKey, annotationScope, projectId]);
 
   const weightedScore = useMemo(() => {
     if (!rubricTemplate?.criteria) return 0;
     return computeWeightedScore(rubricTemplate.criteria, scores);
   }, [rubricTemplate, scores]);
 
+  const passingThreshold = useMemo(() => {
+    return Number(rubricTemplate?.passing_score ?? 75);
+  }, [rubricTemplate]);
+
+  const autoVerdict = useMemo<"passed" | "failed">(() => {
+    return weightedScore >= passingThreshold ? "passed" : "failed";
+  }, [weightedScore, passingThreshold]);
+
+  // Strictly synchronize Verdict with the rubric slider score vs passing threshold
+  useEffect(() => {
+    if (verdict !== autoVerdict) {
+      setVerdict(autoVerdict);
+    }
+  }, [autoVerdict, verdict]);
+
   const scoreLabel = useMemo(() => {
-    if (!rubricTemplate) return "failing" as const;
-    return deriveScoreLabel(weightedScore, {
-      passing_score: rubricTemplate.passing_score,
-      excellent_score: rubricTemplate.excellent_score,
-    });
-  }, [rubricTemplate, weightedScore]);
+    return weightedScore >= passingThreshold ? ("passing" as const) : ("failing" as const);
+  }, [weightedScore, passingThreshold]);
 
   const handleUpdateAnnotationStatus = async (annotationId: string, newStatus: string) => {
     try {
@@ -1112,12 +1158,12 @@ export function GradingPanel({
           throw new Error(actionErrorMsg || directErr.message || "Failed to submit adviser endorsement.");
         }
 
-        // Keep project status aligned
-        if (projectId && status === "approved") {
+        // Keep project status aligned on both endorsement and withdrawal/cancellation
+        if (projectId) {
           try {
             await supabase
               .from("projects")
-              .update({ status: "submitted" })
+              .update({ status: status === "approved" ? "submitted" : "revision_required" })
               .eq("id", projectId);
           } catch (projErr) {
             console.warn("[GradingPanel] Direct project status sync notice:", projErr);
@@ -1125,7 +1171,7 @@ export function GradingPanel({
         }
       }
 
-      // 3. Immediately update local state so UI reflects endorsement without delay
+      // 3. Immediately update local state so UI reflects endorsement or withdrawal without delay
       setDocumentData((prev: any) => ({
         ...(prev || {}),
         adviser_approval_status: status === "approved" ? "approved" : "rejected",
@@ -1134,10 +1180,16 @@ export function GradingPanel({
         updated_at: new Date().toISOString(),
       }));
 
+      // Broadcast real-time refresh across all open views and notification bell
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("aurora:refresh"));
+        window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
+      }
+
       toast.success(
         status === "approved"
           ? "Manuscript endorsed for defense! Project is now eligible for defense scheduling."
-          : "Revisions requested. Student authors have been notified."
+          : "Endorsement withdrawn / Revisions requested. Student authors and coordinators notified in real time."
       );
 
       // 4. Background re-fetch to sync full record
@@ -1456,7 +1508,15 @@ export function GradingPanel({
       setEvalId(newEval.id);
       setEvalVersion(newEval.version);
       setEvalStatus(newEval.status);
-      setVerdict(newEval.verdict_code || "passed_minor");
+      setVerdict(
+        newEval.verdict_code === "failed"
+          ? "failed"
+          : newEval.verdict_code?.startsWith("passed")
+            ? "passed"
+            : weightedScore >= passingThreshold
+              ? "passed"
+              : "failed"
+      );
       setNotes(newEval.panel_notes || "");
       setRecommendations(newEval.recommendations || "");
       setEvaluationData(newEval);
@@ -1473,8 +1533,6 @@ export function GradingPanel({
 
   const verdicts = [
     { value: "passed", label: "Passed" },
-    { value: "passed_minor", label: "Passed with Minor Revisions" },
-    { value: "passed_major", label: "Passed with Major Revisions" },
     { value: "failed", label: "Failed" },
   ];
 
@@ -2572,25 +2630,21 @@ export function GradingPanel({
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <Calculator className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-bold text-primary">Weighted score</span>
+                  <span className="text-xs font-bold text-primary">Weighted Rubric Score</span>
                 </div>
                 <div className="flex gap-2 mt-1 text-[10px] text-muted-foreground">
-                  <span>Pass: {rubricTemplate.passing_score}</span>
-                  <span>•</span>
-                  <span>Excel: {rubricTemplate.excellent_score}</span>
+                  <span>Passing Threshold: {passingThreshold}%</span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-primary">
-                  {weightedScore.toFixed(1)}
+                  {weightedScore.toFixed(1)}%
                 </span>
                 <div className="text-[9px] mt-0.5 font-semibold">
-                  {scoreLabel === "excellent" ? (
-                    <Badge variant="success" className="px-1.5 py-0">Excellent</Badge>
-                  ) : scoreLabel === "passing" ? (
-                    <Badge variant="warning" className="px-1.5 py-0">Passing</Badge>
+                  {weightedScore >= passingThreshold ? (
+                    <Badge variant="success" className="px-2 py-0.5 font-black uppercase">Passed</Badge>
                   ) : (
-                    <Badge variant="danger" className="px-1.5 py-0">Failing</Badge>
+                    <Badge variant="danger" className="px-2 py-0.5 font-black uppercase">Failed</Badge>
                   )}
                 </div>
               </div>
@@ -2701,27 +2755,45 @@ export function GradingPanel({
               </div>
             </div>
 
-            {/* Verdict options */}
+            {/* Threshold-Driven Verdict (Strictly Pass or Fail based on Rubric Slider) */}
             <div className="space-y-2 pt-1">
-              <p className="text-xs font-semibold text-foreground">Verdict</p>
-              <div className="grid grid-cols-2 gap-2">
-                {verdicts.map((v) => (
-                  <button
-                    key={v.value}
-                    type="button"
-                    disabled={evalStatus === "submitted"}
-                    onClick={() => setVerdict(v.value)}
-                    className={cn(
-                      "rounded-xl border px-3 py-2.5 text-[11px] font-semibold transition-all text-center",
-                      verdict === v.value
-                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                        : "border-border hover:bg-muted bg-card text-muted-foreground",
-                      evalStatus === "submitted" && "opacity-60 cursor-not-allowed"
-                    )}
-                  >
-                    {v.label}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-foreground">Verdict (Threshold-Determined)</p>
+                <span className="text-[10px] font-semibold text-muted-foreground">
+                  Threshold: {passingThreshold}%
+                </span>
+              </div>
+              <div
+                className={cn(
+                  "rounded-xl border p-3.5 transition-all flex items-center justify-between",
+                  weightedScore >= passingThreshold
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                    : "border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200"
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  {weightedScore >= passingThreshold ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                  )}
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider">
+                      {weightedScore >= passingThreshold ? "PASSED" : "FAILED"}
+                    </p>
+                    <p className="text-[10px] opacity-80 font-medium">
+                      {weightedScore >= passingThreshold
+                        ? `Weighted slider score (${weightedScore.toFixed(1)}%) meets the ${passingThreshold}% passing threshold.`
+                        : `Weighted slider score (${weightedScore.toFixed(1)}%) is below the ${passingThreshold}% passing threshold.`}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant={weightedScore >= passingThreshold ? "success" : "danger"}
+                  className="text-[10px] font-black uppercase px-2.5 py-1"
+                >
+                  {weightedScore >= passingThreshold ? "Pass" : "Fail"}
+                </Badge>
               </div>
             </div>
 

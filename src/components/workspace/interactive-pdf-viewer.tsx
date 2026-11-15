@@ -108,6 +108,11 @@ interface InteractivePdfViewerProps {
   selectedAnnotationId?: string | null;
   onSelectAnnotation?: (id: string | null) => void;
   manuscriptTitle?: string;
+  hideToolbar?: boolean;
+  externalScale?: number;
+  externalActiveTool?: "select" | "pen";
+  externalPenColor?: string;
+  externalPenWidth?: number;
 }
 
 export function InteractivePdfViewer({
@@ -120,9 +125,14 @@ export function InteractivePdfViewer({
   selectedAnnotationId,
   onSelectAnnotation,
   manuscriptTitle,
+  hideToolbar = false,
+  externalScale,
+  externalActiveTool,
+  externalPenColor,
+  externalPenWidth,
 }: InteractivePdfViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [scale, setScale] = useState<number>(1.15);
+  const [scale, setScale] = useState<number>(externalScale ?? 1.15);
   const [annotations, setAnnotations] = useState<AnnotationItem[]>([]);
   const [loadingAnnotations, setLoadingAnnotations] = useState(false);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationItem | null>(null);
@@ -148,9 +158,32 @@ export function InteractivePdfViewer({
   const [submittingReply, setSubmittingReply] = useState(false);
 
   // Freehand Pen Drawing State
-  const [activeTool, setActiveTool] = useState<"select" | "pen">("select");
-  const [penColor, setPenColor] = useState<string>("#ef4444");
-  const [penWidth, setPenWidth] = useState<number>(3);
+  const [activeTool, setActiveTool] = useState<"select" | "pen">(externalActiveTool ?? "select");
+  const [penColor, setPenColor] = useState<string>(externalPenColor ?? "#ef4444");
+  const [penWidth, setPenWidth] = useState<number>(externalPenWidth ?? 3);
+
+  useEffect(() => {
+    if (externalScale !== undefined) setScale(externalScale);
+  }, [externalScale]);
+
+  useEffect(() => {
+    if (externalActiveTool !== undefined) {
+      setActiveTool(externalActiveTool);
+      if (externalActiveTool === "select") setPendingDrawing(null);
+      if (externalActiveTool === "pen") {
+        setPendingSelection(null);
+        setShowComposer(false);
+      }
+    }
+  }, [externalActiveTool]);
+
+  useEffect(() => {
+    if (externalPenColor !== undefined) setPenColor(externalPenColor);
+  }, [externalPenColor]);
+
+  useEffect(() => {
+    if (externalPenWidth !== undefined) setPenWidth(externalPenWidth);
+  }, [externalPenWidth]);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [currentDrawingPage, setCurrentDrawingPage] = useState<number | null>(null);
   const [currentPoints, setCurrentPoints] = useState<Array<{ x: number; y: number }>>([]);
@@ -803,7 +836,8 @@ export function InteractivePdfViewer({
 
   return (
     <div className="flex h-full flex-col bg-slate-100 dark:bg-slate-950 relative overflow-hidden select-text">
-      {/* Zoom & Page Control Bar */}
+      {/* Zoom & Page Control Bar (Hidden when controlled by parent Microsoft Word Ribbon) */}
+      {!hideToolbar && (
       <div className="flex items-center justify-between border-b border-border bg-card/90 backdrop-blur px-4 py-2 shrink-0 z-20 text-xs shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border">
@@ -985,6 +1019,7 @@ export function InteractivePdfViewer({
           </Badge>
         </div>
       </div>
+      )}
 
       {/* Main Document Canvas Scroll Area */}
       <div

@@ -73,6 +73,12 @@ export default function NotificationsPage() {
 
     if (!user) return;
 
+    const handleLiveRefresh = () => {
+      loadNotifications();
+    };
+    window.addEventListener("aurora:refresh", handleLiveRefresh);
+    window.addEventListener("aurora:notifications-updated", handleLiveRefresh);
+
     const channel = supabase
       .channel(`user-notifications-${user.id}`)
       .on(
@@ -90,6 +96,8 @@ export default function NotificationsPage() {
       .subscribe();
 
     return () => {
+      window.removeEventListener("aurora:refresh", handleLiveRefresh);
+      window.removeEventListener("aurora:notifications-updated", handleLiveRefresh);
       supabase.removeChannel(channel);
     };
   }, [user?.id, supabase]);
@@ -104,6 +112,7 @@ export default function NotificationsPage() {
       if (error) throw error;
       toast.success(isRead ? "Marked as read" : "Marked as unread");
       loadNotifications();
+      window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to update status.");
@@ -121,6 +130,7 @@ export default function NotificationsPage() {
       if (error) throw error;
       toast.success(toArchive ? "Notification archived" : "Notification unarchived");
       loadNotifications();
+      window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to archive notification.");
@@ -137,6 +147,7 @@ export default function NotificationsPage() {
       if (error) throw error;
       toast.success("Notification deleted");
       loadNotifications();
+      window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to delete notification.");
@@ -156,6 +167,7 @@ export default function NotificationsPage() {
       if (error) throw error;
       toast.success("All notifications marked as read!");
       loadNotifications();
+      window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to mark all as read.");

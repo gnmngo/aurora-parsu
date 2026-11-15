@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Menu, Search, LogOut, Sun, Moon, RotateCw } from "lucide-react";
+import { Bell, Menu, Search, LogOut, Sun, Moon, RotateCw, CheckCheck, ArrowRight } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,8 +25,12 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
   const { profile, roles, activeRole, setActiveRole, signOut } = useAuth();
   const { resolvedTheme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const lastSeenNotifIdRef = useRef<string | null>(null);
+  const lastDocSignatureRef = useRef<string | null>(null);
   const supabase = createClient();
 
   const effectiveRole = activeRole || roles[0] || "student";
@@ -46,18 +51,80 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
     }
   };
 
-  const fetchUnreadCount = useCallback(async () => {
+  const fetchUnreadCount = useCallback(async (showToastOnNew = false) => {
     if (!profile) return;
-    const { count, error } = await supabase
-      .from("notifications_compat")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", profile.id)
-      .eq("is_read", false);
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, title, message, type, link, read_at, created_at, metadata")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(25);
 
-    if (!error && count !== null) {
-      setUnreadCount(count);
+      if (!error && data) {
+        const activeList = data.filter((n: any) => !n.metadata?.is_archived);
+        const unread = activeList.filter((n: any) => !n.read_at).length;
+        setUnreadCount(unread);
+        setRecentNotifications(activeList.slice(0, 8));
+
+        const newest = activeList[0];
+        if (newest) {
+          if (showToastOnNew && lastSeenNotifIdRef.current && lastSeenNotifIdRef.current !== newest.id) {
+            const notifTitle = newest.title || "New Notification";
+            const notifMessage = newest.message || "";
+            if (newest.type === "revision_requested" || notifTitle.toLowerCase().includes("revision") || notifTitle.toLowerCase().includes("withdrawn")) {
+              toast.error(notifTitle, { description: notifMessage, duration: 7000 });
+            } else if (notifTitle.toLowerCase().includes("endorse") || notifTitle.toLowerCase().includes("approved")) {
+              toast.success(notifTitle, { description: notifMessage, duration: 6000 });
+            } else {
+              toast.info(notifTitle, { description: notifMessage, duration: 5000 });
+            }
+            window.dispatchEvent(new CustomEvent("aurora:refresh"));
+            router.refresh();
+          }
+          lastSeenNotifIdRef.current = newest.id;
+        }
+      }
+    } catch {
+      // non-fatal
     }
-  }, [profile, supabase]);
+  }, [profile, supabase, router]);
+
+  const handleMarkAllReadQuick = async () => {
+    if (!profile) return;
+    try {
+      const now = new Date().toISOString();
+      await supabase
+        .from("notifications")
+        .update({ read_at: now })
+        .eq("profile_id", profile.id)
+        .is("read_at", null);
+      setUnreadCount(0);
+      setRecentNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || now })));
+      window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
+      toast.success("All notifications marked as read");
+    } catch {
+      toast.error("Failed to mark notifications as read");
+    }
+  };
+
+  const handleNotifItemClick = async (notif: any) => {
+    setShowNotifDropdown(false);
+    if (!notif.read_at) {
+      const now = new Date().toISOString();
+      setUnreadCount((c) => Math.max(0, c - 1));
+      setRecentNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read_at: now } : n))
+      );
+      supabase.from("notifications").update({ read_at: now }).eq("id", notif.id).then();
+    }
+    const targetUrl =
+      notif.link ||
+      (notif.metadata?.projectId && notif.metadata?.stageId
+        ? `/workspace/${notif.metadata.projectId}/${notif.metadata.stageId}`
+        : "/dashboard/notifications");
+    router.push(targetUrl);
+  };
 
   // Manual Live Refresher Trigger
   const handleSyncRefresh = () => {
@@ -67,7 +134,7 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
     // 2. Revalidate server-rendered routes
     router.refresh();
     // 3. Re-query unread notifications
-    fetchUnreadCount();
+    fetchUnreadCount(false);
     // 4. Smooth spin completion & user notification
     setTimeout(() => {
       setIsRefreshing(false);
@@ -78,38 +145,65 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
     }, 600);
   };
 
-  // Smart background tab focus revalidation
+  // Smart background tab focus revalidation + 5-second live polling for real-time updates
   useEffect(() => {
-    let lastActive = Date.now();
+    if (!profile) return;
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        const elapsed = Date.now() - lastActive;
-        // If tab was away for > 25 seconds, silently re-sync data!
-        if (elapsed > 25000) {
-          window.dispatchEvent(new CustomEvent("aurora:refresh"));
-          fetchUnreadCount();
-          router.refresh();
-        }
-        lastActive = Date.now();
-      } else {
-        lastActive = Date.now();
+        window.dispatchEvent(new CustomEvent("aurora:refresh"));
+        fetchUnreadCount(true);
+        router.refresh();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    const handleCustomNotifUpdate = () => {
+      fetchUnreadCount(false);
     };
-  }, [fetchUnreadCount, router]);
+
+    // Poll every 5 seconds while tab is visible to guarantee real-time sync even if WebSockets drop
+    const pollInterval = setInterval(async () => {
+      if (document.visibilityState !== "visible") return;
+      await fetchUnreadCount(true);
+
+      try {
+        const { data: latestDocs } = await supabase
+          .from("documents")
+          .select("id, adviser_approval_status, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(3);
+        if (latestDocs && latestDocs.length > 0) {
+          const sig = latestDocs.map((d: any) => `${d.id}:${d.adviser_approval_status}:${d.updated_at}`).join("|");
+          if (lastDocSignatureRef.current && lastDocSignatureRef.current !== sig) {
+            window.dispatchEvent(new CustomEvent("aurora:refresh"));
+            router.refresh();
+          }
+          lastDocSignatureRef.current = sig;
+        }
+      } catch {
+        // non-fatal
+      }
+    }, 5000);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("aurora:notifications-updated", handleCustomNotifUpdate);
+    window.addEventListener("aurora:refresh", handleCustomNotifUpdate);
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("aurora:notifications-updated", handleCustomNotifUpdate);
+      window.removeEventListener("aurora:refresh", handleCustomNotifUpdate);
+    };
+  }, [profile, fetchUnreadCount, router, supabase]);
 
   useEffect(() => {
     if (!profile) return;
 
-    fetchUnreadCount();
+    fetchUnreadCount(false);
 
-    // Set up realtime notification updates
+    // Set up realtime updates for notifications, documents (endorsement/withdrawal), projects, and schedules
     const channel = supabase
-      .channel(`unread-notifications-${Date.now()}`)
+      .channel(`aurora-live-header-${profile.id}-${Date.now()}`)
       .on(
         "postgres_changes",
         {
@@ -119,12 +213,13 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
           filter: `profile_id=eq.${profile.id}`,
         },
         (payload) => {
-          fetchUnreadCount();
+          fetchUnreadCount(false);
           if (payload.eventType === "INSERT" && payload.new) {
             const notif = payload.new as any;
+            lastSeenNotifIdRef.current = notif.id;
             const notifTitle = notif.title || "New Notification";
             const notifMessage = notif.message || notif.body || "";
-            if (notif.type === "revision_requested" || notifTitle.toLowerCase().includes("revision")) {
+            if (notif.type === "revision_requested" || notifTitle.toLowerCase().includes("revision") || notifTitle.toLowerCase().includes("withdrawn")) {
               toast.error(notifTitle, {
                 description: notifMessage,
                 duration: 8000,
@@ -140,7 +235,38 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
                 duration: 5000,
               });
             }
+            window.dispatchEvent(new CustomEvent("aurora:refresh"));
+            router.refresh();
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents" },
+        () => {
+          window.dispatchEvent(new CustomEvent("aurora:refresh"));
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects" },
+        () => {
+          window.dispatchEvent(new CustomEvent("aurora:refresh"));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "defense_schedules" },
+        () => {
+          window.dispatchEvent(new CustomEvent("aurora:refresh"));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "evaluations" },
+        () => {
+          window.dispatchEvent(new CustomEvent("aurora:refresh"));
         }
       )
       .subscribe();
@@ -148,7 +274,7 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile, supabase]);
+  }, [profile, supabase, fetchUnreadCount, router]);
 
   const initials = profile
     ? `${profile.first_name?.[0] || ""}${profile.last_name?.[0] || ""}`.toUpperCase()
@@ -183,16 +309,108 @@ export function AppHeader({ title, onMenuClick }: AppHeaderProps) {
         />
       </form>
 
-      <Link href="/dashboard/notifications" className="relative">
-        <Button variant="ghost" size="icon" className="relative">
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative cursor-pointer"
+          onClick={() => {
+            setShowNotifDropdown((prev) => !prev);
+            fetchUnreadCount(false);
+          }}
+          title="Notifications"
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white animate-pulse">
-              {unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
         </Button>
-      </Link>
+
+        {showNotifDropdown && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowNotifDropdown(false)}
+            />
+            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-foreground">Live Notifications</span>
+                  {unreadCount > 0 && (
+                    <Badge variant="info" className="text-[10px] px-1.5 py-0 font-bold">
+                      {unreadCount} new
+                    </Badge>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllReadQuick}
+                    className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckCheck className="h-3 w-3" />
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-border/60">
+                {recentNotifications.length === 0 ? (
+                  <div className="py-8 px-4 text-center text-xs text-muted-foreground">
+                    No notifications yet. Live updates will appear here automatically.
+                  </div>
+                ) : (
+                  recentNotifications.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => handleNotifItemClick(n)}
+                      className={cn(
+                        "w-full text-left px-4 py-3 hover:bg-muted/60 transition-colors cursor-pointer flex items-start gap-2.5",
+                        !n.read_at && "bg-primary/5"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "mt-1.5 h-2 w-2 rounded-full shrink-0",
+                          !n.read_at ? "bg-primary" : "bg-transparent"
+                        )}
+                      />
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn("text-xs truncate", !n.read_at ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
+                            {n.title || "System Notification"}
+                          </p>
+                          <span className="text-[9px] text-muted-foreground shrink-0">
+                            {n.created_at ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true }) : ""}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground line-clamp-2 leading-snug">
+                          {n.message}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <div className="border-t border-border bg-muted/30 p-2 text-center">
+                <Link
+                  href="/dashboard/notifications"
+                  onClick={() => setShowNotifDropdown(false)}
+                  className="inline-flex items-center justify-center gap-1 text-xs font-bold text-primary hover:underline py-1 w-full"
+                >
+                  <span>Open Full Notification Center</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Live Data Refresher / Sync */}
       <Button

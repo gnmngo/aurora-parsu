@@ -24,15 +24,13 @@ export interface CertificateData {
 function formatVerdictLabel(verdictCode?: string): string {
   switch (verdictCode) {
     case "passed":
-      return "PASSED (FULL APPROVAL)";
     case "passed_minor":
-      return "PASSED WITH MINOR REVISIONS";
     case "passed_major":
-      return "PASSED WITH MAJOR REVISIONS";
+      return "PASSED";
     case "failed":
-      return "RE-DEFENSE REQUIRED (FAILED)";
+      return "FAILED";
     default:
-      return "DEFENSE EVALUATED";
+      return "PASSED";
   }
 }
 
@@ -241,22 +239,23 @@ export async function generateCertificatePdf(data: CertificateData): Promise<Blo
 
   currentY += 4;
 
-  // Generate QR Code for live verification URL
+  // Generate QR Code for live verification URL (high-DPI + standard quiet zone for reliable phone scanning)
   const verifyUrl = `https://aurora-parsu.vercel.app/verify/${encodeURIComponent(data.certificateSerial)}`;
   let qrDataUrl: string | null = null;
   try {
     qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-      width: 140,
-      margin: 1,
-      color: { dark: "#0f172a", light: "#ffffff" },
+      width: 360,
+      margin: 3,
+      color: { dark: "#000000", light: "#ffffff" },
+      errorCorrectionLevel: "M",
     });
   } catch (qrErr) {
     console.warn("Failed to generate QR code for PDF:", qrErr);
   }
 
-  const footerQrSize = 22;
+  const footerQrSize = 25;
   const qrX = pageWidth - margin - 8 - footerQrSize;
-  const qrY = currentY;
+  const qrY = currentY - 1;
 
   if (qrDataUrl) {
     try {

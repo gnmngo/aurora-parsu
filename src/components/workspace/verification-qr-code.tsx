@@ -23,7 +23,7 @@ interface VerificationQRCodeProps {
 export function VerificationQRCode({
   certificateSerial,
   baseUrl,
-  size = 80,
+  size = 104,
 }: VerificationQRCodeProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -31,14 +31,22 @@ export function VerificationQRCode({
   useEffect(() => {
     if (!certificateSerial) return;
 
-    const origin = baseUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
-    const verifyUrl = `${origin}/verify/${encodeURIComponent(certificateSerial)}`;
+    const rawOrigin =
+      baseUrl ??
+      (typeof window !== "undefined" ? window.location.origin : "https://aurora-parsu.vercel.app");
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const origin = isLocalhost
+      ? process.env.NEXT_PUBLIC_SITE_URL || "https://aurora-parsu.vercel.app"
+      : rawOrigin;
+    const verifyUrl = `${origin.replace(/\/$/, "")}/verify/${encodeURIComponent(certificateSerial.trim())}`;
 
     QRCode.toDataURL(verifyUrl, {
-      width: size * 2, // 2× for crisp rendering
-      margin: 1,
+      width: Math.max(size * 4, 360), // High-DPI crispness for phone cameras & print
+      margin: 3, // Standard quiet zone required by mobile QR scanners
       color: {
-        dark: "#0f172a",
+        dark: "#000000",
         light: "#ffffff",
       },
       errorCorrectionLevel: "M",
@@ -54,7 +62,7 @@ export function VerificationQRCode({
     return (
       <div
         style={{ width: size, height: size }}
-        className="border border-slate-200 rounded flex items-center justify-center bg-slate-50"
+        className="border border-slate-200 rounded flex items-center justify-center bg-white"
       >
         <span className="text-[8px] text-slate-400 text-center px-1">QR N/A</span>
       </div>
@@ -65,19 +73,27 @@ export function VerificationQRCode({
     return (
       <div
         style={{ width: size, height: size }}
-        className="border border-slate-100 rounded bg-slate-50 animate-pulse"
+        className="border border-slate-100 rounded bg-white animate-pulse"
       />
     );
   }
 
   return (
-    <img
-      src={qrDataUrl}
-      alt={`QR code — verify certificate ${certificateSerial}`}
-      width={size}
-      height={size}
-      className="rounded border border-slate-100 bg-white"
-      style={{ imageRendering: "pixelated" }}
-    />
+    <a
+      href={`/verify/${encodeURIComponent(certificateSerial.trim())}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Scan with phone camera or click to verify ${certificateSerial}`}
+      className="inline-block rounded-lg border border-slate-200 bg-white p-1 shadow-2xs hover:ring-2 hover:ring-primary/40 transition-all"
+    >
+      <img
+        src={qrDataUrl}
+        alt={`QR code — verify certificate ${certificateSerial}`}
+        width={size}
+        height={size}
+        className="block bg-white"
+        style={{ imageRendering: "pixelated", width: size, height: size }}
+      />
+    </a>
   );
 }

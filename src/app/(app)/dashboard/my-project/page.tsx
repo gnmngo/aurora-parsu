@@ -44,6 +44,7 @@ import {
   leaveProjectAction,
 } from "@/lib/projects/actions";
 import { CertificateDialog } from "@/components/workspace/certificate-dialog";
+import { VerificationQRCode } from "@/components/workspace/verification-qr-code";
 import { downloadCertificatePdf } from "@/lib/certificates/pdf-generator";
 import { DefenseApplicationDialog } from "@/components/defenses/defense-application-dialog";
 import { getProgramFormMetadata } from "@/lib/workflow/template-resolver";
@@ -498,6 +499,39 @@ export default function MyProjectPage() {
 
   // Global live refresher subscription
   useLiveRefresh(loadProjectData);
+
+  // Real-time subscription for adviser endorsement / withdrawal, schedules, and evaluations
+  useEffect(() => {
+    if (!project?.id) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`my-project-live-${project.id}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents", filter: `project_id=eq.${project.id}` },
+        () => loadProjectData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects", filter: `id=eq.${project.id}` },
+        () => loadProjectData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "defense_schedules", filter: `project_id=eq.${project.id}` },
+        () => loadProjectData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "evaluations", filter: `project_id=eq.${project.id}` },
+        () => loadProjectData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [project?.id, loadProjectData]);
 
   useEffect(() => {
 
@@ -2882,6 +2916,17 @@ export default function MyProjectPage() {
                   <p className="text-[9px] font-bold text-muted-foreground mt-0.5">
                     Certified by {adviserName}
                   </p>
+                </div>
+
+                {/* Scannable QR Code for Clearance Verification */}
+                <div className="flex flex-col items-center space-y-1 shrink-0">
+                  <VerificationQRCode
+                    certificateSerial={`AURORA-END-${project.id.slice(0, 8).toUpperCase()}`}
+                    size={96}
+                  />
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Scan to Verify
+                  </span>
                 </div>
               </div>
             </div>

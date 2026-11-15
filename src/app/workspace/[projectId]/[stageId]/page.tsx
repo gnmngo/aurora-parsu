@@ -273,6 +273,34 @@ export default function WorkspacePage() {
     }
   }, [projectId, loadWorkspaceData]);
 
+  useEffect(() => {
+    if (!projectId) return;
+
+    const handleGlobalRefresh = () => {
+      loadWorkspaceData();
+    };
+    window.addEventListener("aurora:refresh", handleGlobalRefresh);
+
+    const channel = supabase
+      .channel(`workspace-page-live-${projectId}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents", filter: `project_id=eq.${projectId}` },
+        () => loadWorkspaceData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "document_versions" },
+        () => loadWorkspaceData()
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("aurora:refresh", handleGlobalRefresh);
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, loadWorkspaceData, supabase]);
+
   if (!mounted || loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background text-sm text-muted-foreground gap-3">

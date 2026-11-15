@@ -52,25 +52,26 @@ export async function GET(request: Request, { params }: RouteProps) {
           weighted_score,
           verdict_code,
           project_id,
-          stages ( title ),
+          defense_stages ( name ),
           projects (
             title,
-            colleges ( name ),
+            campuses ( name ),
             departments ( name )
           )
         )
       `)
       .ilike("certificate_serial", serial)
-      .eq("status", "active")
+      .order("signed_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (sig && !sigErr) {
       const evalData: any = Array.isArray(sig.evaluations) ? sig.evaluations[0] : sig.evaluations;
       const proj: any = evalData?.projects ? (Array.isArray(evalData.projects) ? evalData.projects[0] : evalData.projects) : null;
       const prof: any = Array.isArray(sig.profiles) ? sig.profiles[0] : sig.profiles;
-      const stage: any = evalData?.stages ? (Array.isArray(evalData.stages) ? evalData.stages[0] : evalData.stages) : null;
+      const stage: any = evalData?.defense_stages ? (Array.isArray(evalData.defense_stages) ? evalData.defense_stages[0] : evalData.defense_stages) : null;
 
-      const collegeName = extractName(proj?.colleges) || "College of Engineering and Computational Sciences";
+      const collegeName = extractName(proj?.campuses) || "College of Engineering and Computational Sciences";
       const departmentName = extractName(proj?.departments) || "Department of Computational Sciences";
 
       return NextResponse.json(
@@ -79,8 +80,8 @@ export async function GET(request: Request, { params }: RouteProps) {
           found: true,
           certificateSerial: sig.certificate_serial,
           projectTitle: proj?.title || "Research Defense Manuscript",
-          stage: stage?.title || "Oral Defense",
-          verdict: evalData?.verdict_code || "approved",
+          stage: stage?.name || "Oral Defense",
+          verdict: evalData?.verdict_code === "failed" ? "failed" : "passed",
           score: evalData?.weighted_score ?? evalData?.total_score ?? null,
           panelistName: prof ? `${prof.first_name} ${prof.last_name}` : "Faculty Panelist",
           signedAt: sig.signed_at,
@@ -114,23 +115,25 @@ export async function GET(request: Request, { params }: RouteProps) {
         weighted_score,
         verdict_code,
         profiles!panelist_id ( first_name, last_name, email ),
-        stages ( title ),
+        defense_stages ( name ),
         projects (
           title,
-          colleges ( name ),
+          campuses ( name ),
           departments ( name )
         )
       `)
       .ilike("certificate_serial", serial)
+      .order("signed_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (ev && !evErr) {
       const evData: any = ev;
       const proj: any = evData.projects ? (Array.isArray(evData.projects) ? evData.projects[0] : evData.projects) : null;
       const prof: any = evData.profiles ? (Array.isArray(evData.profiles) ? evData.profiles[0] : evData.profiles) : null;
-      const stage: any = evData.stages ? (Array.isArray(evData.stages) ? evData.stages[0] : evData.stages) : null;
+      const stage: any = evData.defense_stages ? (Array.isArray(evData.defense_stages) ? evData.defense_stages[0] : evData.defense_stages) : null;
 
-      const collegeName = extractName(proj?.colleges) || "College of Engineering and Computational Sciences";
+      const collegeName = extractName(proj?.campuses) || "College of Engineering and Computational Sciences";
       const departmentName = extractName(proj?.departments) || "Department of Computational Sciences";
 
       return NextResponse.json(
@@ -139,8 +142,8 @@ export async function GET(request: Request, { params }: RouteProps) {
           found: true,
           certificateSerial: evData.certificate_serial,
           projectTitle: proj?.title || "Research Defense Manuscript",
-          stage: stage?.title || "Oral Defense",
-          verdict: evData.verdict_code || "approved",
+          stage: stage?.name || "Oral Defense",
+          verdict: evData.verdict_code === "failed" ? "failed" : "passed",
           score: evData.weighted_score ?? evData.total_score ?? null,
           panelistName: prof ? `${prof.first_name} ${prof.last_name}` : "Faculty Panelist",
           signedAt: evData.signed_at,

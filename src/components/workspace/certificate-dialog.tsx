@@ -300,9 +300,11 @@ export function CertificateDialog({
       })
     : "N/A";
 
-  const publicVerifyUrl = evaluation.certificate_serial
-    ? `/verify/${encodeURIComponent(evaluation.certificate_serial)}`
-    : null;
+  const effectiveSerial =
+    evaluation.certificate_serial ||
+    (evaluation.id ? `AURORA-EVAL-${String(evaluation.id).slice(0, 8).toUpperCase()}` : "AURORA-CERT");
+
+  const publicVerifyUrl = `/verify/${encodeURIComponent(effectiveSerial)}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -384,7 +386,7 @@ export function CertificateDialog({
             {/* Certificate Meta Details */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-b border-slate-100 py-3 my-4 text-[11px] max-w-md mx-auto">
               <div className="text-slate-500 font-semibold">Certificate Number:</div>
-              <div className="font-bold font-mono text-slate-950">{evaluation.certificate_serial}</div>
+              <div className="font-bold font-mono text-slate-950">{effectiveSerial}</div>
 
               <div className="text-slate-500 font-semibold">Status:</div>
               <div className="font-bold text-emerald-600 flex items-center gap-1">
@@ -404,26 +406,22 @@ export function CertificateDialog({
             </div>
 
             {/* Certificate Footer */}
-            <div className="flex justify-between items-end pt-3 mt-4 border-t border-slate-50">
+            <div className="flex justify-between items-end pt-3 mt-4 border-t border-slate-50 gap-4">
               {/* SHA-256 Hash box */}
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0 flex-1">
                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Integrity Signature Hash (SHA-256)</p>
                 <p className="font-mono text-[8px] text-slate-500 max-w-[260px] sm:max-w-[300px] break-all leading-normal select-all bg-slate-50 p-1.5 rounded border border-slate-100 font-semibold">
                   {evaluation.signature_hash}
                 </p>
               </div>
 
-              {/* QR Code box */}
-              <div className="flex flex-col items-center space-y-1">
-                {evaluation.certificate_serial ? (
-                  <VerificationQRCode
-                    certificateSerial={evaluation.certificate_serial}
-                    size={56}
-                  />
-                ) : (
-                  <div className="h-14 w-14 border border-slate-100 rounded bg-slate-50" />
-                )}
-                <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-wider">AURORA QR VERIFY</span>
+              {/* QR Code box — Large 108x108px with standard quiet zone for reliable phone scanning */}
+              <div className="flex flex-col items-center space-y-1 shrink-0">
+                <VerificationQRCode
+                  certificateSerial={effectiveSerial}
+                  size={108}
+                />
+                <span className="text-[8px] text-slate-500 uppercase font-bold tracking-wider">Scan or Click to Verify</span>
               </div>
             </div>
           </div>

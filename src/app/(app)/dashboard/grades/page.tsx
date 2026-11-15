@@ -320,6 +320,14 @@ export default function GradesPage() {
                 {projects.map((proj) => {
                   const isExpanded = expandedConsensusId === proj.id;
                   const isAlreadyReleased = !!(proj.status && ["passed", "passed_minor", "passed_major", "failed", "conditional", "re_defense"].includes(proj.status));
+                  const projGroup = evaluationGroups.find((g) => g.projectId === proj.id);
+                  const thresholdVerdict: "passed" | "failed" =
+                    (projGroup?.averageScore ?? 0) >= (projGroup?.passingScore ?? 75) ? "passed" : "failed";
+                  const normalizedStatusLabel = proj.status?.startsWith("passed")
+                    ? "PASSED"
+                    : proj.status === "failed"
+                      ? "FAILED"
+                      : proj.status?.replace(/_/g, " ");
                   return (
                     <div key={proj.id} className="p-4 space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -331,7 +339,7 @@ export default function GradesPage() {
                                 variant={proj.status.startsWith("passed") ? "success" : proj.status === "failed" ? "danger" : "outline"}
                                 className="text-[9px] uppercase font-mono px-1.5 py-0"
                               >
-                                {proj.status.replace(/_/g, " ")}
+                                {normalizedStatusLabel}
                               </Badge>
                             )}
                           </div>
@@ -345,35 +353,47 @@ export default function GradesPage() {
                             {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                           </button>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {(["passed", "passed_minor", "passed_major", "failed", "conditional"] as const).map((v) => (
-                            <Button
-                              key={v}
-                              size="sm"
-                              variant={v.startsWith("passed") ? "default" : v === "failed" ? "danger" : "outline"}
-                              className="h-7 text-[10px] capitalize font-bold"
-                              disabled={releasingId === proj.id}
-                              onClick={async () => {
-                                const promptMsg = isAlreadyReleased
-                                  ? `This project already has verdict "${proj.status?.replace(/_/g, " ").toUpperCase()}". Are you sure you want to change it to "${v.replace(/_/g, " ").toUpperCase()}"?`
-                                  : `Release official verdict "${v.replace(/_/g, " ").toUpperCase()}" for "${proj.title}"?`;
-                                if (!confirm(promptMsg)) return;
-                                setReleasingId(proj.id);
-                                try {
-                                  await releaseProjectVerdictAction(proj.id, v);
-                                  toast.success(`Verdict released: ${v.replace(/_/g, " ")}`);
-                                  await loadGrades();
-                                } catch (err: unknown) {
-                                  const msg = err instanceof Error ? err.message : "Failed";
-                                  toast.error(msg);
-                                } finally {
-                                  setReleasingId(null);
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] font-semibold text-muted-foreground">
+                            Composite: <strong className="text-foreground">{(projGroup?.averageScore ?? 0).toFixed(1)}%</strong> (Threshold: {projGroup?.passingScore ?? 75}%)
+                          </span>
+                          <Button
+                            size="sm"
+                            variant={thresholdVerdict === "passed" ? "default" : "danger"}
+                            className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
+                            disabled={releasingId === proj.id}
+                            onClick={async () => {
+                              const verdictLabel = thresholdVerdict === "passed" ? "PASSED" : "FAILED";
+                              const promptMsg = isAlreadyReleased
+                                ? `Release updated threshold-determined verdict "${verdictLabel}" (Score: ${(projGroup?.averageScore ?? 0).toFixed(1)}%) for "${proj.title}"?`
+                                : `Release official threshold-determined verdict "${verdictLabel}" (Score: ${(projGroup?.averageScore ?? 0).toFixed(1)}%) for "${proj.title}"?`;
+                              if (!confirm(promptMsg)) return;
+                              setReleasingId(proj.id);
+                              try {
+                                await releaseProjectVerdictAction(proj.id, thresholdVerdict);
+                                toast.success(`Official verdict released: ${verdictLabel}`);
+                                if (typeof window !== "undefined") {
+                                  window.dispatchEvent(new CustomEvent("aurora:refresh"));
+                                  window.dispatchEvent(new CustomEvent("aurora:notifications-updated"));
                                 }
-                              }}
-                            >
-                              {releasingId === proj.id ? <Loader2 className="h-3 w-3 animate-spin" /> : v.replace(/_/g, " ")}
-                            </Button>
-                          ))}
+                                await loadGrades();
+                              } catch (err: unknown) {
+                                const msg = err instanceof Error ? err.message : "Failed";
+                                toast.error(msg);
+                              } finally {
+                                setReleasingId(null);
+                              }
+                            }}
+                          >
+                            {releasingId === proj.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : thresholdVerdict === "passed" ? (
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            ) : (
+                              <AlertCircle className="h-3.5 w-3.5" />
+                            )}
+                            Release Verdict: {thresholdVerdict === "passed" ? "PASSED" : "FAILED"}
+                          </Button>
                         </div>
                       </div>
 

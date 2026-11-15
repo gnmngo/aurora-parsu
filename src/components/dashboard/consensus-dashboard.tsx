@@ -92,21 +92,8 @@ export function ConsensusDashboard({ projectId, isStudentView = false }: Consens
   const stdDev = Number(Math.sqrt(avgSquareDiff).toFixed(2));
   const isHighDiscrepancy = count >= 2 && stdDev >= 15.0;
 
-  // Derive Consensus Verdict
-  const failCount = evaluations.filter((ev) => ev.verdict_code === "failed").length;
-  const revisionCount = evaluations.filter(
-    (ev) =>
-      ev.verdict_code === "passed_minor" ||
-      ev.verdict_code === "passed_major" ||
-      ev.verdict_code === "passed_with_revisions"
-  ).length;
-  
-  let consensusVerdict = "Accepted";
-  if (failCount > count / 2) {
-    consensusVerdict = "Rejected";
-  } else if (revisionCount > 0 || failCount > 0) {
-    consensusVerdict = "Accepted with Revisions";
-  }
+  // Derive Consensus Verdict strictly based on passing threshold (75%)
+  const consensusVerdict = average >= 75 ? "Passed" : "Failed";
 
   return (
     <Card className="border border-border/80 shadow-md text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -140,13 +127,7 @@ export function ConsensusDashboard({ projectId, isStudentView = false }: Consens
           <div className="p-3 bg-muted/40 rounded-xl flex items-center justify-between">
             <span className="text-muted-foreground">Consensus Verdict</span>
             <Badge 
-              variant={
-                consensusVerdict === "Accepted" 
-                  ? "success" 
-                  : consensusVerdict === "Rejected" 
-                    ? "danger" 
-                    : "info"
-              }
+              variant={consensusVerdict === "Passed" ? "success" : "danger"}
               className="text-[9px] font-extrabold uppercase"
             >
               {consensusVerdict}
@@ -218,7 +199,12 @@ export function ConsensusDashboard({ projectId, isStudentView = false }: Consens
                     <td className="p-3 font-bold text-slate-900 dark:text-slate-100">{name}</td>
                     <td className="p-3 text-center text-primary font-black">{displayScore}</td>
                     <td className="p-3 text-center">
-                      <Badge variant="outline" className="capitalize text-[8px] font-extrabold">{ev.verdict_code.replace(/_/g, " ")}</Badge>
+                      <Badge
+                        variant={Number(displayScore) >= 75 && ev.verdict_code !== "failed" ? "success" : "danger"}
+                        className="uppercase text-[8px] font-extrabold"
+                      >
+                        {Number(displayScore) >= 75 && ev.verdict_code !== "failed" ? "Passed" : "Failed"}
+                      </Badge>
                     </td>
                     <td className="p-3 text-center text-muted-foreground font-mono text-[9px]">
                       {new Date(ev.signed_at).toLocaleDateString()}

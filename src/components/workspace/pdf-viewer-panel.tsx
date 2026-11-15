@@ -17,6 +17,10 @@ import {
   ChevronUp,
   Sparkles,
   FileText,
+  ZoomIn,
+  ZoomOut,
+  MousePointer,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -67,6 +71,15 @@ export function PdfViewerPanel({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [isExporting, setIsExporting] = useState(false);
+
+  // Microsoft Word Ribbon State (Consolidated Zoom, Markup & Export Controls)
+  const [ribbonTab, setRibbonTab] = useState<"all" | "view" | "review">("all");
+  const [isRibbonCollapsed, setIsRibbonCollapsed] = useState<boolean>(false);
+  const [scale, setScale] = useState<number>(1.15);
+  const [activeTool, setActiveTool] = useState<"select" | "pen">("select");
+  const [penColor, setPenColor] = useState<string>("#ef4444");
+  const [penWidth, setPenWidth] = useState<number>(3.5);
+  const [showDownloadMenu, setShowDownloadMenu] = useState<boolean>(false);
 
   // Form states for new remark
   const [commentText, setCommentText] = useState("");
@@ -294,115 +307,352 @@ export function PdfViewerPanel({
     return ann.severity === filterSeverity;
   });
 
+  const isStudent = currentUserRole === "student";
+
   return (
     <div className="flex h-full flex-col bg-slate-900/5 relative overflow-hidden">
-      {/* Top Action Toolbar */}
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 shrink-0 z-10">
-        <div className="flex items-center gap-2">
-          {/* Mode Switcher: Google Docs Mode vs Native PDF */}
-          <div className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5 mr-1">
-            <button
-              type="button"
-              onClick={() => setViewMode("interactive")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
-                viewMode === "interactive"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              title="Google Docs-style text selection and inline highlighting"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              <span className="hidden sm:inline">Docs Mode</span>
-              <span className="sm:hidden">Docs</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("native")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
-                viewMode === "native"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              title="Browser native PDF reader"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Native PDF</span>
-              <span className="sm:hidden">PDF</span>
-            </button>
+      {/* Microsoft Word-Inspired Ribbon Toolbar */}
+      <div className="border-b border-border bg-card shrink-0 z-20 shadow-2xs select-none">
+        {/* Ribbon Tab Strip */}
+        <div className="flex items-center justify-between px-3 pt-1.5 border-b border-border/50 bg-muted/30">
+          <div className="flex items-center gap-0.5">
+            {(
+              [
+                { id: "all", label: "Home & Review Ribbon" },
+                { id: "view", label: "View & Zoom" },
+                { id: "review", label: "Markup & Remarks" },
+              ] as const
+            ).map((tab) => {
+              const active = ribbonTab === tab.id && !isRibbonCollapsed;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    if (ribbonTab === tab.id && !isRibbonCollapsed) {
+                      setIsRibbonCollapsed(true);
+                    } else {
+                      setRibbonTab(tab.id);
+                      setIsRibbonCollapsed(false);
+                    }
+                  }}
+                  className={cn(
+                    "px-3 py-1 text-[11px] font-bold rounded-t-md border-t border-x transition-all cursor-pointer",
+                    active
+                      ? "bg-card text-primary border-border -mb-px pb-1.5 shadow-2xs"
+                      : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          {currentUserRole !== "student" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 rounded-lg text-xs font-semibold shadow-xs"
-              onClick={() => setShowAddModal(true)}
+          <div className="flex items-center gap-2 pb-1">
+            <span className="hidden lg:inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+              <Sparkles className="h-3 w-3 text-amber-500" />
+              {isStudent
+                ? "Click any highlight or pen markup to reply"
+                : activeTool === "pen"
+                  ? "Draw freehand on manuscript pages"
+                  : "Highlight text to leave inline comments"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsRibbonCollapsed(!isRibbonCollapsed)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title={isRibbonCollapsed ? "Expand Ribbon" : "Collapse Ribbon"}
             >
-              <MessageSquarePlus className="h-3.5 w-3.5 text-primary" />
-              <span className="hidden sm:inline">Add General Remark</span>
-              <span className="sm:hidden">Remark</span>
-            </Button>
-          )}
-
-          <Button
-            variant={showRemarksDrawer ? "secondary" : "ghost"}
-            size="sm"
-            className="h-8 gap-1.5 rounded-lg text-xs"
-            onClick={() => setShowRemarksDrawer(!showRemarksDrawer)}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Remarks</span>
-            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold">
-              {annotations.length}
-            </Badge>
-          </Button>
+              {isRibbonCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {pdfUrl && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportAnnotatedPdf}
-                disabled={isExporting}
-                className="h-8 gap-1 rounded-lg text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-xs"
-                title="Download PDF with all freehand pen marks and faculty remarks baked in"
-              >
-                {isExporting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
-                <span className="hidden sm:inline">Export with Markings</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 rounded-lg text-xs"
-                asChild
-              >
-                <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">New Tab</span>
-                </a>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 rounded-lg text-xs"
-                asChild
-              >
-                <a href={pdfUrl} download={`${title || "manuscript"}.pdf`}>
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Download</span>
-                </a>
-              </Button>
-            </>
-          )}
-        </div>
+        {/* Ribbon Groups Body */}
+        {!isRibbonCollapsed && (
+          <div className="flex flex-wrap items-stretch gap-1 px-3 py-1.5 bg-card min-h-[54px]">
+            {/* GROUP 1: VIEW MODE */}
+            {(ribbonTab === "all" || ribbonTab === "view") && (
+              <div className="flex flex-col justify-between pr-2.5 mr-1 border-r border-border/70">
+                <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-0.5 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("interactive")}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer",
+                      viewMode === "interactive"
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    title="Interactive Docs Mode (Inline Highlighting & Pen Markup)"
+                  >
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                    <span>Docs Mode</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("native")}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer",
+                      viewMode === "native"
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    title="Browser Native PDF Reader"
+                  >
+                    <FileText className="h-3 w-3" />
+                    <span>Native PDF</span>
+                  </button>
+                </div>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/80 text-center mt-1">
+                  View Mode
+                </span>
+              </div>
+            )}
+
+            {/* GROUP 2: ZOOM CONTROLS */}
+            {(ribbonTab === "all" || ribbonTab === "view") && viewMode === "interactive" && (
+              <div className="flex flex-col justify-between pr-2.5 mr-1 border-r border-border/70">
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 rounded cursor-pointer"
+                      onClick={() => setScale((prev) => Math.max(0.75, Number((prev - 0.15).toFixed(2))))}
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="h-3 w-3" />
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => setScale(1.15)}
+                      className="text-[11px] font-bold px-1.5 text-foreground hover:text-primary w-11 text-center cursor-pointer"
+                      title="Click to reset zoom (100%)"
+                    >
+                      {Math.round(scale * 100)}%
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 rounded cursor-pointer"
+                      onClick={() => setScale((prev) => Math.min(2.0, Number((prev + 0.15).toFixed(2))))}
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/80 text-center mt-1">
+                  Zoom
+                </span>
+              </div>
+            )}
+
+            {/* GROUP 3: INK & MARKUP TOOLS (Faculty / Reviewers) */}
+            {(ribbonTab === "all" || ribbonTab === "review") && !isStudent && viewMode === "interactive" && (
+              <div className="flex flex-col justify-between pr-2.5 mr-1 border-r border-border/70">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTool("select")}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-all",
+                        activeTool === "select"
+                          ? "bg-card text-primary shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      title="Select & Highlight Text"
+                    >
+                      <MousePointer className="h-3 w-3" />
+                      <span>Select</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTool("pen")}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-all",
+                        activeTool === "pen"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      title="Freehand Ink Pen"
+                    >
+                      <PenTool className="h-3 w-3" />
+                      <span>Ink Pen</span>
+                    </button>
+                  </div>
+
+                  {activeTool === "pen" && (
+                    <div className="flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded-lg border border-border">
+                      <div className="flex items-center gap-1">
+                        {[
+                          { color: "#ef4444", label: "Red" },
+                          { color: "#2563eb", label: "Blue" },
+                          { color: "#d97706", label: "Amber" },
+                          { color: "#059669", label: "Emerald" },
+                        ].map((c) => (
+                          <button
+                            key={c.color}
+                            type="button"
+                            onClick={() => setPenColor(c.color)}
+                            style={{ backgroundColor: c.color }}
+                            className={cn(
+                              "h-3.5 w-3.5 rounded-full transition-transform cursor-pointer",
+                              penColor === c.color ? "ring-2 ring-offset-1 ring-primary scale-110" : "opacity-75 hover:opacity-100"
+                            )}
+                            title={`${c.label} Ink`}
+                          />
+                        ))}
+                      </div>
+                      <div className="h-3 w-px bg-border" />
+                      <div className="flex items-center gap-0.5">
+                        {[
+                          { width: 2, label: "Fine" },
+                          { width: 3.5, label: "Med" },
+                          { width: 5, label: "Bold" },
+                        ].map((w) => (
+                          <button
+                            key={w.width}
+                            type="button"
+                            onClick={() => setPenWidth(w.width)}
+                            className={cn(
+                              "px-1 py-0.5 text-[9px] font-bold rounded cursor-pointer",
+                              penWidth === w.width
+                                ? "bg-card text-foreground shadow-2xs border border-border"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {w.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/80 text-center mt-1">
+                  Markup Tools
+                </span>
+              </div>
+            )}
+
+            {/* GROUP 4: COMMENTS & REMARKS */}
+            {(ribbonTab === "all" || ribbonTab === "review") && (
+              <div className="flex flex-col justify-between pr-2.5 mr-1 border-r border-border/70">
+                <div className="flex items-center gap-1">
+                  {!isStudent && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 px-2 rounded-lg text-[11px] font-semibold cursor-pointer"
+                      onClick={() => setShowAddModal(true)}
+                      title="Add General Page Remark"
+                    >
+                      <MessageSquarePlus className="h-3 w-3 text-primary" />
+                      <span>New Remark</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant={showRemarksDrawer ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1 px-2 rounded-lg text-[11px] font-semibold cursor-pointer"
+                    onClick={() => setShowRemarksDrawer(!showRemarksDrawer)}
+                    title="Toggle Remarks Drawer"
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    <span>Remarks</span>
+                    <Badge variant="secondary" className="h-4 px-1 text-[9px] font-bold">
+                      {annotations.length}
+                    </Badge>
+                  </Button>
+                </div>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/80 text-center mt-1">
+                  Comments
+                </span>
+              </div>
+            )}
+
+            {/* GROUP 5: UNIFIED DOCUMENT EXPORT (Single Download Button with Menu) */}
+            {pdfUrl && (
+              <div className="flex flex-col justify-between ml-auto relative">
+                <div className="flex items-center gap-1">
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isExporting}
+                      onClick={() => setShowDownloadMenu((prev) => !prev)}
+                      className="h-7 gap-1.5 px-2.5 rounded-lg text-[11px] font-bold border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
+                      title="Download or Open Manuscript PDF"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Download className="h-3 w-3" />
+                      )}
+                      <span>{isExporting ? "Exporting..." : "Download"}</span>
+                      <ChevronDown className="h-3 w-3 opacity-70" />
+                    </Button>
+
+                    {showDownloadMenu && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowDownloadMenu(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-border bg-card p-1.5 shadow-xl z-50 text-xs space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowDownloadMenu(false);
+                              handleExportAnnotatedPdf();
+                            }}
+                            disabled={isExporting}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left font-semibold hover:bg-muted transition-colors cursor-pointer text-foreground"
+                          >
+                            <Download className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <div>
+                              <p className="text-[11px] font-bold">Annotated PDF (with Markings)</p>
+                              <p className="text-[9px] text-muted-foreground">Includes all ink &amp; faculty remarks</p>
+                            </div>
+                          </button>
+                          <a
+                            href={pdfUrl}
+                            download={`${title || "manuscript"}.pdf`}
+                            onClick={() => setShowDownloadMenu(false)}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left font-semibold hover:bg-muted transition-colors cursor-pointer text-foreground"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div>
+                              <p className="text-[11px] font-bold">Original Manuscript PDF</p>
+                              <p className="text-[9px] text-muted-foreground">Clean copy without markings</p>
+                            </div>
+                          </a>
+                          <div className="h-px bg-border/60 my-1" />
+                          <a
+                            href={pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setShowDownloadMenu(false)}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left font-medium hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-[11px]">Open PDF in New Tab</span>
+                          </a>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/80 text-center mt-1">
+                  Export
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main PDF Viewer Container */}
@@ -419,6 +669,11 @@ export function PdfViewerPanel({
               onSelectAnnotation={setSelectedAnnotationId}
               onAnnotationCreated={handleAnnotationCreated}
               manuscriptTitle={title}
+              hideToolbar={true}
+              externalScale={scale}
+              externalActiveTool={activeTool}
+              externalPenColor={penColor}
+              externalPenWidth={penWidth}
             />
           ) : (
             <iframe

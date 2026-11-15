@@ -137,13 +137,45 @@ export async function adviserApproveDocumentAction(
         }
       }
 
+      const wasPreviouslyApproved = doc.adviser_approval_status === "approved";
+      const notifTitle =
+        status === "approved"
+          ? "Manuscript Endorsed for Defense"
+          : wasPreviouslyApproved
+            ? "Adviser Endorsement Withdrawn — Revisions Required"
+            : "Manuscript Revision Required";
+      const notifMessage =
+        status === "approved"
+          ? `Your adviser has officially endorsed "${projTitle}" for oral defense scheduling. Remarks: ${remarks || "None"}.`
+          : wasPreviouslyApproved
+            ? `Your adviser has withdrawn defense endorsement and requested revisions on "${projTitle}". Remarks: ${remarks || "None"}.`
+            : `Your adviser has requested revisions on "${projTitle}". Remarks: ${remarks || "None"}.`;
+
       if (studentProfileIds.length > 0) {
         await emitNotificationToMany(serviceClient, studentProfileIds, {
-          title: `Manuscript ${status === "approved" ? "Approved" : "Revision Required"}`,
-          message: `Your adviser has ${status === "approved" ? "approved" : "requested revisions on"} your manuscript "${doc.title}". Remarks: ${remarks || "None"}.`,
+          title: notifTitle,
+          message: notifMessage,
           eventType: status === "approved" ? "document_approved" : "revision_required",
           actionUrl: `/workspace/${projId}/${doc.stage_id || ""}`,
-          metadata: { documentId, projectId: projId, remarks: remarks || null },
+          metadata: { documentId, projectId: projId, stageId: doc.stage_id || null, remarks: remarks || null },
+        });
+      }
+
+      // Also notify Coordinators when endorsement is granted or withdrawn so scheduling queue stays synced
+      const { data: coordRoles } = await serviceClient
+        .from("user_roles")
+        .select("profile_id, roles!inner(code)")
+        .eq("roles.code", "coordinator");
+      const coordIds = Array.from(
+        new Set((coordRoles || []).map((r: any) => r.profile_id).filter((id: string) => id && id !== user.id))
+      );
+      if (coordIds.length > 0) {
+        await emitNotificationToMany(serviceClient, coordIds, {
+          title: notifTitle,
+          message: `Adviser ${status === "approved" ? "endorsed" : wasPreviouslyApproved ? "withdrew endorsement for" : "requested revisions on"} project "${projTitle}".`,
+          eventType: status === "approved" ? "document_approved" : "revision_required",
+          actionUrl: `/dashboard/defenses`,
+          metadata: { documentId, projectId: projId, stageId: doc.stage_id || null, remarks: remarks || null },
         });
       }
     } catch (notifErr) {
