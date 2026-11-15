@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadingRef = useRef<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
+  const isSigningOutRef = useRef(false);
 
   const setActiveRole = useCallback((role: string) => {
     setActiveRoleState(role);
@@ -312,10 +313,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!session) {
         clearAuthState();
-        setIsLoading(false);
+        if (!isSigningOutRef.current) {
+          setIsLoading(false);
+        }
         return;
       }
 
+      isSigningOutRef.current = false;
       setSession(session);
       setUser(session.user);
 
@@ -373,9 +377,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [roles, permissions]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    isSigningOutRef.current = true;
+    setIsLoading(true);
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     clearAuthState();
-    window.location.href = "/login";
+    window.location.replace("/login");
   }, [clearAuthState]);
 
   return (

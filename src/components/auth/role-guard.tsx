@@ -35,10 +35,11 @@ export function RoleGuard({
   fallback = null,
   showLoader = true,
 }: RoleGuardProps) {
-  const { hasRole, hasPermission, isLoading } = useAuth();
+  const { user, roles, hasRole, hasPermission, isLoading } = useAuth();
 
-  // While auth is hydrating show spinner — prevents flash of unauthorized content
-  if (isLoading) {
+  // While auth is hydrating, signing out, or user is unauthenticated (redirecting to /login),
+  // show loader instead of flashing the AccessDenied fallback.
+  if (isLoading || !user || roles.length === 0) {
     if (!showLoader) return null;
     return (
       <div className="flex items-center justify-center py-12">
